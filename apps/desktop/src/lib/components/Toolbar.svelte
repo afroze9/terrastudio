@@ -1,10 +1,53 @@
 <script lang="ts">
   import { ui } from '$lib/stores/ui.svelte';
+  import { diagram } from '$lib/stores/diagram.svelte';
+  import { project } from '$lib/stores/project.svelte';
+  import { terraform } from '$lib/stores/terraform.svelte';
+  import { openProject, saveDiagram } from '$lib/services/project-service';
+  import { generateAndWrite } from '$lib/services/terraform-service';
+
+  let { onNewProject }: { onNewProject: () => void } = $props();
+
+  const canGenerate = $derived(
+    project.isOpen && diagram.nodes.length > 0 && !terraform.isRunning,
+  );
+
+  async function handleGenerate() {
+    terraform.clearOutput();
+    try {
+      await generateAndWrite();
+      ui.showTerraformPanel = true;
+    } catch {
+      // Error already logged to terraform store
+    }
+  }
+
+  async function handleSave() {
+    if (!project.isOpen) return;
+    await saveDiagram();
+  }
+
+  async function handleOpen() {
+    try {
+      await openProject();
+    } catch {
+      // User cancelled or error
+    }
+  }
 </script>
 
 <header class="toolbar">
   <div class="toolbar-left">
     <span class="app-logo">TerraStudio</span>
+    <span class="separator"></span>
+    <button class="toolbar-btn" onclick={onNewProject}>New</button>
+    <button class="toolbar-btn" onclick={handleOpen}>Open</button>
+    {#if project.isOpen}
+      <button class="toolbar-btn" onclick={handleSave}>Save</button>
+    {/if}
+    {#if project.name}
+      <span class="project-name">{project.name}</span>
+    {/if}
   </div>
   <div class="toolbar-center">
     <button
@@ -30,7 +73,13 @@
     </button>
   </div>
   <div class="toolbar-right">
-    <button class="toolbar-btn toolbar-btn-accent" disabled>Generate</button>
+    <button
+      class="toolbar-btn toolbar-btn-accent"
+      disabled={!canGenerate}
+      onclick={handleGenerate}
+    >
+      Generate
+    </button>
   </div>
 </header>
 
@@ -56,6 +105,19 @@
     letter-spacing: -0.02em;
     color: var(--color-accent);
   }
+  .separator {
+    width: 1px;
+    height: 20px;
+    background: var(--color-border);
+    margin: 0 4px;
+  }
+  .project-name {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    padding: 2px 8px;
+    background: var(--color-bg);
+    border-radius: 4px;
+  }
   .toolbar-btn {
     padding: 4px 12px;
     border: 1px solid transparent;
@@ -66,7 +128,7 @@
     cursor: pointer;
     transition: all 0.15s;
   }
-  .toolbar-btn:hover {
+  .toolbar-btn:hover:not(:disabled) {
     background: var(--color-surface-hover);
     color: var(--color-text);
   }

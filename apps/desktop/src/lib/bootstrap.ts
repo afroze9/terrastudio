@@ -3,6 +3,7 @@ import networkingPlugin from '@terrastudio/plugin-azure-networking';
 import computePlugin from '@terrastudio/plugin-azure-compute';
 import DefaultResourceNode from '$lib/components/DefaultResourceNode.svelte';
 import ContainerResourceNode from '$lib/components/ContainerResourceNode.svelte';
+import { checkTerraform } from '$lib/services/terraform-service';
 import type { Component } from 'svelte';
 
 export const registry = new PluginRegistry();
@@ -11,6 +12,10 @@ export function initializePlugins(): void {
   registry.registerPlugin(networkingPlugin);
   registry.registerPlugin(computePlugin);
   registry.finalize();
+}
+
+export function initializeTerraformCheck(): void {
+  checkTerraform();
 }
 
 /**
