@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use tauri::command;
 
+use super::recent;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ProjectMetadata {
     pub name: String,
@@ -71,10 +73,15 @@ pub async fn create_project(
         .await
         .map_err(|e| format!("Failed to write project file: {}", e))?;
 
+    let project_path_str = project_dir.to_string_lossy().to_string();
+
+    // Track in recent projects
+    let _ = recent::add_recent(&name, &project_path_str);
+
     Ok(ProjectData {
         metadata,
         diagram: None,
-        path: project_dir.to_string_lossy().to_string(),
+        path: project_path_str,
     })
 }
 
@@ -125,6 +132,9 @@ pub async fn load_project(project_path: String) -> Result<ProjectData, String> {
         None
     };
 
+    // Track in recent projects
+    let _ = recent::add_recent(&metadata.name, &project_path);
+
     Ok(ProjectData {
         metadata,
         diagram,
@@ -156,4 +166,16 @@ pub async fn save_project_config(
         .map_err(|e| format!("Failed to write project file: {}", e))?;
 
     Ok(())
+}
+
+/// Get the list of recent projects.
+#[command]
+pub async fn get_recent_projects() -> Result<Vec<recent::RecentProject>, String> {
+    Ok(recent::load_recent())
+}
+
+/// Remove a project from the recent projects list.
+#[command]
+pub async fn remove_recent_project(path: String) -> Result<(), String> {
+    recent::remove_recent(&path)
 }

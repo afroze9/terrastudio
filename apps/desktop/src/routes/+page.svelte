@@ -7,6 +7,7 @@
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import TerraformPanel from '$lib/components/TerraformPanel.svelte';
 	import NewProjectDialog from '$lib/components/NewProjectDialog.svelte';
+	import WelcomeScreen from '$lib/components/WelcomeScreen.svelte';
 	import { ui } from '$lib/stores/ui.svelte';
 	import { project } from '$lib/stores/project.svelte';
 	import { saveDiagram } from '$lib/services/project-service';
@@ -32,21 +33,25 @@
 	});
 </script>
 
-<div class="app-shell">
-	<Toolbar onNewProject={() => (showNewProjectDialog = true)} />
-	<div class="app-body">
-		{#if ui.showPalette}
-			<ResourcePalette />
-		{/if}
-		<div class="main-area">
-			<Canvas />
-			<TerraformPanel />
+{#if project.isOpen}
+	<div class="app-shell">
+		<Toolbar onNewProject={() => (showNewProjectDialog = true)} />
+		<div class="app-body">
+			{#if ui.showPalette}
+				<ResourcePalette />
+			{/if}
+			<div class="main-area">
+				<Canvas />
+				<TerraformPanel />
+			</div>
+			{#if ui.showSidebar}
+				<Sidebar />
+			{/if}
 		</div>
-		{#if ui.showSidebar}
-			<Sidebar />
-		{/if}
 	</div>
-</div>
+{:else}
+	<WelcomeScreen onNewProject={() => (showNewProjectDialog = true)} />
+{/if}
 
 <NewProjectDialog
 	open={showNewProjectDialog}

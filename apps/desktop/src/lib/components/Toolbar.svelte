@@ -34,6 +34,11 @@
       // User cancelled or error
     }
   }
+
+  function handleClose() {
+    diagram.clear();
+    project.close();
+  }
 </script>
 
 <header class="toolbar">
@@ -44,6 +49,7 @@
     <button class="toolbar-btn" onclick={handleOpen}>Open</button>
     {#if project.isOpen}
       <button class="toolbar-btn" onclick={handleSave}>Save</button>
+      <button class="toolbar-btn" onclick={handleClose}>Close</button>
     {/if}
     {#if project.name}
       <span class="project-name">{project.name}</span>

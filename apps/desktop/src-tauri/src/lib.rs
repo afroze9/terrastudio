@@ -21,6 +21,8 @@ pub fn run() {
             project::commands::save_diagram,
             project::commands::load_project,
             project::commands::save_project_config,
+            project::commands::get_recent_projects,
+            project::commands::remove_recent_project,
             terraform::commands::write_terraform_files,
             terraform::commands::check_terraform,
             terraform::commands::terraform_init,

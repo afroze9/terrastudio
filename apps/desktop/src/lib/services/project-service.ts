@@ -60,6 +60,33 @@ export async function openProject(): Promise<void> {
 }
 
 /**
+ * Load a project from a known path (no folder picker).
+ * Used by the welcome screen when clicking a recent project.
+ */
+export async function loadProjectByPath(path: string): Promise<void> {
+  const data = await invoke<ProjectData>('load_project', {
+    projectPath: path,
+  });
+
+  diagram.clear();
+  project.open(data.path, data.metadata);
+
+  if (data.diagram) {
+    const d = data.diagram as { nodes?: unknown[]; edges?: unknown[] };
+    if (d.nodes) {
+      for (const node of d.nodes) {
+        diagram.addNode(node as any);
+      }
+    }
+    if (d.edges) {
+      for (const edge of d.edges) {
+        diagram.addEdge(edge as any);
+      }
+    }
+  }
+}
+
+/**
  * Save the current diagram to the project's diagrams/main.json.
  */
 export async function saveDiagram(): Promise<void> {
