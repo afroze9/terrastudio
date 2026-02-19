@@ -10,11 +10,6 @@ export const resourceGroupSchema: ResourceSchema = {
   supportsTags: true,
   requiresResourceGroup: false,
   isContainer: true,
-  acceptsChildren: [
-    'azurerm/networking/virtual_network',
-    'azurerm/networking/network_security_group',
-    'azurerm/compute/virtual_machine',
-  ],
 
   properties: [
     {

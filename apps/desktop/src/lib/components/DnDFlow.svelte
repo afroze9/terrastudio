@@ -20,25 +20,60 @@
   const { screenToFlowPosition } = useSvelteFlow();
 
   /**
-   * Find the container node at a given flow position, if any.
-   * Returns the container's id if the drop position falls inside it.
+   * Compute absolute position for a node by walking up the parent chain.
+   */
+  function getAbsolutePosition(nodeId: string): { x: number; y: number } {
+    let x = 0;
+    let y = 0;
+    let currentId: string | undefined = nodeId;
+
+    while (currentId) {
+      const node = diagram.nodes.find((n) => n.id === currentId);
+      if (!node) break;
+      x += node.position.x;
+      y += node.position.y;
+      currentId = node.parentId as string | undefined;
+    }
+
+    return { x, y };
+  }
+
+  /**
+   * Find the deepest container at a given flow position that accepts childTypeId.
+   * Uses canBeChildOf on the child schema to check compatibility.
    */
   function findContainerAtPosition(flowX: number, flowY: number, childTypeId: ResourceTypeId): string | undefined {
+    const childSchema = registry.getResourceSchema(childTypeId);
+    const allowedParents = childSchema?.canBeChildOf;
+    if (!allowedParents || allowedParents.length === 0) return undefined;
+
+    let bestMatch: string | undefined;
+    let bestDepth = -1;
+
     for (const node of diagram.nodes) {
-      const schema = registry.getResourceSchema(node.type as ResourceTypeId);
-      if (!schema?.isContainer) continue;
-      if (schema.acceptsChildren && !schema.acceptsChildren.includes(childTypeId)) continue;
+      const nodeTypeId = node.type as ResourceTypeId;
+      if (!allowedParents.includes(nodeTypeId)) continue;
 
-      const nx = node.position.x;
-      const ny = node.position.y;
-      const nw = node.measured?.width ?? node.width ?? 250;
-      const nh = node.measured?.height ?? node.height ?? 150;
+      const abs = getAbsolutePosition(node.id);
+      const nw = node.measured?.width ?? (node.width as number | undefined) ?? 250;
+      const nh = node.measured?.height ?? (node.height as number | undefined) ?? 150;
 
-      if (flowX >= nx && flowX <= nx + nw && flowY >= ny && flowY <= ny + nh) {
-        return node.id;
+      if (flowX >= abs.x && flowX <= abs.x + nw && flowY >= abs.y && flowY <= abs.y + nh) {
+        // Compute depth (deeper containers win)
+        let depth = 0;
+        let pid = node.parentId as string | undefined;
+        while (pid) {
+          depth++;
+          pid = diagram.nodes.find((n) => n.id === pid)?.parentId as string | undefined;
+        }
+        if (depth > bestDepth) {
+          bestDepth = depth;
+          bestMatch = node.id;
+        }
       }
     }
-    return undefined;
+
+    return bestMatch;
   }
 
   const dndHandler: Action = (node) => {
@@ -73,13 +108,20 @@
       // Container nodes need explicit dimensions for SvelteFlow parent-child
       const isContainer = schema.isContainer ?? false;
 
+      // If dropped in a container, position is relative to parent's absolute position
+      let nodePosition = position;
+      if (parentId) {
+        const parentAbs = getAbsolutePosition(parentId);
+        nodePosition = {
+          x: position.x - parentAbs.x,
+          y: position.y - parentAbs.y,
+        };
+      }
+
       const newNode: Record<string, unknown> = {
         id,
         type: schema.typeId,
-        position: parentId
-          ? { x: position.x - (diagram.nodes.find((n) => n.id === parentId)?.position.x ?? 0),
-              y: position.y - (diagram.nodes.find((n) => n.id === parentId)?.position.y ?? 0) }
-          : position,
+        position: nodePosition,
         data: nodeData,
       };
 

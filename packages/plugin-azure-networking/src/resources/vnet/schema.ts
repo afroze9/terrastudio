@@ -10,8 +10,8 @@ export const vnetSchema: ResourceSchema = {
   supportsTags: true,
   requiresResourceGroup: true,
   isContainer: true,
-  acceptsChildren: [
-    'azurerm/networking/subnet',
+  canBeChildOf: [
+    'azurerm/core/resource_group',
   ],
 
   properties: [

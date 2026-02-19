@@ -10,8 +10,8 @@ export const subnetSchema: ResourceSchema = {
   supportsTags: false,
   requiresResourceGroup: true,
   isContainer: true,
-  acceptsChildren: [
-    'azurerm/compute/virtual_machine',
+  canBeChildOf: [
+    'azurerm/networking/virtual_network',
   ],
 
   properties: [
