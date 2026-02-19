@@ -13,43 +13,67 @@
   import { registry } from '$lib/bootstrap';
   import { createNodeData, generateNodeId } from '@terrastudio/core';
   import type { ResourceNodeComponent } from '@terrastudio/types';
+  import type { Action } from 'svelte/action';
 
   let { nodeTypes }: { nodeTypes: Record<string, ResourceNodeComponent> } = $props();
 
   const { screenToFlowPosition } = useSvelteFlow();
 
-  function onDragOver(event: DragEvent) {
-    event.preventDefault();
-    if (event.dataTransfer) {
-      event.dataTransfer.dropEffect = 'move';
+  /**
+   * Svelte action that imperatively attaches dragover/drop listeners
+   * to the DOM element. This bypasses any event delegation issues.
+   */
+  const dndHandler: Action = (node) => {
+    function handleDragOver(event: DragEvent) {
+      event.preventDefault();
+      if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = 'move';
+      }
     }
-  }
 
-  function onDrop(event: DragEvent) {
-    event.preventDefault();
-    if (!event.dataTransfer) return;
+    function handleDrop(event: DragEvent) {
+      event.preventDefault();
+      if (!event.dataTransfer) return;
 
-    const typeId = event.dataTransfer.getData('application/terrastudio-type');
-    if (!typeId) return;
+      const typeId = event.dataTransfer.getData('application/terrastudio-type');
+      console.log('[DnDFlow] drop received, typeId:', typeId);
+      if (!typeId) return;
 
-    const schema = registry.getResourceSchema(typeId as `${string}/${string}/${string}`);
-    if (!schema) return;
+      const schema = registry.getResourceSchema(typeId as `${string}/${string}/${string}`);
+      if (!schema) {
+        console.warn('[DnDFlow] schema not found for typeId:', typeId);
+        return;
+      }
 
-    const nodeData = createNodeData(schema);
-    const id = generateNodeId(schema.typeId);
+      const nodeData = createNodeData(schema);
+      const id = generateNodeId(schema.typeId);
 
-    const position = screenToFlowPosition({
-      x: event.clientX,
-      y: event.clientY,
-    });
+      const position = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
 
-    diagram.addNode({
-      id,
-      type: schema.typeId,
-      position,
-      data: nodeData,
-    });
-  }
+      console.log('[DnDFlow] adding node:', id, 'at', position);
+      diagram.addNode({
+        id,
+        type: schema.typeId,
+        position,
+        data: nodeData,
+      });
+    }
+
+    // Use capture phase so our handlers fire BEFORE SvelteFlow's
+    // internal pane can intercept/stop the drag events
+    node.addEventListener('dragover', handleDragOver, { capture: true });
+    node.addEventListener('drop', handleDrop, { capture: true });
+
+    return {
+      destroy() {
+        node.removeEventListener('dragover', handleDragOver, { capture: true });
+        node.removeEventListener('drop', handleDrop, { capture: true });
+      },
+    };
+  };
 
   const onConnect: OnConnect = (connection) => {
     const edgeId = `e-${connection.source}-${connection.target}`;
@@ -77,12 +101,7 @@
   }
 </script>
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<div
-  class="dnd-flow-wrapper"
-  ondragover={onDragOver}
-  ondrop={onDrop}
->
+<div class="dnd-flow-wrapper" use:dndHandler>
   <SvelteFlow
     nodes={diagram.nodes}
     edges={diagram.edges}

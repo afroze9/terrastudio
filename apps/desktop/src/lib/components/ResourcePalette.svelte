@@ -6,7 +6,8 @@
   function onDragStart(event: DragEvent, typeId: string) {
     if (!event.dataTransfer) return;
     event.dataTransfer.setData('application/terrastudio-type', typeId);
-    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.effectAllowed = 'copyMove';
+    console.log('[Palette] dragstart:', typeId);
   }
 </script>
 
