@@ -15,21 +15,21 @@ gantt
     axisFormat %s
 
     section Foundation
-    Phase 1: Monorepo + Types      :p1, 0, 1
-    Phase 2: Core Registry + HCL   :p2, 1, 2
+    Phase 1: Monorepo + Types      :done, p1, 0, 1
+    Phase 2: Core Registry + HCL   :done, p2, 1, 2
 
     section First Plugin
-    Phase 3: Networking Plugin      :p3, 2, 3
+    Phase 3: Networking Plugin      :done, p3, 2, 3
 
     section Desktop App
-    Phase 4: Tauri Shell + Canvas   :p4, 3, 4
-    Phase 5: Sidebar + Drag-Drop   :p5, 4, 5
+    Phase 4: Tauri Shell + Canvas   :done, p4, 3, 4
+    Phase 5: Sidebar + Drag-Drop   :done, p5, 4, 5
 
     section Cross-Plugin
-    Phase 6: Compute Plugin (VM)    :p6, 5, 6
+    Phase 6: Compute Plugin (VM)    :done, p6, 5, 6
 
     section Terraform
-    Phase 7: Terraform Execution    :p7, 6, 7
+    Phase 7: Terraform Execution    :active, p7, 6, 7
     Phase 8: Deployment Status      :p8, 7, 8
 
     section Polish
@@ -41,7 +41,7 @@ gantt
 
 ---
 
-## Phase 1: Monorepo Scaffolding + Types Package
+## Phase 1: Monorepo Scaffolding + Types Package ✅
 
 **Goal**: Working monorepo with the complete type contract.
 
@@ -65,9 +65,13 @@ gantt
 - `pnpm typecheck` passes with no errors
 - Types can be imported from `@terrastudio/types`
 
+### Implementation Notes
+- Added `isContainer?: boolean` and `canBeChildOf?: ReadonlyArray<ResourceTypeId>` to `ResourceSchema` for container nesting
+- Added `[key: string]: unknown` index signature to `ResourceNodeData` for SvelteFlow compatibility
+
 ---
 
-## Phase 2: Core Registry + HCL Pipeline
+## Phase 2: Core Registry + HCL Pipeline ✅
 
 **Goal**: Plugin registry and HCL generation working with mock data.
 
@@ -96,7 +100,7 @@ gantt
 
 ---
 
-## Phase 3: Networking Plugin (VNet, Subnet, NSG)
+## Phase 3: Networking Plugin (VNet, Subnet, NSG) ✅
 
 **Goal**: First real plugin implementing three resource types.
 
@@ -127,9 +131,14 @@ gantt
 - HCL pipeline generates valid Terraform for a VNet + Subnet + NSG diagram
 - Run `terraform validate` on generated output
 
+### Implementation Notes
+- VNet and Subnet are container nodes (`isContainer: true`)
+- Subnet uses `canBeChildOf: ['azurerm/networking/virtual_network']`
+- NSG uses `canBeChildOf: ['azurerm/core/resource_group']`
+
 ---
 
-## Phase 4: Desktop App Shell + Canvas
+## Phase 4: Desktop App Shell + Canvas ✅
 
 **Goal**: Tauri app launches with an empty Svelte Flow canvas.
 
@@ -152,9 +161,14 @@ gantt
 - Canvas renders with zoom, pan, minimap, background grid
 - No console errors
 
+### Implementation Notes
+- Required `"dragDropEnabled": false` in `tauri.conf.json` — Tauri 2 WebView2 on Windows intercepts native drag events by default
+- Drag-drop uses capture-phase event listeners via a Svelte action (`use:dndHandler`) to fire before SvelteFlow's internal pane handlers
+- SvelteFlow v1.5.1 uses `bind:nodes`/`bind:edges` for two-way state sync (no `onnodeschange` prop)
+
 ---
 
-## Phase 5: Property Sidebar + Drag-and-Drop
+## Phase 5: Property Sidebar + Drag-and-Drop ✅
 
 **Goal**: Full diagram interaction - drag resources, edit properties.
 
@@ -185,9 +199,15 @@ gantt
 - Edit a property - node data updates, label changes
 - Delete key removes node and its children
 
+### Implementation Notes
+- Container parent relationship uses `canBeChildOf` on child schemas (not `acceptsChildren` on parents) — more scalable
+- `findContainerAtPosition()` computes absolute positions via parent chain walking to support 3+ levels of nesting
+- `onnodedragstop` handler enables dynamic reparenting: drag nodes into, out of, and between containers
+- Default container sizes scale by hierarchy level: RG 800x600, VNet 600x400, Subnet 350x250
+
 ---
 
-## Phase 6: Compute Plugin (VM)
+## Phase 6: Compute Plugin (VM) ✅
 
 **Goal**: Second plugin validates cross-plugin connections.
 
@@ -212,6 +232,12 @@ gantt
 - Can build a diagram: Resource Group > VNet > Subnet > VM + NSG
 - HCL generation produces valid Terraform with correct cross-resource references
 - `terraform validate` passes on generated output
+
+### Implementation Notes
+- Resource Group lives in compute plugin (as `azurerm/core/resource_group`)
+- `ContainerResourceNode.svelte` renders containers with dashed border and `NodeResizer`
+- `DefaultResourceNode.svelte` renders leaf nodes (VM, NSG)
+- `buildNodeTypes()` in `bootstrap.ts` maps `isContainer` schemas to the container component
 
 ---
 
