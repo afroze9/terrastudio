@@ -30,10 +30,10 @@ gantt
 
     section Terraform
     Phase 7: Terraform Execution    :done, p7, 6, 7
-    Phase 8: Deployment Status      :active, p8, 7, 8
+    Phase 8: Deployment Status      :done, p8, 7, 8
 
     section Polish
-    Phase 9: Save/Load + Polish     :p9, 8, 9
+    Phase 9: Save/Load + Polish     :active, p9, 8, 9
 
     section Export
     Phase 10: Export + Doc Gen      :p10, 9, 10
@@ -288,7 +288,7 @@ gantt
 
 ---
 
-## Phase 8: Deployment Status
+## Phase 8: Deployment Status ✅
 
 **Goal**: Green/grey dots on diagram nodes showing what's deployed.
 
@@ -315,9 +315,15 @@ gantt
 - Add a new resource to diagram - shows grey dot
 - Modify a deployed resource's properties - shows yellow dot
 
+### Implementation Notes
+- `terraform_show` Rust command uses `run_terraform_capture()` (non-streaming, captures full stdout)
+- `refreshDeploymentStatus()` in `terraform-service.ts` parses `terraform show -json`, matches `{terraformType}.{terraformName}` addresses to nodes
+- Auto-refresh after apply/destroy in TerraformPanel + manual "Refresh Status" button
+- DeploymentBadge component (from Phase 5) receives status updates through `diagram.updateNodeData()`
+
 ---
 
-## Phase 9: Save/Load + Polish
+## Phase 9: Save/Load + Polish ✅
 
 **Goal**: Persist projects, keyboard shortcuts, error handling.
 
@@ -345,6 +351,15 @@ gantt
 - Undo/redo works for add/delete/move operations
 - Missing terraform shows helpful error message
 - Full cycle works: diagram -> terraform -> deployed infrastructure -> green dots
+
+### Implementation Notes
+- Save/load was implemented in Phase 7 (project system), this phase focused on polish
+- Undo/redo: snapshot-based history stack in `diagram.svelte.ts` (MAX_HISTORY=50), captures full `{nodes, edges}` state via `structuredClone($state.snapshot(...))`, requires `unknown` intermediate cast to avoid TypeScript "excessively deep" error with Svelte Flow types
+- `diagram.saveSnapshot()` called on `onnodedragstart` to capture pre-drag state for undo
+- `diagram.loadDiagram()` bulk-loads nodes/edges without pushing individual history entries or marking dirty
+- Dirty tracking: `project.markDirty()` called from `pushSnapshot()`, visual indicator in toolbar (asterisk on Save button + dot next to project name)
+- Pre-generation validation: `validateDiagram()` from core runs before HCL generation, errors displayed in terraform panel
+- Keyboard shortcuts: Ctrl+Z/Y (undo/redo), Ctrl+A (select all), Delete/Backspace (delete selected), Ctrl+S (save) — all skip when focus is in INPUT/TEXTAREA/SELECT
 
 ---
 

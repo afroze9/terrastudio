@@ -46,16 +46,7 @@ export async function openProject(): Promise<void> {
   // Restore diagram if it exists
   if (data.diagram) {
     const d = data.diagram as { nodes?: unknown[]; edges?: unknown[] };
-    if (d.nodes) {
-      for (const node of d.nodes) {
-        diagram.addNode(node as any);
-      }
-    }
-    if (d.edges) {
-      for (const edge of d.edges) {
-        diagram.addEdge(edge as any);
-      }
-    }
+    diagram.loadDiagram((d.nodes ?? []) as any[], (d.edges ?? []) as any[]);
   }
 }
 
@@ -73,16 +64,7 @@ export async function loadProjectByPath(path: string): Promise<void> {
 
   if (data.diagram) {
     const d = data.diagram as { nodes?: unknown[]; edges?: unknown[] };
-    if (d.nodes) {
-      for (const node of d.nodes) {
-        diagram.addNode(node as any);
-      }
-    }
-    if (d.edges) {
-      for (const edge of d.edges) {
-        diagram.addEdge(edge as any);
-      }
-    }
+    diagram.loadDiagram((d.nodes ?? []) as any[], (d.edges ?? []) as any[]);
   }
 }
 

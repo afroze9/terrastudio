@@ -8,9 +8,25 @@
 </script>
 
 <svelte:window onkeydown={(event) => {
+  const tag = (event.target as HTMLElement).tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+  if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
+    event.preventDefault();
+    diagram.undo();
+    return;
+  }
+  if ((event.ctrlKey || event.metaKey) && (event.key === 'y' || (event.key === 'z' && event.shiftKey))) {
+    event.preventDefault();
+    diagram.redo();
+    return;
+  }
+  if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
+    event.preventDefault();
+    diagram.selectAll();
+    return;
+  }
   if (event.key === 'Delete' || event.key === 'Backspace') {
-    const tag = (event.target as HTMLElement).tagName;
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
     if (diagram.selectedNodeId) {
       diagram.removeNode(diagram.selectedNodeId);
     }

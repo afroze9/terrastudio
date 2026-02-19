@@ -48,11 +48,11 @@
     <button class="toolbar-btn" onclick={onNewProject}>New</button>
     <button class="toolbar-btn" onclick={handleOpen}>Open</button>
     {#if project.isOpen}
-      <button class="toolbar-btn" onclick={handleSave}>Save</button>
+      <button class="toolbar-btn" class:unsaved={project.isDirty} onclick={handleSave}>Save{#if project.isDirty}*{/if}</button>
       <button class="toolbar-btn" onclick={handleClose}>Close</button>
     {/if}
     {#if project.name}
-      <span class="project-name">{project.name}</span>
+      <span class="project-name">{project.name}{#if project.isDirty} <span class="dirty-dot"></span>{/if}</span>
     {/if}
   </div>
   <div class="toolbar-center">
@@ -154,5 +154,17 @@
   .toolbar-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+  .toolbar-btn.unsaved {
+    color: var(--color-accent);
+  }
+  .dirty-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    vertical-align: middle;
+    margin-left: 2px;
   }
 </style>

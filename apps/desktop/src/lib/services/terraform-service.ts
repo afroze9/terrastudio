@@ -2,7 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import type { UnlistenFn } from '@tauri-apps/api/event';
 import type { DeploymentStatus, ResourceTypeId } from '@terrastudio/types';
-import { HclPipeline, type GeneratedFiles } from '@terrastudio/core';
+import { HclPipeline, validateDiagram, type GeneratedFiles } from '@terrastudio/core';
 import { registry } from '$lib/bootstrap';
 import { diagram } from '$lib/stores/diagram.svelte';
 import { project } from '$lib/stores/project.svelte';
@@ -39,6 +39,23 @@ export async function generateAndWrite(): Promise<void> {
       diagram.edges,
       connectionRules,
     );
+
+    // Validate diagram before generation
+    const validation = validateDiagram(resources, registry);
+    if (!validation.valid) {
+      for (const diagramError of validation.errors) {
+        terraform.appendError(
+          `[${diagramError.label}] ${diagramError.errors.map((e) => e.message).join(', ')}`,
+        );
+      }
+      terraform.appendError(
+        `Validation failed with ${validation.errors.length} resource(s) having errors. Fix issues and try again.`,
+      );
+      terraform.setStatus('error');
+      throw new Error('Diagram validation failed');
+    }
+
+    terraform.appendInfo('Validation passed.');
 
     // Run HCL pipeline
     const pipeline = new HclPipeline(registry);

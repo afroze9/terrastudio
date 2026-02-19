@@ -234,6 +234,7 @@
     fitView
     onconnect={onConnect}
     ondelete={onDelete}
+    onnodedragstart={() => { diagram.saveSnapshot(); }}
     onnodedragstop={handleNodeDragStop}
     onnodeclick={({ node }) => { diagram.selectedNodeId = node.id; }}
     onpaneclick={() => { diagram.selectedNodeId = null; }}
