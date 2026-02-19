@@ -18,7 +18,8 @@
       <div class="category-label">{category.label}</div>
       <div class="category-items">
         {#each resources as reg}
-          <button
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <div
             class="palette-item"
             draggable="true"
             ondragstart={(e) => onDragStart(e, reg.schema.typeId)}
@@ -28,7 +29,7 @@
               <span class="palette-icon">{@html reg.icon.svg}</span>
             {/if}
             <span class="palette-label">{reg.schema.displayName}</span>
-          </button>
+          </div>
         {/each}
       </div>
     </div>
