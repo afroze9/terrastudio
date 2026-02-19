@@ -10,10 +10,10 @@
     type IsValidConnection,
   } from '@xyflow/svelte';
   import { diagram } from '$lib/stores/diagram.svelte';
-  import { registry } from '$lib/bootstrap';
+  import { registry, buildNodeTypes } from '$lib/bootstrap';
   import { createNodeData, generateNodeId } from '@terrastudio/core';
 
-  const nodeTypes = registry.buildNodeTypesMap();
+  const nodeTypes = buildNodeTypes();
 
   function onDragOver(event: DragEvent) {
     event.preventDefault();
