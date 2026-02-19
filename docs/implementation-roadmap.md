@@ -37,6 +37,11 @@ gantt
 
     section Export
     Phase 10: Export + Doc Gen      :done, p10, 9, 10
+
+    section Visual Polish
+    Phase 11: Icons + Containers    :active, p11, 10, 11
+    Phase 12: Handle + Edge Labels  :p12, 11, 12
+    Phase 13: Subscription + Vars   :p13, 12, 13
 ```
 
 ---
@@ -400,7 +405,8 @@ gantt
 - Generated Mermaid diagrams render correctly in GitHub/VS Code preview
 
 ### Implementation Notes
-- `html-to-image` (`toPng`) captures the `.svelte-flow` DOM element with `getNodesBounds` + `getViewportForBounds` for proper framing
+- `html-to-image@1.11.11` (`toPng`) captures `.svelte-flow__viewport` (not the outer `.svelte-flow` — avoids baking controls/minimap into the image), per the official Svelte Flow docs example
+- Fixed 1024×768 output with `getViewportForBounds(nodesBounds, 1024, 768, 0.5, 2, 0.2)` for content fitting
 - Clipboard copy uses `navigator.clipboard.write()` with `ClipboardItem` for native paste support
 - Rust `write_export_file` command writes binary data (PNG bytes or UTF-8 Markdown) to user-selected paths via `@tauri-apps/plugin-dialog` save dialog
 - Doc generator walks `diagram.nodes`/`diagram.edges`, pulls schemas from registry, produces Markdown with resource inventory table, parent-child hierarchy tree, Mermaid dependency graph, and per-resource property details
@@ -409,18 +415,136 @@ gantt
 
 ---
 
+## Phase 11: Visual Polish — Icons, Palette, Container Styling
+
+**Goal**: Replace plain rectangles with real Azure resource icons, add collapsible palette sections, and give containers provider-accurate styling.
+
+### Tasks
+
+1. **Collapsible palette sections**
+   - Each `PaletteCategory` renders as a collapsible accordion section (header + toggle arrow)
+   - Remembered open/closed state per session (UI store)
+   - Smooth expand/collapse animation
+
+2. **Resource SVG icons**
+   - Source official Azure architecture SVG icons for each resource type (Resource Group, VNet, Subnet, NSG, VM, Storage Account, App Service, VMSS)
+   - Store as inline SVG strings in each resource's `icon.ts` (already wired into the plugin contract)
+   - Render icons in palette items, diagram nodes, and sidebar header
+   - Palette items: icon + label, compact grid or list layout
+
+3. **Custom container styling (plugin-driven)**
+   - Add optional `ContainerStyle` interface to `@terrastudio/types`:
+     ```ts
+     interface ContainerStyle {
+       borderColor?: string;
+       borderStyle?: 'solid' | 'dashed' | 'dotted';
+       backgroundColor?: string;
+       headerColor?: string;
+       borderRadius?: number;
+     }
+     ```
+   - Add optional `containerStyle?: ContainerStyle` field to `ResourceSchema`
+   - `ContainerResourceNode.svelte` reads `containerStyle` from schema and applies it
+   - Defaults per resource: Resource Group (blue-grey border), VNet (teal dashed border, light teal background), Subnet (purple dashed border, light purple background)
+
+4. **Update node components**
+   - `DefaultResourceNode.svelte`: show SVG icon left of label, cleaner card layout
+   - `ContainerResourceNode.svelte`: icon + label in header bar, styled border/background from schema
+
+### Verification
+- Palette shows collapsible sections with icons
+- Diagram nodes display resource-specific SVG icons
+- Containers have distinct visual styles matching Azure conventions
+- Plugins can override container styling via schema
+
+---
+
+## Phase 12: Handle Labels + Connector Labels
+
+**Goal**: Show what connections mean — labeled handles on nodes and labeled edges on the diagram.
+
+### Tasks
+
+1. **Labeled handles (inputs/outputs)**
+   - `HandleDefinition` in `@terrastudio/types` already has `label` field — render it
+   - Show labels next to connection handles on hover (tooltip) or always (small text)
+   - Source handles (outputs): right side, labelled e.g. "subnet_id", "nsg_id"
+   - Target handles (inputs): left side, labelled e.g. "subnet_id", "network_security_group_id"
+   - Style: muted text, smaller font, positioned adjacent to the handle dot
+
+2. **Labeled edges/connectors**
+   - When an edge connects source handle → target handle, derive a label from the connection rule or handle names
+   - Render edge labels using Svelte Flow's `EdgeLabelRenderer` or custom edge component
+   - Label shows the relationship, e.g. "subnet_id", "nsg_association"
+   - Labels appear on hover or always (configurable in UI store)
+   - Custom edge component with a styled label badge at the midpoint
+
+3. **Connection rule display**
+   - When dragging a new connection, highlight compatible handles (green glow)
+   - Dim incompatible handles (grey out)
+   - Show a tooltip on the target handle with the connection type
+
+### Verification
+- Hover over a node handle → see "subnet_id" or similar label
+- Draw a connection → edge shows label describing the relationship
+- Incompatible handles are visually dimmed during connection drag
+
+---
+
+## Phase 13: Azure Subscription Resource + Variable Management UI
+
+**Goal**: Add the subscription-level container and expose Terraform variable management in the UI.
+
+### Tasks
+
+1. **Azure Subscription component**
+   - New resource type: `azurerm/core/subscription` in the compute plugin (or a new `plugin-azure-core`)
+   - Container node that wraps Resource Groups
+   - Schema properties: `subscription_id`, `display_name`, `tenant_id`
+   - HCL generator: configures the `azurerm` provider block's `subscription_id`
+   - Container styling: outermost dashed border, Azure blue header
+   - `canBeChildOf: []` (top-level only), Resource Group gets `canBeChildOf: ['azurerm/core/subscription']`
+   - Palette placement: top of the "Core" category
+
+2. **Terraform variable management UI**
+   - **Variables panel**: new sidebar tab or section showing all variables from `projectConfig`
+   - Display variables extracted from the HCL pipeline (`VariableCollector` output)
+   - Show each variable's name, type, description, default value, and whether it's set
+   - Highlight **missing required variables** (no default, no value set) with red warning
+   - Inline editing: click a variable value to set/change it
+   - Variables are persisted in `terrastudio.json` → `projectConfig.variableValues`
+   - Pre-apply check: if missing required variables, show a warning dialog before `terraform apply`
+
+3. **Project config UI**
+   - Surface existing `projectConfig` fields (location, resource group name, common tags) in a settings dialog or panel
+   - Toggle `locationAsVariable` / `resourceGroupAsVariable` checkboxes
+   - Edit common tags as key-value pairs
+
+### Verification
+- Drag Subscription onto canvas → wraps Resource Groups
+- HCL generates correct `provider "azurerm"` block with subscription_id
+- Variables panel shows all extracted variables with their status
+- Missing required variables highlighted in red
+- Set a variable value → reflected in generated `terraform.tfvars`
+- Pre-apply warning when required variables are unset
+
+---
+
 ## Future Phases (Post-MVP)
 
 These are not part of the initial implementation but are natural extensions:
 
 - **Import existing Terraform**: Parse `terraform show -json` from existing infrastructure into a diagram
-- **More Azure plugins**: Database, Containers (AKS), Serverless, Monitoring
+- **More Azure plugins**: Database (Azure SQL, Cosmos DB), Containers (AKS), Serverless (Functions, Logic Apps), Monitoring (App Insights, Log Analytics)
+- **Storage plugin expansion**: Blob containers, file shares, queues, tables as child resources of Storage Account
 - **AWS/GCP plugins**: Validate the multi-provider architecture
 - **Auto-layout**: dagre/elkjs for automatic node positioning
-- **Template gallery**: Pre-built architectures (hub-spoke, 3-tier web app)
+- **Template gallery**: Pre-built architectures (hub-spoke, 3-tier web app, microservices)
 - **Cost estimation**: Query Azure pricing API based on diagram resources
 - **Module support**: Group resources into reusable Terraform modules
-- **Dark mode**: Tailwind dark theme
+- **Dark/light mode toggle**: Tailwind theme switching with persisted preference
+- **SVG export**: Vector export for high-quality diagrams in documentation
+- **Plugin doc sections**: Plugins contribute custom sections to exported architecture docs
 
 ## Related Docs
 
