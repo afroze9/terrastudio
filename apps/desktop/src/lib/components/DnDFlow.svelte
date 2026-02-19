@@ -70,6 +70,9 @@
       // Check if dropped inside a container node
       const parentId = findContainerAtPosition(position.x, position.y, schema.typeId);
 
+      // Container nodes need explicit dimensions for SvelteFlow parent-child
+      const isContainer = schema.isContainer ?? false;
+
       const newNode: Record<string, unknown> = {
         id,
         type: schema.typeId,
@@ -79,6 +82,12 @@
           : position,
         data: nodeData,
       };
+
+      if (isContainer) {
+        newNode.width = 350;
+        newNode.height = 200;
+        newNode.style = 'width: 350px; height: 200px;';
+      }
 
       if (parentId) {
         newNode.parentId = parentId;
