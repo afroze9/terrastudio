@@ -9,7 +9,7 @@
     type OnConnect,
     type OnDelete,
   } from '@xyflow/svelte';
-  import { diagram } from '$lib/stores/diagram.svelte';
+  import { diagram, type DiagramNode } from '$lib/stores/diagram.svelte';
   import { registry } from '$lib/bootstrap';
   import { createNodeData, generateNodeId } from '@terrastudio/core';
   import type { ResourceNodeComponent, ResourceTypeId } from '@terrastudio/types';
@@ -42,7 +42,12 @@
    * Find the deepest container at a given flow position that accepts childTypeId.
    * Uses canBeChildOf on the child schema to check compatibility.
    */
-  function findContainerAtPosition(flowX: number, flowY: number, childTypeId: ResourceTypeId): string | undefined {
+  function findContainerAtPosition(
+    flowX: number,
+    flowY: number,
+    childTypeId: ResourceTypeId,
+    excludeNodeId?: string,
+  ): string | undefined {
     const childSchema = registry.getResourceSchema(childTypeId);
     const allowedParents = childSchema?.canBeChildOf;
     if (!allowedParents || allowedParents.length === 0) return undefined;
@@ -51,6 +56,7 @@
     let bestDepth = -1;
 
     for (const node of diagram.nodes) {
+      if (node.id === excludeNodeId) continue;
       const nodeTypeId = node.type as ResourceTypeId;
       if (!allowedParents.includes(nodeTypeId)) continue;
 
@@ -126,14 +132,20 @@
       };
 
       if (isContainer) {
-        newNode.width = 350;
-        newNode.height = 200;
-        newNode.style = 'width: 350px; height: 200px;';
+        // Larger defaults for higher-level containers
+        const sizeMap: Record<string, { w: number; h: number }> = {
+          'azurerm/core/resource_group': { w: 800, h: 600 },
+          'azurerm/networking/virtual_network': { w: 600, h: 400 },
+          'azurerm/networking/subnet': { w: 350, h: 250 },
+        };
+        const { w, h } = sizeMap[schema.typeId] ?? { w: 350, h: 200 };
+        newNode.width = w;
+        newNode.height = h;
+        newNode.style = `width: ${w}px; height: ${h}px;`;
       }
 
       if (parentId) {
         newNode.parentId = parentId;
-        newNode.extent = 'parent' as const;
       }
 
       diagram.addNode(newNode as any);
@@ -167,6 +179,51 @@
       diagram.removeNode(node.id);
     }
   };
+
+  /**
+   * Handle node drag stop: reparent nodes based on their final position.
+   * Allows dragging nodes into, out of, and between containers.
+   */
+  function handleNodeDragStop({ targetNode }: { targetNode: DiagramNode | null; nodes: DiagramNode[]; event: MouseEvent | TouchEvent }) {
+    if (!targetNode) return;
+    const draggedNode = targetNode;
+    const schema = registry.getResourceSchema(draggedNode.type as ResourceTypeId);
+    if (!schema) return;
+
+    // Compute the dragged node's absolute position
+    const absPos = getAbsolutePosition(draggedNode.id);
+
+    // Find the deepest valid container at this position (excluding self)
+    const newParentId = findContainerAtPosition(absPos.x, absPos.y, schema.typeId, draggedNode.id);
+    const currentParentId = draggedNode.parentId as string | undefined;
+
+    // If parent hasn't changed, nothing to do
+    if (newParentId === currentParentId) return;
+
+    diagram.nodes = diagram.nodes.map((n) => {
+      if (n.id !== draggedNode.id) return n;
+
+      if (newParentId) {
+        // Moving into (or between) containers — position relative to new parent
+        const parentAbs = getAbsolutePosition(newParentId);
+        return {
+          ...n,
+          parentId: newParentId,
+          position: {
+            x: absPos.x - parentAbs.x,
+            y: absPos.y - parentAbs.y,
+          },
+        };
+      } else {
+        // Moving out of container — position becomes absolute
+        const { parentId: _pid, extent: _ext, ...rest } = n as any;
+        return {
+          ...rest,
+          position: absPos,
+        };
+      }
+    });
+  }
 </script>
 
 <div class="dnd-flow-wrapper" use:dndHandler>
@@ -177,6 +234,7 @@
     fitView
     onconnect={onConnect}
     ondelete={onDelete}
+    onnodedragstop={handleNodeDragStop}
     onnodeclick={({ node }) => { diagram.selectedNodeId = node.id; }}
     onpaneclick={() => { diagram.selectedNodeId = null; }}
   >
