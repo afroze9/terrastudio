@@ -11,6 +11,7 @@ export type DeploymentStatus =
   | 'destroyed';
 
 export interface ResourceNodeData {
+  [key: string]: unknown;
   typeId: ResourceTypeId;
   properties: Record<string, unknown>;
   references: Record<string, string>;
