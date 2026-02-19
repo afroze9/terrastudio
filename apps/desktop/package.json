@@ -1,5 +1,8 @@
 {
-  "name": "desktop",
+  "name": "@terrastudio/desktop",
+  "description": "TerraStudio desktop application (Tauri 2 + Svelte 5)",
+  "author": "afroze9 <afrozeamjad@gmail.com>",
+  "license": "AGPL-3.0-only",
   "private": true,
   "version": "0.1.0",
   "type": "module",

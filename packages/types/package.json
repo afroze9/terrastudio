@@ -1,6 +1,9 @@
 {
   "name": "@terrastudio/types",
   "version": "0.1.0",
+  "description": "Shared TypeScript interfaces for TerraStudio",
+  "author": "afroze9 <afrozeamjad@gmail.com>",
+  "license": "AGPL-3.0-only",
   "private": true,
   "type": "module",
   "exports": {

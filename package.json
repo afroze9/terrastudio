@@ -1,5 +1,8 @@
 {
   "name": "terrastudio",
+  "description": "Visual infrastructure diagram builder that generates and executes Terraform",
+  "author": "afroze9 <afrozeamjad@gmail.com>",
+  "license": "AGPL-3.0-only",
   "private": true,
   "packageManager": "pnpm@10.27.0",
   "scripts": {
