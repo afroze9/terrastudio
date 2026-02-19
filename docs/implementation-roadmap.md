@@ -39,9 +39,12 @@ gantt
     Phase 10: Export + Doc Gen      :done, p10, 9, 10
 
     section Visual Polish
-    Phase 11: Icons + Containers    :active, p11, 10, 11
+    Phase 11: Icons + Frameless UI  :active, p11, 10, 11
     Phase 12: Handle + Edge Labels  :p12, 11, 12
+
+    section Azure Intelligence
     Phase 13: Subscription + Vars   :p13, 12, 13
+    Phase 14: CIDR + Name Validation:p14, 13, 14
 ```
 
 ---
@@ -415,24 +418,31 @@ gantt
 
 ---
 
-## Phase 11: Visual Polish — Icons, Palette, Container Styling
+## Phase 11: Visual Polish — Icons, Palette, Container Styling, Frameless UI
 
-**Goal**: Replace plain rectangles with real Azure resource icons, add collapsible palette sections, and give containers provider-accurate styling.
+**Goal**: Replace plain rectangles with real Azure resource icons, add collapsible palette sections, give containers provider-accurate styling, and modernize the window chrome.
 
 ### Tasks
 
-1. **Collapsible palette sections**
+1. **Borderless/frameless window**
+   - Configure Tauri window decorations: `"decorations": false` in `tauri.conf.json`
+   - Custom title bar in the Toolbar component: app icon, drag region, minimize/maximize/close buttons
+   - Ensure window drag works via Tauri's `data-tauri-drag-region` attribute
+   - Platform-appropriate close/minimize/maximize button placement (right on Windows)
+   - Title bar blends seamlessly with the toolbar — no visible separation
+
+2. **Collapsible palette sections**
    - Each `PaletteCategory` renders as a collapsible accordion section (header + toggle arrow)
    - Remembered open/closed state per session (UI store)
    - Smooth expand/collapse animation
 
-2. **Resource SVG icons**
+3. **Resource SVG icons**
    - Source official Azure architecture SVG icons for each resource type (Resource Group, VNet, Subnet, NSG, VM, Storage Account, App Service, VMSS)
    - Store as inline SVG strings in each resource's `icon.ts` (already wired into the plugin contract)
    - Render icons in palette items, diagram nodes, and sidebar header
    - Palette items: icon + label, compact grid or list layout
 
-3. **Custom container styling (plugin-driven)**
+4. **Custom container styling (plugin-driven)**
    - Add optional `ContainerStyle` interface to `@terrastudio/types`:
      ```ts
      interface ContainerStyle {
@@ -447,15 +457,24 @@ gantt
    - `ContainerResourceNode.svelte` reads `containerStyle` from schema and applies it
    - Defaults per resource: Resource Group (blue-grey border), VNet (teal dashed border, light teal background), Subnet (purple dashed border, light purple background)
 
-4. **Update node components**
+5. **Update node components**
    - `DefaultResourceNode.svelte`: show SVG icon left of label, cleaner card layout
    - `ContainerResourceNode.svelte`: icon + label in header bar, styled border/background from schema
 
+6. **Resource hover details**
+   - Hovering over a diagram node shows a tooltip/popover with key resource details
+   - Display: resource type, terraform name, deployment status, 2–3 key properties (from schema's top properties)
+   - Delay on show (~300ms) to avoid flicker during mouse movement
+   - Positioned above/below the node, doesn't interfere with drag or selection
+   - Uses existing schema metadata — no new data needed
+
 ### Verification
+- App window is frameless with custom title bar that matches the toolbar
 - Palette shows collapsible sections with icons
 - Diagram nodes display resource-specific SVG icons
 - Containers have distinct visual styles matching Azure conventions
 - Plugins can override container styling via schema
+- Hovering a node shows a detail tooltip with type, terraform name, and key properties
 
 ---
 
@@ -527,6 +546,47 @@ gantt
 - Missing required variables highlighted in red
 - Set a variable value → reflected in generated `terraform.tfvars`
 - Pre-apply warning when required variables are unset
+
+---
+
+## Phase 14: Networking Intelligence + Azure Name Validation
+
+**Goal**: Auto-populate subnet CIDR ranges based on VNet address space, and optionally validate resource name availability against Azure APIs during diagram creation.
+
+### Tasks
+
+1. **Auto-populate subnet CIDR ranges**
+   - When a subnet is added to a VNet, auto-calculate the next available CIDR block
+   - Parse the VNet's `address_space` (e.g. `10.0.0.0/16`) to determine the available range
+   - First subnet: `10.0.1.0/24`, second: `10.0.2.0/24`, etc. (standard /24 subnets within the VNet's space)
+   - Skip ranges already assigned to existing sibling subnets
+   - Populate the subnet's `address_prefixes` property automatically on drop
+   - Allow manual override — auto-value is a default, not enforced
+   - Add a CIDR utility module to `@terrastudio/core`: `parseSubnet()`, `nextAvailableSubnet()`, `isOverlapping()`
+   - Visual feedback: show the auto-assigned CIDR in the subnet node label (e.g. "subnet-1 (10.0.1.0/24)")
+
+2. **Azure resource name availability validation**
+   - Add a settings toggle: "Validate name availability" (off by default — requires Azure CLI / credentials)
+   - When enabled, validate resource names against Azure's name availability APIs:
+     - Storage accounts: `az storage account check-name`
+     - Resource groups: check uniqueness within subscription
+     - VNets, VMs: check uniqueness within resource group
+   - Validation runs on debounce (500ms) when the name property is edited in the sidebar
+   - Show inline validation status next to the name field: green check (available), red X (taken), grey spinner (checking)
+   - Rust backend: new command `check_name_availability` that shells out to `az` CLI or calls Azure REST API
+   - Graceful degradation: if Azure CLI not available or not logged in, silently skip with no error
+
+3. **Subnet CIDR overlap detection**
+   - When editing a subnet's CIDR, validate it doesn't overlap with sibling subnets in the same VNet
+   - Show a warning badge on the subnet node if overlap detected
+   - Add to the existing `diagram-validator.ts` validation rules
+
+### Verification
+- Add a VNet with `10.0.0.0/16` → add 3 subnets → CIDRs auto-assigned as `10.0.1.0/24`, `10.0.2.0/24`, `10.0.3.0/24`
+- Delete the second subnet → add a new one → gets `10.0.2.0/24` (fills the gap)
+- Manually change a subnet CIDR to overlap another → warning shown
+- Enable name validation → type a storage account name → see green/red indicator
+- Name validation disabled by default, no errors when Azure CLI not present
 
 ---
 
