@@ -1,13 +1,25 @@
 <script lang="ts">
   import { diagram } from '$lib/stores/diagram.svelte';
   import { registry } from '$lib/bootstrap';
-  import type { ResourceSchema } from '@terrastudio/types';
+  import PropertyRenderer from './PropertyRenderer.svelte';
 
   let schema = $derived(
     diagram.selectedNode
       ? registry.getResourceSchema(diagram.selectedNode.data.typeId)
       : null
   );
+
+  function onPropertyChange(key: string, value: unknown) {
+    if (!diagram.selectedNode) return;
+    const newProps = { ...diagram.selectedNode.data.properties };
+    newProps[key] = value;
+    diagram.updateNodeData(diagram.selectedNode.id, {
+      properties: newProps,
+      label: key === 'name' && typeof value === 'string'
+        ? value || schema?.displayName || diagram.selectedNode.data.label
+        : diagram.selectedNode.data.label,
+    });
+  }
 </script>
 
 {#if diagram.selectedNode && schema}
@@ -24,9 +36,9 @@
     </div>
 
     <div class="sidebar-content">
-      <div class="property-group">
+      <div class="tf-name-field">
         <label class="field-label">
-          Terraform Name
+          <span class="label-text">Terraform Name</span>
           <input
             type="text"
             value={diagram.selectedNode.data.terraformName}
@@ -41,36 +53,11 @@
         </label>
       </div>
 
-      {#each schema.properties as prop}
-        {#if prop.type === 'string'}
-          <div class="property-group">
-            <label class="field-label">
-              {prop.label}
-              {#if prop.required}<span class="required">*</span>{/if}
-              <input
-                type="text"
-                placeholder={prop.placeholder}
-                value={(diagram.selectedNode.data.properties[prop.key] as string) ?? ''}
-                oninput={(e) => {
-                  if (diagram.selectedNode) {
-                    const newProps = { ...diagram.selectedNode.data.properties };
-                    newProps[prop.key] = (e.target as HTMLInputElement).value;
-                    diagram.updateNodeData(diagram.selectedNode.id, {
-                      properties: newProps,
-                      label: prop.key === 'name'
-                        ? (e.target as HTMLInputElement).value || schema!.displayName
-                        : diagram.selectedNode.data.label,
-                    });
-                  }
-                }}
-              />
-              {#if prop.description}
-                <span class="help-text">{prop.description}</span>
-              {/if}
-            </label>
-          </div>
-        {/if}
-      {/each}
+      <PropertyRenderer
+        properties={schema.properties}
+        values={diagram.selectedNode.data.properties}
+        onChange={onPropertyChange}
+      />
     </div>
   </aside>
 {/if}
@@ -91,6 +78,7 @@
     justify-content: space-between;
     padding: 12px 16px;
     border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
   }
   .sidebar-header h3 {
     margin: 0;
@@ -111,24 +99,21 @@
   }
   .sidebar-content {
     padding: 12px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+    flex: 1;
+    overflow-y: auto;
   }
-  .property-group {
-    display: flex;
-    flex-direction: column;
+  .tf-name-field {
+    margin-bottom: 12px;
   }
   .field-label {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--color-text-muted);
     display: flex;
     flex-direction: column;
     gap: 4px;
+    font-size: 12px;
+    color: var(--color-text-muted);
   }
-  .required {
-    color: #ef4444;
+  .label-text {
+    font-weight: 500;
   }
   input[type='text'] {
     padding: 6px 10px;
@@ -139,12 +124,10 @@
     font-size: 13px;
     outline: none;
     transition: border-color 0.15s;
+    width: 100%;
+    box-sizing: border-box;
   }
   input[type='text']:focus {
     border-color: var(--color-accent);
-  }
-  .help-text {
-    font-size: 11px;
-    color: var(--color-text-muted);
   }
 </style>

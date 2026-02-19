@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Handle, Position } from '@xyflow/svelte';
   import { registry } from '$lib/bootstrap';
+  import DeploymentBadge from './DeploymentBadge.svelte';
 
   let { data, id, selected }: { data: any; id: string; selected?: boolean } = $props();
 
@@ -15,11 +16,7 @@
       <span class="node-icon">{@html icon.svg}</span>
     {/if}
     <span class="node-label">{data.label || schema?.displayName || 'Resource'}</span>
-    <span
-      class="status-dot"
-      class:created={data.deploymentStatus === 'created'}
-      class:failed={data.deploymentStatus === 'failed'}
-    ></span>
+    <DeploymentBadge status={data.deploymentStatus} />
   </div>
   <div class="node-type">{schema?.terraformType ?? data.typeId}</div>
 
@@ -70,19 +67,6 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-  }
-  .status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #6b7280;
-    flex-shrink: 0;
-  }
-  .status-dot.created {
-    background: #22c55e;
-  }
-  .status-dot.failed {
-    background: #ef4444;
   }
   .node-type {
     font-size: 10px;

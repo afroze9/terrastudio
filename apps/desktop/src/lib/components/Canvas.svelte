@@ -74,7 +74,19 @@
   function onPaneClick() {
     diagram.selectedNodeId = null;
   }
+
+  function onKeyDown(event: KeyboardEvent) {
+    if (event.key === 'Delete' || event.key === 'Backspace') {
+      // Don't delete if user is typing in an input
+      if ((event.target as HTMLElement).tagName === 'INPUT' || (event.target as HTMLElement).tagName === 'TEXTAREA') return;
+      if (diagram.selectedNodeId) {
+        diagram.removeNode(diagram.selectedNodeId);
+      }
+    }
+  }
 </script>
+
+<svelte:window onkeydown={onKeyDown} />
 
 <div
   class="canvas-wrapper"
