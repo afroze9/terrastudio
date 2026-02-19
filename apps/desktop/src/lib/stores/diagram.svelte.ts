@@ -78,8 +78,11 @@ class DiagramStore {
 
   private restoreSnapshot(snapshot: DiagramSnapshot) {
     this.skipHistory = true;
-    this.nodes = structuredClone(snapshot.nodes);
-    this.edges = structuredClone(snapshot.edges);
+    // snapshot is a reactive proxy (from $state history array), unwrap before cloning
+    const nodesSnap = $state.snapshot(snapshot.nodes) as unknown;
+    const edgesSnap = $state.snapshot(snapshot.edges) as unknown;
+    this.nodes = structuredClone(nodesSnap) as DiagramNode[];
+    this.edges = structuredClone(edgesSnap) as DiagramEdge[];
     this.selectedNodeId = null;
     this.skipHistory = false;
   }
@@ -108,6 +111,15 @@ class DiagramStore {
   addEdge(edge: DiagramEdge) {
     this.pushSnapshot();
     this.edges = [...this.edges, edge];
+  }
+
+  removeSelectedNodes() {
+    const selectedIds = new Set(this.nodes.filter((n) => n.selected).map((n) => n.id));
+    if (selectedIds.size === 0) return;
+    this.pushSnapshot();
+    this.nodes = this.nodes.filter((n) => !selectedIds.has(n.id));
+    this.edges = this.edges.filter((e) => !selectedIds.has(e.source) && !selectedIds.has(e.target));
+    this.selectedNodeId = null;
   }
 
   removeEdge(id: string) {

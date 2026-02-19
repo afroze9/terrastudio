@@ -27,7 +27,10 @@
     return;
   }
   if (event.key === 'Delete' || event.key === 'Backspace') {
-    if (diagram.selectedNodeId) {
+    const hasSelected = diagram.nodes.some((n) => n.selected);
+    if (hasSelected) {
+      diagram.removeSelectedNodes();
+    } else if (diagram.selectedNodeId) {
       diagram.removeNode(diagram.selectedNodeId);
     }
   }
