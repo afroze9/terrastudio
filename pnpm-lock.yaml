@@ -15,6 +15,16 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
+  packages/core:
+    dependencies:
+      '@terrastudio/types':
+        specifier: workspace:*
+        version: link:../types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
   packages/types:
     devDependencies:
       typescript:
