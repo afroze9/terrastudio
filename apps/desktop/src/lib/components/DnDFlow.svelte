@@ -12,12 +12,34 @@
   import { diagram } from '$lib/stores/diagram.svelte';
   import { registry } from '$lib/bootstrap';
   import { createNodeData, generateNodeId } from '@terrastudio/core';
-  import type { ResourceNodeComponent } from '@terrastudio/types';
+  import type { ResourceNodeComponent, ResourceTypeId } from '@terrastudio/types';
   import type { Action } from 'svelte/action';
 
   let { nodeTypes }: { nodeTypes: Record<string, ResourceNodeComponent> } = $props();
 
   const { screenToFlowPosition } = useSvelteFlow();
+
+  /**
+   * Find the container node at a given flow position, if any.
+   * Returns the container's id if the drop position falls inside it.
+   */
+  function findContainerAtPosition(flowX: number, flowY: number, childTypeId: ResourceTypeId): string | undefined {
+    for (const node of diagram.nodes) {
+      const schema = registry.getResourceSchema(node.type as ResourceTypeId);
+      if (!schema?.isContainer) continue;
+      if (schema.acceptsChildren && !schema.acceptsChildren.includes(childTypeId)) continue;
+
+      const nx = node.position.x;
+      const ny = node.position.y;
+      const nw = node.measured?.width ?? node.width ?? 250;
+      const nh = node.measured?.height ?? node.height ?? 150;
+
+      if (flowX >= nx && flowX <= nx + nw && flowY >= ny && flowY <= ny + nh) {
+        return node.id;
+      }
+    }
+    return undefined;
+  }
 
   const dndHandler: Action = (node) => {
     function handleDragOver(event: DragEvent) {
@@ -45,12 +67,25 @@
         y: event.clientY,
       });
 
-      diagram.addNode({
+      // Check if dropped inside a container node
+      const parentId = findContainerAtPosition(position.x, position.y, schema.typeId);
+
+      const newNode: Record<string, unknown> = {
         id,
         type: schema.typeId,
-        position,
+        position: parentId
+          ? { x: position.x - (diagram.nodes.find((n) => n.id === parentId)?.position.x ?? 0),
+              y: position.y - (diagram.nodes.find((n) => n.id === parentId)?.position.y ?? 0) }
+          : position,
         data: nodeData,
-      });
+      };
+
+      if (parentId) {
+        newNode.parentId = parentId;
+        newNode.extent = 'parent' as const;
+      }
+
+      diagram.addNode(newNode as any);
     }
 
     // Capture phase so handlers fire before SvelteFlow's internal pane

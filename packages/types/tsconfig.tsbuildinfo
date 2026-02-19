@@ -1,0 +1,1 @@
+{"root":["./src/connection.ts","./src/hcl.ts","./src/index.ts","./src/node.ts","./src/plugin.ts","./src/provider.ts","./src/resource-schema.ts","./src/validation.ts"],"version":"5.9.3"}

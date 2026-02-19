@@ -9,6 +9,10 @@ export const vnetSchema: ResourceSchema = {
   terraformType: 'azurerm_virtual_network',
   supportsTags: true,
   requiresResourceGroup: true,
+  isContainer: true,
+  acceptsChildren: [
+    'azurerm/networking/subnet',
+  ],
 
   properties: [
     {

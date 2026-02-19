@@ -72,4 +72,8 @@ export interface ResourceSchema {
   readonly handles: ReadonlyArray<HandleDefinition>;
   readonly supportsTags: boolean;
   readonly requiresResourceGroup: boolean;
+  /** If true, this resource renders as a container that can hold child nodes */
+  readonly isContainer?: boolean;
+  /** Which resource typeIds can be children of this container */
+  readonly acceptsChildren?: ReadonlyArray<ResourceTypeId>;
 }
