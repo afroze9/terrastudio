@@ -23,6 +23,7 @@ class DiagramStore {
   private history = $state<DiagramSnapshot[]>([]);
   private historyIndex = $state(-1);
   private skipHistory = false;
+  private debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   canUndo = $derived(this.historyIndex > 0);
   canRedo = $derived(this.historyIndex < this.history.length - 1);
@@ -68,13 +69,24 @@ class DiagramStore {
     this.historyIndex = newHistory.length - 1;
   }
 
+  /** Flush any pending debounced snapshot (e.g. from typing in property fields). */
+  private flushPendingSnapshot() {
+    if (this.debounceTimer !== null) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = null;
+      this.pushSnapshot();
+    }
+  }
+
   /** Save current state to history (call after external mutations like drag stop). */
   saveSnapshot() {
+    this.flushPendingSnapshot();
     this.ensureInitialSnapshot();
     this.pushSnapshot();
   }
 
   undo() {
+    this.flushPendingSnapshot();
     if (!this.canUndo) return;
     this.historyIndex--;
     this.restoreSnapshot(this.history[this.historyIndex]);
@@ -82,6 +94,7 @@ class DiagramStore {
   }
 
   redo() {
+    this.flushPendingSnapshot();
     if (!this.canRedo) return;
     this.historyIndex++;
     this.restoreSnapshot(this.history[this.historyIndex]);
@@ -100,12 +113,14 @@ class DiagramStore {
   }
 
   addNode(node: DiagramNode) {
+    this.flushPendingSnapshot();
     this.ensureInitialSnapshot();
     this.nodes = [...this.nodes, node];
     this.pushSnapshot();
   }
 
   removeNode(id: string) {
+    this.flushPendingSnapshot();
     this.ensureInitialSnapshot();
     this.nodes = this.nodes.filter((n) => n.id !== id);
     this.edges = this.edges.filter((e) => e.source !== id && e.target !== id);
@@ -117,13 +132,27 @@ class DiagramStore {
 
   updateNodeData(id: string, data: Partial<ResourceNodeData>) {
     this.ensureInitialSnapshot();
+
+    // Cancel any pending debounced snapshot (we'll start a new debounce)
+    if (this.debounceTimer !== null) {
+      clearTimeout(this.debounceTimer);
+    }
+
+    project.markDirty();
+
     this.nodes = this.nodes.map((n) =>
       n.id === id ? { ...n, data: { ...n.data, ...data } } : n
     );
-    this.pushSnapshot();
+
+    // Debounce: coalesce rapid property edits (typing) into one undo step
+    this.debounceTimer = setTimeout(() => {
+      this.debounceTimer = null;
+      this.pushSnapshot();
+    }, 500);
   }
 
   addEdge(edge: DiagramEdge) {
+    this.flushPendingSnapshot();
     this.ensureInitialSnapshot();
     this.edges = [...this.edges, edge];
     this.pushSnapshot();
@@ -132,6 +161,7 @@ class DiagramStore {
   removeSelectedNodes() {
     const selectedIds = new Set(this.nodes.filter((n) => n.selected).map((n) => n.id));
     if (selectedIds.size === 0) return;
+    this.flushPendingSnapshot();
     this.ensureInitialSnapshot();
     this.nodes = this.nodes.filter((n) => !selectedIds.has(n.id));
     this.edges = this.edges.filter((e) => !selectedIds.has(e.source) && !selectedIds.has(e.target));
@@ -140,6 +170,7 @@ class DiagramStore {
   }
 
   removeEdge(id: string) {
+    this.flushPendingSnapshot();
     this.ensureInitialSnapshot();
     this.edges = this.edges.filter((e) => e.id !== id);
     this.pushSnapshot();
@@ -162,6 +193,10 @@ class DiagramStore {
   }
 
   clear() {
+    if (this.debounceTimer !== null) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = null;
+    }
     this.nodes = [];
     this.edges = [];
     this.selectedNodeId = null;
