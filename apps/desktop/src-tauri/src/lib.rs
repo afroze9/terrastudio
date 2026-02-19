@@ -30,6 +30,7 @@ pub fn run() {
             terraform::commands::terraform_plan,
             terraform::commands::terraform_apply,
             terraform::commands::terraform_destroy,
+            terraform::commands::terraform_show,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

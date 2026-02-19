@@ -29,8 +29,8 @@ gantt
     Phase 6: Compute Plugin (VM)    :done, p6, 5, 6
 
     section Terraform
-    Phase 7: Terraform Execution    :active, p7, 6, 7
-    Phase 8: Deployment Status      :p8, 7, 8
+    Phase 7: Terraform Execution    :done, p7, 6, 7
+    Phase 8: Deployment Status      :active, p8, 7, 8
 
     section Polish
     Phase 9: Save/Load + Polish     :p9, 8, 9
@@ -241,7 +241,7 @@ gantt
 
 ---
 
-## Phase 7: Terraform Execution
+## Phase 7: Terraform Execution ✅
 
 **Goal**: Full init/validate/plan/apply workflow from the app.
 
@@ -275,6 +275,16 @@ gantt
 - Click Validate - reports errors or success
 - Click Plan - shows planned changes
 - Click Apply - deploys to Azure (requires real subscription)
+
+### Implementation Notes
+- Project system added first: create/open/save projects with directory structure (`diagrams/` + `terraform/`)
+- Rust backend: `project/commands.rs` (create/load/save), `terraform/runner.rs` (process spawning with streaming), `terraform/commands.rs` (init/validate/plan/apply/destroy)
+- Windows `CREATE_NO_WINDOW` flag (0x08000000) prevents console flash when spawning terraform.exe
+- `terraform_apply` uses `-auto-approve` flag
+- TerraformPanel: live streaming console with auto-scroll, status dots (grey/blue-pulse/green/red), terraform version badge
+- Diagram converter: `DiagramNode[]` → `ResourceInstance[]` with edge-based references and parent container references from SvelteFlow `parentId`
+- Welcome screen with recent projects list (persisted in `{app_data}/com.terrastudio.app/recent-projects.json`)
+- VarsInputForm deferred to Phase 9 (Polish)
 
 ---
 

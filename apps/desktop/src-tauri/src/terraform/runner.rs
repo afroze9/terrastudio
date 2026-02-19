@@ -22,6 +22,36 @@ pub struct TerraformStatus {
     pub command: String,
 }
 
+/// Run a terraform command and capture all output (no streaming).
+/// Used for commands like `terraform show -json` where we need the full JSON result.
+pub async fn run_terraform_capture(
+    working_dir: &Path,
+    subcommand: &str,
+    args: &[&str],
+) -> Result<String, String> {
+    let mut cmd = Command::new("terraform");
+    cmd.arg(subcommand);
+    cmd.args(args);
+    cmd.current_dir(working_dir);
+
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+
+    let output = cmd.output().await.map_err(|e| {
+        format!(
+            "Failed to run terraform {}: {}",
+            subcommand, e
+        )
+    })?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("terraform {} failed: {}", subcommand, stderr));
+    }
+
+    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
 /// Check if the terraform CLI is available on PATH.
 pub async fn check_terraform_installed() -> Result<String, String> {
     let output = Command::new("terraform")

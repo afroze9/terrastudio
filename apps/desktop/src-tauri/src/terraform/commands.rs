@@ -84,3 +84,10 @@ pub async fn terraform_destroy(app: AppHandle, project_path: String) -> Result<b
     .await?;
     Ok(result.success)
 }
+
+/// Run terraform show -json to get the current state as JSON.
+#[command]
+pub async fn terraform_show(project_path: String) -> Result<String, String> {
+    let terraform_dir = PathBuf::from(&project_path).join("terraform");
+    runner::run_terraform_capture(&terraform_dir, "show", &["-json"]).await
+}

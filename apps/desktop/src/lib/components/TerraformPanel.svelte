@@ -2,7 +2,7 @@
   import { ui } from '$lib/stores/ui.svelte';
   import { project } from '$lib/stores/project.svelte';
   import { terraform, type TerraformCommand } from '$lib/stores/terraform.svelte';
-  import { runTerraformCommand } from '$lib/services/terraform-service';
+  import { runTerraformCommand, refreshDeploymentStatus } from '$lib/services/terraform-service';
   import { tick } from 'svelte';
 
   let outputEl: HTMLPreElement | undefined = $state();
@@ -44,7 +44,17 @@
   });
 
   async function handleCommand(command: TerraformCommand) {
-    await runTerraformCommand(command);
+    const success = await runTerraformCommand(command);
+    // Auto-refresh deployment status after apply or destroy
+    if ((command === 'apply' || command === 'destroy') && success) {
+      await refreshDeploymentStatus();
+    }
+  }
+
+  async function handleRefreshStatus() {
+    terraform.appendInfo('\n--- Refreshing deployment status ---');
+    await refreshDeploymentStatus();
+    terraform.appendInfo('Status refreshed.');
   }
 
   // Auto-scroll when output changes
@@ -113,6 +123,9 @@
         {#if terraform.terraformInstalled === false}
           <span class="warning-badge">Terraform not found</span>
         {/if}
+        <button class="clear-btn" onclick={handleRefreshStatus} disabled={terraform.isRunning || !project.isOpen}>
+          Refresh Status
+        </button>
         <button class="clear-btn" onclick={() => terraform.clearOutput()}>
           Clear
         </button>
