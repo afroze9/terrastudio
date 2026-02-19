@@ -11,10 +11,11 @@ import { registry } from '$lib/bootstrap';
 import type { ResourceTypeId } from '@terrastudio/types';
 
 /**
- * Get the .svelte-flow viewport element from the DOM.
+ * Get the .svelte-flow__viewport element — the inner layer that holds
+ * only nodes and edges (no controls, minimap, or background).
  */
-function getFlowElement(): HTMLElement | null {
-  return document.querySelector('.svelte-flow') as HTMLElement | null;
+function getViewportElement(): HTMLElement | null {
+  return document.querySelector('.svelte-flow__viewport') as HTMLElement | null;
 }
 
 /**
@@ -62,13 +63,15 @@ export async function copyDiagramToClipboard(): Promise<void> {
  * Generate a PNG data URL from the current diagram.
  */
 async function generatePngDataUrl(): Promise<string | null> {
-  const flowEl = getFlowElement();
-  if (!flowEl || diagram.nodes.length === 0) return null;
+  const viewportEl = getViewportElement();
+  if (!viewportEl || diagram.nodes.length === 0) return null;
 
   const nodesBounds = getNodesBounds(diagram.nodes);
-  const padding = 50;
-  const imageWidth = nodesBounds.width + padding * 2;
-  const imageHeight = nodesBounds.height + padding * 2;
+
+  // Use fixed output size and let getViewportForBounds fit the content
+  // (matches the approach from the official Svelte Flow docs)
+  const imageWidth = 1024;
+  const imageHeight = 768;
 
   const viewport = getViewportForBounds(
     nodesBounds,
@@ -76,10 +79,12 @@ async function generatePngDataUrl(): Promise<string | null> {
     imageHeight,
     0.5,
     2,
-    padding,
+    0.2,
   );
 
-  return toPng(flowEl, {
+  if (!viewport) return null;
+
+  return toPng(viewportEl, {
     backgroundColor: '#1a1a2e',
     width: imageWidth,
     height: imageHeight,

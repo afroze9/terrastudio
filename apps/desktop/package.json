@@ -24,7 +24,7 @@
     "@terrastudio/types": "workspace:*",
     "@xyflow/svelte": "^1.5.1",
     "bits-ui": "^2.0.0",
-    "html-to-image": "^1.11.13"
+    "html-to-image": "^1.11.11"
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.0",
