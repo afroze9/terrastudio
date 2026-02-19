@@ -18,7 +18,8 @@ class DiagramStore {
 
   selectedNodeId = $state<string | null>(null);
 
-  // Undo/redo history
+  // Undo/redo history — each entry is a complete state snapshot.
+  // historyIndex points to the entry representing the current state.
   private history = $state<DiagramSnapshot[]>([]);
   private historyIndex = $state(-1);
   private skipHistory = false;
@@ -32,21 +33,31 @@ class DiagramStore {
       : null
   );
 
+  private takeSnapshot(): DiagramSnapshot {
+    const nodesSnap = $state.snapshot(this.nodes) as unknown;
+    const edgesSnap = $state.snapshot(this.edges) as unknown;
+    return {
+      nodes: structuredClone(nodesSnap) as DiagramNode[],
+      edges: structuredClone(edgesSnap) as DiagramEdge[],
+    };
+  }
+
+  /** Ensure history has an initial entry for the pre-mutation state. */
+  private ensureInitialSnapshot() {
+    if (this.history.length > 0) return;
+    this.history = [this.takeSnapshot()];
+    this.historyIndex = 0;
+  }
+
+  /** Push current state onto history. Call AFTER performing a mutation. */
   private pushSnapshot() {
     if (this.skipHistory) return;
     project.markDirty();
 
-    // Discard any future history if we're not at the end
+    // Discard any future history (redo branch) if we're not at the end
     const newHistory = this.history.slice(0, this.historyIndex + 1);
 
-    // Cast through unknown to avoid "excessively deep" type instantiation
-    // with Svelte Flow's deeply nested node/edge types
-    const nodesSnap = $state.snapshot(this.nodes) as unknown;
-    const edgesSnap = $state.snapshot(this.edges) as unknown;
-    newHistory.push({
-      nodes: structuredClone(nodesSnap) as DiagramNode[],
-      edges: structuredClone(edgesSnap) as DiagramEdge[],
-    });
+    newHistory.push(this.takeSnapshot());
 
     // Cap history size
     if (newHistory.length > MAX_HISTORY) {
@@ -57,8 +68,9 @@ class DiagramStore {
     this.historyIndex = newHistory.length - 1;
   }
 
-  /** Save current state as a snapshot (call before external mutations like drag). */
+  /** Save current state to history (call after external mutations like drag stop). */
   saveSnapshot() {
+    this.ensureInitialSnapshot();
     this.pushSnapshot();
   }
 
@@ -88,43 +100,49 @@ class DiagramStore {
   }
 
   addNode(node: DiagramNode) {
-    this.pushSnapshot();
+    this.ensureInitialSnapshot();
     this.nodes = [...this.nodes, node];
+    this.pushSnapshot();
   }
 
   removeNode(id: string) {
-    this.pushSnapshot();
+    this.ensureInitialSnapshot();
     this.nodes = this.nodes.filter((n) => n.id !== id);
     this.edges = this.edges.filter((e) => e.source !== id && e.target !== id);
     if (this.selectedNodeId === id) {
       this.selectedNodeId = null;
     }
+    this.pushSnapshot();
   }
 
   updateNodeData(id: string, data: Partial<ResourceNodeData>) {
-    this.pushSnapshot();
+    this.ensureInitialSnapshot();
     this.nodes = this.nodes.map((n) =>
       n.id === id ? { ...n, data: { ...n.data, ...data } } : n
     );
+    this.pushSnapshot();
   }
 
   addEdge(edge: DiagramEdge) {
-    this.pushSnapshot();
+    this.ensureInitialSnapshot();
     this.edges = [...this.edges, edge];
+    this.pushSnapshot();
   }
 
   removeSelectedNodes() {
     const selectedIds = new Set(this.nodes.filter((n) => n.selected).map((n) => n.id));
     if (selectedIds.size === 0) return;
-    this.pushSnapshot();
+    this.ensureInitialSnapshot();
     this.nodes = this.nodes.filter((n) => !selectedIds.has(n.id));
     this.edges = this.edges.filter((e) => !selectedIds.has(e.source) && !selectedIds.has(e.target));
     this.selectedNodeId = null;
+    this.pushSnapshot();
   }
 
   removeEdge(id: string) {
-    this.pushSnapshot();
+    this.ensureInitialSnapshot();
     this.edges = this.edges.filter((e) => e.id !== id);
+    this.pushSnapshot();
   }
 
   selectAll() {
@@ -139,12 +157,7 @@ class DiagramStore {
     this.selectedNodeId = null;
     this.skipHistory = false;
     // Set initial history snapshot
-    const nodesSnap = $state.snapshot(this.nodes) as unknown;
-    const edgesSnap = $state.snapshot(this.edges) as unknown;
-    this.history = [{
-      nodes: structuredClone(nodesSnap) as DiagramNode[],
-      edges: structuredClone(edgesSnap) as DiagramEdge[],
-    }];
+    this.history = [this.takeSnapshot()];
     this.historyIndex = 0;
   }
 
