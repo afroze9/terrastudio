@@ -77,28 +77,40 @@
   }
 </script>
 
-<SvelteFlow
-  nodes={diagram.nodes}
-  edges={diagram.edges}
-  {nodeTypes}
-  fitView
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div
+  class="dnd-flow-wrapper"
   ondragover={onDragOver}
   ondrop={onDrop}
-  onconnect={onConnect}
-  ondelete={onDelete}
-  onnodeclick={onNodeClick}
-  onpaneclick={onPaneClick}
-  onnodeschange={(changes) => {
-    for (const change of changes) {
-      if (change.type === 'position' && change.position) {
-        diagram.nodes = diagram.nodes.map((n) =>
-          n.id === change.id ? { ...n, position: change.position! } : n
-        );
-      }
-    }
-  }}
 >
-  <Controls />
-  <MiniMap />
-  <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
-</SvelteFlow>
+  <SvelteFlow
+    nodes={diagram.nodes}
+    edges={diagram.edges}
+    {nodeTypes}
+    fitView
+    onconnect={onConnect}
+    ondelete={onDelete}
+    onnodeclick={onNodeClick}
+    onpaneclick={onPaneClick}
+    onnodeschange={(changes) => {
+      for (const change of changes) {
+        if (change.type === 'position' && change.position) {
+          diagram.nodes = diagram.nodes.map((n) =>
+            n.id === change.id ? { ...n, position: change.position! } : n
+          );
+        }
+      }
+    }}
+  >
+    <Controls />
+    <MiniMap />
+    <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
+  </SvelteFlow>
+</div>
+
+<style>
+  .dnd-flow-wrapper {
+    width: 100%;
+    height: 100%;
+  }
+</style>
