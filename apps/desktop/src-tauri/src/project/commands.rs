@@ -168,6 +168,14 @@ pub async fn save_project_config(
     Ok(())
 }
 
+/// Write binary data to a file (used for PNG/Markdown export).
+#[command]
+pub async fn write_export_file(path: String, data: Vec<u8>) -> Result<(), String> {
+    tokio::fs::write(&path, &data)
+        .await
+        .map_err(|e| format!("Failed to write export file: {}", e))
+}
+
 /// Get the list of recent projects.
 #[command]
 pub async fn get_recent_projects() -> Result<Vec<recent::RecentProject>, String> {

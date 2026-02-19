@@ -23,6 +23,7 @@ pub fn run() {
             project::commands::save_project_config,
             project::commands::get_recent_projects,
             project::commands::remove_recent_project,
+            project::commands::write_export_file,
             terraform::commands::write_terraform_files,
             terraform::commands::check_terraform,
             terraform::commands::terraform_init,

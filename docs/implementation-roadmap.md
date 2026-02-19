@@ -33,10 +33,10 @@ gantt
     Phase 8: Deployment Status      :done, p8, 7, 8
 
     section Polish
-    Phase 9: Save/Load + Polish     :active, p9, 8, 9
+    Phase 9: Save/Load + Polish     :done, p9, 8, 9
 
     section Export
-    Phase 10: Export + Doc Gen      :p10, 9, 10
+    Phase 10: Export + Doc Gen      :done, p10, 9, 10
 ```
 
 ---
@@ -363,7 +363,7 @@ gantt
 
 ---
 
-## Phase 10: Export + Documentation Generation
+## Phase 10: Export + Documentation Generation ✅
 
 **Goal**: Export diagrams as images and auto-generate architecture documentation from the diagram.
 
@@ -398,6 +398,14 @@ gantt
 - Export as SVG - valid SVG file that opens in browsers/Figma
 - Generate docs - produces a Markdown file with resource table, diagram, and dependency graph
 - Generated Mermaid diagrams render correctly in GitHub/VS Code preview
+
+### Implementation Notes
+- `html-to-image` (`toPng`) captures the `.svelte-flow` DOM element with `getNodesBounds` + `getViewportForBounds` for proper framing
+- Clipboard copy uses `navigator.clipboard.write()` with `ClipboardItem` for native paste support
+- Rust `write_export_file` command writes binary data (PNG bytes or UTF-8 Markdown) to user-selected paths via `@tauri-apps/plugin-dialog` save dialog
+- Doc generator walks `diagram.nodes`/`diagram.edges`, pulls schemas from registry, produces Markdown with resource inventory table, parent-child hierarchy tree, Mermaid dependency graph, and per-resource property details
+- Export dropdown in Toolbar with click-outside dismiss
+- SVG export, HTML/PDF formats, and plugin doc section contributions deferred to future phases
 
 ---
 

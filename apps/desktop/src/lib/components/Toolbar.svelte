@@ -5,12 +5,17 @@
   import { terraform } from '$lib/stores/terraform.svelte';
   import { openProject, saveDiagram } from '$lib/services/project-service';
   import { generateAndWrite } from '$lib/services/terraform-service';
+  import { exportPNG, copyDiagramToClipboard, exportDocumentation } from '$lib/services/export-service';
 
   let { onNewProject }: { onNewProject: () => void } = $props();
 
   const canGenerate = $derived(
     project.isOpen && diagram.nodes.length > 0 && !terraform.isRunning,
   );
+
+  const canExport = $derived(project.isOpen && diagram.nodes.length > 0);
+
+  let showExportMenu = $state(false);
 
   async function handleGenerate() {
     terraform.clearOutput();
@@ -39,7 +44,19 @@
     diagram.clear();
     project.close();
   }
+
+  function handleWindowClick(e: MouseEvent) {
+    if (showExportMenu) {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.export-dropdown')) {
+        showExportMenu = false;
+      }
+    }
+  }
 </script>
+
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<svelte:window onclick={handleWindowClick} />
 
 <header class="toolbar">
   <div class="toolbar-left">
@@ -79,6 +96,25 @@
     </button>
   </div>
   <div class="toolbar-right">
+    {#if canExport}
+      <div class="export-dropdown">
+        <button
+          class="toolbar-btn"
+          onclick={() => (showExportMenu = !showExportMenu)}
+        >
+          Export
+        </button>
+        {#if showExportMenu}
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
+          <div class="export-menu" onclick={() => (showExportMenu = false)}>
+            <button class="export-item" onclick={() => exportPNG()}>Save as PNG</button>
+            <button class="export-item" onclick={() => copyDiagramToClipboard()}>Copy to Clipboard</button>
+            <button class="export-item" onclick={() => exportDocumentation()}>Export Docs (.md)</button>
+          </div>
+        {/if}
+      </div>
+    {/if}
     <button
       class="toolbar-btn toolbar-btn-accent"
       disabled={!canGenerate}
@@ -166,5 +202,37 @@
     background: var(--color-accent);
     vertical-align: middle;
     margin-left: 2px;
+  }
+  .export-dropdown {
+    position: relative;
+  }
+  .export-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 4px;
+    min-width: 160px;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  .export-item {
+    display: block;
+    width: 100%;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--color-text-muted);
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+  }
+  .export-item:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
   }
 </style>
