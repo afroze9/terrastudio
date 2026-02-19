@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.svelte-kit/
+.turbo/
+
+# Tauri
+src-tauri/target/
+src-tauri/WixTools/
+src-tauri/icons/icon.ico
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+!.vscode/extensions.json
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Terraform (generated in project dirs, not committed)
+*.tfstate
+*.tfstate.backup
+.terraform/
+*.tfplan
+crash.log
+
+# Claude
+.claude/
