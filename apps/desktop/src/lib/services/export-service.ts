@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { save as saveDialog } from '@tauri-apps/plugin-dialog';
-import { toPng } from 'html-to-image';
+import { toPng, toSvg } from 'html-to-image';
 import {
   getNodesBounds,
   getViewportForBounds,
@@ -8,6 +8,7 @@ import {
 import { diagram } from '$lib/stores/diagram.svelte';
 import { project } from '$lib/stores/project.svelte';
 import { registry } from '$lib/bootstrap';
+import { getCSSVariable } from '$lib/themes/theme-engine';
 import type { ResourceTypeId } from '@terrastudio/types';
 
 /**
@@ -60,6 +61,69 @@ export async function copyDiagramToClipboard(): Promise<void> {
 }
 
 /**
+ * Export the diagram as an SVG file.
+ * Shows a save dialog for the user to pick the destination.
+ */
+export async function exportSVG(): Promise<void> {
+  const svgDataUrl = await generateSvgDataUrl();
+  if (!svgDataUrl) return;
+
+  const path = await saveDialog({
+    title: 'Export Diagram as SVG',
+    defaultPath: `${project.name || 'diagram'}.svg`,
+    filters: [{ name: 'SVG Image', extensions: ['svg'] }],
+  });
+
+  if (!path) return;
+
+  // Extract SVG content from the data URL
+  const svgContent = decodeURIComponent(svgDataUrl.split(',')[1]);
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(svgContent);
+
+  await invoke('write_export_file', {
+    path,
+    data: Array.from(bytes),
+  });
+}
+
+/**
+ * Generate an SVG data URL from the current diagram.
+ */
+async function generateSvgDataUrl(): Promise<string | null> {
+  const viewportEl = getViewportElement();
+  if (!viewportEl || diagram.nodes.length === 0) return null;
+
+  const nodesBounds = getNodesBounds(diagram.nodes);
+  const imageWidth = 1024;
+  const imageHeight = 768;
+
+  const viewport = getViewportForBounds(
+    nodesBounds,
+    imageWidth,
+    imageHeight,
+    0.5,
+    2,
+    0.2,
+  );
+
+  if (!viewport) return null;
+
+  const bgColor = getCSSVariable('color-bg') || '#0f111a';
+
+  return toSvg(viewportEl, {
+    backgroundColor: bgColor,
+    width: imageWidth,
+    height: imageHeight,
+    style: {
+      width: `${imageWidth}px`,
+      height: `${imageHeight}px`,
+      transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
+    },
+  });
+}
+
+/**
  * Generate a PNG data URL from the current diagram.
  */
 async function generatePngDataUrl(): Promise<string | null> {
@@ -84,8 +148,10 @@ async function generatePngDataUrl(): Promise<string | null> {
 
   if (!viewport) return null;
 
+  const bgColor = getCSSVariable('color-bg') || '#0f111a';
+
   return toPng(viewportEl, {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: bgColor,
     width: imageWidth,
     height: imageHeight,
     style: {

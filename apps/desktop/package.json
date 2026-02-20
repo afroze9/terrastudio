@@ -19,6 +19,7 @@
     "@dagrejs/dagre": "^2.0.4",
     "@tauri-apps/api": "^2.0.0",
     "@tauri-apps/plugin-dialog": "^2.6.0",
+    "@tauri-apps/plugin-fs": "^2.4.5",
     "@terrastudio/core": "workspace:*",
     "@terrastudio/plugin-azure-compute": "workspace:*",
     "@terrastudio/plugin-azure-networking": "workspace:*",

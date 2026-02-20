@@ -18,6 +18,7 @@
 	initializePlugins();
 
 	onMount(() => {
+		ui.applyTheme();
 		initializeTerraformCheck();
 
 		function handleKeydown(e: KeyboardEvent) {

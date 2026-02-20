@@ -1,15 +1,19 @@
 @import 'tailwindcss';
 @import '@xyflow/svelte/dist/style.css';
 
+/* Fallback defaults (Indigo Craft dark) — overridden by theme engine at runtime */
 :root {
-  --color-bg: #0f1117;
-  --color-surface: #1a1d27;
-  --color-surface-hover: #242836;
-  --color-border: #2e3347;
-  --color-text: #e1e4ed;
-  --color-text-muted: #8b90a0;
-  --color-accent: #3b82f6;
-  --color-accent-hover: #2563eb;
+  --color-bg: #0f111a;
+  --color-surface: #1a1e2e;
+  --color-surface-hover: #252a3a;
+  --color-border: #2d3348;
+  --color-text: #e2e8f0;
+  --color-text-muted: #8892a8;
+  --color-accent: #818cf8;
+  --color-accent-hover: #6366f1;
+  --color-shadow: rgba(0, 0, 0, 0.4);
+  --scrollbar-thumb: rgba(129, 140, 248, 0.15);
+  --scrollbar-thumb-hover: rgba(129, 140, 248, 0.3);
 }
 
 html, body {
@@ -21,10 +25,10 @@ html, body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
-/* Custom scrollbars — slim, dark, VS Code-style */
+/* Custom scrollbars — slim, VS Code-style */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
@@ -34,11 +38,11 @@ html, body {
   background: transparent;
 }
 *::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--scrollbar-thumb-hover);
 }
 *::-webkit-scrollbar-corner {
   background: transparent;
@@ -47,12 +51,12 @@ html, body {
 /* Edge label styling */
 .svelte-flow__edge-text {
   font-size: 10px;
-  fill: var(--color-text-muted, #8b90a0);
+  fill: var(--color-text-muted);
 }
 
 .svelte-flow__edge-textbg {
-  fill: var(--color-surface, #1a1d27);
-  stroke: var(--color-border, #2e3347);
+  fill: var(--color-surface);
+  stroke: var(--color-border);
   stroke-width: 0.5;
   rx: 3;
 }

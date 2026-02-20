@@ -1,5 +1,10 @@
+import type { PaletteId } from '$lib/themes/types';
+import { applyPalette, getPalette } from '$lib/themes/theme-engine';
+import { DEFAULT_PALETTE_ID } from '$lib/themes/palettes';
+
 export type SidebarView = 'explorer' | 'terraform' | 'settings';
 export type EdgeStyle = 'default' | 'smoothstep' | 'step' | 'straight';
+export type Theme = 'dark' | 'light';
 
 export interface EditorTab {
   id: string;        // 'canvas' or filename
@@ -35,6 +40,16 @@ class UiStore {
 
   // --- Edge style ---
   edgeType = $state<EdgeStyle>('default');
+
+  // --- Theme ---
+  theme = $state<Theme>((typeof localStorage !== 'undefined' && localStorage.getItem('terrastudio-theme') as Theme) || 'dark');
+
+  // --- Palette ---
+  paletteId = $state<PaletteId>((typeof localStorage !== 'undefined' && localStorage.getItem('terrastudio-palette') as PaletteId) || DEFAULT_PALETTE_ID);
+
+  get palette() {
+    return getPalette(this.paletteId);
+  }
 
   // --- Palette categories ---
   toggleCategory(categoryId: string) {
@@ -90,6 +105,25 @@ class UiStore {
   /** Toggle terminal visibility */
   toggleTerminal() {
     this.showTerminal = !this.showTerminal;
+  }
+
+  /** Toggle dark/light theme */
+  toggleTheme() {
+    this.theme = this.theme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('terrastudio-theme', this.theme);
+    applyPalette(this.paletteId, this.theme);
+  }
+
+  /** Switch to a different palette */
+  setPalette(id: PaletteId) {
+    this.paletteId = id;
+    localStorage.setItem('terrastudio-palette', id);
+    applyPalette(this.paletteId, this.theme);
+  }
+
+  /** Apply saved theme + palette to DOM (call once on startup) */
+  applyTheme() {
+    applyPalette(this.paletteId, this.theme);
   }
 }
 

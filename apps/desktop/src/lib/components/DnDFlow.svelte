@@ -335,6 +335,7 @@
     bind:edges={diagram.edges}
     {nodeTypes}
     {defaultEdgeOptions}
+    colorMode={ui.theme}
     fitView
     minZoom={0.1}
     maxZoom={2}

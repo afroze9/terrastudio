@@ -4,13 +4,16 @@
   import { project } from '$lib/stores/project.svelte';
   import { registry } from '$lib/bootstrap';
   import { openProject, saveDiagram } from '$lib/services/project-service';
-  import { exportPNG, copyDiagramToClipboard, exportDocumentation } from '$lib/services/export-service';
+  import { exportPNG, exportSVG, copyDiagramToClipboard, exportDocumentation } from '$lib/services/export-service';
   import { autoLayout, type LayoutDirection } from '$lib/services/layout-service';
 
   import type { EdgeStyle } from '$lib/stores/ui.svelte';
+  import { getAllPalettes } from '$lib/themes/theme-engine';
+  import type { PaletteId } from '$lib/themes/types';
 
   let showLayoutSub = $state(false);
   let showEdgeStyleSub = $state(false);
+  let showPaletteSub = $state(false);
 
   function handleAutoLayout(direction: LayoutDirection) {
     close();
@@ -32,6 +35,7 @@
     openMenu = null;
     showLayoutSub = false;
     showEdgeStyleSub = false;
+    showPaletteSub = false;
   }
 
   async function handleSave() {
@@ -93,6 +97,9 @@
           <div class="dropdown-separator"></div>
           <button class="dropdown-item" onclick={() => { close(); exportPNG(); }}>
             <span>Export as PNG</span>
+          </button>
+          <button class="dropdown-item" onclick={() => { close(); exportSVG(); }}>
+            <span>Export as SVG</span>
           </button>
           <button class="dropdown-item" onclick={() => { close(); copyDiagramToClipboard(); }}>
             <span>Copy to Clipboard</span>
@@ -180,6 +187,31 @@
           <span class="shortcut">Ctrl+J</span>
         </button>
         <div class="dropdown-separator"></div>
+        <button class="dropdown-item" onclick={() => { close(); ui.toggleTheme(); }}>
+          <span>{ui.theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+        </button>
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div
+          class="dropdown-item submenu-trigger"
+          onmouseenter={() => { showPaletteSub = true; }}
+          onmouseleave={() => { showPaletteSub = false; }}
+        >
+          <span>Color Palette</span>
+          <span class="submenu-arrow">&#9656;</span>
+          {#if showPaletteSub}
+            <div class="submenu">
+              {#each getAllPalettes() as palette (palette.id)}
+                <button class="dropdown-item" onclick={() => { close(); ui.setPalette(palette.id as PaletteId); }}>
+                  <span class="palette-indicator" style="background: {palette.previewAccent}"></span>
+                  <span>{palette.name}</span>
+                  {#if ui.paletteId === palette.id}
+                    <span class="check-mark">&#10003;</span>
+                  {/if}
+                </button>
+              {/each}
+            </div>
+          {/if}
+        </div>
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
           class="dropdown-item submenu-trigger"
@@ -296,6 +328,16 @@
     font-size: 12px;
     color: var(--color-accent);
     margin-left: 12px;
+  }
+  .palette-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-right: 2px;
+  }
+  .dropdown-item:hover .check-mark {
+    color: white;
   }
   .submenu-trigger {
     position: relative;

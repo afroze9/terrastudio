@@ -57,7 +57,7 @@
 
   let borderColor = $derived(cs.borderColor ?? 'var(--color-border, #2e3347)');
   let borderStyle = $derived(cs.borderStyle ?? 'dashed');
-  let bg = $derived(cs.backgroundColor ?? 'rgba(26, 29, 39, 0.6)');
+  let bg = $derived(cs.backgroundColor ?? 'color-mix(in srgb, var(--color-surface) 60%, transparent)');
   let headerColor = $derived(cs.headerColor ?? 'var(--color-text-muted, #8b90a0)');
   let radius = $derived(cs.borderRadius ?? 10);
 
