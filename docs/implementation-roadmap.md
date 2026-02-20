@@ -2,51 +2,54 @@
 
 ## MVP Scope
 
-5 Azure resources: **Resource Group, Virtual Network, Subnet, NSG, Virtual Machine**
+9 Azure resources: **Resource Group, Virtual Network, Subnet, NSG, Virtual Machine, Storage Account, App Service Plan, App Service, Key Vault**
 
-This is enough to deploy a basic VM-in-a-VNet architecture, validating the entire pipeline end-to-end.
+Core pipeline validated end-to-end: diagram → HCL generation → Terraform init/validate/plan/apply → deployment status.
 
 ## Phase Overview
 
 ```mermaid
 gantt
     title TerraStudio Implementation Phases
-    dateFormat X
-    axisFormat %L
+    dateFormat YYYY-MM-DD
+    axisFormat %b %d
 
     section Foundation
-    Phase 1: Monorepo + Types        :done, p1, 0, 1
-    Phase 2: Core Registry + HCL     :done, p2, 1, 1
+    Phase 1 Monorepo + Types         :done, p1, 2025-07-01, 3d
+    Phase 2 Core Registry + HCL      :done, p2, after p1, 3d
 
     section First Plugin
-    Phase 3: Networking Plugin       :done, p3, 2, 1
+    Phase 3 Networking Plugin         :done, p3, after p2, 3d
 
     section Desktop App
-    Phase 4: Tauri Shell + Canvas    :done, p4, 3, 1
-    Phase 5: Sidebar + Drag-Drop     :done, p5, 4, 1
+    Phase 4 Tauri Shell + Canvas      :done, p4, after p3, 3d
+    Phase 5 Sidebar + Drag-Drop       :done, p5, after p4, 3d
 
     section Cross-Plugin
-    Phase 6: Compute Plugin (VM)     :done, p6, 5, 1
+    Phase 6 Compute Plugin (VM)       :done, p6, after p5, 3d
 
     section Terraform
-    Phase 7: Terraform Execution     :done, p7, 6, 1
-    Phase 8: Deployment Status       :done, p8, 7, 1
+    Phase 7 Terraform Execution       :done, p7, after p6, 3d
+    Phase 8 Deployment Status         :done, p8, after p7, 3d
 
     section Polish
-    Phase 9: Save/Load + Polish      :done, p9, 8, 1
+    Phase 9 Save/Load + Polish        :done, p9, after p8, 3d
 
     section Export
-    Phase 10: Export + Doc Gen       :done, p10, 9, 1
+    Phase 10 Export + Doc Gen         :done, p10, after p9, 3d
 
     section Visual Polish
-    Phase 11: Icons + Frameless UI   :done, p11, 10, 1
-    Phase 12: Handle + Edge Labels   :done, p12, 11, 1
+    Phase 11 Icons + Frameless UI     :done, p11, after p10, 3d
+    Phase 12 Handle + Edge Labels     :done, p12, after p11, 3d
 
-    section Azure Intelligence
-    Phase 13: Subscription + Vars    :active, p13, 12, 1
-    Phase 14: CIDR + Name Validation :active, p14, 13, 1
+    section Refactor + Expand
+    Phase 13 Containment Refactor     :done, p13, after p12, 3d
+    Phase 14 New Resources            :done, p14, after p12, 3d
 
-
+    section Upcoming
+    Phase 15 Resource Output Bindings :active, p15, after p14, 5d
+    Phase 16 Subscription + Vars      :p16, after p15, 5d
+    Phase 17 CIDR + Name Validation   :p17, after p16, 5d
 ```
 
 ---
@@ -520,7 +523,116 @@ gantt
 
 ---
 
-## Phase 13: Azure Subscription Resource + Variable Management UI
+## Phase 13: Containment Refactor ✅
+
+**Goal**: Remove redundant containment edges — derive parent references from visual nesting instead of explicit edges.
+
+### Changes
+
+1. **Added `parentReference` to `ResourceSchema`**
+   - New optional field: `parentReference: { propertyKey: string }`
+   - When a node is visually nested inside a parent container, the HCL pipeline automatically sets the reference (e.g., Subnet inside VNet → `virtual_network_name` reference)
+
+2. **Updated `deriveParentReferences()` in `diagram-converter.ts`**
+   - Now reads `parentReference` from the child's schema instead of scanning connection rules
+   - Accepts `getSchema` callback typed with `ResourceTypeId`
+
+3. **Removed containment handles and connection rules**
+   - VNet: removed `subnet-out` handle
+   - Subnet: removed `vnet-in` and `resource-out` handles, added `parentReference: { propertyKey: 'virtual_network_name' }`
+   - VM: removed `subnet-in` handle, added `parentReference: { propertyKey: 'subnet_id' }`
+   - Resource Group: removed `resources-out` handle
+   - Removed containment rules from both plugin connection rule files
+
+4. **What stayed**: `canBeChildOf` (drag-drop validation), `isContainer` (rendering), association edges (NSG↔Subnet, NSG↔VM), association handles (`nsg-in`, `nsg-out`)
+
+### Verification
+- Containment works via visual nesting — no edges needed
+- Association edges (NSG) still work with handles
+- HCL generation produces correct parent references from `parentId`
+
+---
+
+## Phase 14: New Azure Resources + resolveTerraformType ✅
+
+**Goal**: Expand the resource palette beyond the original 5 MVP resources.
+
+### New Resources
+
+1. **Storage Account** (`azurerm/storage/storage_account`) — new `plugin-azure-storage` package
+   - Properties: name (3-24 lowercase alphanumeric), account_tier, replication_type, account_kind, access_tier, min_tls_version, https_traffic_only
+   - Leaf node, `canBeChildOf: ['azurerm/core/resource_group']`
+
+2. **App Service Plan** (`azurerm/compute/app_service_plan`)
+   - Properties: name, os_type (Linux/Windows), sku_name (F1–P3v3)
+   - Has `apps-out` source handle for connecting to App Services
+
+3. **App Service** (`azurerm/compute/app_service`)
+   - Properties: name, os_type, runtime_stack, always_on, https_only
+   - Has `plan-in` target handle (accepts App Service Plan, maxConnections: 1)
+   - Connection rule: App Service Plan → App Service creates `service_plan_id` reference
+
+4. **Key Vault** (`azurerm/security/key_vault`)
+   - Properties: name, sku_name, soft_delete_retention, purge_protection, deployment flags
+   - HCL generator emits `data "azurerm_client_config" "current" {}` for tenant_id/object_id
+
+### resolveTerraformType
+
+- Added optional `resolveTerraformType?(properties)` to `HclGenerator` interface
+- Fixes OS-variant resources where `schema.terraformType` is static but the actual Terraform type depends on `os_type` (e.g., `azurerm_linux_web_app` vs `azurerm_windows_web_app`)
+- Implemented on VM and App Service generators
+- `refreshDeploymentStatus()` uses it for correct state address matching
+
+### Other Changes
+- Official Azure SVG icons for all 4 new resources (with namespaced gradient IDs to prevent color collisions)
+- New `security` palette category (order: 40) in compute plugin
+- Updated CLAUDE.md with "Adding New Resources" criteria guide
+
+---
+
+## Phase 15: Resource Output Bindings
+
+**Goal**: Enable using outputs of one resource as inputs to another — e.g., a Storage Account's connection string becomes a Key Vault secret.
+
+### Motivation
+
+Currently, references between resources are limited to IDs (e.g., `service_plan_id`, `subnet_id`). Real-world infrastructure often needs to pass **computed outputs** from one resource to another:
+- Storage Account connection string → Key Vault secret value
+- App Service default hostname → DNS CNAME record
+- Key Vault URI → App Service app settings
+- Database connection string → App Service configuration
+
+### Tasks
+
+1. **Output binding model**
+   - Define `OutputBinding` type: which resource attribute to read, where to pipe it
+   - Schema-level: each resource declares its available outputs (e.g., Storage Account exposes `primary_connection_string`, `primary_access_key`)
+   - Distinguish between simple attribute references (`azurerm_storage_account.example.id`) and computed outputs that require specific Terraform expressions
+
+2. **Binding edges**
+   - New edge type for output bindings (visually distinct from association edges)
+   - Source handle: output attribute on the producing resource
+   - Target handle: input property on the consuming resource
+   - Connection rule specifies the Terraform expression to generate
+
+3. **HCL generation for bindings**
+   - Generate the correct Terraform expression (e.g., `azurerm_storage_account.sa.primary_connection_string`)
+   - For Key Vault secrets: generate an `azurerm_key_vault_secret` resource that references the source output
+   - Handle sensitive values correctly (mark as sensitive in variables/outputs)
+
+4. **Common binding patterns**
+   - Storage Account → Key Vault (connection string as secret)
+   - App Service → Key Vault (Key Vault reference in app settings)
+   - Database → App Service (connection string in app settings)
+
+### Verification
+- Draw a binding edge from Storage Account to Key Vault → HCL generates a Key Vault secret with the connection string value
+- Binding edges visually distinct from association edges
+- Generated Terraform validates and plans correctly
+
+---
+
+## Phase 16: Azure Subscription Resource + Variable Management UI
 
 **Goal**: Add the subscription-level container and expose Terraform variable management in the UI.
 
@@ -559,7 +671,7 @@ gantt
 
 ---
 
-## Phase 14: Networking Intelligence + Azure Name Validation
+## Phase 17: Networking Intelligence + Azure Name Validation
 
 **Goal**: Auto-populate subnet CIDR ranges based on VNet address space, and optionally validate resource name availability against Azure APIs during diagram creation.
 
