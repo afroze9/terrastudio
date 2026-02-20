@@ -103,7 +103,7 @@ export class PluginRegistry implements PluginRegistryReader {
     return this.resourceTypes.get(typeId)?.schema;
   }
 
-  getIcon(typeId: ResourceTypeId): IconDefinition {
+  getIcon(typeId: ResourceTypeId): IconDefinition | undefined {
     const reg = this.getRegistration(typeId);
     return reg.icon;
   }

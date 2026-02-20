@@ -44,8 +44,10 @@
               ondragstart={(e) => onDragStart(e, reg.schema.typeId)}
               title={reg.schema.description}
             >
-              {#if reg.icon.type === 'svg' && reg.icon.svg}
+              {#if reg.icon?.type === 'svg' && reg.icon.svg}
                 <span class="palette-icon">{@html reg.icon.svg}</span>
+              {:else}
+                <span class="palette-icon"></span>
               {/if}
               <span class="palette-label">{reg.schema.displayName}</span>
             </div>

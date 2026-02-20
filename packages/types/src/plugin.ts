@@ -23,7 +23,7 @@ export interface ResourceTypeRegistration {
   readonly nodeComponent: ResourceNodeComponent;
   readonly propertyEditor?: PropertyEditorComponent;
   readonly hclGenerator: HclGenerator;
-  readonly icon: IconDefinition;
+  readonly icon?: IconDefinition;
 }
 
 export interface PluginRegistryReader {
