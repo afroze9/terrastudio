@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { initializePlugins, initializeTerraformCheck } from '$lib/bootstrap';
-	import Toolbar from '$lib/components/Toolbar.svelte';
-	import ResourcePalette from '$lib/components/ResourcePalette.svelte';
-	import Canvas from '$lib/components/Canvas.svelte';
-	import Sidebar from '$lib/components/Sidebar.svelte';
-	import TerraformPanel from '$lib/components/TerraformPanel.svelte';
+	import Titlebar from '$lib/components/Titlebar.svelte';
+	import ActivityBar from '$lib/components/ActivityBar.svelte';
+	import SidePanel from '$lib/components/SidePanel.svelte';
+	import EditorArea from '$lib/components/EditorArea.svelte';
+	import PropertiesPanel from '$lib/components/PropertiesPanel.svelte';
+	import StatusBar from '$lib/components/StatusBar.svelte';
 	import NewProjectDialog from '$lib/components/NewProjectDialog.svelte';
 	import WelcomeScreen from '$lib/components/WelcomeScreen.svelte';
 	import { ui } from '$lib/stores/ui.svelte';
@@ -22,9 +23,15 @@
 		function handleKeydown(e: KeyboardEvent) {
 			if (e.ctrlKey && e.key === 's') {
 				e.preventDefault();
-				if (project.isOpen) {
-					saveDiagram();
-				}
+				if (project.isOpen) saveDiagram();
+			}
+			if (e.ctrlKey && e.key === 'b') {
+				e.preventDefault();
+				ui.showSidePanel = !ui.showSidePanel;
+			}
+			if (e.ctrlKey && e.key === 'j') {
+				e.preventDefault();
+				ui.toggleTerminal();
 			}
 		}
 
@@ -35,19 +42,18 @@
 
 {#if project.isOpen}
 	<div class="app-shell">
-		<Toolbar onNewProject={() => (showNewProjectDialog = true)} />
-		<div class="app-body">
-			{#if ui.showPalette}
-				<ResourcePalette />
+		<Titlebar onNewProject={() => (showNewProjectDialog = true)} />
+		<div class="main-body">
+			<ActivityBar />
+			{#if ui.showSidePanel}
+				<SidePanel />
 			{/if}
-			<div class="main-area">
-				<Canvas />
-				<TerraformPanel />
-			</div>
-			{#if ui.showSidebar}
-				<Sidebar />
+			<EditorArea />
+			{#if ui.showPropertiesPanel}
+				<PropertiesPanel />
 			{/if}
 		</div>
+		<StatusBar />
 	</div>
 {:else}
 	<WelcomeScreen onNewProject={() => (showNewProjectDialog = true)} />
@@ -66,15 +72,9 @@
 		width: 100vw;
 		overflow: hidden;
 	}
-	.app-body {
+	.main-body {
 		display: flex;
 		flex: 1;
 		min-height: 0;
-	}
-	.main-area {
-		display: flex;
-		flex-direction: column;
-		flex: 1;
-		min-width: 0;
 	}
 </style>

@@ -280,6 +280,8 @@
     bind:edges={diagram.edges}
     {nodeTypes}
     fitView
+    minZoom={0.1}
+    maxZoom={2}
     {isValidConnection}
     onconnect={onConnect}
     ondelete={onDelete}

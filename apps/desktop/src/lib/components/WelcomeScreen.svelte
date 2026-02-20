@@ -71,6 +71,8 @@
 
 <div class="welcome">
   <div class="welcome-titlebar" data-tauri-drag-region>
+    <span class="welcome-logo" data-tauri-drag-region>TerraStudio</span>
+    <div class="titlebar-spacer" data-tauri-drag-region></div>
     <WindowControls />
   </div>
   <div class="welcome-inner">
@@ -159,13 +161,25 @@
     background: var(--color-bg);
   }
 
+  .welcome-logo {
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: -0.02em;
+    color: var(--color-accent);
+    padding-left: 12px;
+    flex-shrink: 0;
+  }
+  .titlebar-spacer {
+    flex: 1;
+  }
   .welcome-titlebar {
     position: fixed;
     top: 0;
+    left: 0;
     right: 0;
     display: flex;
-    justify-content: flex-end;
-    height: 36px;
+    align-items: center;
+    height: 30px;
     width: 100%;
     -webkit-app-region: drag;
     z-index: 10;

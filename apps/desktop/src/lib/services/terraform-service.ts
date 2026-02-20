@@ -7,6 +7,7 @@ import { registry, edgeValidator } from '$lib/bootstrap';
 import { diagram } from '$lib/stores/diagram.svelte';
 import { project } from '$lib/stores/project.svelte';
 import { terraform, type TerraformCommand } from '$lib/stores/terraform.svelte';
+import { ui } from '$lib/stores/ui.svelte';
 import { convertToResourceInstances, extractOutputBindings } from './diagram-converter';
 
 /**
@@ -90,6 +91,9 @@ export async function generateAndWrite(): Promise<void> {
       projectPath: project.path,
       files: fileMap,
     });
+
+    // Populate generated file list for TerraformSidebar
+    ui.generatedFiles = Object.keys(fileMap);
 
     terraform.appendInfo(
       `Generated ${Object.keys(fileMap).length} files to ${outputPath}`,

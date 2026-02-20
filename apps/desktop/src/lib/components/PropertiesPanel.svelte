@@ -1,9 +1,7 @@
 <script lang="ts">
   import { diagram } from '$lib/stores/diagram.svelte';
-  import { project } from '$lib/stores/project.svelte';
   import { registry } from '$lib/bootstrap';
   import PropertyRenderer from './PropertyRenderer.svelte';
-  import ProjectConfigPanel from './ProjectConfigPanel.svelte';
   import type { ResourceTypeId } from '@terrastudio/types';
 
   let schema = $derived(
@@ -74,22 +72,31 @@
         : diagram.selectedNode.data.label,
     });
   }
+
+  const panelTitle = $derived.by(() => {
+    if (diagram.selectedNode && schema) return schema.displayName;
+    if (diagram.selectedEdge) return 'Connection';
+    return 'Properties';
+  });
 </script>
 
-{#if diagram.selectedNode && schema}
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <h3>{schema.displayName}</h3>
+<aside class="properties-panel">
+  <div class="panel-header">
+    <h3>{panelTitle}</h3>
+    {#if diagram.selectedNode || diagram.selectedEdge}
       <button
         class="close-btn"
-        onclick={() => (diagram.selectedNodeId = null)}
-        aria-label="Close sidebar"
-      >
-        &times;
-      </button>
-    </div>
+        onclick={() => {
+          diagram.selectedNodeId = null;
+          diagram.selectedEdgeId = null;
+        }}
+        aria-label="Close"
+      >&times;</button>
+    {/if}
+  </div>
 
-    <div class="sidebar-content">
+  <div class="panel-content">
+    {#if diagram.selectedNode && schema}
       <div class="tf-name-field">
         <label class="field-label">
           <span class="label-text">Terraform Name</span>
@@ -156,22 +163,8 @@
           {/each}
         </div>
       {/if}
-    </div>
-  </aside>
-{:else if diagram.selectedEdge}
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <h3>Connection</h3>
-      <button
-        class="close-btn"
-        onclick={() => (diagram.selectedEdgeId = null)}
-        aria-label="Close sidebar"
-      >
-        &times;
-      </button>
-    </div>
 
-    <div class="sidebar-content">
+    {:else if diagram.selectedEdge}
       <div class="edge-endpoints">
         <div class="edge-endpoint">
           <span class="endpoint-label">From</span>
@@ -212,14 +205,17 @@
       >
         Delete Connection
       </button>
-    </div>
-  </aside>
-{:else if project.isOpen}
-  <ProjectConfigPanel />
-{/if}
+
+    {:else}
+      <div class="empty-state">
+        <p class="empty-hint">Select a node or connection to view its properties.</p>
+      </div>
+    {/if}
+  </div>
+</aside>
 
 <style>
-  .sidebar {
+  .properties-panel {
     width: 300px;
     min-width: 300px;
     background: var(--color-surface);
@@ -227,25 +223,30 @@
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    flex-shrink: 0;
   }
-  .sidebar-header {
+  .panel-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
+    padding: 0 12px;
+    height: 35px;
     border-bottom: 1px solid var(--color-border);
     flex-shrink: 0;
   }
-  .sidebar-header h3 {
+  .panel-header h3 {
     margin: 0;
-    font-size: 14px;
+    font-size: 11px;
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
   }
   .close-btn {
     background: none;
     border: none;
     color: var(--color-text-muted);
-    font-size: 20px;
+    font-size: 18px;
     cursor: pointer;
     padding: 0 4px;
     line-height: 1;
@@ -253,7 +254,7 @@
   .close-btn:hover {
     color: var(--color-text);
   }
-  .sidebar-content {
+  .panel-content {
     padding: 12px 16px;
     flex: 1;
     overflow-y: auto;
@@ -420,5 +421,19 @@
   .disconnect-btn:hover {
     color: #ef4444;
     border-color: #ef4444;
+  }
+  .empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 24px;
+  }
+  .empty-hint {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    opacity: 0.5;
+    text-align: center;
+    margin: 0;
   }
 </style>

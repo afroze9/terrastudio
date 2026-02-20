@@ -41,12 +41,8 @@
   let tagEntries = $derived(Object.entries(project.projectConfig.commonTags));
 </script>
 
-<aside class="sidebar">
-  <div class="sidebar-header">
-    <h3>Project Config</h3>
-  </div>
-
-  <div class="sidebar-content">
+<div class="config-panel">
+  <div class="config-panel-content">
     <!-- Common Tags Section -->
     <div class="config-section">
       <div class="group-header">Common Tags</div>
@@ -123,32 +119,16 @@
       {/if}
     </div>
   </div>
-</aside>
+</div>
 
 <style>
-  .sidebar {
-    width: 300px;
-    min-width: 300px;
-    background: var(--color-surface);
-    border-left: 1px solid var(--color-border);
+  .config-panel {
+    width: 100%;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
   }
-  .sidebar-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--color-border);
-    flex-shrink: 0;
-  }
-  .sidebar-header h3 {
-    margin: 0;
-    font-size: 14px;
-    font-weight: 600;
-  }
-  .sidebar-content {
+  .config-panel-content {
     padding: 12px 16px;
     flex: 1;
     overflow-y: auto;

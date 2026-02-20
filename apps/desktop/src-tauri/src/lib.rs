@@ -32,6 +32,8 @@ pub fn run() {
             terraform::commands::terraform_apply,
             terraform::commands::terraform_destroy,
             terraform::commands::terraform_show,
+            terraform::commands::read_terraform_file,
+            terraform::commands::list_terraform_files,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

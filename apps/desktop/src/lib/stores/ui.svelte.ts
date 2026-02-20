@@ -1,12 +1,35 @@
-class UiStore {
-  showPalette = $state(true);
-  showSidebar = $state(true);
-  showTerraformPanel = $state(true);
-  terraformPanelHeight = $state(200);
+export type SidebarView = 'explorer' | 'terraform' | 'settings';
 
-  /** Set of palette category IDs that are collapsed */
+export interface EditorTab {
+  id: string;        // 'canvas' or filename
+  label: string;     // 'Canvas' or 'main.tf'
+  type: 'canvas' | 'file';
+}
+
+class UiStore {
+  // --- Activity Bar + Side Panel ---
+  activeView = $state<SidebarView>('explorer');
+  showSidePanel = $state(true);
+  sidePanelWidth = $state(280);
+
+  // --- Editor Tabs ---
+  tabs = $state<EditorTab[]>([{ id: 'canvas', label: 'Canvas', type: 'canvas' }]);
+  activeTabId = $state('canvas');
+
+  // --- Properties Panel (right) ---
+  showPropertiesPanel = $state(true);
+
+  // --- Terminal ---
+  showTerminal = $state(false);
+  terminalPanelHeight = $state(200);
+
+  // --- Palette categories ---
   collapsedCategories = $state<Set<string>>(new Set());
 
+  // --- Generated terraform file list ---
+  generatedFiles = $state<string[]>([]);
+
+  // --- Palette categories ---
   toggleCategory(categoryId: string) {
     const next = new Set(this.collapsedCategories);
     if (next.has(categoryId)) {
@@ -19,6 +42,47 @@ class UiStore {
 
   isCategoryCollapsed(categoryId: string): boolean {
     return this.collapsedCategories.has(categoryId);
+  }
+
+  toggleAllCategories(categoryIds: string[]) {
+    const allCollapsed = categoryIds.every((id) => this.collapsedCategories.has(id));
+    this.collapsedCategories = allCollapsed ? new Set() : new Set(categoryIds);
+  }
+
+  /** Toggle sidebar view; collapse if already showing the same view */
+  setActiveView(view: SidebarView) {
+    if (this.activeView === view && this.showSidePanel) {
+      this.showSidePanel = false;
+    } else {
+      this.activeView = view;
+      this.showSidePanel = true;
+    }
+  }
+
+  /** Open a file tab (or focus it if already open) */
+  openFileTab(filename: string) {
+    const existing = this.tabs.find((t) => t.id === filename);
+    if (existing) {
+      this.activeTabId = existing.id;
+    } else {
+      const tab: EditorTab = { id: filename, label: filename, type: 'file' };
+      this.tabs = [...this.tabs, tab];
+      this.activeTabId = tab.id;
+    }
+  }
+
+  /** Close a file tab */
+  closeTab(tabId: string) {
+    if (tabId === 'canvas') return;
+    this.tabs = this.tabs.filter((t) => t.id !== tabId);
+    if (this.activeTabId === tabId) {
+      this.activeTabId = 'canvas';
+    }
+  }
+
+  /** Toggle terminal visibility */
+  toggleTerminal() {
+    this.showTerminal = !this.showTerminal;
   }
 }
 
