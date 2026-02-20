@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2a2f42"/>
+      <stop offset="100%" stop-color="#181b24"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#60a5fa"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+    <linearGradient id="teal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#5eead4"/>
+      <stop offset="100%" stop-color="#14b8a6"/>
+    </linearGradient>
+    <linearGradient id="purple" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#9333ea"/>
+    </linearGradient>
+    <!-- Clip everything to the frame shape -->
+    <clipPath id="frameClip">
+      <rect x="32" y="32" width="448" height="448" rx="36" ry="36"/>
+    </clipPath>
+  </defs>
+
+  <!-- Layer 1: Frame fill (no stroke) -->
+  <rect x="32" y="32" width="448" height="448" rx="36" ry="36" fill="url(#frame)"/>
+
+  <!-- Layer 2: All interior content, clipped to frame -->
+  <g clip-path="url(#frameClip)">
+    <!-- Dark title bar -->
+    <rect x="32" y="32" width="448" height="44" fill="#13151d"/>
+
+    <!-- Traffic light dots -->
+    <circle cx="68" cy="54" r="6.5" fill="#ff5f57" opacity="0.9"/>
+    <circle cx="90" cy="54" r="6.5" fill="#febc2e" opacity="0.9"/>
+    <circle cx="112" cy="54" r="6.5" fill="#28c840" opacity="0.9"/>
+
+    <!-- Edges (behind nodes) -->
+    <line x1="256" y1="190" x2="148" y2="340" stroke="#60a5fa" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
+    <line x1="256" y1="190" x2="364" y2="340" stroke="#5eead4" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
+    <line x1="148" y1="340" x2="364" y2="340" stroke="#a855f7" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
+
+    <!-- Node 1: Rounded square (top center) — blue -->
+    <rect x="214" y="148" width="84" height="84" rx="18" ry="18" fill="url(#blue)"/>
+
+    <!-- Node 2: Circle (bottom left) — teal -->
+    <circle cx="148" cy="340" r="44" fill="url(#teal)"/>
+
+    <!-- Node 3: Hexagon (bottom right) — purple, regular pointy-top, rounded corners -->
+    <polygon points="364,298 400,319 400,361 364,382 328,361 328,319"
+      fill="url(#purple)" stroke="url(#purple)" stroke-width="10" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Layer 3: Frame border drawn LAST, on top of everything -->
+  <rect x="32" y="32" width="448" height="448" rx="36" ry="36" fill="none" stroke="#3b4559" stroke-width="3"/>
+
+  <!-- Layer 4: Separator line drawn on top of frame border so it connects seamlessly -->
+  <line x1="30.5" y1="76" x2="481.5" y2="76" stroke="#3b4559" stroke-width="3" clip-path="url(#frameClip)"/>
+</svg>

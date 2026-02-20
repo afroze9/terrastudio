@@ -71,6 +71,14 @@
 
 <div class="welcome">
   <div class="welcome-titlebar" data-tauri-drag-region>
+    <svg class="titlebar-icon" width="16" height="16" viewBox="0 0 512 512" data-tauri-drag-region>
+      <line x1="256" y1="128" x2="128" y2="340" stroke="#60a5fa" stroke-width="20" stroke-linecap="round" opacity="0.6"/>
+      <line x1="256" y1="128" x2="384" y2="340" stroke="#5eead4" stroke-width="20" stroke-linecap="round" opacity="0.6"/>
+      <line x1="128" y1="340" x2="384" y2="340" stroke="#a855f7" stroke-width="20" stroke-linecap="round" opacity="0.6"/>
+      <rect x="206" y="78" width="100" height="100" rx="22" fill="#3b82f6"/>
+      <circle cx="128" cy="340" r="54" fill="#14b8a6"/>
+      <polygon points="384,290 424,313 424,367 384,390 344,367 344,313" fill="#9333ea" stroke="#9333ea" stroke-width="14" stroke-linejoin="round"/>
+    </svg>
     <span class="welcome-logo" data-tauri-drag-region>TerraStudio</span>
     <div class="titlebar-spacer" data-tauri-drag-region></div>
     <WindowControls />
@@ -122,6 +130,14 @@
 
     <div class="actions-section">
       <div class="branding">
+        <svg class="hero-icon" width="48" height="48" viewBox="0 0 512 512">
+          <line x1="256" y1="128" x2="128" y2="340" stroke="#60a5fa" stroke-width="20" stroke-linecap="round" opacity="0.6"/>
+          <line x1="256" y1="128" x2="384" y2="340" stroke="#5eead4" stroke-width="20" stroke-linecap="round" opacity="0.6"/>
+          <line x1="128" y1="340" x2="384" y2="340" stroke="#a855f7" stroke-width="20" stroke-linecap="round" opacity="0.6"/>
+          <rect x="206" y="78" width="100" height="100" rx="22" fill="#3b82f6"/>
+          <circle cx="128" cy="340" r="54" fill="#14b8a6"/>
+          <polygon points="384,290 424,313 424,367 384,390 344,367 344,313" fill="#9333ea" stroke="#9333ea" stroke-width="14" stroke-linejoin="round"/>
+        </svg>
         <h1 class="app-title">TerraStudio</h1>
         <p class="app-subtitle">Visual infrastructure diagram builder</p>
         <p class="app-desc">Design Azure architectures visually and generate Terraform configurations.</p>
@@ -161,12 +177,16 @@
     background: var(--color-bg);
   }
 
+  .titlebar-icon {
+    flex-shrink: 0;
+    margin-left: 12px;
+    margin-right: 6px;
+  }
   .welcome-logo {
     font-weight: 700;
     font-size: 12px;
     letter-spacing: -0.02em;
     color: var(--color-accent);
-    padding-left: 12px;
     flex-shrink: 0;
   }
   .titlebar-spacer {
@@ -332,6 +352,9 @@
     gap: 8px;
   }
 
+  .hero-icon {
+    margin-bottom: 4px;
+  }
   .app-title {
     font-size: 28px;
     font-weight: 700;
