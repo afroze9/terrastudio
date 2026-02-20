@@ -73,28 +73,59 @@ classDiagram
 
 ## Dependency Resolution
 
-Edges on the diagram map to Terraform references. The pipeline resolves these in two steps:
+References between resources are resolved through three mechanisms:
 
-### Step 1: Edge-to-Reference Mapping
+### Source 1: Containment References (parentId)
+
+When a node is visually nested inside a container, `deriveParentReferences()` uses the child's `parentReference.propertyKey` to set the reference automatically:
 
 ```mermaid
 flowchart LR
     subgraph Diagram
-        A["VNet node"] -->|"edge"| B["Subnet node"]
+        A["VNet container"] -->|"parentId"| B["Subnet node"]
     end
 
-    subgraph ConnectionRule
-        CR["sourceType: azurerm/.../vnet<br/>targetType: azurerm/.../subnet<br/>createsReference:<br/>  side: target<br/>  propertyKey: virtual_network_name"]
+    subgraph Schema
+        S["subnet.parentReference:<br/>  propertyKey: 'virtual_network_name'"]
     end
 
     subgraph Result
         R["subnet.references = {<br/>  virtual_network_name: vnet-node-id<br/>}"]
     end
 
+    Diagram --> Schema --> Result
+```
+
+No edges or connection rules needed — the visual nesting drives the reference.
+
+### Source 2: Edge-to-Reference Mapping
+
+For non-containment associations (e.g., App Service Plan → App Service), edges on the diagram map to references via `ConnectionRule`:
+
+```mermaid
+flowchart LR
+    subgraph Diagram
+        A["Plan node"] -->|"edge"| B["App Service node"]
+    end
+
+    subgraph ConnectionRule
+        CR["sourceType: .../app_service_plan<br/>targetType: .../app_service<br/>createsReference:<br/>  side: target<br/>  propertyKey: service_plan_id"]
+    end
+
+    subgraph Result
+        R["appService.references = {<br/>  service_plan_id: plan-node-id<br/>}"]
+    end
+
     Diagram --> ConnectionRule --> Result
 ```
 
 When an edge is created, the matching `ConnectionRule` determines which property on which side gets set as a reference.
+
+### Source 3: Property-Based References
+
+Some associations are configured via the property sidebar instead of edges. The resource schema declares a `reference` property type with `referenceTargetTypes`, and the user selects the target from a dropdown. Values are stored directly in `node.data.references` and flow through to HCL generators automatically.
+
+Example: NSG association on Subnet/VM uses `nsg_id` reference property with a `visibleWhen` conditional toggle, instead of handles + connection rules.
 
 ### Step 2: Reference Resolution in Generators
 

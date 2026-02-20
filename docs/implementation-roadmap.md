@@ -545,11 +545,10 @@ gantt
    - Resource Group: removed `resources-out` handle
    - Removed containment rules from both plugin connection rule files
 
-4. **What stayed**: `canBeChildOf` (drag-drop validation), `isContainer` (rendering), association edges (NSG↔Subnet, NSG↔VM), association handles (`nsg-in`, `nsg-out`)
+4. **What stayed**: `canBeChildOf` (drag-drop validation), `isContainer` (rendering)
 
 ### Verification
 - Containment works via visual nesting — no edges needed
-- Association edges (NSG) still work with handles
 - HCL generation produces correct parent references from `parentId`
 
 ---
@@ -634,105 +633,249 @@ gantt
 - Multiple outputs from same source to same Key Vault → unique edges, all listed in sidebar
 - Select Key Vault → "Connected Secrets" section shows all bindings with disconnect buttons
 - Generate HCL → each binding produces a separate `azurerm_key_vault_secret` resource
-- Existing static handles (NSG→Subnet, Plan→App Service) work unchanged
+- Existing static handles (Plan→App Service) work unchanged
 
 ---
 
-## Phase 16: Azure Subscription Resource + Variable Management UI
+## Phase 15.5: NSG Reference Properties ✅
+
+**Goal**: Replace edge-based NSG associations (handles + connection rules) with property-based references — a boolean toggle + dropdown on Subnet/VM to select an NSG. Reduces visual clutter and is more intuitive.
+
+### What Was Implemented
+
+1. **`visibleWhen` conditional visibility in PropertyRenderer**
+   - Evaluates `truthy`, `falsy`, `eq`, `neq`, `in`, `notIn` operators
+   - Properties with unsatisfied `visibleWhen` conditions are hidden from the form
+
+2. **`reference` property type rendering in PropertyRenderer**
+   - New props: `references`, `diagramNodes`, `onReferenceChange`
+   - Renders a `<select>` dropdown filtered by `referenceTargetTypes`
+   - Values stored in `node.data.references` (not `properties`), flowing automatically through `diagram-converter.ts` to HCL generators
+
+3. **PropertiesPanel wiring**
+   - `onReferenceChange` updates `node.data.references`
+   - `diagramNodes` built from all diagram nodes (excluding selected), mapped to `{id, typeId, label}`
+
+4. **Schema changes**
+   - Subnet: added `nsg_enabled` (boolean) + `nsg_id` (reference with `visibleWhen: { field: 'nsg_enabled', operator: 'truthy' }`) in Security group; removed `nsg-in` handle
+   - VM: same pattern — `nsg_enabled` + `nsg_id` properties; removed `nsg-in` handle
+   - NSG: removed `nsg-out` handle → `handles: []`
+
+5. **Connection rules removed**
+   - Networking plugin: `connectionRules = []` (NSG→Subnet rule removed)
+   - Compute plugin: `connectionRules = []` (NSG→VM rule removed)
+
+6. **HCL generators updated**
+   - Subnet: emits `azurerm_subnet_network_security_group_association` when `references['nsg_id']` exists
+   - VM: emits `azurerm_network_interface_security_group_association` when `references['nsg_id']` exists
+
+7. **Stale reference cleanup**
+   - `removeNode()` and `removeSelectedNodes()` clean up dangling references pointing to deleted nodes
+
+8. **NSG badge on nodes**
+   - `ContainerResourceNode` and `DefaultResourceNode` show the Azure NSG icon (from registry) when `data.references['nsg_id']` is set
+   - Positioned in the badge area alongside the deployment status dot
+
+### Verification
+- Select a Subnet → toggle NSG checkbox → dropdown appears with available NSGs
+- Select an NSG → shield icon appears on subnet header
+- Same toggle/dropdown works on VM
+- Generate Terraform → association blocks appear
+- Delete the NSG node → references cleaned up, badges disappear
+- No more NSG handles or edge connections available
+
+---
+
+## Phase 16: Azure Subscription Resource + Variable Management UI ✅
 
 **Goal**: Add the subscription-level container and expose Terraform variable management in the UI.
 
-### Tasks
+### What Was Implemented
 
-1. **Azure Subscription component**
-   - New resource type: `azurerm/core/subscription` in the compute plugin (or a new `plugin-azure-core`)
-   - Container node that wraps Resource Groups
+1. **Azure Subscription component** (`azurerm/core/subscription`)
+   - Container node in compute plugin that wraps Resource Groups
    - Schema properties: `subscription_id`, `display_name`, `tenant_id`
-   - HCL generator: configures the `azurerm` provider block's `subscription_id`
+   - HCL generator configures the `azurerm` provider block's `subscription_id`
    - Container styling: outermost dashed border, Azure blue header
-   - `canBeChildOf: []` (top-level only), Resource Group gets `canBeChildOf: ['azurerm/core/subscription']`
-   - Palette placement: top of the "Core" category
+   - `canBeChildOf: []` (top-level only), Resource Group uses `canBeChildOf: ['azurerm/core/subscription']`
 
-2. **Terraform variable management UI**
-   - **Variables panel**: new sidebar tab or section showing all variables from `projectConfig`
-   - Display variables extracted from the HCL pipeline (`VariableCollector` output)
-   - Show each variable's name, type, description, default value, and whether it's set
-   - Highlight **missing required variables** (no default, no value set) with red warning
-   - Inline editing: click a variable value to set/change it
-   - Variables are persisted in `terrastudio.json` → `projectConfig.variableValues`
-   - Pre-apply check: if missing required variables, show a warning dialog before `terraform apply`
+2. **Terraform variable management UI** (`ProjectConfigPanel.svelte`)
+   - Variables section shows collected Terraform variables after HCL generation
+   - Displays variable name, type badge, description, and default values
+   - Input fields for setting variable values (required variables highlighted with orange border)
+   - Debounced variable value changes persisted to project config
+   - Variables mapped to `terraform.tfvars` generation
 
-3. **Project config UI**
-   - Surface existing `projectConfig` fields (location, resource group name, common tags) in a settings dialog or panel
-   - Toggle `locationAsVariable` / `resourceGroupAsVariable` checkboxes
-   - Edit common tags as key-value pairs
-
-### Verification
-- Drag Subscription onto canvas → wraps Resource Groups
-- HCL generates correct `provider "azurerm"` block with subscription_id
-- Variables panel shows all extracted variables with their status
-- Missing required variables highlighted in red
-- Set a variable value → reflected in generated `terraform.tfvars`
-- Pre-apply warning when required variables are unset
+3. **Project config UI** (`ProjectConfigPanel.svelte`)
+   - Common Tags section: add/remove tags applied to all resources supporting tags
+   - Theme toggle (dark/light) with palette support
+   - Integrates with project store for persistence
 
 ---
 
-## Phase 17: Networking Intelligence + Azure Name Validation
+## Phase 17: Networking Intelligence + Azure Name Validation (Partial ✅)
 
 **Goal**: Auto-populate subnet CIDR ranges based on VNet address space, and optionally validate resource name availability against Azure APIs during diagram creation.
 
-### Tasks
+### What Was Implemented
 
-1. **Auto-populate subnet CIDR ranges**
-   - When a subnet is added to a VNet, auto-calculate the next available CIDR block
-   - Parse the VNet's `address_space` (e.g. `10.0.0.0/16`) to determine the available range
-   - First subnet: `10.0.1.0/24`, second: `10.0.2.0/24`, etc. (standard /24 subnets within the VNet's space)
-   - Skip ranges already assigned to existing sibling subnets
-   - Populate the subnet's `address_prefixes` property automatically on drop
-   - Allow manual override — auto-value is a default, not enforced
-   - Add a CIDR utility module to `@terrastudio/core`: `parseSubnet()`, `nextAvailableSubnet()`, `isOverlapping()`
-   - Visual feedback: show the auto-assigned CIDR in the subnet node label (e.g. "subnet-1 (10.0.1.0/24)")
+1. **Auto-populate subnet CIDR ranges** ✅
+   - CIDR utility module in `@terrastudio/core`: `nextAvailableCidr()`, `cidrsOverlap()`, `cidrContains()`
+   - When a subnet is dropped into a VNet, auto-calculates the next available `/24` block
+   - Skips ranges already assigned to existing sibling subnets
+   - Comprehensive test coverage in `cidr-utils.test.ts`
 
-2. **Azure resource name availability validation**
-   - Add a settings toggle: "Validate name availability" (off by default — requires Azure CLI / credentials)
-   - When enabled, validate resource names against Azure's name availability APIs:
-     - Storage accounts: `az storage account check-name`
-     - Resource groups: check uniqueness within subscription
-     - VNets, VMs: check uniqueness within resource group
-   - Validation runs on debounce (500ms) when the name property is edited in the sidebar
-   - Show inline validation status next to the name field: green check (available), red X (taken), grey spinner (checking)
-   - Rust backend: new command `check_name_availability` that shells out to `az` CLI or calls Azure REST API
-   - Graceful degradation: if Azure CLI not available or not logged in, silently skip with no error
+2. **Subnet CIDR overlap detection** ✅
+   - `validateNetworkTopology()` in `core/src/lib/validation/network-validator.ts`
+   - Validates subnet CIDRs fall within parent VNet address space
+   - Detects overlapping CIDRs between sibling subnets
+   - Integrated into diagram validation pipeline
 
-3. **Subnet CIDR overlap detection**
-   - When editing a subnet's CIDR, validate it doesn't overlap with sibling subnets in the same VNet
-   - Show a warning badge on the subnet node if overlap detected
-   - Add to the existing `diagram-validator.ts` validation rules
+### Not Yet Implemented
 
-### Verification
-- Add a VNet with `10.0.0.0/16` → add 3 subnets → CIDRs auto-assigned as `10.0.1.0/24`, `10.0.2.0/24`, `10.0.3.0/24`
-- Delete the second subnet → add a new one → gets `10.0.2.0/24` (fills the gap)
-- Manually change a subnet CIDR to overlap another → warning shown
-- Enable name validation → type a storage account name → see green/red indicator
-- Name validation disabled by default, no errors when Azure CLI not present
+3. **Azure resource name availability validation** ❌
+   - Requires Azure REST API or `az` CLI integration via Rust backend
+   - Would need a settings toggle, debounced validation, and inline status indicators
 
 ---
 
-## Future Phases (Post-MVP)
+## Previously Future — Now Implemented ✅
 
-These are not part of the initial implementation but are natural extensions:
+These items were originally in "Future Phases" but have been completed:
 
-- **Import existing Terraform**: Parse `terraform show -json` from existing infrastructure into a diagram
-- **More Azure plugins**: Database (Azure SQL, Cosmos DB), Containers (AKS), Serverless (Functions, Logic Apps), Monitoring (App Insights, Log Analytics)
-- **Storage plugin expansion**: Blob containers, file shares, queues, tables as child resources of Storage Account
-- **AWS/GCP plugins**: Validate the multi-provider architecture
-- **Auto-layout**: dagre/elkjs for automatic node positioning
-- **Template gallery**: Pre-built architectures (hub-spoke, 3-tier web app, microservices)
-- **Cost estimation**: Query Azure pricing API based on diagram resources
-- **Module support**: Group resources into reusable Terraform modules
-- **Dark/light mode toggle**: Tailwind theme switching with persisted preference
-- **SVG export**: Vector export for high-quality diagrams in documentation
+- **Auto-layout** ✅ — `dagre` hierarchical layout in `layout-service.ts` with TB/BT/LR/RL directions, bottom-up container processing
+- **Dark/light mode toggle** ✅ — Theme toggle in `AppSettingsPanel.svelte`, persisted to localStorage, palette support via `applyPalette()`
+- **SVG export** ✅ — SVG, PNG, and clipboard export in `export-service.ts` using `html-to-image`
+
+---
+
+## Phase 18: Template Gallery
+
+**Goal**: Pre-built architecture templates users can start from instead of a blank canvas.
+
+### Tasks
+
+1. **Template data model**
+   - Define a `DiagramTemplate` interface: name, description, thumbnail, category, serialized diagram state
+   - Ship built-in templates: hub-spoke networking, 3-tier web app, microservices with Key Vault
+
+2. **Template gallery UI**
+   - Welcome screen shows templates alongside recent projects
+   - Template browser with category filtering and preview thumbnails
+   - "Use Template" loads the diagram and opens the canvas
+
+3. **Community/custom templates**
+   - Export current diagram as a reusable template (save to `.terrastudio-template.json`)
+   - Import templates from file
+
+---
+
+## Phase 19: Import Existing Terraform
+
+**Goal**: Parse existing Terraform state into a visual diagram for brownfield adoption.
+
+### Tasks
+
+1. **State parser**
+   - Parse `terraform show -json` output into diagram nodes
+   - Map Terraform resource types back to `ResourceTypeId` via plugin registry
+   - Reconstruct containment hierarchy (RG → VNet → Subnet) from resource references
+
+2. **Import UI**
+   - "Import from State" action in File menu
+   - Point to an existing `.tfstate` or Terraform directory
+   - Preview imported resources before committing to canvas
+   - Auto-layout imported nodes using dagre
+
+3. **Reference reconstruction**
+   - Detect cross-resource references in state and create edges/property references
+   - Handle resources not yet supported by plugins (render as generic nodes)
+
+---
+
+## Phase 20: Expanded Azure Plugins
+
+**Goal**: Broaden Azure resource coverage beyond networking, compute, and storage.
+
+### Tasks
+
+1. **Database plugin** (`@terrastudio/plugin-azure-database`)
+   - Azure SQL Server + Database, Cosmos DB Account + Database + Container
+   - Connection rules: App Service → SQL Database, Function → Cosmos DB
+
+2. **Containers plugin** (`@terrastudio/plugin-azure-containers`)
+   - AKS Cluster, Container Registry, Container Instance
+   - AKS generates complex HCL (node pools, network profiles)
+
+3. **Serverless plugin** (`@terrastudio/plugin-azure-serverless`)
+   - Azure Functions, Logic Apps
+   - Functions reference App Service Plan (consumption/premium)
+
+4. **Monitoring plugin** (`@terrastudio/plugin-azure-monitoring`)
+   - Application Insights, Log Analytics Workspace
+   - Most resources can reference a Log Analytics Workspace
+
+---
+
+## Phase 21: Cost Estimation
+
+**Goal**: Show estimated monthly costs for the designed infrastructure.
+
+### Tasks
+
+1. **Azure pricing integration**
+   - Query Azure Retail Prices API based on resource types and SKUs
+   - Cache pricing data locally with TTL
+   - Map schema property values (e.g., VM size, storage tier) to pricing dimensions
+
+2. **Cost display UI**
+   - Per-node cost badge (optional, toggle in settings)
+   - Total estimated monthly cost in the toolbar
+   - Cost breakdown panel grouped by resource type
+
+---
+
+## Phase 22: Module Support
+
+**Goal**: Group resources into reusable Terraform modules.
+
+### Tasks
+
+1. **Module abstraction**
+   - Select multiple resources → "Create Module"
+   - Module becomes a collapsible group on the canvas
+   - Auto-extract input variables from cross-module references
+   - Generate `modules/` directory with self-contained `.tf` files
+
+2. **Module reuse**
+   - Instantiate a module multiple times with different variable values
+   - Module instances rendered as single nodes with input/output handles
+
+---
+
+## Phase 23: Multi-Provider (AWS/GCP)
+
+**Goal**: Validate the multi-provider architecture with at least one non-Azure plugin.
+
+### Tasks
+
+1. **AWS VPC plugin** (`@terrastudio/plugin-aws-vpc`)
+   - VPC, Subnet, Security Group, Internet Gateway
+   - Validates that the plugin contract works for non-Azure providers
+
+2. **Cross-provider diagrams**
+   - Mixed Azure + AWS diagrams generate separate provider blocks
+   - No cross-provider connection rules by default
+
+---
+
+## Future Ideas
+
 - **Plugin doc sections**: Plugins contribute custom sections to exported architecture docs
+- **Azure resource name availability validation**: Real-time name validation via Azure REST API
+- **Drift detection**: Compare deployed state to diagram and highlight differences
+- **Git integration**: Version control diagram files with diff visualization
+- **Collaboration**: Real-time multi-user editing via CRDT
 
 ## Related Docs
 

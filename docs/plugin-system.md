@@ -89,17 +89,19 @@ Plugins define which resource types can connect via edges:
 ```typescript
 const rules: ConnectionRule[] = [
   {
-    sourceType: 'azurerm/networking/virtual_network',
-    sourceHandle: 'subnet-out',
-    targetType: 'azurerm/networking/subnet',
-    targetHandle: 'vnet-in',
-    createsReference: { side: 'target', propertyKey: 'virtual_network_name' },
-    label: 'Contains subnet',
+    sourceType: 'azurerm/compute/app_service_plan',
+    sourceHandle: 'apps-out',
+    targetType: 'azurerm/compute/app_service',
+    targetHandle: 'plan-in',
+    createsReference: { side: 'target', propertyKey: 'service_plan_id' },
+    label: 'Hosts app',
   },
 ];
 ```
 
-Connection rules can reference resource types from **other plugins** (e.g., a compute plugin's VM connecting to a networking plugin's subnet). The `onAllPluginsRegistered` hook lets plugins define cross-plugin connections after all types are available.
+Connection rules can reference resource types from **other plugins**. The `onAllPluginsRegistered` hook lets plugins define cross-plugin connections after all types are available.
+
+**Alternative: Property-based references**. Some associations are better expressed as a property on the target resource (e.g., NSG on Subnet/VM). Instead of handles + connection rules, declare a `reference` property type with `referenceTargetTypes` and optional `visibleWhen` conditional visibility. The user selects the target from a dropdown in the sidebar, and the value is stored in `node.data.references`, flowing automatically to HCL generators. Use this when the relationship is 1:1 and doesn't need a visible edge on the diagram.
 
 ### 4. Palette Categories
 
@@ -248,7 +250,7 @@ const plugins = [...existingPlugins, myCloudPlugin];
 2. Define `schema.ts`, `node.svelte`, `hcl-generator.ts`, `icon.ts`
 3. Create `index.ts` that bundles them into a `ResourceTypeRegistration`
 4. Add the registration to the plugin's `resourceTypes` map in `index.ts`
-5. Add any new connection rules to `connections/rules.ts`
+5. Add connection rules to `connections/rules.ts` (for edge-based associations) or add `reference` properties to the schema (for property-based associations)
 
 No core changes needed. The registry picks up the new type automatically.
 

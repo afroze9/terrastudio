@@ -158,6 +158,7 @@ flowchart LR
 | Plugin loading | Static imports | Vite must compile Svelte at build time; dynamic import of .svelte files is problematic |
 | Node type key | Full ResourceTypeId | e.g., `"azurerm/networking/virtual_network"` - avoids collisions across providers |
 | State parsing | `terraform show -json` | Official stable API; never parse .tfstate directly (internal format) |
+| NSG association | Property-based reference (not edges) | Toggle + dropdown on Subnet/VM is more intuitive than edge connections; reduces visual clutter; HCL emits association resources automatically |
 
 ## Related Docs
 

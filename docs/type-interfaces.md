@@ -85,7 +85,9 @@ interface PropertySchema {
   // For 'select' / 'multiselect'
   readonly options?: ReadonlyArray<{ label: string; value: string }>;
 
-  // For 'reference': which resource types can be referenced
+  // For 'reference': which resource types can be referenced.
+  // Values are stored in node.data.references (not properties) and flow
+  // automatically through diagram-converter to HCL generators.
   readonly referenceTargetTypes?: ReadonlyArray<ResourceTypeId>;
 
   // For 'array': schema of each item
@@ -101,7 +103,10 @@ interface PropertySchema {
   readonly group?: string;               // Collapsible group heading
   readonly order?: number;               // Sort order within group
 
-  // Conditional visibility
+  // Conditional visibility — hides this property unless the condition is met.
+  // `field` references another property key; `operator` compares its value.
+  // Example: show NSG dropdown only when nsg_enabled is true:
+  //   visibleWhen: { field: 'nsg_enabled', operator: 'truthy' }
   readonly visibleWhen?: {
     field: string;
     operator: 'eq' | 'neq' | 'in' | 'notIn' | 'truthy' | 'falsy';
@@ -126,10 +131,11 @@ Connection points on a node. Determines which edges can attach.
 
 ```typescript
 interface HandleDefinition {
-  readonly id: string;                   // "subnet-out"
+  readonly id: string;                   // "plan-out"
   readonly type: 'source' | 'target';
   readonly position: 'top' | 'bottom' | 'left' | 'right';
   readonly acceptsTypes?: ReadonlyArray<ResourceTypeId>;
+  readonly acceptsOutputs?: boolean;     // Accept connections from any dynamic out-* handle
   readonly label: string;                // Shown on hover
   readonly maxConnections?: number;      // undefined = unlimited
 }
