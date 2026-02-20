@@ -21,17 +21,33 @@
 </script>
 
 <nav class="activity-bar">
-  {#each views as view (view.id)}
+  <div class="views-top">
+    {#each views as view (view.id)}
+      <button
+        class="activity-btn"
+        class:active={ui.activeView === view.id && ui.showSidePanel}
+        onclick={() => ui.setActiveView(view.id)}
+        title={view.label}
+        aria-label={view.label}
+      >
+        {@html view.icon}
+      </button>
+    {/each}
+  </div>
+  <div class="views-bottom">
     <button
       class="activity-btn"
-      class:active={ui.activeView === view.id && ui.showSidePanel}
-      onclick={() => ui.setActiveView(view.id)}
-      title={view.label}
-      aria-label={view.label}
+      class:active={ui.activeView === 'app-settings' && ui.showSidePanel}
+      onclick={() => ui.setActiveView('app-settings')}
+      title="Settings"
+      aria-label="Settings"
     >
-      {@html view.icon}
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1.08-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1.08 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+      </svg>
     </button>
-  {/each}
+  </div>
 </nav>
 
 <style>
@@ -43,8 +59,20 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: space-between;
     padding-top: 4px;
+    padding-bottom: 4px;
     flex-shrink: 0;
+  }
+  .views-top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .views-bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
   .activity-btn {
     width: 48px;

@@ -339,6 +339,7 @@
     fitView
     minZoom={0.1}
     maxZoom={2}
+    snapGrid={ui.snapToGrid ? [ui.gridSize, ui.gridSize] : undefined}
     {isValidConnection}
     onconnect={onConnect}
     ondelete={onDelete}
@@ -349,7 +350,7 @@
   >
     <Controls />
     <MiniMap />
-    <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
+    <Background variant={BackgroundVariant.Dots} gap={ui.gridSize} size={1} />
   </SvelteFlow>
 </div>
 

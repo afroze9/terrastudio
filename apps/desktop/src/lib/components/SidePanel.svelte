@@ -4,6 +4,7 @@
   import ResourcePalette from './ResourcePalette.svelte';
   import TerraformSidebar from './TerraformSidebar.svelte';
   import ProjectConfigPanel from './ProjectConfigPanel.svelte';
+  import AppSettingsPanel from './AppSettingsPanel.svelte';
 
   const categoryIds = registry.getPaletteCategories().map((c) => c.id);
 
@@ -14,6 +15,7 @@
       case 'explorer': return 'RESOURCES';
       case 'terraform': return 'TERRAFORM';
       case 'settings': return 'PROJECT';
+      case 'app-settings': return 'SETTINGS';
       default: return '';
     }
   });
@@ -77,6 +79,8 @@
       <TerraformSidebar />
     {:else if ui.activeView === 'settings'}
       <ProjectConfigPanel />
+    {:else if ui.activeView === 'app-settings'}
+      <AppSettingsPanel />
     {/if}
   </div>
   <!-- svelte-ignore a11y_no_static_element_interactions -->

@@ -9,9 +9,17 @@ export const storageAccountSchema: ResourceSchema = {
   terraformType: 'azurerm_storage_account',
   supportsTags: true,
   requiresResourceGroup: true,
+  isContainer: true,
   canBeChildOf: [
     'azurerm/core/resource_group',
   ],
+  containerStyle: {
+    borderColor: '#37c2b1',
+    borderStyle: 'dashed',
+    backgroundColor: 'rgba(55, 194, 177, 0.06)',
+    headerColor: '#37c2b1',
+    borderRadius: 8,
+  },
 
   properties: [
     {

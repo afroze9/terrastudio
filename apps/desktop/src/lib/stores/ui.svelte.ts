@@ -2,7 +2,7 @@ import type { PaletteId } from '$lib/themes/types';
 import { applyPalette, getPalette } from '$lib/themes/theme-engine';
 import { DEFAULT_PALETTE_ID } from '$lib/themes/palettes';
 
-export type SidebarView = 'explorer' | 'terraform' | 'settings';
+export type SidebarView = 'explorer' | 'terraform' | 'settings' | 'app-settings';
 export type EdgeStyle = 'default' | 'smoothstep' | 'step' | 'straight';
 export type Theme = 'dark' | 'light';
 
@@ -39,7 +39,11 @@ class UiStore {
   fitView: (() => void) | null = $state(null);
 
   // --- Edge style ---
-  edgeType = $state<EdgeStyle>('default');
+  edgeType = $state<EdgeStyle>((typeof localStorage !== 'undefined' && localStorage.getItem('terrastudio-edge-type') as EdgeStyle) || 'default');
+
+  // --- Grid & Snap ---
+  snapToGrid = $state(typeof localStorage !== 'undefined' && localStorage.getItem('terrastudio-snap') === 'true');
+  gridSize = $state(typeof localStorage !== 'undefined' && localStorage.getItem('terrastudio-grid-size') ? Number(localStorage.getItem('terrastudio-grid-size')) : 20);
 
   // --- Theme ---
   theme = $state<Theme>((typeof localStorage !== 'undefined' && localStorage.getItem('terrastudio-theme') as Theme) || 'dark');
@@ -105,6 +109,24 @@ class UiStore {
   /** Toggle terminal visibility */
   toggleTerminal() {
     this.showTerminal = !this.showTerminal;
+  }
+
+  /** Set snap to grid and persist */
+  setSnapToGrid(enabled: boolean) {
+    this.snapToGrid = enabled;
+    localStorage.setItem('terrastudio-snap', String(enabled));
+  }
+
+  /** Set grid size and persist */
+  setGridSize(size: number) {
+    this.gridSize = size;
+    localStorage.setItem('terrastudio-grid-size', String(size));
+  }
+
+  /** Set edge type and persist */
+  setEdgeType(type: EdgeStyle) {
+    this.edgeType = type;
+    localStorage.setItem('terrastudio-edge-type', type);
   }
 
   /** Toggle dark/light theme */

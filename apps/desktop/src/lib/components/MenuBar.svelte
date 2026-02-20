@@ -248,6 +248,10 @@
         <button class="dropdown-item" onclick={() => { close(); ui.setActiveView('settings'); }}>
           <span>Project</span>
         </button>
+        <div class="dropdown-separator"></div>
+        <button class="dropdown-item" onclick={() => { close(); ui.setActiveView('app-settings'); }}>
+          <span>Settings</span>
+        </button>
       </div>
     {/if}
   </div>

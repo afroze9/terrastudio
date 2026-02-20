@@ -1,9 +1,17 @@
 import type { InfraPlugin, ResourceTypeId, ResourceTypeRegistration } from '@terrastudio/types';
 import { storageAccountRegistration } from './resources/storage-account/index.js';
+import { blobContainerRegistration } from './resources/blob-container/index.js';
+import { fileShareRegistration } from './resources/file-share/index.js';
+import { queueRegistration } from './resources/queue/index.js';
+import { tableRegistration } from './resources/table/index.js';
 import { storageConnectionRules } from './connections/rules.js';
 
 const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
   ['azurerm/storage/storage_account', storageAccountRegistration],
+  ['azurerm/storage/blob_container', blobContainerRegistration],
+  ['azurerm/storage/file_share', fileShareRegistration],
+  ['azurerm/storage/queue', queueRegistration],
+  ['azurerm/storage/table', tableRegistration],
 ]);
 
 const plugin: InfraPlugin = {

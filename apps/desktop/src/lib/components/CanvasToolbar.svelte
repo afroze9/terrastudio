@@ -8,6 +8,9 @@
 
   let showLayoutMenu = $state(false);
   let showEdgeMenu = $state(false);
+  let showGridMenu = $state(false);
+
+  const gridSizes = [10, 15, 20, 25, 30, 40, 50];
 
   const layoutOptions: { value: LayoutDirection; label: string; icon: string }[] = [
     { value: 'TB', label: 'Top to Bottom', icon: '↓' },
@@ -31,7 +34,7 @@
 
   function handleEdgeStyle(style: EdgeStyle) {
     showEdgeMenu = false;
-    ui.edgeType = style;
+    ui.setEdgeType(style);
   }
 
   async function handleSave() {
@@ -47,6 +50,7 @@
     if (!target.closest('.toolbar-dropdown-wrapper')) {
       showLayoutMenu = false;
       showEdgeMenu = false;
+      showGridMenu = false;
     }
   }
 </script>
@@ -177,6 +181,53 @@
       </div>
     {/if}
   </div>
+
+  <div class="toolbar-separator"></div>
+
+  <!-- Snap to Grid Toggle -->
+  <button
+    class="toolbar-btn"
+    class:snap-active={ui.snapToGrid}
+    title={ui.snapToGrid ? `Snap to Grid (${ui.gridSize}px) — Click to disable` : 'Snap to Grid — Click to enable'}
+    onclick={() => { ui.setSnapToGrid(!ui.snapToGrid); }}
+  >
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="1" y="1" width="5" height="5" rx="0.5" />
+      <rect x="10" y="1" width="5" height="5" rx="0.5" />
+      <rect x="1" y="10" width="5" height="5" rx="0.5" />
+      <rect x="10" y="10" width="5" height="5" rx="0.5" />
+      <line x1="8" y1="1" x2="8" y2="15" stroke-dasharray="2 2" opacity="0.4" />
+      <line x1="1" y1="8" x2="15" y2="8" stroke-dasharray="2 2" opacity="0.4" />
+    </svg>
+  </button>
+
+  <!-- Grid Size -->
+  <div class="toolbar-dropdown-wrapper">
+    <button
+      class="toolbar-btn"
+      class:active={showGridMenu}
+      title="Grid Size"
+      onclick={(e) => { e.stopPropagation(); showLayoutMenu = false; showEdgeMenu = false; showGridMenu = !showGridMenu; }}
+    >
+      <span class="grid-size-label">{ui.gridSize}</span>
+    </button>
+    {#if showGridMenu}
+      <div class="toolbar-dropdown">
+        {#each gridSizes as size (size)}
+          <button
+            class="toolbar-dropdown-item"
+            class:selected={ui.gridSize === size}
+            onclick={() => { ui.setGridSize(size); showGridMenu = false; }}
+          >
+            <span>{size}px</span>
+            {#if ui.gridSize === size}
+              <span class="check">&#10003;</span>
+            {/if}
+          </button>
+        {/each}
+      </div>
+    {/if}
+  </div>
 </div>
 
 <style>
@@ -288,5 +339,21 @@
 
   .toolbar-dropdown-item:hover .check {
     color: white;
+  }
+
+  .toolbar-btn.snap-active {
+    background: var(--color-accent);
+    color: white;
+  }
+
+  .toolbar-btn.snap-active:hover {
+    opacity: 0.9;
+  }
+
+  .grid-size-label {
+    font-size: 10px;
+    font-weight: 600;
+    min-width: 16px;
+    text-align: center;
   }
 </style>

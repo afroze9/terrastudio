@@ -1,0 +1,51 @@
+import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+
+export const fileShareHclGenerator: HclGenerator = {
+  typeId: 'azurerm/storage/file_share',
+
+  generate(resource: ResourceInstance, context: HclGenerationContext): HclBlock[] {
+    const props = resource.properties;
+    const name = props['name'] as string;
+    const quota = (props['quota'] as number) ?? 50;
+    const accessTier = props['access_tier'] as string | undefined;
+    const protocol = props['enabled_protocol'] as string | undefined;
+
+    const saRef = resource.references['storage_account_name'];
+    const saNameExpr = saRef
+      ? context.getAttributeReference(saRef, 'name')
+      : '"<storage-account-name>"';
+
+    const dependsOn: string[] = [];
+    if (saRef) {
+      const saAddr = context.getTerraformAddress(saRef);
+      if (saAddr) dependsOn.push(saAddr);
+    }
+
+    const lines: string[] = [
+      `resource "azurerm_storage_share" "${resource.terraformName}" {`,
+      `  name                 = "${name}"`,
+      `  storage_account_name = ${saNameExpr}`,
+      `  quota                = ${quota}`,
+    ];
+
+    if (accessTier && accessTier !== 'Hot') {
+      lines.push(`  access_tier          = "${accessTier}"`);
+    }
+
+    if (protocol && protocol !== 'SMB') {
+      lines.push(`  enabled_protocol     = "${protocol}"`);
+    }
+
+    lines.push('}');
+
+    return [
+      {
+        blockType: 'resource',
+        terraformType: 'azurerm_storage_share',
+        name: resource.terraformName,
+        content: lines.join('\n'),
+        dependsOn,
+      },
+    ];
+  },
+};
