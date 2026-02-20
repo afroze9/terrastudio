@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.2](https://github.com/afroze9/terrastudio/compare/v0.1.1...v0.1.2) (2026-02-20)
+
+
+### Features
+
+* replace NSG edge connections with property-based reference system ([f8ca2a2](https://github.com/afroze9/terrastudio/commit/f8ca2a2e037e82486d0b514da74d5b0b77a0e00f))
+* restyle container nodes and add drag-drop containment validation ([68aba0d](https://github.com/afroze9/terrastudio/commit/68aba0d21c36d034d3340f109d42b0ef5a4ff6a4))
+
 ## [0.1.1](https://github.com/afroze9/terrastudio/compare/v0.1.0...v0.1.1) (2026-02-20)
 
 
