@@ -1,4 +1,4 @@
-import type { ResourceInstance, ConnectionRule, ResourceSchema } from '@terrastudio/types';
+import type { ResourceInstance, ConnectionRule, ResourceSchema, ResourceTypeId } from '@terrastudio/types';
 import type { DiagramNode, DiagramEdge } from '$lib/stores/diagram.svelte';
 
 /**
@@ -13,7 +13,7 @@ export function convertToResourceInstances(
   nodes: DiagramNode[],
   edges: DiagramEdge[],
   connectionRules: ConnectionRule[],
-  getSchema: (typeId: string) => ResourceSchema | undefined,
+  getSchema: (typeId: ResourceTypeId) => ResourceSchema | undefined,
 ): ResourceInstance[] {
   const instances: ResourceInstance[] = [];
 
@@ -78,7 +78,7 @@ function deriveParentReferences(
   childNode: DiagramNode,
   allNodes: DiagramNode[],
   references: Record<string, string>,
-  getSchema: (typeId: string) => ResourceSchema | undefined,
+  getSchema: (typeId: ResourceTypeId) => ResourceSchema | undefined,
 ): void {
   const parentNode = allNodes.find((n) => n.id === childNode.parentId);
   if (!parentNode) return;
