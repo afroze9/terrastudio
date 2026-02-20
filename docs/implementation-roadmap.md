@@ -13,6 +13,7 @@ gantt
     title TerraStudio Implementation Phases
     dateFormat YYYY-MM-DD
     axisFormat %b '%y
+    tickInterval 1month
 
     section Foundation
     Phase 1 Monorepo + Types         :done, p1, 2025-08-10, 2025-08-16
