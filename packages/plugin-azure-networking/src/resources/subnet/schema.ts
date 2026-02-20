@@ -71,21 +71,9 @@ export const subnetSchema: ResourceSchema = {
     },
   ],
 
+  parentReference: { propertyKey: 'virtual_network_name' },
+
   handles: [
-    {
-      id: 'vnet-in',
-      type: 'target',
-      position: 'top',
-      label: 'Virtual Network',
-      acceptsTypes: ['azurerm/networking/virtual_network'],
-      maxConnections: 1,
-    },
-    {
-      id: 'resource-out',
-      type: 'source',
-      position: 'bottom',
-      label: 'Resources',
-    },
     {
       id: 'nsg-in',
       type: 'target',

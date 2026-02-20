@@ -57,12 +57,5 @@ export const resourceGroupSchema: ResourceSchema = {
     },
   ],
 
-  handles: [
-    {
-      id: 'resources-out',
-      type: 'source',
-      position: 'bottom',
-      label: 'Resources',
-    },
-  ],
+  handles: [],
 };

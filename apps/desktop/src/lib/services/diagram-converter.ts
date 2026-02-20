@@ -1,4 +1,4 @@
-import type { ResourceInstance, ConnectionRule, ResourceTypeId } from '@terrastudio/types';
+import type { ResourceInstance, ConnectionRule, ResourceSchema } from '@terrastudio/types';
 import type { DiagramNode, DiagramEdge } from '$lib/stores/diagram.svelte';
 
 /**
@@ -7,12 +7,13 @@ import type { DiagramNode, DiagramEdge } from '$lib/stores/diagram.svelte';
  * Responsibilities:
  * 1. Map DiagramNode fields to ResourceInstance fields
  * 2. Derive `references` from edges + connection rules
- * 3. Add implicit parent references from SvelteFlow parentId relationships
+ * 3. Add implicit parent references from schema parentReference + SvelteFlow parentId
  */
 export function convertToResourceInstances(
   nodes: DiagramNode[],
   edges: DiagramEdge[],
   connectionRules: ConnectionRule[],
+  getSchema: (typeId: string) => ResourceSchema | undefined,
 ): ResourceInstance[] {
   const instances: ResourceInstance[] = [];
 
@@ -32,9 +33,9 @@ export function convertToResourceInstances(
       }
     }
 
-    // Derive parent container references from SvelteFlow parentId
+    // Derive parent container references from schema parentReference + parentId
     if (node.parentId) {
-      deriveParentReferences(node, nodes, references, connectionRules);
+      deriveParentReferences(node, nodes, references, getSchema);
     }
 
     instances.push({
@@ -69,28 +70,24 @@ function findMatchingRule(
 
 /**
  * For parent-child container relationships (SvelteFlow parentId),
- * derive implicit references. For example, a Subnet placed inside
- * a VNet container implies a virtual_network_name reference.
+ * derive implicit references using the schema's parentReference field.
+ * For example, a Subnet placed inside a VNet container has
+ * parentReference: { propertyKey: 'virtual_network_name' }.
  */
 function deriveParentReferences(
   childNode: DiagramNode,
   allNodes: DiagramNode[],
   references: Record<string, string>,
-  rules: ConnectionRule[],
+  getSchema: (typeId: string) => ResourceSchema | undefined,
 ): void {
   const parentNode = allNodes.find((n) => n.id === childNode.parentId);
   if (!parentNode) return;
 
-  for (const rule of rules) {
-    if (
-      rule.sourceType === (parentNode.data.typeId as ResourceTypeId) &&
-      rule.targetType === (childNode.data.typeId as ResourceTypeId) &&
-      rule.createsReference?.side === 'target'
-    ) {
-      // Only set if not already explicitly set via an edge
-      if (!references[rule.createsReference.propertyKey]) {
-        references[rule.createsReference.propertyKey] = parentNode.id;
-      }
+  const childSchema = getSchema(childNode.data.typeId);
+  if (childSchema?.parentReference) {
+    // Only set if not already explicitly set
+    if (!references[childSchema.parentReference.propertyKey]) {
+      references[childSchema.parentReference.propertyKey] = parentNode.id;
     }
   }
 }

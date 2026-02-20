@@ -124,15 +124,9 @@ export const vmSchema: ResourceSchema = {
     },
   ],
 
+  parentReference: { propertyKey: 'subnet_id' },
+
   handles: [
-    {
-      id: 'subnet-in',
-      type: 'target',
-      position: 'top',
-      label: 'Subnet',
-      acceptsTypes: ['azurerm/networking/subnet'],
-      maxConnections: 1,
-    },
     {
       id: 'nsg-in',
       type: 'target',

@@ -91,4 +91,8 @@ export interface ResourceSchema {
   readonly canBeChildOf?: ReadonlyArray<ResourceTypeId>;
   /** Visual style for container nodes; read by ContainerResourceNode */
   readonly containerStyle?: ContainerStyle;
+  /** When nested inside a parent container, auto-set this reference for HCL generation */
+  readonly parentReference?: {
+    readonly propertyKey: string;
+  };
 }

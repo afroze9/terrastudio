@@ -72,12 +72,5 @@ export const vnetSchema: ResourceSchema = {
     },
   ],
 
-  handles: [
-    {
-      id: 'subnet-out',
-      type: 'source',
-      position: 'bottom',
-      label: 'Subnets',
-    },
-  ],
+  handles: [],
 };

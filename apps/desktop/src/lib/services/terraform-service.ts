@@ -38,6 +38,7 @@ export async function generateAndWrite(): Promise<void> {
       diagram.nodes,
       diagram.edges,
       connectionRules,
+      (typeId) => registry.getResourceSchema(typeId),
     );
 
     // Validate diagram before generation
