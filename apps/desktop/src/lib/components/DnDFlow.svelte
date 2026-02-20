@@ -12,7 +12,7 @@
   } from '@xyflow/svelte';
   import { diagram, type DiagramNode } from '$lib/stores/diagram.svelte';
   import { registry, edgeValidator } from '$lib/bootstrap';
-  import { createNodeData, generateNodeId } from '@terrastudio/core';
+  import { createNodeData, generateNodeId, nextAvailableCidr } from '@terrastudio/core';
   import type { ResourceNodeComponent, ResourceTypeId } from '@terrastudio/types';
   import type { Action } from 'svelte/action';
 
@@ -83,6 +83,25 @@
     return bestMatch;
   }
 
+  /**
+   * Compute the next available /24 CIDR for a subnet within a VNet.
+   * Returns null if the parent is not a VNet or its address space is empty.
+   */
+  function computeAutoSubnetCidr(parentId: string): string | null {
+    const parentNode = diagram.nodes.find((n) => n.id === parentId);
+    if (!parentNode || parentNode.type !== 'azurerm/networking/virtual_network') return null;
+
+    const addressSpace = parentNode.data.properties?.address_space as string[] | undefined;
+    if (!addressSpace?.length) return null;
+
+    // Collect CIDRs from all existing sibling subnets
+    const usedCidrs = diagram.nodes
+      .filter((n) => n.parentId === parentId && n.type === 'azurerm/networking/subnet')
+      .flatMap((n) => (n.data.properties?.address_prefixes as string[]) ?? []);
+
+    return nextAvailableCidr(addressSpace[0], usedCidrs);
+  }
+
   const dndHandler: Action = (node) => {
     function handleDragOver(event: DragEvent) {
       event.preventDefault();
@@ -111,6 +130,14 @@
 
       // Check if dropped inside a container node
       const parentId = findContainerAtPosition(position.x, position.y, schema.typeId);
+
+      // Auto-assign subnet CIDR when dropped into a VNet
+      if (parentId && schema.typeId === 'azurerm/networking/subnet') {
+        const autoCidr = computeAutoSubnetCidr(parentId);
+        if (autoCidr) {
+          nodeData.properties.address_prefixes = [autoCidr];
+        }
+      }
 
       // Container nodes need explicit dimensions for SvelteFlow parent-child
       const isContainer = schema.isContainer ?? false;
@@ -248,6 +275,15 @@
     // If parent hasn't changed, nothing to do
     if (newParentId === currentParentId) return;
 
+    // Auto-assign subnet CIDR when reparented into a new VNet
+    let updatedProperties: Record<string, unknown> | undefined;
+    if (newParentId && schema.typeId === 'azurerm/networking/subnet') {
+      const autoCidr = computeAutoSubnetCidr(newParentId);
+      if (autoCidr) {
+        updatedProperties = { ...draggedNode.data.properties, address_prefixes: [autoCidr] };
+      }
+    }
+
     diagram.nodes = diagram.nodes.map((n) => {
       if (n.id !== draggedNode.id) return n;
 
@@ -261,6 +297,7 @@
             x: absPos.x - parentAbs.x,
             y: absPos.y - parentAbs.y,
           },
+          ...(updatedProperties ? { data: { ...n.data, properties: updatedProperties } } : {}),
         };
       } else {
         // Moving out of container — position becomes absolute

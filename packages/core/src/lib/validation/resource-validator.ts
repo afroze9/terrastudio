@@ -3,6 +3,7 @@ import type {
   PropertySchema,
   ValidationError,
 } from '@terrastudio/types';
+import { isValidCidr } from '../networking/cidr-utils.js';
 
 /**
  * Validates a single resource instance's properties against its schema.
@@ -42,6 +43,11 @@ function validateProperty(
   // Skip validation if value is empty and not required
   if (value === undefined || value === null || value === '') {
     return errors;
+  }
+
+  // Array item validation (CIDR format, etc.)
+  if (schema.type === 'array') {
+    errors.push(...validateArrayItems(schema, value));
   }
 
   const validation = schema.validation;
@@ -90,6 +96,33 @@ function validateProperty(
         message: `${schema.label} must be at most ${validation.max}`,
         severity: 'error',
       });
+    }
+  }
+
+  return errors;
+}
+
+/**
+ * Validate array items with CIDR type checking.
+ * Called from validateProperty when schema.type === 'array'.
+ */
+function validateArrayItems(
+  schema: PropertySchema,
+  value: unknown,
+): ValidationError[] {
+  const errors: ValidationError[] = [];
+  if (!Array.isArray(value)) return errors;
+
+  if (schema.itemSchema?.type === 'cidr') {
+    for (let i = 0; i < value.length; i++) {
+      const item = value[i];
+      if (typeof item === 'string' && item.trim() !== '' && !isValidCidr(item)) {
+        errors.push({
+          propertyKey: schema.key,
+          message: `${schema.label} item ${i + 1}: invalid CIDR format (expected x.x.x.x/n)`,
+          severity: 'error',
+        });
+      }
     }
   }
 

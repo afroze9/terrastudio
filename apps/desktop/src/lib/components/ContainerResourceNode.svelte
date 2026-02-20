@@ -60,6 +60,16 @@
   let headerColor = $derived(cs.headerColor ?? 'var(--color-text-muted, #8b90a0)');
   let radius = $derived(cs.borderRadius ?? 10);
 
+  // CIDR subtitle: show address_space (VNet) or address_prefixes (Subnet) in the header
+  let cidrSubtitle = $derived.by(() => {
+    const props = data.properties;
+    const addressSpace = props?.address_space as string[] | undefined;
+    if (addressSpace?.length) return addressSpace[0];
+    const addressPrefixes = props?.address_prefixes as string[] | undefined;
+    if (addressPrefixes?.length) return addressPrefixes[0];
+    return null;
+  });
+
   let hoverTimer: ReturnType<typeof setTimeout> | null = null;
   let showTooltip = $state(false);
 
@@ -88,6 +98,9 @@
       <span class="node-icon">{@html icon.svg}</span>
     {/if}
     <span class="node-label" style="color: {headerColor};">{data.label || schema?.displayName || 'Container'}</span>
+    {#if cidrSubtitle}
+      <span class="cidr-subtitle">{cidrSubtitle}</span>
+    {/if}
     <DeploymentBadge status={data.deploymentStatus} />
   </div>
   <div class="container-body"></div>
@@ -145,10 +158,18 @@
   .node-label {
     font-size: 12px;
     font-weight: 600;
-    flex: 1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  .cidr-subtitle {
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--color-text-muted, #8b90a0);
+    opacity: 0.7;
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
   }
   .container-body {
     flex: 1;

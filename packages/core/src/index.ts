@@ -20,3 +20,17 @@ export { createNodeData, generateNodeId } from './lib/diagram/node-factory.js';
 export { validateResourceProperties } from './lib/validation/resource-validator.js';
 export { validateDiagram } from './lib/validation/diagram-validator.js';
 export type { DiagramValidationResult, DiagramError } from './lib/validation/diagram-validator.js';
+
+// Network Topology Validation
+export { validateNetworkTopology } from './lib/validation/network-validator.js';
+export type { TopologyNode, TopologyError } from './lib/validation/network-validator.js';
+
+// Networking
+export {
+  parseCidr,
+  isValidCidr,
+  cidrsOverlap,
+  cidrContains,
+  nextAvailableCidr,
+} from './lib/networking/cidr-utils.js';
+export type { ParsedCidr } from './lib/networking/cidr-utils.js';

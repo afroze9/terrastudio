@@ -2,7 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import type { UnlistenFn } from '@tauri-apps/api/event';
 import type { DeploymentStatus, ResourceTypeId } from '@terrastudio/types';
-import { HclPipeline, validateDiagram } from '@terrastudio/core';
+import { HclPipeline, validateDiagram, validateNetworkTopology } from '@terrastudio/core';
 import { registry, edgeValidator } from '$lib/bootstrap';
 import { diagram } from '$lib/stores/diagram.svelte';
 import { project } from '$lib/stores/project.svelte';
@@ -55,6 +55,29 @@ export async function generateAndWrite(): Promise<void> {
       );
       terraform.setStatus('error');
       throw new Error('Diagram validation failed');
+    }
+
+    // Validate network topology (subnet CIDR containment + overlap detection)
+    const topologyErrors = validateNetworkTopology(diagram.nodes as any);
+    if (topologyErrors.length > 0) {
+      let hasErrors = false;
+      for (const topoError of topologyErrors) {
+        const node = diagram.nodes.find((n) => n.id === topoError.instanceId);
+        const label = node?.data?.label ?? topoError.instanceId;
+        for (const err of topoError.errors) {
+          if (err.severity === 'error') {
+            terraform.appendError(`[${label}] ${err.message}`);
+            hasErrors = true;
+          } else {
+            terraform.appendInfo(`Warning: [${label}] ${err.message}`);
+          }
+        }
+      }
+      if (hasErrors) {
+        terraform.appendError('Network topology validation failed. Fix CIDR issues and try again.');
+        terraform.setStatus('error');
+        throw new Error('Network topology validation failed');
+      }
     }
 
     terraform.appendInfo('Validation passed.');
