@@ -112,4 +112,21 @@ export const storageAccountSchema: ResourceSchema = {
   ],
 
   handles: [],
+
+  outputs: [
+    { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
+    {
+      key: 'primary_connection_string',
+      label: 'Connection String',
+      terraformAttribute: 'primary_connection_string',
+      sensitive: true,
+    },
+    {
+      key: 'primary_access_key',
+      label: 'Access Key',
+      terraformAttribute: 'primary_access_key',
+      sensitive: true,
+    },
+    { key: 'primary_blob_endpoint', label: 'Blob Endpoint', terraformAttribute: 'primary_blob_endpoint' },
+  ],
 };

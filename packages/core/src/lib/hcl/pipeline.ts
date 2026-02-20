@@ -4,6 +4,7 @@ import type {
   HclGenerationContext,
   TerraformVariable,
   TerraformOutput,
+  OutputBinding,
   ProviderId,
 } from '@terrastudio/types';
 import type { PluginRegistry } from '../registry/plugin-registry.js';
@@ -28,6 +29,7 @@ export interface ProjectConfig {
 export interface PipelineInput {
   resources: ResourceInstance[];
   projectConfig: ProjectConfig;
+  bindings?: OutputBinding[];
 }
 
 /**
@@ -124,6 +126,22 @@ export class HclPipeline {
     for (const resource of resources) {
       const generator = this.registry.getHclGenerator(resource.typeId);
       const blocks = generator.generate(resource, context);
+      allBlocks.push(...blocks);
+    }
+
+    // 5b. Generate HCL for output bindings
+    for (const binding of input.bindings ?? []) {
+      const source = resourceMap.get(binding.sourceInstanceId);
+      const target = resourceMap.get(binding.targetInstanceId);
+      if (!source || !target) continue;
+
+      const generator = this.registry.getBindingGenerator(
+        source.typeId,
+        target.typeId,
+      );
+      if (!generator) continue;
+
+      const blocks = generator.generate(source, target, context, binding.sourceAttribute);
       allBlocks.push(...blocks);
     }
 

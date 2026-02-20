@@ -58,4 +58,8 @@ export const resourceGroupSchema: ResourceSchema = {
   ],
 
   handles: [],
+
+  outputs: [
+    { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
+  ],
 };

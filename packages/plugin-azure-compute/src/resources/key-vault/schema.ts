@@ -91,5 +91,18 @@ export const keyVaultSchema: ResourceSchema = {
     },
   ],
 
-  handles: [],
+  handles: [
+    {
+      id: 'secret-in',
+      type: 'target',
+      position: 'left',
+      label: 'Secret',
+      acceptsOutputs: true,
+    },
+  ],
+
+  outputs: [
+    { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
+    { key: 'vault_uri', label: 'Vault URI', terraformAttribute: 'vault_uri' },
+  ],
 };

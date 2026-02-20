@@ -1,7 +1,7 @@
 import type { ProviderId, ProviderConfig } from './provider.js';
 import type { ResourceTypeId, ResourceSchema } from './resource-schema.js';
 import type { ResourceNodeComponent, PropertyEditorComponent } from './node.js';
-import type { HclGenerator } from './hcl.js';
+import type { HclGenerator, BindingHclGenerator } from './hcl.js';
 import type { ConnectionRule } from './connection.js';
 
 export interface IconDefinition {
@@ -43,6 +43,8 @@ export interface InfraPlugin {
   readonly resourceTypes: ReadonlyMap<ResourceTypeId, ResourceTypeRegistration>;
   readonly connectionRules: ReadonlyArray<ConnectionRule>;
   readonly paletteCategories: ReadonlyArray<PaletteCategory>;
+
+  readonly bindingGenerators?: ReadonlyArray<BindingHclGenerator>;
 
   onAllPluginsRegistered?(registry: PluginRegistryReader): void;
 }

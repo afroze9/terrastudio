@@ -3,11 +3,11 @@ import { listen } from '@tauri-apps/api/event';
 import type { UnlistenFn } from '@tauri-apps/api/event';
 import type { DeploymentStatus, ResourceTypeId } from '@terrastudio/types';
 import { HclPipeline, validateDiagram, type GeneratedFiles } from '@terrastudio/core';
-import { registry } from '$lib/bootstrap';
+import { registry, edgeValidator } from '$lib/bootstrap';
 import { diagram } from '$lib/stores/diagram.svelte';
 import { project } from '$lib/stores/project.svelte';
 import { terraform, type TerraformCommand } from '$lib/stores/terraform.svelte';
-import { convertToResourceInstances } from './diagram-converter';
+import { convertToResourceInstances, extractOutputBindings } from './diagram-converter';
 
 /**
  * Check if terraform CLI is available.
@@ -58,11 +58,19 @@ export async function generateAndWrite(): Promise<void> {
 
     terraform.appendInfo('Validation passed.');
 
+    // Extract output bindings from edges
+    const bindings = extractOutputBindings(
+      diagram.edges,
+      diagram.nodes,
+      edgeValidator,
+    );
+
     // Run HCL pipeline
     const pipeline = new HclPipeline(registry);
     const files: GeneratedFiles = pipeline.generate({
       resources,
       projectConfig: project.projectConfig,
+      bindings,
     });
 
     terraform.setStatus('writing');

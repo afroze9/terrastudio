@@ -83,4 +83,8 @@ export const subnetSchema: ResourceSchema = {
       maxConnections: 1,
     },
   ],
+
+  outputs: [
+    { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
+  ],
 };

@@ -3,7 +3,7 @@
   import { edgeValidator } from '$lib/bootstrap';
   import type { HandleDefinition, ResourceTypeId } from '@terrastudio/types';
 
-  let { handle, nodeTypeId }: { handle: HandleDefinition; nodeTypeId: ResourceTypeId } = $props();
+  let { handle, nodeTypeId, style }: { handle: HandleDefinition; nodeTypeId: ResourceTypeId; style?: string } = $props();
 
   const positionMap = {
     top: Position.Top,
@@ -43,6 +43,7 @@
   position={positionMap[handle.position]}
   id={handle.id}
   class={highlightState === 'compatible' ? 'handle-compatible' : highlightState === 'incompatible' ? 'handle-incompatible' : ''}
+  style={style}
 >
   {#snippet children()}
     <span

@@ -9,6 +9,7 @@ export type {
   HandleDefinition,
   ResourceSchema,
   ContainerStyle,
+  OutputDefinition,
 } from './resource-schema.js';
 
 // HCL types
@@ -19,6 +20,8 @@ export type {
   HclBlock,
   TerraformVariable,
   TerraformOutput,
+  OutputBinding,
+  BindingHclGenerator,
 } from './hcl.js';
 
 // Node types

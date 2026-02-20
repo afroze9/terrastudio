@@ -92,4 +92,10 @@ export const appServiceSchema: ResourceSchema = {
       maxConnections: 1,
     },
   ],
+
+  outputs: [
+    { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
+    { key: 'default_hostname', label: 'Default Hostname', terraformAttribute: 'default_hostname' },
+    { key: 'outbound_ip_addresses', label: 'Outbound IPs', terraformAttribute: 'outbound_ip_addresses' },
+  ],
 };

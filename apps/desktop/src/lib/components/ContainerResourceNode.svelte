@@ -1,16 +1,57 @@
 <script lang="ts">
-  import { NodeResizer } from '@xyflow/svelte';
+  import { NodeResizer, useUpdateNodeInternals } from '@xyflow/svelte';
   import { registry } from '$lib/bootstrap';
   import DeploymentBadge from './DeploymentBadge.svelte';
   import NodeTooltip from './NodeTooltip.svelte';
   import HandleWithLabel from './HandleWithLabel.svelte';
   import type { ContainerStyle } from '@terrastudio/types';
 
+  const updateNodeInternals = useUpdateNodeInternals();
+
   let { data, id, selected }: { data: any; id: string; selected?: boolean } = $props();
 
   let schema = $derived(registry.getResourceSchema(data.typeId));
   let icon = $derived(schema ? registry.getIcon(data.typeId) : null);
-  let handles = $derived(schema?.handles ?? []);
+  let staticHandles = $derived(schema?.handles ?? []);
+  let dynamicOutputHandles = $derived.by(() => {
+    if (!schema?.outputs) return [];
+    const enabled = (data.enabledOutputs as string[]) ?? [];
+    return schema.outputs
+      .filter((o: { key: string }) => enabled.includes(o.key))
+      .map((o: { key: string; label: string }) => ({
+        id: `out-${o.key}`,
+        type: 'source' as const,
+        position: 'right' as const,
+        label: o.label,
+      }));
+  });
+  let handles = $derived([...staticHandles, ...dynamicOutputHandles]);
+
+  let handleStyles = $derived.by(() => {
+    const all = handles;
+    const bySide = new Map<string, number[]>();
+    all.forEach((h, i) => {
+      const list = bySide.get(h.position) ?? [];
+      list.push(i);
+      bySide.set(h.position, list);
+    });
+    const styles: (string | undefined)[] = new Array(all.length);
+    for (const [, indices] of bySide) {
+      if (indices.length <= 1) continue;
+      indices.forEach((idx, rank) => {
+        const pct = ((rank + 1) / (indices.length + 1)) * 100;
+        styles[idx] = `top: ${pct}%;`;
+      });
+    }
+    return styles;
+  });
+
+  // When dynamic handles change, tell SvelteFlow to re-read handle positions
+  $effect(() => {
+    dynamicOutputHandles;
+    updateNodeInternals();
+  });
+
   let cs = $derived<ContainerStyle>(schema?.containerStyle ?? {});
 
   let borderColor = $derived(cs.borderColor ?? 'var(--color-border, #2e3347)');
@@ -51,8 +92,8 @@
   </div>
   <div class="container-body"></div>
 
-  {#each handles as handle}
-    <HandleWithLabel {handle} nodeTypeId={data.typeId} />
+  {#each handles as handle, i (handle.id)}
+    <HandleWithLabel {handle} nodeTypeId={data.typeId} style={handleStyles[i]} />
   {/each}
 
   {#if schema && !selected}

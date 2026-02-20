@@ -165,12 +165,14 @@
   };
 
   const onConnect: OnConnect = (connection) => {
-    const edgeId = `e-${connection.source}-${connection.target}`;
+    // Include sourceHandle in ID to support multiple outputs from same source to same target
+    const edgeId = `e-${connection.source}-${connection.sourceHandle ?? 'default'}-${connection.target}`;
 
     // Look up the connection rule to get the default edge label
     const sourceNode = diagram.nodes.find((n) => n.id === connection.source);
     const targetNode = diagram.nodes.find((n) => n.id === connection.target);
     let label: string | undefined;
+    let isBinding = false;
     if (sourceNode && targetNode) {
       const result = edgeValidator.validate(
         sourceNode.type as ResourceTypeId,
@@ -181,6 +183,17 @@
       if (result.valid && result.rule?.label) {
         label = result.rule.label;
       }
+      if (result.valid && result.rule?.outputBinding) {
+        isBinding = true;
+        // Enhance label with source output definition
+        const sourceSchema = registry.getResourceSchema(sourceNode.type as ResourceTypeId);
+        const outputDef = sourceSchema?.outputs?.find(
+          (o) => o.key === result.rule!.outputBinding!.sourceAttribute,
+        );
+        if (outputDef) {
+          label = `Store ${outputDef.label} as secret`;
+        }
+      }
     }
 
     diagram.addEdge({
@@ -190,6 +203,7 @@
       sourceHandle: connection.sourceHandle,
       targetHandle: connection.targetHandle,
       ...(label ? { label } : {}),
+      ...(isBinding ? { animated: true } : {}),
     });
   };
 

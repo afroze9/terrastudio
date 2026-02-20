@@ -162,7 +162,19 @@ class DiagramStore {
   addEdge(edge: DiagramEdge) {
     this.flushPendingSnapshot();
     this.ensureInitialSnapshot();
-    this.edges = [...this.edges, edge];
+    // Replace any auto-added edge with the same endpoints (SvelteFlow bind:edges may auto-add)
+    this.edges = [
+      ...this.edges.filter(
+        (e) =>
+          !(
+            e.source === edge.source &&
+            e.target === edge.target &&
+            e.sourceHandle === edge.sourceHandle &&
+            e.targetHandle === edge.targetHandle
+          ),
+      ),
+      edge,
+    ];
     this.pushSnapshot();
   }
 

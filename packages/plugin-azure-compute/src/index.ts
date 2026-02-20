@@ -5,6 +5,7 @@ import { keyVaultRegistration } from './resources/key-vault/index.js';
 import { appServicePlanRegistration } from './resources/app-service-plan/index.js';
 import { appServiceRegistration } from './resources/app-service/index.js';
 import { computeConnectionRules } from './connections/rules.js';
+import { keyVaultSecretBinding } from './bindings/keyvault-secret.js';
 
 const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
   ['azurerm/core/resource_group', resourceGroupRegistration],
@@ -22,6 +23,7 @@ const plugin: InfraPlugin = {
 
   resourceTypes,
   connectionRules: computeConnectionRules,
+  bindingGenerators: [keyVaultSecretBinding],
 
   paletteCategories: [
     {

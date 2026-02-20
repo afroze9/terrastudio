@@ -1,4 +1,5 @@
-import type { ResourceInstance, ConnectionRule, ResourceSchema, ResourceTypeId } from '@terrastudio/types';
+import type { ResourceInstance, ConnectionRule, ResourceSchema, ResourceTypeId, OutputBinding } from '@terrastudio/types';
+import type { EdgeRuleValidator } from '@terrastudio/core';
 import type { DiagramNode, DiagramEdge } from '$lib/stores/diagram.svelte';
 
 /**
@@ -48,6 +49,38 @@ export function convertToResourceInstances(
   }
 
   return instances;
+}
+
+/**
+ * Extract output bindings from edges using the EdgeRuleValidator.
+ * Handles both explicit connection rules and dynamic output→acceptsOutputs bindings.
+ */
+export function extractOutputBindings(
+  edges: DiagramEdge[],
+  nodes: DiagramNode[],
+  edgeValidator: EdgeRuleValidator,
+): OutputBinding[] {
+  const bindings: OutputBinding[] = [];
+  for (const edge of edges) {
+    const sourceNode = nodes.find((n) => n.id === edge.source);
+    const targetNode = nodes.find((n) => n.id === edge.target);
+    if (!sourceNode || !targetNode) continue;
+
+    const result = edgeValidator.validate(
+      sourceNode.data.typeId,
+      edge.sourceHandle ?? '',
+      targetNode.data.typeId,
+      edge.targetHandle ?? '',
+    );
+    if (!result.valid || !result.rule?.outputBinding) continue;
+
+    bindings.push({
+      sourceInstanceId: edge.source,
+      targetInstanceId: edge.target,
+      sourceAttribute: result.rule.outputBinding.sourceAttribute,
+    });
+  }
+  return bindings;
 }
 
 function findMatchingRule(

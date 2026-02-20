@@ -52,3 +52,20 @@ export interface TerraformOutput {
   readonly description: string;
   readonly sensitive?: boolean;
 }
+
+export interface OutputBinding {
+  readonly sourceInstanceId: string;
+  readonly targetInstanceId: string;
+  readonly sourceAttribute: string;
+}
+
+export interface BindingHclGenerator {
+  readonly sourceType?: ResourceTypeId;
+  readonly targetType: ResourceTypeId;
+  generate(
+    source: ResourceInstance,
+    target: ResourceInstance,
+    context: HclGenerationContext,
+    sourceAttribute: string,
+  ): HclBlock[];
+}

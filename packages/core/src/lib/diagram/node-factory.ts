@@ -31,6 +31,7 @@ export function createNodeData(
     terraformName,
     label: overrides?.label ?? schema.displayName,
     validationErrors: [],
+    enabledOutputs: [],
     ...overrides,
   };
 }

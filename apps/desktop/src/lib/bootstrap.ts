@@ -1,4 +1,4 @@
-import { PluginRegistry, EdgeRuleValidator } from '@terrastudio/core';
+import { PluginRegistry, EdgeRuleValidator, type OutputAcceptingHandle } from '@terrastudio/core';
 import networkingPlugin from '@terrastudio/plugin-azure-networking';
 import computePlugin from '@terrastudio/plugin-azure-compute';
 import storagePlugin from '@terrastudio/plugin-azure-storage';
@@ -15,7 +15,19 @@ export function initializePlugins(): void {
   registry.registerPlugin(computePlugin);
   registry.registerPlugin(storagePlugin);
   registry.finalize();
-  edgeValidator = new EdgeRuleValidator(registry.getConnectionRules());
+
+  // Collect handles that accept any dynamic output
+  const outputAcceptingHandles: OutputAcceptingHandle[] = [];
+  for (const typeId of registry.getResourceTypeIds()) {
+    const schema = registry.getResourceSchema(typeId);
+    for (const handle of schema?.handles ?? []) {
+      if (handle.acceptsOutputs) {
+        outputAcceptingHandles.push({ targetType: typeId, targetHandle: handle.id });
+      }
+    }
+  }
+
+  edgeValidator = new EdgeRuleValidator(registry.getConnectionRules(), outputAcceptingHandles);
 }
 
 export function initializeTerraformCheck(): void {

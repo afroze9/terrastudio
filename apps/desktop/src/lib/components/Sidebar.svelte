@@ -2,12 +2,43 @@
   import { diagram } from '$lib/stores/diagram.svelte';
   import { registry } from '$lib/bootstrap';
   import PropertyRenderer from './PropertyRenderer.svelte';
+  import type { ResourceTypeId } from '@terrastudio/types';
 
   let schema = $derived(
     diagram.selectedNode
       ? registry.getResourceSchema(diagram.selectedNode.data.typeId)
       : null
   );
+
+  /** Edges connected to handles with acceptsOutputs (e.g. Key Vault secret-in) */
+  let connectedBindings = $derived.by(() => {
+    if (!diagram.selectedNode || !schema) return [];
+    const acceptHandles = schema.handles.filter((h) => h.acceptsOutputs);
+    if (acceptHandles.length === 0) return [];
+    const handleIds = new Set(acceptHandles.map((h) => h.id));
+    return diagram.edges
+      .filter(
+        (e) =>
+          e.target === diagram.selectedNode!.id &&
+          handleIds.has(e.targetHandle ?? ''),
+      )
+      .map((edge) => {
+        const sourceNode = diagram.nodes.find((n) => n.id === edge.source);
+        const sourceSchema = sourceNode
+          ? registry.getResourceSchema(sourceNode.data.typeId as ResourceTypeId)
+          : undefined;
+        const attribute = (edge.sourceHandle ?? '').startsWith('out-')
+          ? (edge.sourceHandle as string).slice(4)
+          : edge.sourceHandle ?? '';
+        const outputDef = sourceSchema?.outputs?.find((o) => o.key === attribute);
+        return {
+          edgeId: edge.id,
+          sourceLabel: sourceNode?.data.label ?? 'Unknown',
+          attributeLabel: outputDef?.label ?? attribute,
+          sensitive: outputDef?.sensitive ?? false,
+        };
+      });
+  });
 
   // Edge editing: resolve source/target node names for display
   let sourceNode = $derived(
@@ -20,6 +51,15 @@
       ? diagram.nodes.find((n) => n.id === diagram.selectedEdge!.target)
       : null
   );
+
+  function toggleOutput(key: string) {
+    if (!diagram.selectedNode) return;
+    const current = (diagram.selectedNode.data.enabledOutputs as string[]) ?? [];
+    const next = current.includes(key)
+      ? current.filter((k: string) => k !== key)
+      : [...current, key];
+    diagram.updateNodeData(diagram.selectedNode.id, { enabledOutputs: next });
+  }
 
   function onPropertyChange(key: string, value: unknown) {
     if (!diagram.selectedNode) return;
@@ -70,6 +110,50 @@
         values={diagram.selectedNode.data.properties}
         onChange={onPropertyChange}
       />
+
+      {#if schema.outputs && schema.outputs.length > 0}
+        <div class="outputs-section">
+          <div class="group-header">Outputs</div>
+          {#each schema.outputs as output}
+            <label class="output-toggle">
+              <input
+                type="checkbox"
+                checked={((diagram.selectedNode.data.enabledOutputs as string[]) ?? []).includes(output.key)}
+                onchange={() => toggleOutput(output.key)}
+              />
+              <span class="output-label">{output.label}</span>
+              {#if output.sensitive}
+                <span class="sensitive-badge">sensitive</span>
+              {/if}
+            </label>
+          {/each}
+        </div>
+      {/if}
+
+      {#if connectedBindings.length > 0}
+        <div class="bindings-section">
+          <div class="group-header">Connected Secrets</div>
+          {#each connectedBindings as binding (binding.edgeId)}
+            <div class="binding-item">
+              <div class="binding-info">
+                <span class="binding-source">{binding.sourceLabel}</span>
+                <span class="binding-attr">{binding.attributeLabel}</span>
+              </div>
+              <div class="binding-actions">
+                {#if binding.sensitive}
+                  <span class="sensitive-badge">sensitive</span>
+                {/if}
+                <button
+                  class="disconnect-btn"
+                  onclick={() => diagram.removeEdge(binding.edgeId)}
+                  aria-label="Disconnect"
+                  title="Disconnect"
+                >&times;</button>
+              </div>
+            </div>
+          {/each}
+        </div>
+      {/if}
     </div>
   </aside>
 {:else if diagram.selectedEdge}
@@ -244,5 +328,93 @@
   .delete-edge-btn:hover {
     background: #ef4444;
     color: #fff;
+  }
+  .outputs-section {
+    margin-top: 16px;
+  }
+  .group-header {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-accent);
+    padding: 8px 0 6px;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 8px;
+  }
+  .output-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--color-text);
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .output-toggle input[type='checkbox'] {
+    accent-color: var(--color-accent);
+  }
+  .output-label {
+    flex: 1;
+  }
+  .sensitive-badge {
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    font-weight: 500;
+  }
+  .bindings-section {
+    margin-top: 16px;
+  }
+  .binding-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .binding-item:last-child {
+    border-bottom: none;
+  }
+  .binding-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+  }
+  .binding-source {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .binding-attr {
+    font-size: 11px;
+    color: var(--color-text-muted);
+  }
+  .binding-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .disconnect-btn {
+    background: none;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--color-text-muted);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0 5px;
+    line-height: 1.4;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .disconnect-btn:hover {
+    color: #ef4444;
+    border-color: #ef4444;
   }
 </style>

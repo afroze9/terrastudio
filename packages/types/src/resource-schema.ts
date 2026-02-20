@@ -57,6 +57,8 @@ export interface HandleDefinition {
   readonly type: 'source' | 'target';
   readonly position: 'top' | 'bottom' | 'left' | 'right';
   readonly acceptsTypes?: ReadonlyArray<ResourceTypeId>;
+  /** Accept connections from any dynamic output handle (out-*) */
+  readonly acceptsOutputs?: boolean;
   readonly label: string;
   readonly maxConnections?: number;
 }
@@ -72,6 +74,13 @@ export interface ContainerStyle {
   readonly headerColor?: string;
   /** Border radius in pixels */
   readonly borderRadius?: number;
+}
+
+export interface OutputDefinition {
+  readonly key: string;
+  readonly label: string;
+  readonly terraformAttribute: string;
+  readonly sensitive?: boolean;
 }
 
 export interface ResourceSchema {
@@ -95,4 +104,6 @@ export interface ResourceSchema {
   readonly parentReference?: {
     readonly propertyKey: string;
   };
+  /** Computed outputs this resource exposes for output binding connections */
+  readonly outputs?: ReadonlyArray<OutputDefinition>;
 }

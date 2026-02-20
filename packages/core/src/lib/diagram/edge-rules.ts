@@ -3,6 +3,11 @@ import type {
   ResourceTypeId,
 } from '@terrastudio/types';
 
+export interface OutputAcceptingHandle {
+  targetType: ResourceTypeId;
+  targetHandle: string;
+}
+
 export interface EdgeValidationResult {
   valid: boolean;
   rule?: ConnectionRule;
@@ -11,10 +16,14 @@ export interface EdgeValidationResult {
 
 /**
  * Validates whether an edge can be created between two resource nodes.
- * Uses ConnectionRules from all registered plugins.
+ * Uses ConnectionRules from all registered plugins, plus output-accepting
+ * handles that accept any dynamic output handle (out-*).
  */
 export class EdgeRuleValidator {
-  constructor(private rules: ConnectionRule[]) {}
+  constructor(
+    private rules: ConnectionRule[],
+    private outputAcceptingHandles: OutputAcceptingHandle[] = [],
+  ) {}
 
   /**
    * Check if a connection between two resource types on given handles is valid.
@@ -25,6 +34,7 @@ export class EdgeRuleValidator {
     targetType: ResourceTypeId,
     targetHandle: string,
   ): EdgeValidationResult {
+    // 1. Exact rule match
     const matchingRule = this.rules.find(
       (rule) =>
         rule.sourceType === sourceType &&
@@ -35,6 +45,27 @@ export class EdgeRuleValidator {
 
     if (matchingRule) {
       return { valid: true, rule: matchingRule };
+    }
+
+    // 2. Dynamic output → acceptsOutputs handle
+    if (
+      sourceHandle.startsWith('out-') &&
+      this.outputAcceptingHandles.some(
+        (h) => h.targetType === targetType && h.targetHandle === targetHandle,
+      )
+    ) {
+      const sourceAttribute = sourceHandle.slice(4);
+      return {
+        valid: true,
+        rule: {
+          sourceType,
+          sourceHandle,
+          targetType,
+          targetHandle,
+          label: 'Store as secret',
+          outputBinding: { sourceAttribute },
+        },
+      };
     }
 
     return {
@@ -50,11 +81,30 @@ export class EdgeRuleValidator {
     sourceType: ResourceTypeId,
     sourceHandle: string,
   ): ConnectionRule[] {
-    return this.rules.filter(
+    const results = this.rules.filter(
       (rule) =>
         rule.sourceType === sourceType &&
         rule.sourceHandle === sourceHandle,
     );
+
+    // Dynamic outputs can also target any acceptsOutputs handle
+    if (sourceHandle.startsWith('out-')) {
+      const sourceAttribute = sourceHandle.slice(4);
+      for (const h of this.outputAcceptingHandles) {
+        if (!results.some((r) => r.targetType === h.targetType && r.targetHandle === h.targetHandle)) {
+          results.push({
+            sourceType,
+            sourceHandle,
+            targetType: h.targetType,
+            targetHandle: h.targetHandle,
+            label: 'Store as secret',
+            outputBinding: { sourceAttribute },
+          });
+        }
+      }
+    }
+
+    return results;
   }
 
   /**

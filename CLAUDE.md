@@ -58,6 +58,9 @@ The `nodeTypes` map uses ResourceTypeId as keys. Built dynamically from the Plug
 ### HCL generators
 Each returns `HclBlock[]` with raw HCL strings. The core pipeline assembles blocks into terraform.tf, providers.tf, main.tf, variables.tf, outputs.tf, locals.tf.
 
+### Resource outputs and bindings
+Resources declare `outputs` in their schema (e.g., connection strings, IPs). Users toggle outputs on/off in the sidebar, creating dynamic `out-{key}` source handles. Target handles with `acceptsOutputs: true` (e.g., Key Vault's `secret-in`) accept connections from any dynamic output handle — no per-source-type `ConnectionRule` needed. The `EdgeRuleValidator` synthesizes rules; wildcard `BindingHclGenerator` (no `sourceType`) generates the binding Terraform resource. Bootstrap collects `OutputAcceptingHandle[]` from schemas and passes them to the validator.
+
 ### Export + doc generation
 Core provides image export (PNG/SVG/clipboard) and a documentation generator that walks the diagram graph to produce Markdown architecture docs with resource inventory, network topology, Mermaid dependency graphs, and variable reference. Plugins can contribute doc sections.
 
@@ -102,19 +105,33 @@ For each association:
 
 **Rule of thumb**: If the relationship is parent-child (one is visually inside the other), use `canBeChildOf` + `parentReference`. If the relationship is peer-to-peer or cross-container, use handles + edges.
 
-### 4. Other schema fields
+### 4. Resource outputs and dynamic handles
+Resources can expose Terraform output attributes (e.g., connection strings, IPs) via the `outputs` array in the schema. Each output has a `key`, `label`, `terraformAttribute`, and optional `sensitive` flag. Users toggle outputs on/off in the sidebar; enabled outputs create dynamic source handles (`out-{key}`) on the node.
+
+**Dynamic output handles**: When a user enables an output, a source handle appears on the right side of the node. The handle ID follows the convention `out-{output.key}`. The `DefaultResourceNode` and `ContainerResourceNode` components manage these dynamically using `useUpdateNodeInternals()` from SvelteFlow (NOT `useSvelteFlow()` — they're different hooks).
+
+**`acceptsOutputs` pattern**: Target handles can set `acceptsOutputs: true` to accept connections from **any** dynamic output handle without per-source-type connection rules. The `EdgeRuleValidator` synthesizes rules dynamically — no explicit `ConnectionRule` entries needed. Currently used by Key Vault's `secret-in` handle. Use this for any "data sink" handle that should accept outputs from arbitrary resource types.
+
+**Binding generators**: When an `acceptsOutputs` edge creates a Terraform resource (e.g., `azurerm_key_vault_secret`), register a `BindingHclGenerator` with `sourceType: undefined` (wildcard) on the plugin. The core pipeline matches it for any source resource type.
+
+**When to use `acceptsOutputs` vs `acceptsTypes`**:
+- `acceptsTypes`: For structural 1:1 relationships (NSG→Subnet, Plan→App Service). The target knows exactly which source types are valid.
+- `acceptsOutputs`: For data-flow relationships where many different source types can contribute data (any resource → Key Vault secret). The target doesn't care about source type, only that it has enabled outputs.
+
+### 5. Other schema fields
 - `requiresResourceGroup`: Does Terraform need `resource_group_name`? Almost always `true` for Azure resources.
 - `supportsTags`: Does the Azure resource accept a `tags` block?
 - `terraformType`: The exact Terraform resource type string. Watch for OS variants (e.g., `azurerm_linux_web_app` vs `azurerm_windows_web_app`).
 - `containerStyle`: Only for containers — border color, style, background, header color, radius.
 
-### 5. HCL generator considerations
+### 6. HCL generator considerations
 - Use `context.getResourceGroupExpression()` and `context.getLocationExpression()` for RG/location references.
 - Use `resource.references[key]` + `context.getAttributeReference(ref, attr)` for cross-resource references.
 - If extra data sources are needed (e.g., `data.azurerm_client_config` for Key Vault), emit them as additional `HclBlock` entries with `blockType: 'data'`.
 - Set `dependsOn` on the HclBlock when the resource explicitly depends on another.
+- For binding generators (`BindingHclGenerator`): set `sourceType` to a specific type for targeted bindings, or `undefined` for wildcard (any source). Register in the plugin's `bindingGenerators` array.
 
-### 6. File checklist
+### 7. File checklist
 For each new resource, create these files in the plugin's `src/resources/{resource-name}/`:
 - `schema.ts` — ResourceSchema definition
 - `hcl-generator.ts` — HclGenerator implementation

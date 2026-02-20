@@ -48,7 +48,7 @@ gantt
     Phase 14 New Resources            :done, p14, 2026-02-19, 2026-02-20
 
     section Upcoming
-    Phase 15 Resource Output Bindings :active, p15, 2026-02-20, 2026-02-25
+    Phase 15 Resource Output Bindings :done, p15, 2026-02-20, 2026-02-21
     Phase 16 Subscription + Vars      :p16, 2026-02-25, 2026-03-02
     Phase 17 CIDR + Name Validation   :p17, 2026-03-02, 2026-03-07
 ```
@@ -591,45 +591,50 @@ gantt
 
 ---
 
-## Phase 15: Resource Output Bindings
+## Phase 15: Resource Output Bindings ✅
 
-**Goal**: Enable using outputs of one resource as inputs to another — e.g., a Storage Account's connection string becomes a Key Vault secret.
+**Goal**: Enable using outputs of one resource as inputs to another — e.g., a Storage Account's connection string becomes a Key Vault secret. Decoupled system where any resource's enabled outputs can connect to any `acceptsOutputs` handle.
 
-### Motivation
+### What Was Implemented
 
-Currently, references between resources are limited to IDs (e.g., `service_plan_id`, `subnet_id`). Real-world infrastructure often needs to pass **computed outputs** from one resource to another:
-- Storage Account connection string → Key Vault secret value
-- App Service default hostname → DNS CNAME record
-- Key Vault URI → App Service app settings
-- Database connection string → App Service configuration
+1. **Output definitions on all 9 resources**
+   - Each schema declares an `outputs` array with `key`, `label`, `terraformAttribute`, and optional `sensitive` flag
+   - Users toggle outputs on/off in the sidebar; enabled outputs create dynamic `out-{key}` source handles
+   - `DefaultResourceNode` and `ContainerResourceNode` render dynamic handles using `useUpdateNodeInternals()` (separate hook from `useSvelteFlow()`)
 
-### Tasks
+2. **`acceptsOutputs` pattern (decoupled binding system)**
+   - New `acceptsOutputs?: boolean` flag on `HandleDefinition` — target handles accept connections from any dynamic `out-*` handle without per-source-type `ConnectionRule` entries
+   - `EdgeRuleValidator` extended with `OutputAcceptingHandle[]` — synthesizes validation rules dynamically when `out-*` connects to an `acceptsOutputs` handle
+   - Eliminated N×M coupling: Key Vault's `secret-in` accepts outputs from any resource, no storage-specific rules needed
+   - Bootstrap collects `OutputAcceptingHandle[]` from all schemas and passes to the validator
 
-1. **Output binding model**
-   - Define `OutputBinding` type: which resource attribute to read, where to pipe it
-   - Schema-level: each resource declares its available outputs (e.g., Storage Account exposes `primary_connection_string`, `primary_access_key`)
-   - Distinguish between simple attribute references (`azurerm_storage_account.example.id`) and computed outputs that require specific Terraform expressions
+3. **Wildcard binding generators**
+   - `BindingHclGenerator.sourceType` made optional — `undefined` means "any source resource"
+   - `PluginRegistry.getBindingGenerator()` tries exact match first, falls back to wildcard
+   - Single generic `keyvault-secret.ts` binding generator creates `azurerm_key_vault_secret` for any source attribute
 
-2. **Binding edges**
-   - New edge type for output bindings (visually distinct from association edges)
-   - Source handle: output attribute on the producing resource
-   - Target handle: input property on the consuming resource
-   - Connection rule specifies the Terraform expression to generate
+4. **Binding edge UX**
+   - Animated dashed edges (`animated: true`) visually distinguish binding edges from association edges
+   - Edge labels derived from source output definitions: "Store Connection String as secret"
+   - Edge IDs include `sourceHandle` to support multiple outputs from same source to same target
+   - `addEdge()` deduplicates edges with same endpoints (SvelteFlow `bind:edges` auto-adds)
 
-3. **HCL generation for bindings**
-   - Generate the correct Terraform expression (e.g., `azurerm_storage_account.sa.primary_connection_string`)
-   - For Key Vault secrets: generate an `azurerm_key_vault_secret` resource that references the source output
-   - Handle sensitive values correctly (mark as sensitive in variables/outputs)
+5. **Connected Secrets sidebar section**
+   - When a node with `acceptsOutputs` handles is selected, sidebar shows "Connected Secrets"
+   - Lists each connected binding: source name, attribute label, sensitive badge, disconnect (×) button
+   - Fully reactive — updates as edges are added/removed
 
-4. **Common binding patterns**
-   - Storage Account → Key Vault (connection string as secret)
-   - App Service → Key Vault (Key Vault reference in app settings)
-   - Database → App Service (connection string in app settings)
+6. **Cleanup**
+   - Removed storage-specific `storage-to-keyvault.ts` binding generator and connection rules
+   - `extractOutputBindings()` in `diagram-converter.ts` now uses `EdgeRuleValidator` instead of raw rules
 
 ### Verification
-- Draw a binding edge from Storage Account to Key Vault → HCL generates a Key Vault secret with the connection string value
-- Binding edges visually distinct from association edges
-- Generated Terraform validates and plans correctly
+- Enable any output on any resource → dynamic handle appears
+- Drag from output handle to Key Vault's "Secret" → animated edge with descriptive label
+- Multiple outputs from same source to same Key Vault → unique edges, all listed in sidebar
+- Select Key Vault → "Connected Secrets" section shows all bindings with disconnect buttons
+- Generate HCL → each binding produces a separate `azurerm_key_vault_secret` resource
+- Existing static handles (NSG→Subnet, Plan→App Service) work unchanged
 
 ---
 

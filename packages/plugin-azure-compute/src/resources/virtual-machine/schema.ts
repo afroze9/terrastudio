@@ -136,4 +136,10 @@ export const vmSchema: ResourceSchema = {
       maxConnections: 1,
     },
   ],
+
+  outputs: [
+    { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
+    { key: 'private_ip_address', label: 'Private IP', terraformAttribute: 'private_ip_address' },
+    { key: 'public_ip_address', label: 'Public IP', terraformAttribute: 'public_ip_address' },
+  ],
 };

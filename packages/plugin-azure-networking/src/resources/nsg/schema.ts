@@ -131,4 +131,8 @@ export const nsgSchema: ResourceSchema = {
       label: 'Associate',
     },
   ],
+
+  outputs: [
+    { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
+  ],
 };

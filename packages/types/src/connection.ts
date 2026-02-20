@@ -10,4 +10,8 @@ export interface ConnectionRule {
     propertyKey: string;
   };
   readonly label?: string;
+  /** Marks this rule as an output binding that generates intermediate HCL */
+  readonly outputBinding?: {
+    readonly sourceAttribute: string;
+  };
 }

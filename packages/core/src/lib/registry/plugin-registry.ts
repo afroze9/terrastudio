@@ -6,6 +6,7 @@ import type {
   ResourceNodeComponent,
   PropertyEditorComponent,
   HclGenerator,
+  BindingHclGenerator,
   IconDefinition,
   ConnectionRule,
   PaletteCategory,
@@ -19,6 +20,7 @@ export class PluginRegistry implements PluginRegistryReader {
   private resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>();
   private providers = new Map<ProviderId, ProviderConfig>();
   private connectionRulesList: ConnectionRule[] = [];
+  private bindingGeneratorsList: BindingHclGenerator[] = [];
   private paletteCategoriesMap = new Map<string, PaletteCategory>();
   private finalized = false;
 
@@ -46,6 +48,11 @@ export class PluginRegistry implements PluginRegistryReader {
 
     // Merge connection rules
     this.connectionRulesList.push(...plugin.connectionRules);
+
+    // Merge binding generators
+    if (plugin.bindingGenerators) {
+      this.bindingGeneratorsList.push(...plugin.bindingGenerators);
+    }
 
     // Merge palette categories (dedupe by id)
     for (const category of plugin.paletteCategories) {
@@ -114,6 +121,22 @@ export class PluginRegistry implements PluginRegistryReader {
 
   getConnectionRules(): ConnectionRule[] {
     return [...this.connectionRulesList];
+  }
+
+  getBindingGenerator(
+    sourceType: ResourceTypeId,
+    targetType: ResourceTypeId,
+  ): BindingHclGenerator | undefined {
+    // Prefer exact match
+    const exact = this.bindingGeneratorsList.find(
+      (g) => g.sourceType === sourceType && g.targetType === targetType,
+    );
+    if (exact) return exact;
+
+    // Fall back to wildcard (sourceType undefined = any source)
+    return this.bindingGeneratorsList.find(
+      (g) => g.sourceType === undefined && g.targetType === targetType,
+    );
   }
 
   getPaletteCategories(): PaletteCategory[] {

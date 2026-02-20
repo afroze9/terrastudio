@@ -73,4 +73,8 @@ export const appServicePlanSchema: ResourceSchema = {
       label: 'Apps',
     },
   ],
+
+  outputs: [
+    { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
+  ],
 };

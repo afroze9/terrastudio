@@ -73,4 +73,9 @@ export const vnetSchema: ResourceSchema = {
   ],
 
   handles: [],
+
+  outputs: [
+    { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
+    { key: 'guid', label: 'GUID', terraformAttribute: 'guid' },
+  ],
 };
