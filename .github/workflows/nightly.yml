@@ -1,0 +1,125 @@
+name: Nightly Build
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nightly-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-nightly:
+    # Skip release-please merge commits
+    if: "!contains(github.event.head_commit.message, 'chore(main): release')"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            args: ''
+            rust-targets: ''
+            portable-ext: exe
+            portable-name: TerraStudio.exe
+            archive-cmd: 7z a -tzip
+          - platform: ubuntu-22.04
+            args: ''
+            rust-targets: ''
+            portable-ext: ''
+            portable-name: terra-studio
+            archive-cmd: tar czf
+          - platform: macos-latest
+            args: '--target aarch64-apple-darwin'
+            rust-targets: 'aarch64-apple-darwin,x86_64-apple-darwin'
+            portable-ext: ''
+            portable-name: ''
+            archive-cmd: ''
+          - platform: macos-latest
+            args: '--target x86_64-apple-darwin'
+            rust-targets: 'aarch64-apple-darwin,x86_64-apple-darwin'
+            portable-ext: ''
+            portable-name: ''
+            archive-cmd: ''
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-targets }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: 'apps/desktop/src-tauri -> target'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Set nightly version
+        shell: bash
+        run: |
+          BASE_VERSION=$(node -p "require('./apps/desktop/package.json').version")
+          BUILD_NUM=${{ github.run_number }}
+          NIGHTLY_VERSION="${BASE_VERSION}-nightly.${BUILD_NUM}"
+          echo "NIGHTLY_VERSION=${NIGHTLY_VERSION}" >> $GITHUB_ENV
+          echo "Building nightly version: ${NIGHTLY_VERSION}"
+
+          # Patch package.json
+          node -e "
+            const fs = require('fs');
+            const p = JSON.parse(fs.readFileSync('./apps/desktop/package.json', 'utf8'));
+            p.version = '${NIGHTLY_VERSION}';
+            fs.writeFileSync('./apps/desktop/package.json', JSON.stringify(p, null, 2) + '\n');
+          "
+          # Patch tauri.conf.json
+          node -e "
+            const fs = require('fs');
+            const c = JSON.parse(fs.readFileSync('./apps/desktop/src-tauri/tauri.conf.json', 'utf8'));
+            c.version = '${NIGHTLY_VERSION}';
+            fs.writeFileSync('./apps/desktop/src-tauri/tauri.conf.json', JSON.stringify(c, null, 2) + '\n');
+          "
+          # Patch Cargo.toml
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            sed -i "s/^version = \".*\"/version = \"${NIGHTLY_VERSION}\"/" apps/desktop/src-tauri/Cargo.toml
+          else
+            sed -i'' -e "s/^version = \".*\"/version = \"${NIGHTLY_VERSION}\"/" apps/desktop/src-tauri/Cargo.toml
+          fi
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: apps/desktop
+          tauriScript: pnpm tauri
+          tagName: nightly
+          releaseName: 'TerraStudio Nightly'
+          releaseBody: |
+            **Automated nightly build from master**
+
+            Version: `${{ env.NIGHTLY_VERSION }}`
+            Commit: `${{ github.sha }}`
+            Build: #${{ github.run_number }}
+
+            > These are development builds and may be unstable.
+          releaseDraft: false
+          prerelease: true
+          args: ${{ matrix.args }}

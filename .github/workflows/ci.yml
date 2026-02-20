@@ -12,6 +12,8 @@ concurrency:
 
 jobs:
   build:
+    # Skip release-please version-bump PRs
+    if: ${{ !contains(github.head_ref || '', 'release-please') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -33,6 +35,7 @@ jobs:
         run: pnpm typecheck
 
   build-tauri:
+    if: ${{ !contains(github.head_ref || '', 'release-please') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -46,7 +49,7 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: apps/desktop/src-tauri
+          workspaces: 'apps/desktop/src-tauri -> target'
 
       - uses: pnpm/action-setup@v4
 
