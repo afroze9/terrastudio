@@ -12,39 +12,41 @@ This is enough to deploy a basic VM-in-a-VNet architecture, validating the entir
 gantt
     title TerraStudio Implementation Phases
     dateFormat X
-    axisFormat %s
+    axisFormat %L
 
     section Foundation
-    Phase 1: Monorepo + Types      :done, p1, 0, 1
-    Phase 2: Core Registry + HCL   :done, p2, 1, 2
+    Phase 1: Monorepo + Types        :done, p1, 0, 1
+    Phase 2: Core Registry + HCL     :done, p2, 1, 1
 
     section First Plugin
-    Phase 3: Networking Plugin      :done, p3, 2, 3
+    Phase 3: Networking Plugin       :done, p3, 2, 1
 
     section Desktop App
-    Phase 4: Tauri Shell + Canvas   :done, p4, 3, 4
-    Phase 5: Sidebar + Drag-Drop   :done, p5, 4, 5
+    Phase 4: Tauri Shell + Canvas    :done, p4, 3, 1
+    Phase 5: Sidebar + Drag-Drop     :done, p5, 4, 1
 
     section Cross-Plugin
-    Phase 6: Compute Plugin (VM)    :done, p6, 5, 6
+    Phase 6: Compute Plugin (VM)     :done, p6, 5, 1
 
     section Terraform
-    Phase 7: Terraform Execution    :done, p7, 6, 7
-    Phase 8: Deployment Status      :done, p8, 7, 8
+    Phase 7: Terraform Execution     :done, p7, 6, 1
+    Phase 8: Deployment Status       :done, p8, 7, 1
 
     section Polish
-    Phase 9: Save/Load + Polish     :done, p9, 8, 9
+    Phase 9: Save/Load + Polish      :done, p9, 8, 1
 
     section Export
-    Phase 10: Export + Doc Gen      :done, p10, 9, 10
+    Phase 10: Export + Doc Gen       :done, p10, 9, 1
 
     section Visual Polish
-    Phase 11: Icons + Frameless UI  :active, p11, 10, 11
-    Phase 12: Handle + Edge Labels  :p12, 11, 12
+    Phase 11: Icons + Frameless UI   :active, p11, 10, 1
+    Phase 12: Handle + Edge Labels   :active, p12, 11, 1
 
     section Azure Intelligence
-    Phase 13: Subscription + Vars   :p13, 12, 13
-    Phase 14: CIDR + Name Validation:p14, 13, 14
+    Phase 13: Subscription + Vars    :active, p13, 12, 1
+    Phase 14: CIDR + Name Validation :active, p14, 13, 1
+
+
 ```
 
 ---

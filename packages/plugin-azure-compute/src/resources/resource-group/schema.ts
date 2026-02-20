@@ -10,6 +10,13 @@ export const resourceGroupSchema: ResourceSchema = {
   supportsTags: true,
   requiresResourceGroup: false,
   isContainer: true,
+  containerStyle: {
+    borderColor: '#4b5563',
+    borderStyle: 'dashed',
+    backgroundColor: 'rgba(75, 85, 99, 0.08)',
+    headerColor: '#9ca3af',
+    borderRadius: 12,
+  },
 
   properties: [
     {

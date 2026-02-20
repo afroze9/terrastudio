@@ -13,6 +13,13 @@ export const subnetSchema: ResourceSchema = {
   canBeChildOf: [
     'azurerm/networking/virtual_network',
   ],
+  containerStyle: {
+    borderColor: '#8b5cf6',
+    borderStyle: 'dashed',
+    backgroundColor: 'rgba(139, 92, 246, 0.06)',
+    headerColor: '#8b5cf6',
+    borderRadius: 8,
+  },
 
   properties: [
     {

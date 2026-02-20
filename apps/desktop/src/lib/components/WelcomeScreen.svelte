@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { openProject, loadProjectByPath } from '$lib/services/project-service';
+  import WindowControls from './WindowControls.svelte';
 
   let { onNewProject }: { onNewProject: () => void } = $props();
 
@@ -69,6 +70,9 @@
 </script>
 
 <div class="welcome">
+  <div class="welcome-titlebar" data-tauri-drag-region>
+    <WindowControls />
+  </div>
   <div class="welcome-inner">
     <div class="recent-section">
       <h2 class="section-title">Recent Projects</h2>
@@ -147,11 +151,24 @@
 <style>
   .welcome {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     height: 100vh;
     width: 100vw;
     background: var(--color-bg);
+  }
+
+  .welcome-titlebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    display: flex;
+    justify-content: flex-end;
+    height: 36px;
+    width: 100%;
+    -webkit-app-region: drag;
+    z-index: 10;
   }
 
   .welcome-inner {

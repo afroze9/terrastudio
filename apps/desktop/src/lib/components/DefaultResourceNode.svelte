@@ -2,23 +2,44 @@
   import { Handle, Position } from '@xyflow/svelte';
   import { registry } from '$lib/bootstrap';
   import DeploymentBadge from './DeploymentBadge.svelte';
+  import NodeTooltip from './NodeTooltip.svelte';
 
   let { data, id, selected }: { data: any; id: string; selected?: boolean } = $props();
 
   let schema = $derived(registry.getResourceSchema(data.typeId));
   let icon = $derived(schema ? registry.getIcon(data.typeId) : null);
   let handles = $derived(schema?.handles ?? []);
+
+  let hoverTimer: ReturnType<typeof setTimeout> | null = null;
+  let showTooltip = $state(false);
+
+  function onMouseEnter() {
+    hoverTimer = setTimeout(() => { showTooltip = true; }, 300);
+  }
+
+  function onMouseLeave() {
+    showTooltip = false;
+    if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
+  }
 </script>
 
-<div class="resource-node" class:selected>
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div
+  class="resource-node"
+  class:selected
+  onmouseenter={onMouseEnter}
+  onmouseleave={onMouseLeave}
+>
   <div class="node-header">
     {#if icon?.type === 'svg' && icon.svg}
       <span class="node-icon">{@html icon.svg}</span>
     {/if}
-    <span class="node-label">{data.label || schema?.displayName || 'Resource'}</span>
+    <div class="node-info">
+      <span class="node-label">{data.label || schema?.displayName || 'Resource'}</span>
+      <span class="node-type">{schema?.terraformType ?? data.typeId}</span>
+    </div>
     <DeploymentBadge status={data.deploymentStatus} />
   </div>
-  <div class="node-type">{schema?.terraformType ?? data.typeId}</div>
 
   {#each handles as handle}
     <Handle
@@ -27,10 +48,21 @@
       id={handle.id}
     />
   {/each}
+
+  {#if schema && !selected}
+    <NodeTooltip
+      {schema}
+      terraformName={data.terraformName}
+      deploymentStatus={data.deploymentStatus}
+      properties={data.properties}
+      visible={showTooltip}
+    />
+  {/if}
 </div>
 
 <style>
   .resource-node {
+    position: relative;
     background: var(--color-surface, #1a1d27);
     border: 1.5px solid var(--color-border, #2e3347);
     border-radius: 8px;
@@ -49,21 +81,27 @@
     gap: 8px;
   }
   .node-icon {
-    width: 18px;
-    height: 18px;
+    width: 22px;
+    height: 22px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
   }
   .node-icon :global(svg) {
-    width: 18px;
-    height: 18px;
+    width: 22px;
+    height: 22px;
+  }
+  .node-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
   .node-label {
     font-size: 13px;
     font-weight: 600;
     color: var(--color-text, #e1e4ed);
-    flex: 1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -71,6 +109,5 @@
   .node-type {
     font-size: 10px;
     color: var(--color-text-muted, #8b90a0);
-    margin-top: 4px;
   }
 </style>

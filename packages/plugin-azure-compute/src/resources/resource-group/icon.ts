@@ -2,5 +2,5 @@ import type { IconDefinition } from '@terrastudio/types';
 
 export const resourceGroupIcon: IconDefinition = {
   type: 'svg',
-  svg: `<svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="rg-grad" x1="9" y1="16" x2="9" y2="2" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#0078d4"/><stop offset="1" stop-color="#5ea0ef"/></linearGradient></defs><rect x="2" y="3" width="14" height="12" rx="2" fill="url(#rg-grad)"/><rect x="4" y="5" width="10" height="8" rx="1" fill="none" stroke="#fff" stroke-width=".5" opacity=".6"/><rect x="6" y="7" width="2.5" height="2.5" rx=".3" fill="#fff" opacity=".8"/><rect x="9.5" y="7" width="2.5" height="2.5" rx=".3" fill="#fff" opacity=".8"/><rect x="6" y="10.5" width="6" height="1" rx=".3" fill="#fff" opacity=".5"/></svg>`,
+  svg: `<svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="3.5" width="16" height="11" rx="1.5" fill="#3b82f6"/><path d="M1 5C1 4.17 1.67 3.5 2.5 3.5h5l1.5 2h6.5c.83 0 1.5.67 1.5 1.5" fill="#60a5fa"/><rect x="4" y="7.5" width="3" height="3" rx=".5" fill="#fff" opacity=".85"/><rect x="8" y="7.5" width="3" height="3" rx=".5" fill="#fff" opacity=".85"/><rect x="12" y="7.5" width="2" height="3" rx=".5" fill="#fff" opacity=".6"/></svg>`,
 };

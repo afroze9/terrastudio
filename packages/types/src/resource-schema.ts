@@ -61,6 +61,19 @@ export interface HandleDefinition {
   readonly maxConnections?: number;
 }
 
+export interface ContainerStyle {
+  /** CSS border color, e.g. '#14b8a6' */
+  readonly borderColor?: string;
+  /** CSS border style */
+  readonly borderStyle?: 'solid' | 'dashed' | 'dotted';
+  /** CSS background color (use rgba for semi-transparency) */
+  readonly backgroundColor?: string;
+  /** Color for the container header bar text/icon */
+  readonly headerColor?: string;
+  /** Border radius in pixels */
+  readonly borderRadius?: number;
+}
+
 export interface ResourceSchema {
   readonly typeId: ResourceTypeId;
   readonly provider: string;
@@ -76,4 +89,6 @@ export interface ResourceSchema {
   readonly isContainer?: boolean;
   /** Which container typeIds this resource can be placed inside */
   readonly canBeChildOf?: ReadonlyArray<ResourceTypeId>;
+  /** Visual style for container nodes; read by ContainerResourceNode */
+  readonly containerStyle?: ContainerStyle;
 }

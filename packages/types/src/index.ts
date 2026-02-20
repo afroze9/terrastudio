@@ -8,6 +8,7 @@ export type {
   PropertySchema,
   HandleDefinition,
   ResourceSchema,
+  ContainerStyle,
 } from './resource-schema.js';
 
 // HCL types

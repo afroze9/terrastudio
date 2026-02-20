@@ -6,6 +6,7 @@
   import { openProject, saveDiagram } from '$lib/services/project-service';
   import { generateAndWrite } from '$lib/services/terraform-service';
   import { exportPNG, copyDiagramToClipboard, exportDocumentation } from '$lib/services/export-service';
+  import WindowControls from './WindowControls.svelte';
 
   let { onNewProject }: { onNewProject: () => void } = $props();
 
@@ -58,7 +59,7 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <svelte:window onclick={handleWindowClick} />
 
-<header class="toolbar">
+<header class="toolbar" data-tauri-drag-region>
   <div class="toolbar-left">
     <span class="app-logo">TerraStudio</span>
     <span class="separator"></span>
@@ -122,6 +123,8 @@
     >
       Generate
     </button>
+    <span class="separator"></span>
+    <WindowControls />
   </div>
 </header>
 
@@ -130,16 +133,18 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 16px;
+    padding: 0 0 0 16px;
     height: 44px;
     background: var(--color-surface);
     border-bottom: 1px solid var(--color-border);
     flex-shrink: 0;
+    -webkit-app-region: drag;
   }
   .toolbar-left, .toolbar-center, .toolbar-right {
     display: flex;
     align-items: center;
     gap: 8px;
+    -webkit-app-region: no-drag;
   }
   .app-logo {
     font-weight: 700;
