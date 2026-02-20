@@ -61,7 +61,8 @@ pub async fn create_project(
             "locationAsVariable": true,
             "commonTags": {
                 "managed_by": "terrastudio"
-            }
+            },
+            "variableValues": {}
         }),
     };
 

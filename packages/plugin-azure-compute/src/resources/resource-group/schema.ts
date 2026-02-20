@@ -10,6 +10,7 @@ export const resourceGroupSchema: ResourceSchema = {
   supportsTags: true,
   requiresResourceGroup: false,
   isContainer: true,
+  canBeChildOf: ['azurerm/core/subscription'],
   containerStyle: {
     borderColor: '#4b5563',
     borderStyle: 'dashed',

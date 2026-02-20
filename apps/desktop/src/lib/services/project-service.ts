@@ -1,5 +1,8 @@
 import { invoke } from '@tauri-apps/api/core';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
+import type { ResourceTypeId } from '@terrastudio/types';
+import { createNodeData, generateNodeId } from '@terrastudio/core';
+import { registry } from '$lib/bootstrap';
 import { project, type ProjectMetadata } from '$lib/stores/project.svelte';
 import { diagram } from '$lib/stores/diagram.svelte';
 
@@ -23,6 +26,9 @@ export async function createProject(name: string, parentPath: string): Promise<v
 
   diagram.clear();
   project.open(data.path, data.metadata);
+
+  // Pre-populate canvas with Subscription + Resource Group
+  prePopulateCanvas();
 }
 
 /**
@@ -96,4 +102,49 @@ export async function pickFolder(): Promise<string | null> {
     title: 'Select Project Location',
   });
   return selected ?? null;
+}
+
+/**
+ * Pre-populate a new project with a Subscription container and Resource Group inside it.
+ */
+function prePopulateCanvas(): void {
+  const subTypeId: ResourceTypeId = 'azurerm/core/subscription';
+  const rgTypeId: ResourceTypeId = 'azurerm/core/resource_group';
+
+  const subSchema = registry.getResourceSchema(subTypeId);
+  const rgSchema = registry.getResourceSchema(rgTypeId);
+  if (!subSchema || !rgSchema) return;
+
+  // Create Subscription container
+  const subId = generateNodeId(subTypeId);
+  const subData = createNodeData(subSchema, {
+    label: 'Subscription',
+  });
+
+  diagram.addNode({
+    id: subId,
+    type: subTypeId,
+    position: { x: 100, y: 100 },
+    data: subData,
+    width: 900,
+    height: 700,
+    style: 'width: 900px; height: 700px;',
+  } as any);
+
+  // Create Resource Group as child of Subscription
+  const rgId = generateNodeId(rgTypeId);
+  const rgData = createNodeData(rgSchema, {
+    label: 'Resource Group',
+  });
+
+  diagram.addNode({
+    id: rgId,
+    type: rgTypeId,
+    position: { x: 50, y: 60 },
+    data: rgData,
+    parentId: subId,
+    width: 800,
+    height: 600,
+    style: 'width: 800px; height: 600px;',
+  } as any);
 }

@@ -135,6 +135,7 @@
       if (isContainer) {
         // Larger defaults for higher-level containers
         const sizeMap: Record<string, { w: number; h: number }> = {
+          'azurerm/core/subscription': { w: 900, h: 700 },
           'azurerm/core/resource_group': { w: 800, h: 600 },
           'azurerm/networking/virtual_network': { w: 600, h: 400 },
           'azurerm/networking/subnet': { w: 350, h: 250 },

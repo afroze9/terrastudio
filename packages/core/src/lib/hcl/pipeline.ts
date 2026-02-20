@@ -20,6 +20,7 @@ export interface ProjectConfig {
   location: string;
   locationAsVariable: boolean;
   commonTags: Record<string, string>;
+  variableValues: Record<string, string>;
   backend?: {
     type: string;
     config: Record<string, string>;
@@ -32,6 +33,11 @@ export interface PipelineInput {
   bindings?: OutputBinding[];
 }
 
+export interface PipelineResult {
+  files: GeneratedFiles;
+  collectedVariables: TerraformVariable[];
+}
+
 /**
  * Main HCL generation orchestrator.
  * Takes diagram resources + project config and produces Terraform files.
@@ -39,7 +45,7 @@ export interface PipelineInput {
 export class HclPipeline {
   constructor(private registry: PluginRegistry) {}
 
-  generate(input: PipelineInput): GeneratedFiles {
+  generate(input: PipelineInput): PipelineResult {
     const { resources, projectConfig } = input;
 
     // 1. Build resource map (instanceId -> ResourceInstance)
@@ -48,9 +54,24 @@ export class HclPipeline {
       resourceMap.set(resource.instanceId, resource);
     }
 
-    // 2. Build terraform address map
+    // 1b. Extract subscription_id from canvas Subscription node (if present)
+    let subscriptionId: string | undefined;
+    const subscriptionNode = resources.find(
+      (r) => r.typeId === 'azurerm/core/subscription',
+    );
+    if (subscriptionNode) {
+      subscriptionId = subscriptionNode.properties['subscription_id'] as string;
+    }
+
+    // 1c. Filter out virtual resources (no real Terraform resource)
+    const realResources = resources.filter((r) => {
+      const schema = this.registry.getResourceSchema(r.typeId);
+      return schema && !schema.terraformType.startsWith('_');
+    });
+
+    // 2. Build terraform address map (only real resources)
     const addressMap = new Map<string, string>();
-    for (const resource of resources) {
+    for (const resource of realResources) {
       const schema = this.registry.getResourceSchema(resource.typeId);
       if (schema) {
         addressMap.set(
@@ -121,9 +142,9 @@ export class HclPipeline {
       },
     };
 
-    // 5. Call plugin generators for each resource
+    // 5. Call plugin generators for each real resource
     const allBlocks: HclBlock[] = [];
-    for (const resource of resources) {
+    for (const resource of realResources) {
       const generator = this.registry.getHclGenerator(resource.typeId);
       const blocks = generator.generate(resource, context);
       allBlocks.push(...blocks);
@@ -151,13 +172,18 @@ export class HclPipeline {
 
     // 7. Build provider configs
     const providerBuilder = new ProviderConfigBuilder();
-    const activeProviders = this.getActiveProviders(resources);
+    const activeProviders = this.getActiveProviders(realResources);
 
     for (const providerId of activeProviders) {
       const providerConfig = this.registry.getProviderConfig(providerId);
       if (providerConfig) {
-        const userConfig =
-          projectConfig.providerConfigs[providerId] ?? {};
+        const userConfig = {
+          ...(projectConfig.providerConfigs[providerId] ?? {}),
+        };
+        // Inject subscription_id from canvas node if present
+        if (providerId === 'azurerm' && subscriptionId) {
+          userConfig['subscription_id'] = subscriptionId;
+        }
         providerBuilder.addProvider(providerConfig, userConfig);
       }
     }
@@ -167,7 +193,7 @@ export class HclPipeline {
 
     // 9. Assemble output files
     const blockBuilder = new HclBlockBuilder();
-    return blockBuilder.assemble(
+    const files = blockBuilder.assemble(
       sortedBlocks,
       providerBuilder.generateTerraformBlock('>= 1.0', projectConfig.backend),
       providerBuilder.generateProviderBlocks(),
@@ -175,6 +201,17 @@ export class HclPipeline {
       outputCollector.generateOutputsHcl(),
       localsHcl,
     );
+
+    // 10. Generate terraform.tfvars from variable values
+    const tfvars = this.generateTfvars(variableCollector.getAll(), projectConfig);
+    if (tfvars.trim()) {
+      files['terraform.tfvars'] = tfvars;
+    }
+
+    return {
+      files,
+      collectedVariables: variableCollector.getAll(),
+    };
   }
 
   private getActiveProviders(resources: ResourceInstance[]): Set<ProviderId> {
@@ -186,6 +223,23 @@ export class HclPipeline {
       }
     }
     return providers;
+  }
+
+  private generateTfvars(
+    variables: TerraformVariable[],
+    config: ProjectConfig,
+  ): string {
+    const values: Record<string, string> = { ...(config.variableValues ?? {}) };
+    const lines: string[] = [];
+
+    for (const v of variables) {
+      const value = values[v.name];
+      if (value !== undefined && value !== '') {
+        lines.push(`${v.name} = "${value}"`);
+      }
+    }
+
+    return lines.join('\n');
   }
 
   private generateLocals(config: ProjectConfig): string {

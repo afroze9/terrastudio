@@ -6,8 +6,18 @@
   import { tick } from 'svelte';
 
   let outputEl: HTMLPreElement | undefined = $state();
+  let showVarWarning = $state(false);
 
   const canRunCommand = $derived(project.isOpen && terraform.canRun);
+
+  /** Variables that have no default and no user-supplied value */
+  const missingRequiredVars = $derived(
+    terraform.collectedVariables.filter(
+      (v) =>
+        (v.defaultValue === undefined || v.defaultValue === '') &&
+        !(project.projectConfig.variableValues[v.name]),
+    ),
+  );
 
   const statusLabel = $derived.by(() => {
     switch (terraform.status) {
@@ -44,9 +54,24 @@
   });
 
   async function handleCommand(command: TerraformCommand) {
+    // Warn about missing required variables before apply
+    if (command === 'apply' && missingRequiredVars.length > 0) {
+      showVarWarning = true;
+      return;
+    }
+    showVarWarning = false;
+
     const success = await runTerraformCommand(command);
     // Auto-refresh deployment status after apply or destroy
     if ((command === 'apply' || command === 'destroy') && success) {
+      await refreshDeploymentStatus();
+    }
+  }
+
+  async function forceApply() {
+    showVarWarning = false;
+    const success = await runTerraformCommand('apply');
+    if (success) {
       await refreshDeploymentStatus();
     }
   }
@@ -131,6 +156,15 @@
         </button>
       </div>
     </div>
+    {#if showVarWarning}
+      <div class="var-warning">
+        <span>Missing values for {missingRequiredVars.length} required variable{missingRequiredVars.length > 1 ? 's' : ''}: {missingRequiredVars.map(v => v.name).join(', ')}</span>
+        <div class="var-warning-actions">
+          <button class="clear-btn" onclick={forceApply}>Apply Anyway</button>
+          <button class="clear-btn" onclick={() => (showVarWarning = false)}>Dismiss</button>
+        </div>
+      </div>
+    {/if}
     <pre class="panel-output" bind:this={outputEl}>{#each terraform.outputLines as line}<span class={line.stream === 'stderr' ? 'line-stderr' : 'line-stdout'}>{line.line}
 </span>{/each}</pre>
   </div>
@@ -259,5 +293,22 @@
   }
   .line-stderr {
     color: #ef4444;
+  }
+  .var-warning {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 16px;
+    background: rgba(245, 158, 11, 0.1);
+    border-bottom: 1px solid rgba(245, 158, 11, 0.3);
+    font-size: 11px;
+    color: #f59e0b;
+    flex-shrink: 0;
+  }
+  .var-warning-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
   }
 </style>

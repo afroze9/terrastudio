@@ -7,6 +7,7 @@ export interface GeneratedFiles {
   'variables.tf': string;
   'outputs.tf': string;
   'locals.tf': string;
+  'terraform.tfvars'?: string;
 }
 
 /**

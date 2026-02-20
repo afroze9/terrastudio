@@ -2,7 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import type { UnlistenFn } from '@tauri-apps/api/event';
 import type { DeploymentStatus, ResourceTypeId } from '@terrastudio/types';
-import { HclPipeline, validateDiagram, type GeneratedFiles } from '@terrastudio/core';
+import { HclPipeline, validateDiagram } from '@terrastudio/core';
 import { registry, edgeValidator } from '$lib/bootstrap';
 import { diagram } from '$lib/stores/diagram.svelte';
 import { project } from '$lib/stores/project.svelte';
@@ -67,17 +67,20 @@ export async function generateAndWrite(): Promise<void> {
 
     // Run HCL pipeline
     const pipeline = new HclPipeline(registry);
-    const files: GeneratedFiles = pipeline.generate({
+    const result = pipeline.generate({
       resources,
       projectConfig: project.projectConfig,
       bindings,
     });
 
+    // Store collected variables for UI display
+    terraform.collectedVariables = result.collectedVariables;
+
     terraform.setStatus('writing');
 
     // Filter out empty files and send to Rust backend
     const fileMap: Record<string, string> = {};
-    for (const [name, content] of Object.entries(files)) {
+    for (const [name, content] of Object.entries(result.files)) {
       if (content.trim()) {
         fileMap[name] = content;
       }
@@ -188,15 +191,17 @@ export async function refreshDeploymentStatus(): Promise<void> {
   for (const node of diagram.nodes) {
     const typeId = node.data.typeId as ResourceTypeId;
     const schema = registry.getResourceSchema(typeId);
-    if (schema) {
-      // Use generator's resolveTerraformType if available (handles OS variants)
-      const generator = registry.getHclGenerator(typeId);
-      const tfType = generator.resolveTerraformType
-        ? generator.resolveTerraformType(node.data.properties)
-        : schema.terraformType;
-      const address = `${tfType}.${node.data.terraformName}`;
-      addressToNodeId.set(address, node.id);
-    }
+    if (!schema) continue;
+    // Skip virtual nodes (no real Terraform resource)
+    if (schema.terraformType.startsWith('_')) continue;
+
+    // Use generator's resolveTerraformType if available (handles OS variants)
+    const generator = registry.getHclGenerator(typeId);
+    const tfType = generator.resolveTerraformType
+      ? generator.resolveTerraformType(node.data.properties)
+      : schema.terraformType;
+    const address = `${tfType}.${node.data.terraformName}`;
+    addressToNodeId.set(address, node.id);
   }
 
   // Track which nodes are found in state

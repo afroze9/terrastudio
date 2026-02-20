@@ -4,7 +4,7 @@ export { NodeTypeResolver } from './lib/registry/node-type-resolver.js';
 
 // HCL Pipeline
 export { HclPipeline } from './lib/hcl/pipeline.js';
-export type { ProjectConfig, PipelineInput } from './lib/hcl/pipeline.js';
+export type { ProjectConfig, PipelineInput, PipelineResult } from './lib/hcl/pipeline.js';
 export { HclBlockBuilder } from './lib/hcl/block-builder.js';
 export type { GeneratedFiles } from './lib/hcl/block-builder.js';
 export { DependencyGraph } from './lib/hcl/dependency-graph.js';

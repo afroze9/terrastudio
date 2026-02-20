@@ -1,3 +1,5 @@
+import type { TerraformVariable } from '@terrastudio/types';
+
 export type TerraformCommand = 'init' | 'validate' | 'plan' | 'apply' | 'destroy';
 export type TerraformStatusType = 'idle' | 'generating' | 'writing' | 'running' | 'success' | 'error';
 
@@ -12,6 +14,7 @@ class TerraformStore {
   outputLines = $state<TerraformOutputLine[]>([]);
   terraformVersion = $state<string | null>(null);
   terraformInstalled = $state<boolean | null>(null);
+  collectedVariables = $state<TerraformVariable[]>([]);
 
   isRunning = $derived(
     this.status === 'running' ||

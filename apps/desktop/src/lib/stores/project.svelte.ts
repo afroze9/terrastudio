@@ -25,12 +25,18 @@ class ProjectStore {
     commonTags: {
       managed_by: 'terrastudio',
     },
+    variableValues: {},
   });
 
   open(path: string, metadata: ProjectMetadata) {
     this.path = path;
     this.name = metadata.name;
-    this.projectConfig = metadata.projectConfig;
+    // Merge loaded config with defaults for backward compatibility
+    this.projectConfig = {
+      ...this.projectConfig,
+      ...metadata.projectConfig,
+      variableValues: metadata.projectConfig.variableValues ?? {},
+    };
     this.isOpen = true;
     this.isDirty = false;
   }

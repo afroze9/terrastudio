@@ -1,4 +1,5 @@
 import type { InfraPlugin, ResourceTypeId, ResourceTypeRegistration } from '@terrastudio/types';
+import { subscriptionRegistration } from './resources/subscription/index.js';
 import { resourceGroupRegistration } from './resources/resource-group/index.js';
 import { vmRegistration } from './resources/virtual-machine/index.js';
 import { keyVaultRegistration } from './resources/key-vault/index.js';
@@ -8,6 +9,7 @@ import { computeConnectionRules } from './connections/rules.js';
 import { keyVaultSecretBinding } from './bindings/keyvault-secret.js';
 
 const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
+  ['azurerm/core/subscription', subscriptionRegistration],
   ['azurerm/core/resource_group', resourceGroupRegistration],
   ['azurerm/compute/virtual_machine', vmRegistration],
   ['azurerm/security/key_vault', keyVaultRegistration],

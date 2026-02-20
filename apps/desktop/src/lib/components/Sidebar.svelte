@@ -1,7 +1,9 @@
 <script lang="ts">
   import { diagram } from '$lib/stores/diagram.svelte';
+  import { project } from '$lib/stores/project.svelte';
   import { registry } from '$lib/bootstrap';
   import PropertyRenderer from './PropertyRenderer.svelte';
+  import ProjectConfigPanel from './ProjectConfigPanel.svelte';
   import type { ResourceTypeId } from '@terrastudio/types';
 
   let schema = $derived(
@@ -212,6 +214,8 @@
       </button>
     </div>
   </aside>
+{:else if project.isOpen}
+  <ProjectConfigPanel />
 {/if}
 
 <style>

@@ -26,8 +26,14 @@ export const azurermProviderConfig: ProviderConfig = {
   generateProviderBlock(config: Record<string, unknown>): string {
     const lines: string[] = ['provider "azurerm" {'];
 
-    if (config['subscription_id']) {
-      lines.push(`  subscription_id = "${config['subscription_id']}"`);
+    const subId = config['subscription_id'] as string | undefined;
+    if (subId) {
+      // If it's a variable expression (var.*), don't quote it
+      if (subId.startsWith('var.')) {
+        lines.push(`  subscription_id = ${subId}`);
+      } else {
+        lines.push(`  subscription_id = "${subId}"`);
+      }
     }
 
     lines.push('  features {}');
