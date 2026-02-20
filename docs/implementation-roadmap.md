@@ -12,44 +12,44 @@ Core pipeline validated end-to-end: diagram → HCL generation → Terraform ini
 gantt
     title TerraStudio Implementation Phases
     dateFormat YYYY-MM-DD
-    axisFormat %b %d
+    axisFormat %b '%y
 
     section Foundation
-    Phase 1 Monorepo + Types         :done, p1, 2025-07-01, 3d
-    Phase 2 Core Registry + HCL      :done, p2, after p1, 3d
+    Phase 1 Monorepo + Types         :done, p1, 2025-08-10, 2025-08-16
+    Phase 2 Core Registry + HCL      :done, p2, 2025-08-17, 2025-08-24
 
     section First Plugin
-    Phase 3 Networking Plugin         :done, p3, after p2, 3d
+    Phase 3 Networking Plugin         :done, p3, 2025-08-25, 2025-09-06
 
     section Desktop App
-    Phase 4 Tauri Shell + Canvas      :done, p4, after p3, 3d
-    Phase 5 Sidebar + Drag-Drop       :done, p5, after p4, 3d
+    Phase 4 Tauri Shell + Canvas      :done, p4, 2025-09-07, 2025-09-20
+    Phase 5 Sidebar + Drag-Drop       :done, p5, 2025-09-21, 2025-10-04
 
     section Cross-Plugin
-    Phase 6 Compute Plugin (VM)       :done, p6, after p5, 3d
+    Phase 6 Compute Plugin (VM)       :done, p6, 2025-10-05, 2025-10-18
 
     section Terraform
-    Phase 7 Terraform Execution       :done, p7, after p6, 3d
-    Phase 8 Deployment Status         :done, p8, after p7, 3d
+    Phase 7 Terraform Execution       :done, p7, 2025-10-19, 2025-11-08
+    Phase 8 Deployment Status         :done, p8, 2025-11-09, 2025-11-22
 
     section Polish
-    Phase 9 Save/Load + Polish        :done, p9, after p8, 3d
+    Phase 9 Save/Load + Polish        :done, p9, 2025-11-23, 2025-12-06
 
     section Export
-    Phase 10 Export + Doc Gen         :done, p10, after p9, 3d
+    Phase 10 Export + Doc Gen         :done, p10, 2025-12-07, 2025-12-20
 
     section Visual Polish
-    Phase 11 Icons + Frameless UI     :done, p11, after p10, 3d
-    Phase 12 Handle + Edge Labels     :done, p12, after p11, 3d
+    Phase 11 Icons + Frameless UI     :done, p11, 2026-01-05, 2026-01-18
+    Phase 12 Handle + Edge Labels     :done, p12, 2026-01-19, 2026-02-01
 
     section Refactor + Expand
-    Phase 13 Containment Refactor     :done, p13, after p12, 3d
-    Phase 14 New Resources            :done, p14, after p12, 3d
+    Phase 13 Containment Refactor     :done, p13, 2026-02-02, 2026-02-10
+    Phase 14 New Resources            :done, p14, 2026-02-10, 2026-02-20
 
     section Upcoming
-    Phase 15 Resource Output Bindings :active, p15, after p14, 5d
-    Phase 16 Subscription + Vars      :p16, after p15, 5d
-    Phase 17 CIDR + Name Validation   :p17, after p16, 5d
+    Phase 15 Resource Output Bindings :active, p15, 2026-02-21, 2026-03-07
+    Phase 16 Subscription + Vars      :p16, 2026-03-08, 2026-03-22
+    Phase 17 CIDR + Name Validation   :p17, 2026-03-23, 2026-04-05
 ```
 
 ---
