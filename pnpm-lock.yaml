@@ -32,6 +32,9 @@ importers:
       '@terrastudio/plugin-azure-networking':
         specifier: workspace:*
         version: link:../../packages/plugin-azure-networking
+      '@terrastudio/plugin-azure-storage':
+        specifier: workspace:*
+        version: link:../../packages/plugin-azure-storage
       '@terrastudio/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -97,6 +100,16 @@ importers:
         version: 5.9.3
 
   packages/plugin-azure-networking:
+    dependencies:
+      '@terrastudio/types':
+        specifier: workspace:*
+        version: link:../types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
+  packages/plugin-azure-storage:
     dependencies:
       '@terrastudio/types':
         specifier: workspace:*

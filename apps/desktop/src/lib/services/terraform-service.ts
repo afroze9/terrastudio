@@ -178,9 +178,15 @@ export async function refreshDeploymentStatus(): Promise<void> {
   // Build a lookup: "terraform_type.terraform_name" -> nodeId
   const addressToNodeId = new Map<string, string>();
   for (const node of diagram.nodes) {
-    const schema = registry.getResourceSchema(node.data.typeId as ResourceTypeId);
+    const typeId = node.data.typeId as ResourceTypeId;
+    const schema = registry.getResourceSchema(typeId);
     if (schema) {
-      const address = `${schema.terraformType}.${node.data.terraformName}`;
+      // Use generator's resolveTerraformType if available (handles OS variants)
+      const generator = registry.getHclGenerator(typeId);
+      const tfType = generator.resolveTerraformType
+        ? generator.resolveTerraformType(node.data.properties)
+        : schema.terraformType;
+      const address = `${tfType}.${node.data.terraformName}`;
       addressToNodeId.set(address, node.id);
     }
   }

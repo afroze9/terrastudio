@@ -3,6 +3,12 @@ import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } f
 export const vmHclGenerator: HclGenerator = {
   typeId: 'azurerm/compute/virtual_machine',
 
+  resolveTerraformType(properties: Record<string, unknown>): string {
+    return (properties['os_type'] as string) === 'windows'
+      ? 'azurerm_windows_virtual_machine'
+      : 'azurerm_linux_virtual_machine';
+  },
+
   generate(resource: ResourceInstance, context: HclGenerationContext): HclBlock[] {
     const props = resource.properties;
     const name = props['name'] as string;

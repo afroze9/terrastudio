@@ -17,7 +17,7 @@ Visual infrastructure diagram builder that generates and executes Terraform. Des
 packages/types/                     # @terrastudio/types - shared interfaces (the contract)
 packages/core/                      # @terrastudio/core - diagram engine, HCL pipeline, terraform bridge
 packages/plugin-azure-networking/   # @terrastudio/plugin-azure-networking - VNet, Subnet, NSG
-packages/plugin-azure-compute/      # @terrastudio/plugin-azure-compute - VM, VMSS, App Service
+packages/plugin-azure-compute/      # @terrastudio/plugin-azure-compute - RG, VM, App Service, Key Vault
 packages/plugin-azure-storage/      # @terrastudio/plugin-azure-storage - Storage Account, Blob
 apps/desktop/                       # Tauri 2 desktop app (wires core + plugins)
 ```
@@ -73,6 +73,55 @@ Svelte 5 runes (`$state`, `$derived`). No stores library. Diagram state in `diag
 - Plugins are statically imported in `apps/desktop/src/lib/bootstrap.ts`
 - Use Mermaid diagrams in markdown documentation
 - Types package has zero runtime dependencies
+
+## Adding New Resources
+
+When adding a new Azure (or any provider) resource, determine the following before writing code:
+
+### 1. Container or leaf?
+- **Container** (`isContainer: true`): Renders as a resizable box that other nodes can be placed inside (e.g., Resource Group, VNet, Subnet). Uses `ContainerResourceNode.svelte`.
+- **Leaf** (`isContainer` omitted/false): Renders as a compact card node (e.g., VM, NSG, Storage Account). Uses `DefaultResourceNode.svelte`.
+
+### 2. Containment requirements (`canBeChildOf`)
+Does this resource **must** live inside a specific container? If so, set `canBeChildOf: ['azurerm/.../parent_type']`. Examples:
+- Subnet must be inside a VNet
+- VM must be inside a Subnet
+- Most resources must be inside a Resource Group
+
+If it has a containment parent, also set `parentReference: { propertyKey: '...' }` so HCL generation can derive the parent reference from `parentId`. The `propertyKey` should match the Terraform argument name (e.g., `'virtual_network_name'` for Subnet, `'subnet_id'` for VM).
+
+### 3. Association edges (handles + connection rules)
+Does this resource need a **non-containment** relationship with another resource? These are drawn as edges on the canvas. Examples:
+- NSG associates with Subnet or VM (not containment — NSG lives in RG, not inside Subnet)
+- App Service references an App Service Plan
+
+For each association:
+- Add a **handle** on both sides (source handle on the provider, target handle on the consumer)
+- Add a **connection rule** in the plugin's `connections/rules.ts`
+- If the edge creates a Terraform reference, set `createsReference: { side, propertyKey }` on the rule
+
+**Rule of thumb**: If the relationship is parent-child (one is visually inside the other), use `canBeChildOf` + `parentReference`. If the relationship is peer-to-peer or cross-container, use handles + edges.
+
+### 4. Other schema fields
+- `requiresResourceGroup`: Does Terraform need `resource_group_name`? Almost always `true` for Azure resources.
+- `supportsTags`: Does the Azure resource accept a `tags` block?
+- `terraformType`: The exact Terraform resource type string. Watch for OS variants (e.g., `azurerm_linux_web_app` vs `azurerm_windows_web_app`).
+- `containerStyle`: Only for containers — border color, style, background, header color, radius.
+
+### 5. HCL generator considerations
+- Use `context.getResourceGroupExpression()` and `context.getLocationExpression()` for RG/location references.
+- Use `resource.references[key]` + `context.getAttributeReference(ref, attr)` for cross-resource references.
+- If extra data sources are needed (e.g., `data.azurerm_client_config` for Key Vault), emit them as additional `HclBlock` entries with `blockType: 'data'`.
+- Set `dependsOn` on the HclBlock when the resource explicitly depends on another.
+
+### 6. File checklist
+For each new resource, create these files in the plugin's `src/resources/{resource-name}/`:
+- `schema.ts` — ResourceSchema definition
+- `hcl-generator.ts` — HclGenerator implementation
+- `index.ts` — ResourceTypeRegistration bundle
+- `icon.ts` — (optional) IconDefinition with inline SVG
+
+Then register it in the plugin's `src/index.ts` resourceTypes Map and add its category to `paletteCategories` if new.
 
 ## Documentation
 

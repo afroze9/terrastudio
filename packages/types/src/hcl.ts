@@ -22,6 +22,8 @@ export interface HclGenerationContext {
 export interface HclGenerator {
   readonly typeId: ResourceTypeId;
   generate(resource: ResourceInstance, context: HclGenerationContext): HclBlock[];
+  /** Resolve the actual Terraform type based on properties (for OS-variant resources like VM, App Service). Falls back to schema.terraformType if not implemented. */
+  resolveTerraformType?(properties: Record<string, unknown>): string;
 }
 
 export interface HclBlock {

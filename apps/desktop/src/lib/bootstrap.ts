@@ -1,6 +1,7 @@
 import { PluginRegistry, EdgeRuleValidator } from '@terrastudio/core';
 import networkingPlugin from '@terrastudio/plugin-azure-networking';
 import computePlugin from '@terrastudio/plugin-azure-compute';
+import storagePlugin from '@terrastudio/plugin-azure-storage';
 import DefaultResourceNode from '$lib/components/DefaultResourceNode.svelte';
 import ContainerResourceNode from '$lib/components/ContainerResourceNode.svelte';
 import { checkTerraform } from '$lib/services/terraform-service';
@@ -12,6 +13,7 @@ export let edgeValidator: EdgeRuleValidator;
 export function initializePlugins(): void {
   registry.registerPlugin(networkingPlugin);
   registry.registerPlugin(computePlugin);
+  registry.registerPlugin(storagePlugin);
   registry.finalize();
   edgeValidator = new EdgeRuleValidator(registry.getConnectionRules());
 }

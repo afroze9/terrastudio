@@ -1,11 +1,17 @@
 import type { InfraPlugin, ResourceTypeId, ResourceTypeRegistration } from '@terrastudio/types';
 import { resourceGroupRegistration } from './resources/resource-group/index.js';
 import { vmRegistration } from './resources/virtual-machine/index.js';
+import { keyVaultRegistration } from './resources/key-vault/index.js';
+import { appServicePlanRegistration } from './resources/app-service-plan/index.js';
+import { appServiceRegistration } from './resources/app-service/index.js';
 import { computeConnectionRules } from './connections/rules.js';
 
 const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
   ['azurerm/core/resource_group', resourceGroupRegistration],
   ['azurerm/compute/virtual_machine', vmRegistration],
+  ['azurerm/security/key_vault', keyVaultRegistration],
+  ['azurerm/compute/app_service_plan', appServicePlanRegistration],
+  ['azurerm/compute/app_service', appServiceRegistration],
 ]);
 
 const plugin: InfraPlugin = {
@@ -27,6 +33,11 @@ const plugin: InfraPlugin = {
       id: 'compute',
       label: 'Compute',
       order: 20,
+    },
+    {
+      id: 'security',
+      label: 'Security',
+      order: 40,
     },
   ],
 };
