@@ -8,9 +8,10 @@
     BackgroundVariant,
     type OnConnect,
     type OnDelete,
+    type IsValidConnection,
   } from '@xyflow/svelte';
   import { diagram, type DiagramNode } from '$lib/stores/diagram.svelte';
-  import { registry } from '$lib/bootstrap';
+  import { registry, edgeValidator } from '$lib/bootstrap';
   import { createNodeData, generateNodeId } from '@terrastudio/core';
   import type { ResourceNodeComponent, ResourceTypeId } from '@terrastudio/types';
   import type { Action } from 'svelte/action';
@@ -165,13 +166,45 @@
 
   const onConnect: OnConnect = (connection) => {
     const edgeId = `e-${connection.source}-${connection.target}`;
+
+    // Look up the connection rule to get the default edge label
+    const sourceNode = diagram.nodes.find((n) => n.id === connection.source);
+    const targetNode = diagram.nodes.find((n) => n.id === connection.target);
+    let label: string | undefined;
+    if (sourceNode && targetNode) {
+      const result = edgeValidator.validate(
+        sourceNode.type as ResourceTypeId,
+        connection.sourceHandle ?? '',
+        targetNode.type as ResourceTypeId,
+        connection.targetHandle ?? '',
+      );
+      if (result.valid && result.rule?.label) {
+        label = result.rule.label;
+      }
+    }
+
     diagram.addEdge({
       id: edgeId,
       source: connection.source,
       target: connection.target,
       sourceHandle: connection.sourceHandle,
       targetHandle: connection.targetHandle,
+      ...(label ? { label } : {}),
     });
+  };
+
+  const isValidConnection: IsValidConnection = (connection) => {
+    const sourceNode = diagram.nodes.find((n) => n.id === connection.source);
+    const targetNode = diagram.nodes.find((n) => n.id === connection.target);
+    if (!sourceNode || !targetNode) return false;
+
+    const result = edgeValidator.validate(
+      sourceNode.type as ResourceTypeId,
+      connection.sourceHandle ?? '',
+      targetNode.type as ResourceTypeId,
+      connection.targetHandle ?? '',
+    );
+    return result.valid;
   };
 
   const onDelete: OnDelete = ({ nodes: deletedNodes }) => {
@@ -232,11 +265,13 @@
     bind:edges={diagram.edges}
     {nodeTypes}
     fitView
+    {isValidConnection}
     onconnect={onConnect}
     ondelete={onDelete}
     onnodedragstop={(event) => { handleNodeDragStop(event); diagram.saveSnapshot(); }}
-    onnodeclick={({ node }) => { diagram.selectedNodeId = node.id; }}
-    onpaneclick={() => { diagram.selectedNodeId = null; }}
+    onnodeclick={({ node }) => { diagram.selectedEdgeId = null; diagram.selectedNodeId = node.id; }}
+    onedgeclick={({ edge }) => { diagram.selectedNodeId = null; diagram.selectedEdgeId = edge.id; }}
+    onpaneclick={() => { diagram.selectedNodeId = null; diagram.selectedEdgeId = null; }}
   >
     <Controls />
     <MiniMap />

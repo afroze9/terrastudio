@@ -20,3 +20,29 @@ html, body {
   color: var(--color-text);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
+
+/* Edge label styling */
+.svelte-flow__edge-text {
+  font-size: 10px;
+  fill: var(--color-text-muted, #8b90a0);
+}
+
+.svelte-flow__edge-textbg {
+  fill: var(--color-surface, #1a1d27);
+  stroke: var(--color-border, #2e3347);
+  stroke-width: 0.5;
+  rx: 3;
+}
+
+/* Handle highlighting during connection drag */
+.svelte-flow .handle-compatible {
+  background-color: #22c55e !important;
+  box-shadow: 0 0 6px 2px rgba(34, 197, 94, 0.5);
+  transform: scale(1.4);
+  transition: all 0.15s ease;
+}
+
+.svelte-flow .handle-incompatible {
+  opacity: 0.3;
+  transition: opacity 0.15s ease;
+}

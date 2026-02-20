@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { Handle, Position } from '@xyflow/svelte';
   import { registry } from '$lib/bootstrap';
   import DeploymentBadge from './DeploymentBadge.svelte';
   import NodeTooltip from './NodeTooltip.svelte';
+  import HandleWithLabel from './HandleWithLabel.svelte';
 
   let { data, id, selected }: { data: any; id: string; selected?: boolean } = $props();
 
@@ -42,11 +42,7 @@
   </div>
 
   {#each handles as handle}
-    <Handle
-      type={handle.type}
-      position={handle.position === 'top' ? Position.Top : handle.position === 'bottom' ? Position.Bottom : handle.position === 'left' ? Position.Left : Position.Right}
-      id={handle.id}
-    />
+    <HandleWithLabel {handle} nodeTypeId={data.typeId} />
   {/each}
 
   {#if schema && !selected}

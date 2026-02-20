@@ -9,6 +9,18 @@
       : null
   );
 
+  // Edge editing: resolve source/target node names for display
+  let sourceNode = $derived(
+    diagram.selectedEdge
+      ? diagram.nodes.find((n) => n.id === diagram.selectedEdge!.source)
+      : null
+  );
+  let targetNode = $derived(
+    diagram.selectedEdge
+      ? diagram.nodes.find((n) => n.id === diagram.selectedEdge!.target)
+      : null
+  );
+
   function onPropertyChange(key: string, value: unknown) {
     if (!diagram.selectedNode) return;
     const newProps = { ...diagram.selectedNode.data.properties };
@@ -58,6 +70,62 @@
         values={diagram.selectedNode.data.properties}
         onChange={onPropertyChange}
       />
+    </div>
+  </aside>
+{:else if diagram.selectedEdge}
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h3>Connection</h3>
+      <button
+        class="close-btn"
+        onclick={() => (diagram.selectedEdgeId = null)}
+        aria-label="Close sidebar"
+      >
+        &times;
+      </button>
+    </div>
+
+    <div class="sidebar-content">
+      <div class="edge-endpoints">
+        <div class="edge-endpoint">
+          <span class="endpoint-label">From</span>
+          <span class="endpoint-value">{sourceNode?.data.label || 'Unknown'}</span>
+        </div>
+        <div class="edge-arrow">&#8595;</div>
+        <div class="edge-endpoint">
+          <span class="endpoint-label">To</span>
+          <span class="endpoint-value">{targetNode?.data.label || 'Unknown'}</span>
+        </div>
+      </div>
+
+      <div class="tf-name-field">
+        <label class="field-label">
+          <span class="label-text">Label</span>
+          <input
+            type="text"
+            value={typeof diagram.selectedEdge.label === 'string' ? diagram.selectedEdge.label : ''}
+            oninput={(e) => {
+              if (diagram.selectedEdge) {
+                diagram.updateEdgeLabel(diagram.selectedEdge.id, (e.target as HTMLInputElement).value);
+              }
+            }}
+            placeholder="Connection label..."
+          />
+        </label>
+      </div>
+
+      <button
+        class="delete-edge-btn"
+        onclick={() => {
+          if (diagram.selectedEdge) {
+            const edgeId = diagram.selectedEdge.id;
+            diagram.selectedEdgeId = null;
+            diagram.removeEdge(edgeId);
+          }
+        }}
+      >
+        Delete Connection
+      </button>
     </div>
   </aside>
 {/if}
@@ -129,5 +197,52 @@
   }
   input[type='text']:focus {
     border-color: var(--color-accent);
+  }
+  .edge-endpoints {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 16px;
+    padding: 10px;
+    background: var(--color-bg);
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+  }
+  .edge-endpoint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+  .endpoint-label {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    min-width: 32px;
+  }
+  .endpoint-value {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text);
+  }
+  .edge-arrow {
+    color: var(--color-text-muted);
+    font-size: 14px;
+  }
+  .delete-edge-btn {
+    margin-top: 16px;
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ef4444;
+    border-radius: 6px;
+    background: transparent;
+    color: #ef4444;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .delete-edge-btn:hover {
+    background: #ef4444;
+    color: #fff;
   }
 </style>

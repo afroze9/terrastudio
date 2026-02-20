@@ -39,8 +39,8 @@ gantt
     Phase 10: Export + Doc Gen       :done, p10, 9, 1
 
     section Visual Polish
-    Phase 11: Icons + Frameless UI   :active, p11, 10, 1
-    Phase 12: Handle + Edge Labels   :active, p12, 11, 1
+    Phase 11: Icons + Frameless UI   :done, p11, 10, 1
+    Phase 12: Handle + Edge Labels   :done, p12, 11, 1
 
     section Azure Intelligence
     Phase 13: Subscription + Vars    :active, p13, 12, 1
@@ -420,7 +420,7 @@ gantt
 
 ---
 
-## Phase 11: Visual Polish — Icons, Palette, Container Styling, Frameless UI
+## Phase 11: Visual Polish — Icons, Palette, Container Styling, Frameless UI ✅
 
 **Goal**: Replace plain rectangles with real Azure resource icons, add collapsible palette sections, give containers provider-accurate styling, and modernize the window chrome.
 
@@ -480,7 +480,7 @@ gantt
 
 ---
 
-## Phase 12: Handle Labels + Connector Labels
+## Phase 12: Handle Labels + Connector Labels ✅
 
 **Goal**: Show what connections mean — labeled handles on nodes and labeled edges on the diagram.
 
@@ -509,6 +509,14 @@ gantt
 - Hover over a node handle → see "subnet_id" or similar label
 - Draw a connection → edge shows label describing the relationship
 - Incompatible handles are visually dimmed during connection drag
+
+### Implementation Notes
+- `HandleWithLabel.svelte` — shared component used by both `DefaultResourceNode` and `ContainerResourceNode`. Uses SvelteFlow's Handle `children` snippet to position labels adjacent to handles. Labels always visible (9px muted text).
+- `useConnection()` hook inside `HandleWithLabel` drives connection drag highlighting — compatible handles glow green (`#22c55e`), incompatible handles dim to 30% opacity
+- `EdgeRuleValidator` instantiated in `bootstrap.ts` from plugin connection rules, used for both `isValidConnection` prop (prevents invalid connections) and `onConnect` label derivation
+- Edge labels use SvelteFlow's built-in `edge.label` rendering (SVG text with background rect) — no custom edge component needed. Styled via `.svelte-flow__edge-text` / `.svelte-flow__edge-textbg` CSS overrides.
+- Edge labels are user-editable: click an edge to select it, edit label in the sidebar. `diagram.updateEdgeLabel()` with debounced history (same pattern as `updateNodeData`).
+- `diagram.selectedEdgeId` tracks edge selection; `Sidebar.svelte` shows connection details (source/target names, editable label, delete button) when an edge is selected
 
 ---
 

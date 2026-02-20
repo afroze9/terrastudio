@@ -17,6 +17,7 @@ class DiagramStore {
   edges = $state<DiagramEdge[]>([]);
 
   selectedNodeId = $state<string | null>(null);
+  selectedEdgeId = $state<string | null>(null);
 
   // Undo/redo history — each entry is a complete state snapshot.
   // historyIndex points to the entry representing the current state.
@@ -31,6 +32,12 @@ class DiagramStore {
   selectedNode = $derived(
     this.selectedNodeId
       ? this.nodes.find((n) => n.id === this.selectedNodeId) ?? null
+      : null
+  );
+
+  selectedEdge = $derived(
+    this.selectedEdgeId
+      ? this.edges.find((e) => e.id === this.selectedEdgeId) ?? null
       : null
   );
 
@@ -109,6 +116,7 @@ class DiagramStore {
     this.nodes = structuredClone(nodesSnap) as DiagramNode[];
     this.edges = structuredClone(edgesSnap) as DiagramEdge[];
     this.selectedNodeId = null;
+    this.selectedEdgeId = null;
     this.skipHistory = false;
   }
 
@@ -156,6 +164,25 @@ class DiagramStore {
     this.ensureInitialSnapshot();
     this.edges = [...this.edges, edge];
     this.pushSnapshot();
+  }
+
+  updateEdgeLabel(edgeId: string, label: string) {
+    this.ensureInitialSnapshot();
+
+    if (this.debounceTimer !== null) {
+      clearTimeout(this.debounceTimer);
+    }
+
+    project.markDirty();
+
+    this.edges = this.edges.map((e) =>
+      e.id === edgeId ? { ...e, label } : e
+    );
+
+    this.debounceTimer = setTimeout(() => {
+      this.debounceTimer = null;
+      this.pushSnapshot();
+    }, 500);
   }
 
   removeSelectedNodes() {
