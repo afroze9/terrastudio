@@ -7,10 +7,14 @@ import ContainerResourceNode from '$lib/components/ContainerResourceNode.svelte'
 import { checkTerraform } from '$lib/services/terraform-service';
 import type { Component } from 'svelte';
 
-export const registry = new PluginRegistry();
+export let registry = new PluginRegistry();
 export let edgeValidator: EdgeRuleValidator;
+let initialized = false;
 
 export function initializePlugins(): void {
+  if (initialized) return;
+  initialized = true;
+
   registry.registerPlugin(networkingPlugin);
   registry.registerPlugin(computePlugin);
   registry.registerPlugin(storagePlugin);

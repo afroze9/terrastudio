@@ -73,6 +73,23 @@
     });
   }
 
+  function onReferenceChange(key: string, targetId: string | null) {
+    if (!diagram.selectedNode) return;
+    const newRefs = { ...diagram.selectedNode.data.references };
+    if (targetId) {
+      newRefs[key] = targetId;
+    } else {
+      delete newRefs[key];
+    }
+    diagram.updateNodeData(diagram.selectedNode.id, { references: newRefs });
+  }
+
+  let diagramNodesForRef = $derived(
+    diagram.nodes
+      .filter((n) => diagram.selectedNode ? n.id !== diagram.selectedNode.id : true)
+      .map((n) => ({ id: n.id, typeId: n.data.typeId as string, label: n.data.label }))
+  );
+
   const panelTitle = $derived.by(() => {
     if (diagram.selectedNode && schema) return schema.displayName;
     if (diagram.selectedEdge) return 'Connection';
@@ -118,6 +135,9 @@
         properties={schema.properties}
         values={diagram.selectedNode.data.properties}
         onChange={onPropertyChange}
+        references={diagram.selectedNode.data.references}
+        diagramNodes={diagramNodesForRef}
+        onReferenceChange={onReferenceChange}
       />
 
       {#if schema.outputs && schema.outputs.length > 0}

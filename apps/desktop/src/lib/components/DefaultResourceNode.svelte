@@ -53,6 +53,9 @@
     updateNodeInternals();
   });
 
+  let hasNsg = $derived(!!data.references?.['nsg_id']);
+  let nsgIcon = $derived(hasNsg ? registry.getIcon('azurerm/networking/network_security_group' as any) : null);
+
   let hoverTimer: ReturnType<typeof setTimeout> | null = null;
   let showTooltip = $state(false);
 
@@ -81,6 +84,9 @@
       <span class="node-label">{data.label || schema?.displayName || 'Resource'}</span>
       <span class="node-type">{schema?.terraformType ?? data.typeId}</span>
     </div>
+    {#if hasNsg && nsgIcon?.type === 'svg' && nsgIcon.svg}
+      <span class="nsg-badge" title="NSG attached">{@html nsgIcon.svg}</span>
+    {/if}
     <DeploymentBadge status={data.deploymentStatus} />
   </div>
 
@@ -148,5 +154,16 @@
   .node-type {
     font-size: 10px;
     color: var(--color-text-muted, #8b90a0);
+  }
+  .nsg-badge {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+  }
+  .nsg-badge :global(svg) {
+    width: 16px;
+    height: 16px;
   }
 </style>

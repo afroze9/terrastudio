@@ -72,6 +72,9 @@
   let isValidDropTarget = $derived(ui.dragFeedback?.validContainerIds.has(id) ?? false);
   let isInvalidDropTarget = $derived(ui.dragFeedback?.invalidContainerIds.has(id) ?? false);
 
+  let hasNsg = $derived(!!data.references?.['nsg_id']);
+  let nsgIcon = $derived(hasNsg ? registry.getIcon('azurerm/networking/network_security_group' as any) : null);
+
   // CIDR subtitle: show address_space (VNet) or address_prefixes (Subnet) in the header
   let cidrSubtitle = $derived.by(() => {
     const props = data.properties;
@@ -170,6 +173,9 @@
     </svg>
   {/if}
   <div class="deployment-badge-corner">
+    {#if hasNsg && nsgIcon?.type === 'svg' && nsgIcon.svg}
+      <span class="nsg-badge" title="NSG attached">{@html nsgIcon.svg}</span>
+    {/if}
     <DeploymentBadge status={data.deploymentStatus} />
   </div>
   <div class="container-header" style="border-bottom-color: {borderColor}; {hideHeaderBorder ? 'border-bottom: none;' : ''}">
@@ -238,6 +244,9 @@
     top: 10px;
     right: 12px;
     z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
   .container-header {
     display: flex;
@@ -278,5 +287,16 @@
     flex: 1;
     min-height: 80px;
     padding: 8px;
+  }
+  .nsg-badge {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+  }
+  .nsg-badge :global(svg) {
+    width: 16px;
+    height: 16px;
   }
 </style>

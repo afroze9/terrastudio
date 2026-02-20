@@ -40,7 +40,7 @@ export const subnetHclGenerator: HclGenerator = {
 
     lines.push('}');
 
-    return [
+    const blocks: HclBlock[] = [
       {
         blockType: 'resource',
         terraformType: 'azurerm_subnet',
@@ -49,5 +49,30 @@ export const subnetHclGenerator: HclGenerator = {
         dependsOn,
       },
     ];
+
+    // NSG association via reference property
+    const nsgRef = resource.references['nsg_id'];
+    if (nsgRef) {
+      const nsgIdExpr = context.getAttributeReference(nsgRef, 'id');
+      const assocDeps = [`azurerm_subnet.${resource.terraformName}`];
+      const nsgAddr = context.getTerraformAddress(nsgRef);
+      if (nsgAddr) assocDeps.push(nsgAddr);
+
+      const assocLines = [
+        `resource "azurerm_subnet_network_security_group_association" "${resource.terraformName}_nsg" {`,
+        `  subnet_id                 = azurerm_subnet.${resource.terraformName}.id`,
+        `  network_security_group_id = ${nsgIdExpr}`,
+        '}',
+      ];
+      blocks.push({
+        blockType: 'resource',
+        terraformType: 'azurerm_subnet_network_security_group_association',
+        name: `${resource.terraformName}_nsg`,
+        content: assocLines.join('\n'),
+        dependsOn: assocDeps,
+      });
+    }
+
+    return blocks;
   },
 };

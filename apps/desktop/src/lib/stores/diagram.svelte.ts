@@ -133,6 +133,7 @@ class DiagramStore {
     this.ensureInitialSnapshot();
     this.nodes = this.nodes.filter((n) => n.id !== id);
     this.edges = this.edges.filter((e) => e.source !== id && e.target !== id);
+    this.cleanStaleReferences(id);
     if (this.selectedNodeId === id) {
       this.selectedNodeId = null;
     }
@@ -205,8 +206,25 @@ class DiagramStore {
     this.ensureInitialSnapshot();
     this.nodes = this.nodes.filter((n) => !selectedIds.has(n.id));
     this.edges = this.edges.filter((e) => !selectedIds.has(e.source) && !selectedIds.has(e.target));
+    for (const deletedId of selectedIds) {
+      this.cleanStaleReferences(deletedId);
+    }
     this.selectedNodeId = null;
     this.pushSnapshot();
+  }
+
+  /** Remove references pointing to a deleted node from all remaining nodes. */
+  private cleanStaleReferences(deletedId: string) {
+    this.nodes = this.nodes.map((n) => {
+      const refs = n.data.references;
+      const hasStale = Object.values(refs).includes(deletedId);
+      if (!hasStale) return n;
+      const cleaned = { ...refs };
+      for (const [k, v] of Object.entries(cleaned)) {
+        if (v === deletedId) delete cleaned[k];
+      }
+      return { ...n, data: { ...n.data, references: cleaned } };
+    });
   }
 
   removeEdge(id: string) {

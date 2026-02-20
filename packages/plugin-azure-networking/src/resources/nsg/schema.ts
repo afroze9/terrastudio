@@ -123,14 +123,7 @@ export const nsgSchema: ResourceSchema = {
     },
   ],
 
-  handles: [
-    {
-      id: 'nsg-out',
-      type: 'source',
-      position: 'left',
-      label: 'Associate',
-    },
-  ],
+  handles: [],
 
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },

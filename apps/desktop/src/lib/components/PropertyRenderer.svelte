@@ -1,19 +1,49 @@
 <script lang="ts">
   import type { PropertySchema, ResourceTypeId } from '@terrastudio/types';
 
+  interface DiagramNodeRef {
+    id: string;
+    typeId: string;
+    label: string;
+  }
+
   interface Props {
     properties: ReadonlyArray<PropertySchema>;
     values: Record<string, unknown>;
     onChange: (key: string, value: unknown) => void;
+    references?: Record<string, string>;
+    diagramNodes?: DiagramNodeRef[];
+    onReferenceChange?: (key: string, targetId: string | null) => void;
   }
 
-  let { properties, values, onChange }: Props = $props();
+  let { properties, values, onChange, references = {}, diagramNodes = [], onReferenceChange }: Props = $props();
+
+  function isVisible(prop: PropertySchema, vals: Record<string, unknown>): boolean {
+    if (!prop.visibleWhen) return true;
+    const fieldVal = vals[prop.visibleWhen.field];
+    switch (prop.visibleWhen.operator) {
+      case 'truthy': return !!fieldVal;
+      case 'falsy': return !fieldVal;
+      case 'eq': return fieldVal === prop.visibleWhen.value;
+      case 'neq': return fieldVal !== prop.visibleWhen.value;
+      case 'in': return Array.isArray(prop.visibleWhen.value) && (prop.visibleWhen.value as unknown[]).includes(fieldVal);
+      case 'notIn': return Array.isArray(prop.visibleWhen.value) && !(prop.visibleWhen.value as unknown[]).includes(fieldVal);
+      default: return true;
+    }
+  }
+
+  function getReferenceOptions(prop: PropertySchema): DiagramNodeRef[] {
+    if (!prop.referenceTargetTypes || prop.referenceTargetTypes.length === 0) return diagramNodes;
+    const allowed = new Set<string>(prop.referenceTargetTypes);
+    return diagramNodes.filter((n) => allowed.has(n.typeId));
+  }
 
   // Group properties by group name
   let grouped = $derived.by(() => {
     const groups = new Map<string, PropertySchema[]>();
     const sorted = [...properties].sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
     for (const prop of sorted) {
+      if (!isVisible(prop, values)) continue;
       const group = prop.group ?? 'General';
       if (!groups.has(group)) groups.set(group, []);
       groups.get(group)!.push(prop);
@@ -147,6 +177,21 @@
                 onclick={() => handleArrayAdd(prop.key, prop.itemSchema?.defaultValue ?? '')}
               >+ Add</button>
             </div>
+
+          {:else if prop.type === 'reference'}
+            {@const options = getReferenceOptions(prop)}
+            <select
+              value={references[prop.key] ?? ''}
+              onchange={(e) => {
+                const val = (e.target as HTMLSelectElement).value;
+                onReferenceChange?.(prop.key, val || null);
+              }}
+            >
+              <option value="">None</option>
+              {#each options as opt}
+                <option value={opt.id}>{opt.label}</option>
+              {/each}
+            </select>
 
           {:else if prop.type === 'tags' || prop.type === 'key-value-map'}
             <div class="kv-field">

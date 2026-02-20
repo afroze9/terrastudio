@@ -104,7 +104,7 @@ export const vmHclGenerator: HclGenerator = {
     vmLines.push('  tags = local.common_tags');
     vmLines.push('}');
 
-    return [
+    const blocks: HclBlock[] = [
       {
         blockType: 'resource',
         terraformType: 'azurerm_network_interface',
@@ -120,5 +120,30 @@ export const vmHclGenerator: HclGenerator = {
         dependsOn: [`azurerm_network_interface.${nicName}`],
       },
     ];
+
+    // NSG association via reference property (attaches to NIC)
+    const nsgRef = resource.references['nsg_id'];
+    if (nsgRef) {
+      const nsgIdExpr = context.getAttributeReference(nsgRef, 'id');
+      const assocDeps = [`azurerm_network_interface.${nicName}`];
+      const nsgAddr = context.getTerraformAddress(nsgRef);
+      if (nsgAddr) assocDeps.push(nsgAddr);
+
+      const assocName = `${resource.terraformName}_nsg`;
+      blocks.push({
+        blockType: 'resource',
+        terraformType: 'azurerm_network_interface_security_group_association',
+        name: assocName,
+        content: [
+          `resource "azurerm_network_interface_security_group_association" "${assocName}" {`,
+          `  network_interface_id      = azurerm_network_interface.${nicName}.id`,
+          `  network_security_group_id = ${nsgIdExpr}`,
+          '}',
+        ].join('\n'),
+        dependsOn: assocDeps,
+      });
+    }
+
+    return blocks;
   },
 };

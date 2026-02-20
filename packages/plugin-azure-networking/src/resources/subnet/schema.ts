@@ -73,20 +73,31 @@ export const subnetSchema: ResourceSchema = {
         { label: 'Microsoft.Web', value: 'Microsoft.Web' },
       ],
     },
+    {
+      key: 'nsg_enabled',
+      label: 'Network Security Group',
+      type: 'boolean',
+      required: false,
+      group: 'Security',
+      order: 10,
+      defaultValue: false,
+      description: 'Associate a Network Security Group with this subnet',
+    },
+    {
+      key: 'nsg_id',
+      label: 'NSG',
+      type: 'reference',
+      required: false,
+      group: 'Security',
+      order: 11,
+      referenceTargetTypes: ['azurerm/networking/network_security_group'],
+      visibleWhen: { field: 'nsg_enabled', operator: 'truthy' },
+    },
   ],
 
   parentReference: { propertyKey: 'virtual_network_name' },
 
-  handles: [
-    {
-      id: 'nsg-in',
-      type: 'target',
-      position: 'right',
-      label: 'NSG',
-      acceptsTypes: ['azurerm/networking/network_security_group'],
-      maxConnections: 1,
-    },
-  ],
+  handles: [],
 
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
