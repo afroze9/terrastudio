@@ -2,8 +2,21 @@
   import { ui } from '$lib/stores/ui.svelte';
   import { diagram } from '$lib/stores/diagram.svelte';
   import { project } from '$lib/stores/project.svelte';
+  import { registry } from '$lib/bootstrap';
   import { openProject, saveDiagram } from '$lib/services/project-service';
   import { exportPNG, copyDiagramToClipboard, exportDocumentation } from '$lib/services/export-service';
+  import { autoLayout, type LayoutDirection } from '$lib/services/layout-service';
+
+  import type { EdgeStyle } from '$lib/stores/ui.svelte';
+
+  let showLayoutSub = $state(false);
+  let showEdgeStyleSub = $state(false);
+
+  function handleAutoLayout(direction: LayoutDirection) {
+    close();
+    autoLayout(registry, direction);
+    ui.fitView?.();
+  }
 
   let { onNewProject }: { onNewProject: () => void } = $props();
 
@@ -17,6 +30,8 @@
 
   function close() {
     openMenu = null;
+    showLayoutSub = false;
+    showEdgeStyleSub = false;
   }
 
   async function handleSave() {
@@ -109,6 +124,32 @@
           <span class="shortcut">Ctrl+Y</span>
         </button>
         <div class="dropdown-separator"></div>
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div
+          class="dropdown-item submenu-trigger"
+          class:disabled={diagram.nodes.length === 0}
+          onmouseenter={() => { showLayoutSub = true; }}
+          onmouseleave={() => { showLayoutSub = false; }}
+        >
+          <span>Auto Layout</span>
+          <span class="submenu-arrow">&#9656;</span>
+          {#if showLayoutSub && diagram.nodes.length > 0}
+            <div class="submenu">
+              <button class="dropdown-item" onclick={() => handleAutoLayout('TB')}>
+                <span>Top to Bottom</span>
+              </button>
+              <button class="dropdown-item" onclick={() => handleAutoLayout('LR')}>
+                <span>Left to Right</span>
+              </button>
+              <button class="dropdown-item" onclick={() => handleAutoLayout('BT')}>
+                <span>Bottom to Top</span>
+              </button>
+              <button class="dropdown-item" onclick={() => handleAutoLayout('RL')}>
+                <span>Right to Left</span>
+              </button>
+            </div>
+          {/if}
+        </div>
         <button class="dropdown-item" onclick={() => { close(); diagram.selectAll(); }}>
           <span>Select All</span>
           <span class="shortcut">Ctrl+A</span>
@@ -138,6 +179,33 @@
           <span>{ui.showTerminal ? 'Hide' : 'Show'} Terminal</span>
           <span class="shortcut">Ctrl+J</span>
         </button>
+        <div class="dropdown-separator"></div>
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div
+          class="dropdown-item submenu-trigger"
+          onmouseenter={() => { showEdgeStyleSub = true; }}
+          onmouseleave={() => { showEdgeStyleSub = false; }}
+        >
+          <span>Edge Style</span>
+          <span class="submenu-arrow">&#9656;</span>
+          {#if showEdgeStyleSub}
+            <div class="submenu">
+              {#each [
+                { value: 'default', label: 'Bezier' },
+                { value: 'smoothstep', label: 'Smooth Step' },
+                { value: 'step', label: 'Step' },
+                { value: 'straight', label: 'Straight' },
+              ] as option (option.value)}
+                <button class="dropdown-item" onclick={() => { close(); ui.edgeType = option.value as EdgeStyle; }}>
+                  <span>{option.label}</span>
+                  {#if ui.edgeType === option.value}
+                    <span class="check-mark">&#10003;</span>
+                  {/if}
+                </button>
+              {/each}
+            </div>
+          {/if}
+        </div>
         <div class="dropdown-separator"></div>
         <button class="dropdown-item" onclick={() => { close(); ui.setActiveView('explorer'); }}>
           <span>Resources</span>
@@ -223,5 +291,35 @@
     height: 1px;
     background: var(--color-border);
     margin: 4px 0;
+  }
+  .check-mark {
+    font-size: 12px;
+    color: var(--color-accent);
+    margin-left: 12px;
+  }
+  .submenu-trigger {
+    position: relative;
+  }
+  .submenu-trigger.disabled {
+    opacity: 0.4;
+    cursor: default;
+    pointer-events: none;
+  }
+  .submenu-arrow {
+    font-size: 10px;
+    opacity: 0.6;
+    margin-left: 24px;
+  }
+  .submenu {
+    position: absolute;
+    left: 100%;
+    top: -4px;
+    min-width: 170px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 4px;
+    z-index: 1001;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   }
 </style>

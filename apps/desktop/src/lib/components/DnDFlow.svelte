@@ -11,14 +11,32 @@
     type IsValidConnection,
   } from '@xyflow/svelte';
   import { diagram, type DiagramNode } from '$lib/stores/diagram.svelte';
+  import { ui } from '$lib/stores/ui.svelte';
   import { registry, edgeValidator } from '$lib/bootstrap';
   import { createNodeData, generateNodeId, nextAvailableCidr } from '@terrastudio/core';
   import type { ResourceNodeComponent, ResourceTypeId } from '@terrastudio/types';
   import type { Action } from 'svelte/action';
+  import { untrack } from 'svelte';
 
   let { nodeTypes }: { nodeTypes: Record<string, ResourceNodeComponent> } = $props();
 
-  const { screenToFlowPosition } = useSvelteFlow();
+  const { screenToFlowPosition, fitView } = useSvelteFlow();
+
+  // Expose fitView globally so MenuBar can trigger it after auto-layout
+  $effect(() => {
+    ui.fitView = () => fitView();
+    return () => { ui.fitView = null; };
+  });
+
+  // When edge type changes, update all existing edges
+  $effect(() => {
+    const type = ui.edgeType;
+    untrack(() => {
+      diagram.edges = diagram.edges.map((e) => ({ ...e, type }));
+    });
+  });
+
+  let defaultEdgeOptions = $derived({ type: ui.edgeType });
 
   /**
    * Compute absolute position for a node by walking up the parent chain.
@@ -316,6 +334,7 @@
     bind:nodes={diagram.nodes}
     bind:edges={diagram.edges}
     {nodeTypes}
+    {defaultEdgeOptions}
     fitView
     minZoom={0.1}
     maxZoom={2}

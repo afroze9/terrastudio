@@ -1,4 +1,5 @@
 export type SidebarView = 'explorer' | 'terraform' | 'settings';
+export type EdgeStyle = 'default' | 'smoothstep' | 'step' | 'straight';
 
 export interface EditorTab {
   id: string;        // 'canvas' or filename
@@ -28,6 +29,12 @@ class UiStore {
 
   // --- Generated terraform file list ---
   generatedFiles = $state<string[]>([]);
+
+  // --- SvelteFlow fitView (assigned by DnDFlow) ---
+  fitView: (() => void) | null = $state(null);
+
+  // --- Edge style ---
+  edgeType = $state<EdgeStyle>('default');
 
   // --- Palette categories ---
   toggleCategory(categoryId: string) {

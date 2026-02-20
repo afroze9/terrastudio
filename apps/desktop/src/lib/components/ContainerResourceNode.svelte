@@ -1,6 +1,7 @@
 <script lang="ts">
   import { NodeResizer, useUpdateNodeInternals } from '@xyflow/svelte';
   import { registry } from '$lib/bootstrap';
+  import { diagram } from '$lib/stores/diagram.svelte';
   import DeploymentBadge from './DeploymentBadge.svelte';
   import NodeTooltip from './NodeTooltip.svelte';
   import HandleWithLabel from './HandleWithLabel.svelte';
@@ -81,9 +82,57 @@
     showTooltip = false;
     if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
   }
+
+  /** After this container is resized, expand any parent that is now too small. */
+  function handleResizeEnd(_event: unknown, params: { x: number; y: number; width: number; height: number }) {
+    const PADDING = 20;
+    // Walk up the parent chain
+    let currentNodeId: string | undefined = id;
+    while (currentNodeId) {
+      const node = diagram.nodes.find((n) => n.id === currentNodeId);
+      if (!node?.parentId) break;
+
+      const parent = diagram.nodes.find((n) => n.id === node.parentId);
+      if (!parent) break;
+
+      // For the node that was just resized, use params (most accurate).
+      // For ancestors, use their current stored dimensions.
+      const childX = node.id === id ? params.x : (node.position?.x ?? 0);
+      const childY = node.id === id ? params.y : (node.position?.y ?? 0);
+      const childW = node.id === id ? params.width : (node.measured?.width ?? node.width ?? 250);
+      const childH = node.id === id ? params.height : (node.measured?.height ?? node.height ?? 150);
+
+      const parentW = parent.measured?.width ?? parent.width ?? 250;
+      const parentH = parent.measured?.height ?? parent.height ?? 150;
+
+      const neededW = childX + childW + PADDING;
+      const neededH = childY + childH + PADDING;
+
+      let changed = false;
+      let newW = parentW;
+      let newH = parentH;
+
+      if (neededW > parentW) { newW = neededW; changed = true; }
+      if (neededH > parentH) { newH = neededH; changed = true; }
+
+      if (changed) {
+        // Update parent dimensions via style (SvelteFlow reads width/height from the style attribute)
+        diagram.nodes = diagram.nodes.map((n) =>
+          n.id === parent.id
+            ? { ...n, width: newW, height: newH, style: `width: ${newW}px; height: ${newH}px;` }
+            : n
+        );
+      } else {
+        break; // No expansion needed, stop walking up
+      }
+
+      currentNodeId = parent.id;
+    }
+    diagram.saveSnapshot();
+  }
 </script>
 
-<NodeResizer minWidth={200} minHeight={120} isVisible={selected ?? false} />
+<NodeResizer minWidth={200} minHeight={120} isVisible={selected ?? false} onResizeEnd={handleResizeEnd} />
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div

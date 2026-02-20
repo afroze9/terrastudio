@@ -3,6 +3,7 @@
   import { diagram } from '$lib/stores/diagram.svelte';
   import { buildNodeTypes } from '$lib/bootstrap';
   import DnDFlow from './DnDFlow.svelte';
+  import CanvasToolbar from './CanvasToolbar.svelte';
 
   const nodeTypes = buildNodeTypes();
 </script>
@@ -39,6 +40,7 @@
 <div class="canvas-wrapper">
   <SvelteFlowProvider>
     <DnDFlow {nodeTypes} />
+    <CanvasToolbar />
   </SvelteFlowProvider>
 </div>
 

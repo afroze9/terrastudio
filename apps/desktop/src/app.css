@@ -69,3 +69,22 @@ html, body {
   opacity: 0.3;
   transition: opacity 0.15s ease;
 }
+
+/* Bigger resize corner handles (default 5px) */
+.svelte-flow__resize-control.handle {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+/* Wider resize edge line hit areas (default 1px) */
+.svelte-flow__resize-control.line {
+  border-color: transparent;
+  border-width: 3px;
+}
+
+/* Bigger connection handles (default 6px) */
+.svelte-flow__handle {
+  width: 10px;
+  height: 10px;
+}
