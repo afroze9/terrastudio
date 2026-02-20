@@ -14,11 +14,15 @@ export const subnetSchema: ResourceSchema = {
     'azurerm/networking/virtual_network',
   ],
   containerStyle: {
-    borderColor: '#8b5cf6',
-    borderStyle: 'dashed',
-    backgroundColor: 'rgba(139, 92, 246, 0.06)',
-    headerColor: '#8b5cf6',
-    borderRadius: 8,
+    borderColor: '#c0c0c0',
+    borderStyle: 'solid',
+    backgroundColor: '#f5f5f5',
+    headerColor: '#1a1a2e',
+    borderRadius: 10,
+    borderWidth: 1.5,
+    hideHeaderBorder: true,
+    iconSize: 0,
+    labelSize: 16,
   },
 
   properties: [

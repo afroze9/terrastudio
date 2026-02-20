@@ -9,9 +9,22 @@ export const appServicePlanSchema: ResourceSchema = {
   terraformType: 'azurerm_service_plan',
   supportsTags: true,
   requiresResourceGroup: true,
+  isContainer: true,
   canBeChildOf: [
     'azurerm/core/resource_group',
   ],
+  containerStyle: {
+    borderColor: '#2B7CF6',
+    borderStyle: 'dotted',
+    backgroundColor: '#ffffff',
+    headerColor: '#1a1a2e',
+    borderRadius: 12,
+    borderWidth: 3,
+    hideHeaderBorder: true,
+    iconSize: 28,
+    labelSize: 16,
+    dashArray: '4,8',
+  },
 
   properties: [
     {
@@ -65,14 +78,7 @@ export const appServicePlanSchema: ResourceSchema = {
     },
   ],
 
-  handles: [
-    {
-      id: 'apps-out',
-      type: 'source',
-      position: 'right',
-      label: 'Apps',
-    },
-  ],
+  handles: [],
 
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },

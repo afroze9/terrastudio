@@ -74,6 +74,16 @@ export interface ContainerStyle {
   readonly headerColor?: string;
   /** Border radius in pixels */
   readonly borderRadius?: number;
+  /** Border width in pixels */
+  readonly borderWidth?: number;
+  /** Whether to hide the header bottom border */
+  readonly hideHeaderBorder?: boolean;
+  /** Icon size in pixels (default 18) */
+  readonly iconSize?: number;
+  /** Label font size in pixels (default 12) */
+  readonly labelSize?: number;
+  /** SVG stroke-dasharray for dashed borders (e.g. '20,10'). Overrides borderStyle with an SVG border. */
+  readonly dashArray?: string;
 }
 
 export interface OutputDefinition {

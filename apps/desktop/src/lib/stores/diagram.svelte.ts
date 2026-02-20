@@ -1,6 +1,7 @@
 import type { Node, Edge } from '@xyflow/svelte';
-import type { ResourceNodeData } from '@terrastudio/types';
+import type { ResourceNodeData, ResourceTypeId } from '@terrastudio/types';
 import { project } from './project.svelte';
+import { registry } from '$lib/bootstrap';
 
 export type DiagramNode = Node<ResourceNodeData>;
 export type DiagramEdge = Edge;
@@ -222,7 +223,22 @@ class DiagramStore {
   /** Load a saved diagram without marking dirty or pushing per-node history. */
   loadDiagram(nodes: DiagramNode[], edges: DiagramEdge[]) {
     this.skipHistory = true;
-    this.nodes = structuredClone(nodes);
+    const cloned = structuredClone(nodes);
+    // Validate parentId constraints — strip invalid containment relationships
+    for (const node of cloned) {
+      if (!node.parentId) continue;
+      const childSchema = registry.getResourceSchema(node.type as ResourceTypeId);
+      const allowedParents = childSchema?.canBeChildOf;
+      if (!allowedParents || allowedParents.length === 0) {
+        delete (node as any).parentId;
+        continue;
+      }
+      const parent = cloned.find((n) => n.id === node.parentId);
+      if (!parent || !allowedParents.includes(parent.type as ResourceTypeId)) {
+        delete (node as any).parentId;
+      }
+    }
+    this.nodes = cloned;
     this.edges = structuredClone(edges);
     this.selectedNodeId = null;
     this.skipHistory = false;

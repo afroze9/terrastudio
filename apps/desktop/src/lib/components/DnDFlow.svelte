@@ -120,16 +120,100 @@
     return nextAvailableCidr(addressSpace[0], usedCidrs);
   }
 
+  /**
+   * Check if dropping childTypeId at the given position would land on an
+   * invalid container (the deepest container under the cursor doesn't accept it).
+   */
+  function isDropBlocked(flowX: number, flowY: number, childTypeId: ResourceTypeId, excludeNodeId?: string): boolean {
+    const allowedParents = registry.getResourceSchema(childTypeId)?.canBeChildOf ?? [];
+    if (allowedParents.length === 0) return false; // No parent constraints — always OK
+
+    let deepestType: ResourceTypeId | undefined;
+    let deepestDepth = -1;
+
+    for (const node of diagram.nodes) {
+      if (node.id === excludeNodeId) continue;
+      const nodeSchema = registry.getResourceSchema(node.type as ResourceTypeId);
+      if (!nodeSchema?.isContainer) continue;
+
+      const abs = getAbsolutePosition(node.id);
+      const nw = node.measured?.width ?? (node.width as number | undefined) ?? 250;
+      const nh = node.measured?.height ?? (node.height as number | undefined) ?? 150;
+
+      if (flowX >= abs.x && flowX <= abs.x + nw && flowY >= abs.y && flowY <= abs.y + nh) {
+        let depth = 0;
+        let pid = node.parentId as string | undefined;
+        while (pid) {
+          depth++;
+          pid = diagram.nodes.find((n) => n.id === pid)?.parentId as string | undefined;
+        }
+        if (depth > deepestDepth) {
+          deepestDepth = depth;
+          deepestType = node.type as ResourceTypeId;
+        }
+      }
+    }
+
+    if (!deepestType) return false; // Not over any container
+    return !allowedParents.includes(deepestType);
+  }
+
+  /**
+   * Compute drag feedback: which containers are valid/invalid drop targets
+   * for a given resource type at a given flow position.
+   */
+  function updateDragFeedback(flowX: number, flowY: number, childTypeId: ResourceTypeId, excludeNodeId?: string) {
+    const childSchema = registry.getResourceSchema(childTypeId);
+    const allowedParents = childSchema?.canBeChildOf ?? [];
+
+    const validContainerIds = new Set<string>();
+    const invalidContainerIds = new Set<string>();
+
+    for (const node of diagram.nodes) {
+      if (node.id === excludeNodeId) continue;
+      const nodeSchema = registry.getResourceSchema(node.type as ResourceTypeId);
+      if (!nodeSchema?.isContainer) continue;
+
+      const abs = getAbsolutePosition(node.id);
+      const nw = node.measured?.width ?? (node.width as number | undefined) ?? 250;
+      const nh = node.measured?.height ?? (node.height as number | undefined) ?? 150;
+
+      // Only highlight containers the cursor is currently over
+      if (flowX >= abs.x && flowX <= abs.x + nw && flowY >= abs.y && flowY <= abs.y + nh) {
+        if (allowedParents.includes(node.type as ResourceTypeId)) {
+          validContainerIds.add(node.id);
+        } else {
+          invalidContainerIds.add(node.id);
+        }
+      }
+    }
+
+    // Remove valid ancestors from invalid set (if cursor is over both parent and grandparent)
+    // and remove invalid containers that are parents of a valid one (the valid child "wins")
+    ui.dragFeedback = { typeId: childTypeId, validContainerIds, invalidContainerIds };
+  }
+
+  function clearDragFeedback() {
+    ui.dragFeedback = null;
+  }
+
   const dndHandler: Action = (node) => {
     function handleDragOver(event: DragEvent) {
       event.preventDefault();
-      if (event.dataTransfer) {
-        event.dataTransfer.dropEffect = 'move';
+      if (!event.dataTransfer) return;
+
+      const typeId = event.dataTransfer.getData('application/terrastudio-type');
+      if (typeId) {
+        const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+        const blocked = isDropBlocked(position.x, position.y, typeId as ResourceTypeId);
+        event.dataTransfer.dropEffect = blocked ? 'none' : 'move';
+        updateDragFeedback(position.x, position.y, typeId as ResourceTypeId);
       }
     }
 
     function handleDrop(event: DragEvent) {
       event.preventDefault();
+      clearDragFeedback();
       if (!event.dataTransfer) return;
 
       const typeId = event.dataTransfer.getData('application/terrastudio-type');
@@ -138,13 +222,16 @@
       const schema = registry.getResourceSchema(typeId as `${string}/${string}/${string}`);
       if (!schema) return;
 
-      const nodeData = createNodeData(schema);
-      const id = generateNodeId(schema.typeId);
-
       const position = screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
       });
+
+      // Block drop if cursor is over an invalid container
+      if (isDropBlocked(position.x, position.y, schema.typeId)) return;
+
+      const nodeData = createNodeData(schema);
+      const id = generateNodeId(schema.typeId);
 
       // Check if dropped inside a container node
       const parentId = findContainerAtPosition(position.x, position.y, schema.typeId);
@@ -184,6 +271,8 @@
           'azurerm/core/resource_group': { w: 800, h: 600 },
           'azurerm/networking/virtual_network': { w: 600, h: 400 },
           'azurerm/networking/subnet': { w: 350, h: 250 },
+          'azurerm/compute/app_service_plan': { w: 400, h: 300 },
+          'azurerm/storage/storage_account': { w: 400, h: 300 },
         };
         const { w, h } = sizeMap[schema.typeId] ?? { w: 350, h: 200 };
         newNode.width = w;
@@ -198,14 +287,20 @@
       diagram.addNode(newNode as any);
     }
 
+    function handleDragLeave() {
+      clearDragFeedback();
+    }
+
     // Capture phase so handlers fire before SvelteFlow's internal pane
     node.addEventListener('dragover', handleDragOver, { capture: true });
     node.addEventListener('drop', handleDrop, { capture: true });
+    node.addEventListener('dragleave', handleDragLeave);
 
     return {
       destroy() {
         node.removeEventListener('dragover', handleDragOver, { capture: true });
         node.removeEventListener('drop', handleDrop, { capture: true });
+        node.removeEventListener('dragleave', handleDragLeave);
       },
     };
   };
@@ -273,11 +368,34 @@
     }
   };
 
+  // Track pre-drag positions so we can snap back if dropped on an invalid container
+  let dragStartPositions = new Map<string, { x: number; y: number }>();
+
+  /**
+   * Capture starting positions of all dragged nodes before the drag begins.
+   */
+  function handleNodeDragStart({ nodes: draggedNodes }: { targetNode: DiagramNode | null; nodes: DiagramNode[]; event: MouseEvent | TouchEvent }) {
+    dragStartPositions.clear();
+    for (const node of draggedNodes) {
+      dragStartPositions.set(node.id, { x: node.position.x, y: node.position.y });
+    }
+  }
+
+  /**
+   * During node drag, update drag feedback to highlight valid/invalid containers.
+   */
+  function handleNodeDrag({ targetNode }: { targetNode: DiagramNode | null; nodes: DiagramNode[]; event: MouseEvent | TouchEvent }) {
+    if (!targetNode) return;
+    const absPos = getAbsolutePosition(targetNode.id);
+    updateDragFeedback(absPos.x, absPos.y, targetNode.type as ResourceTypeId, targetNode.id);
+  }
+
   /**
    * Handle node drag stop: reparent nodes based on their final position.
    * Allows dragging nodes into, out of, and between containers.
    */
   function handleNodeDragStop({ targetNode }: { targetNode: DiagramNode | null; nodes: DiagramNode[]; event: MouseEvent | TouchEvent }) {
+    clearDragFeedback();
     if (!targetNode) return;
     const draggedNode = targetNode;
     const schema = registry.getResourceSchema(draggedNode.type as ResourceTypeId);
@@ -285,6 +403,17 @@
 
     // Compute the dragged node's absolute position
     const absPos = getAbsolutePosition(draggedNode.id);
+
+    // If dropped on an invalid container, snap back to starting position
+    if (isDropBlocked(absPos.x, absPos.y, schema.typeId, draggedNode.id)) {
+      diagram.nodes = diagram.nodes.map((n) => {
+        const startPos = dragStartPositions.get(n.id);
+        return startPos ? { ...n, position: startPos } : n;
+      });
+      dragStartPositions.clear();
+      return;
+    }
+    dragStartPositions.clear();
 
     // Find the deepest valid container at this position (excluding self)
     const newParentId = findContainerAtPosition(absPos.x, absPos.y, schema.typeId, draggedNode.id);
@@ -326,6 +455,29 @@
         };
       }
     });
+
+    bringToFront(draggedNode.id);
+  }
+
+  /**
+   * Move a node and all its descendants to the end of the nodes array
+   * so they render on top of sibling containers in the same parent.
+   */
+  function bringToFront(nodeId: string) {
+    const descendantIds = new Set<string>([nodeId]);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const n of diagram.nodes) {
+        if (n.parentId && descendantIds.has(n.parentId as string) && !descendantIds.has(n.id)) {
+          descendantIds.add(n.id);
+          changed = true;
+        }
+      }
+    }
+    const others = diagram.nodes.filter((n) => !descendantIds.has(n.id));
+    const moved = diagram.nodes.filter((n) => descendantIds.has(n.id));
+    diagram.nodes = [...others, ...moved];
   }
 </script>
 
@@ -343,6 +495,8 @@
     {isValidConnection}
     onconnect={onConnect}
     ondelete={onDelete}
+    onnodedragstart={handleNodeDragStart}
+    onnodedrag={handleNodeDrag}
     onnodedragstop={(event) => { handleNodeDragStop(event); diagram.saveSnapshot(); }}
     onnodeclick={({ node }) => { diagram.selectedEdgeId = null; diagram.selectedNodeId = node.id; }}
     onedgeclick={({ edge }) => { diagram.selectedNodeId = null; diagram.selectedEdgeId = edge.id; }}

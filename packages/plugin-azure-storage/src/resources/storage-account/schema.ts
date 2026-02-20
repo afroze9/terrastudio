@@ -14,11 +14,16 @@ export const storageAccountSchema: ResourceSchema = {
     'azurerm/core/resource_group',
   ],
   containerStyle: {
-    borderColor: '#37c2b1',
-    borderStyle: 'dashed',
-    backgroundColor: 'rgba(55, 194, 177, 0.06)',
-    headerColor: '#37c2b1',
-    borderRadius: 8,
+    borderColor: '#2B7CF6',
+    borderStyle: 'dotted',
+    backgroundColor: '#ffffff',
+    headerColor: '#1a1a2e',
+    borderRadius: 12,
+    borderWidth: 3,
+    hideHeaderBorder: true,
+    iconSize: 28,
+    labelSize: 16,
+    dashArray: '4,8',
   },
 
   properties: [

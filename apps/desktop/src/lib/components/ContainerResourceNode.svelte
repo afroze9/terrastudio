@@ -2,6 +2,7 @@
   import { NodeResizer, useUpdateNodeInternals } from '@xyflow/svelte';
   import { registry } from '$lib/bootstrap';
   import { diagram } from '$lib/stores/diagram.svelte';
+  import { ui } from '$lib/stores/ui.svelte';
   import DeploymentBadge from './DeploymentBadge.svelte';
   import NodeTooltip from './NodeTooltip.svelte';
   import HandleWithLabel from './HandleWithLabel.svelte';
@@ -60,6 +61,16 @@
   let bg = $derived(cs.backgroundColor ?? 'color-mix(in srgb, var(--color-surface) 60%, transparent)');
   let headerColor = $derived(cs.headerColor ?? 'var(--color-text-muted, #8b90a0)');
   let radius = $derived(cs.borderRadius ?? 10);
+  let borderWidth = $derived(cs.borderWidth ?? 1.5);
+  let hideHeaderBorder = $derived(cs.hideHeaderBorder ?? false);
+  let iconSize = $derived(cs.iconSize ?? 18);
+  let labelSize = $derived(cs.labelSize ?? 12);
+  let dashArray = $derived(cs.dashArray);
+  let useSvgBorder = $derived(!!dashArray);
+
+  // Drag feedback: highlight as valid (green) or invalid (red) drop target
+  let isValidDropTarget = $derived(ui.dragFeedback?.validContainerIds.has(id) ?? false);
+  let isInvalidDropTarget = $derived(ui.dragFeedback?.invalidContainerIds.has(id) ?? false);
 
   // CIDR subtitle: show address_space (VNet) or address_prefixes (Subnet) in the header
   let cidrSubtitle = $derived.by(() => {
@@ -138,19 +149,37 @@
 <div
   class="container-node"
   class:selected
-  style="border-color: {selected ? 'var(--color-accent, #3b82f6)' : borderColor}; border-style: {borderStyle}; background: {bg}; border-radius: {radius}px;"
+  class:drop-valid={isValidDropTarget}
+  class:drop-invalid={isInvalidDropTarget}
+  style="border-color: {isInvalidDropTarget ? '#ef4444' : isValidDropTarget ? '#22c55e' : selected ? 'var(--color-accent, #3b82f6)' : borderColor}; border-style: {useSvgBorder && !isInvalidDropTarget && !isValidDropTarget ? 'none' : isInvalidDropTarget || isValidDropTarget ? 'solid' : borderStyle}; background: {isInvalidDropTarget ? 'rgba(239, 68, 68, 0.06)' : isValidDropTarget ? 'rgba(34, 197, 94, 0.06)' : bg}; border-radius: {radius}px; border-width: {useSvgBorder && !isInvalidDropTarget && !isValidDropTarget ? 0 : isInvalidDropTarget || isValidDropTarget ? 2.5 : borderWidth}px;"
   onmouseenter={onMouseEnter}
   onmouseleave={onMouseLeave}
 >
-  <div class="container-header" style="border-bottom-color: {borderColor};">
-    {#if icon?.type === 'svg' && icon.svg}
-      <span class="node-icon">{@html icon.svg}</span>
+  {#if useSvgBorder && !isInvalidDropTarget && !isValidDropTarget}
+    <svg class="svg-border" xmlns="http://www.w3.org/2000/svg" style="--bw: {borderWidth}px;">
+      <rect
+        x="{borderWidth / 2}" y="{borderWidth / 2}"
+        rx="{radius}" ry="{radius}"
+        fill="none"
+        stroke="{selected ? 'var(--color-accent, #3b82f6)' : borderColor}"
+        stroke-width="{borderWidth}"
+        stroke-dasharray="{dashArray}"
+        stroke-linecap="round"
+        class="svg-border-rect"
+      />
+    </svg>
+  {/if}
+  <div class="deployment-badge-corner">
+    <DeploymentBadge status={data.deploymentStatus} />
+  </div>
+  <div class="container-header" style="border-bottom-color: {borderColor}; {hideHeaderBorder ? 'border-bottom: none;' : ''}">
+    {#if icon?.type === 'svg' && icon.svg && iconSize > 0}
+      <span class="node-icon" style="width: {iconSize}px; height: {iconSize}px;">{@html icon.svg}</span>
     {/if}
-    <span class="node-label" style="color: {headerColor};">{data.label || schema?.displayName || 'Container'}</span>
+    <span class="node-label" style="color: {headerColor}; font-size: {labelSize}px;">{data.label || schema?.displayName || 'Container'}</span>
     {#if cidrSubtitle}
       <span class="cidr-subtitle">{cidrSubtitle}</span>
     {/if}
-    <DeploymentBadge status={data.deploymentStatus} />
   </div>
   <div class="container-body"></div>
 
@@ -172,25 +201,50 @@
 <style>
   .container-node {
     position: relative;
-    border-width: 1.5px;
     padding: 0;
     min-width: 250px;
     min-height: 150px;
     width: 100%;
     height: 100%;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
     display: flex;
     flex-direction: column;
   }
   .container-node.selected {
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
   }
+  .container-node.drop-valid {
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25);
+  }
+  .container-node.drop-invalid {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+  }
+  .svg-border {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: visible;
+  }
+  .svg-border-rect {
+    width: calc(100% - var(--bw, 3px));
+    height: calc(100% - var(--bw, 3px));
+  }
+  .deployment-badge-corner {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    z-index: 1;
+  }
   .container-header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
+    gap: 10px;
+    padding: 10px 14px;
+    padding-right: 28px; /* leave room for badge */
     border-bottom: 1px solid;
   }
   .node-icon {
@@ -201,8 +255,8 @@
     align-items: center;
   }
   .node-icon :global(svg) {
-    width: 18px;
-    height: 18px;
+    width: 100%;
+    height: 100%;
   }
   .node-label {
     font-size: 12px;

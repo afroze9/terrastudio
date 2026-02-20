@@ -14,11 +14,16 @@ export const vnetSchema: ResourceSchema = {
     'azurerm/core/resource_group',
   ],
   containerStyle: {
-    borderColor: '#14b8a6',
-    borderStyle: 'dashed',
-    backgroundColor: 'rgba(20, 184, 166, 0.06)',
-    headerColor: '#14b8a6',
-    borderRadius: 10,
+    borderColor: '#2B7CF6',
+    borderStyle: 'dotted',
+    backgroundColor: '#ffffff',
+    headerColor: '#1a1a2e',
+    borderRadius: 12,
+    borderWidth: 3,
+    hideHeaderBorder: true,
+    iconSize: 28,
+    labelSize: 16,
+    dashArray: '4,8',
   },
 
   properties: [

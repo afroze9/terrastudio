@@ -11,11 +11,15 @@ export const subscriptionSchema: ResourceSchema = {
   requiresResourceGroup: false,
   isContainer: true,
   containerStyle: {
-    borderColor: '#3b82f6',
-    borderStyle: 'dashed',
-    backgroundColor: 'rgba(59, 130, 246, 0.05)',
-    headerColor: '#60a5fa',
-    borderRadius: 16,
+    borderColor: '#2B7CF6',
+    borderStyle: 'solid',
+    backgroundColor: '#ffffff',
+    headerColor: '#1a1a2e',
+    borderRadius: 12,
+    borderWidth: 2.5,
+    hideHeaderBorder: true,
+    iconSize: 28,
+    labelSize: 16,
   },
 
   properties: [

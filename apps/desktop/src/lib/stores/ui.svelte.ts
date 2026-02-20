@@ -1,10 +1,20 @@
 import type { PaletteId } from '$lib/themes/types';
 import { applyPalette, getPalette } from '$lib/themes/theme-engine';
 import { DEFAULT_PALETTE_ID } from '$lib/themes/palettes';
+import type { ResourceTypeId } from '@terrastudio/types';
 
 export type SidebarView = 'explorer' | 'terraform' | 'settings' | 'app-settings';
 export type EdgeStyle = 'default' | 'smoothstep' | 'step' | 'straight';
 export type Theme = 'dark' | 'light';
+
+export interface DragFeedback {
+  /** The resource type being dragged */
+  typeId: ResourceTypeId;
+  /** Container node IDs that are valid drop targets */
+  validContainerIds: Set<string>;
+  /** Container node IDs that are invalid (hovered but can't accept) */
+  invalidContainerIds: Set<string>;
+}
 
 export interface EditorTab {
   id: string;        // 'canvas' or filename
@@ -47,6 +57,9 @@ class UiStore {
 
   // --- Theme ---
   theme = $state<Theme>((typeof localStorage !== 'undefined' && localStorage.getItem('terrastudio-theme') as Theme) || 'dark');
+
+  // --- Drag feedback for container highlighting ---
+  dragFeedback = $state<DragFeedback | null>(null);
 
   // --- Palette ---
   paletteId = $state<PaletteId>((typeof localStorage !== 'undefined' && localStorage.getItem('terrastudio-palette') as PaletteId) || DEFAULT_PALETTE_ID);

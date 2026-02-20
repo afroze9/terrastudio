@@ -11,6 +11,7 @@ export const appServiceSchema: ResourceSchema = {
   requiresResourceGroup: true,
   canBeChildOf: [
     'azurerm/core/resource_group',
+    'azurerm/compute/app_service_plan',
   ],
 
   properties: [
@@ -82,16 +83,9 @@ export const appServiceSchema: ResourceSchema = {
     },
   ],
 
-  handles: [
-    {
-      id: 'plan-in',
-      type: 'target',
-      position: 'left',
-      label: 'Plan',
-      acceptsTypes: ['azurerm/compute/app_service_plan'],
-      maxConnections: 1,
-    },
-  ],
+  parentReference: { propertyKey: 'service_plan_id' },
+
+  handles: [],
 
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
