@@ -160,6 +160,28 @@ class UiStore {
   applyTheme() {
     applyPalette(this.paletteId, this.theme);
   }
+
+  // --- Confirm dialog ---
+  confirmDialog = $state<{
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    danger?: boolean;
+    resolve: (confirmed: boolean) => void;
+  } | null>(null);
+
+  /** Show a confirm dialog and return a promise that resolves to true/false. */
+  confirm(opts: { title: string; message: string; confirmLabel?: string; danger?: boolean }): Promise<boolean> {
+    return new Promise((resolve) => {
+      this.confirmDialog = { ...opts, resolve };
+    });
+  }
+
+  /** Called by ConfirmDialog component to close and resolve. */
+  resolveConfirm(confirmed: boolean) {
+    this.confirmDialog?.resolve(confirmed);
+    this.confirmDialog = null;
+  }
 }
 
 export const ui = new UiStore();

@@ -8,6 +8,7 @@
 	import PropertiesPanel from '$lib/components/PropertiesPanel.svelte';
 	import StatusBar from '$lib/components/StatusBar.svelte';
 	import NewProjectDialog from '$lib/components/NewProjectDialog.svelte';
+	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import WelcomeScreen from '$lib/components/WelcomeScreen.svelte';
 	import { ui } from '$lib/stores/ui.svelte';
 	import { project } from '$lib/stores/project.svelte';
@@ -64,6 +65,7 @@
 	open={showNewProjectDialog}
 	onclose={() => (showNewProjectDialog = false)}
 />
+<ConfirmDialog />
 
 <style>
 	.app-shell {

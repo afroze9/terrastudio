@@ -68,3 +68,17 @@ function generateTerraformName(
 export function generateNodeId(typeId: ResourceTypeId): string {
   return `${typeId.replace(/\//g, '-')}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
+
+/**
+ * Given a base terraform name and a set of existing names, returns a unique name.
+ * e.g., "vm_1" with existing {"vm_1", "vm_1_2"} → "vm_1_3"
+ */
+export function generateUniqueTerraformName(
+  baseName: string,
+  existingNames: Set<string>,
+): string {
+  if (!existingNames.has(baseName)) return baseName;
+  let counter = 2;
+  while (existingNames.has(`${baseName}_${counter}`)) counter++;
+  return `${baseName}_${counter}`;
+}

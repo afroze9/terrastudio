@@ -6,6 +6,7 @@
     MiniMap,
     Background,
     BackgroundVariant,
+    SelectionMode,
     type OnConnect,
     type OnDelete,
     type IsValidConnection,
@@ -37,6 +38,59 @@
   });
 
   let defaultEdgeOptions = $derived({ type: ui.edgeType });
+
+  // ── Context menu state ───────────────────────────────────────────
+  let contextMenu = $state<{
+    x: number;
+    y: number;
+    nodeId?: string;
+    edgeId?: string;
+  } | null>(null);
+
+  function closeContextMenu() { contextMenu = null; }
+
+  function handleContextCopy() {
+    const ids = diagram.nodes.filter((n) => n.selected).map((n) => n.id);
+    if (contextMenu?.nodeId && !ids.includes(contextMenu.nodeId)) {
+      ids.push(contextMenu.nodeId);
+    }
+    if (ids.length > 0) diagram.copyNodes(ids);
+    closeContextMenu();
+  }
+
+  function handleContextDuplicate() {
+    handleContextCopy();
+    diagram.pasteNodes();
+  }
+
+  function handleContextPaste() {
+    diagram.pasteNodes();
+    closeContextMenu();
+  }
+
+  function handleContextDelete() {
+    if (contextMenu?.edgeId) {
+      diagram.removeEdge(contextMenu.edgeId);
+    } else {
+      const hasSelected = diagram.nodes.some((n) => n.selected);
+      if (hasSelected) {
+        diagram.confirmAndRemoveSelectedNodes();
+      } else if (contextMenu?.nodeId) {
+        diagram.confirmAndRemoveNode(contextMenu.nodeId);
+      }
+    }
+    closeContextMenu();
+  }
+
+  function handleContextSelectAll() {
+    diagram.selectAll();
+    closeContextMenu();
+  }
+
+  function handleContextFitView() {
+    ui.fitView?.();
+    closeContextMenu();
+  }
 
   /**
    * Compute absolute position for a node by walking up the parent chain.
@@ -492,15 +546,23 @@
     minZoom={0.1}
     maxZoom={2}
     snapGrid={ui.snapToGrid ? [ui.gridSize, ui.gridSize] : undefined}
+    selectionOnDrag
+    panOnDrag={[1]}
+    panActivationKey="Space"
+    selectionMode={SelectionMode.Full}
     {isValidConnection}
     onconnect={onConnect}
     ondelete={onDelete}
-    onnodedragstart={handleNodeDragStart}
+    onnodedragstart={(event) => { contextMenu = null; handleNodeDragStart(event); }}
     onnodedrag={handleNodeDrag}
     onnodedragstop={(event) => { handleNodeDragStop(event); diagram.saveSnapshot(); }}
-    onnodeclick={({ node }) => { diagram.selectedEdgeId = null; diagram.selectedNodeId = node.id; }}
-    onedgeclick={({ edge }) => { diagram.selectedNodeId = null; diagram.selectedEdgeId = edge.id; }}
-    onpaneclick={() => { diagram.selectedNodeId = null; diagram.selectedEdgeId = null; }}
+    onnodeclick={({ node }) => { contextMenu = null; diagram.selectedEdgeId = null; diagram.selectedNodeId = node.id; }}
+    onedgeclick={({ edge }) => { contextMenu = null; diagram.selectedNodeId = null; diagram.selectedEdgeId = edge.id; }}
+    onpaneclick={() => { contextMenu = null; diagram.selectedNodeId = null; diagram.selectedEdgeId = null; }}
+    onnodecontextmenu={({ event, node }) => { event.preventDefault(); contextMenu = { x: event.clientX, y: event.clientY, nodeId: node.id }; }}
+    onselectioncontextmenu={({ event, nodes: selNodes }) => { event.preventDefault(); contextMenu = { x: event.clientX, y: event.clientY, nodeId: selNodes[0]?.id }; }}
+    onedgecontextmenu={({ event, edge }) => { event.preventDefault(); contextMenu = { x: event.clientX, y: event.clientY, edgeId: edge.id }; }}
+    onpanecontextmenu={({ event }) => { event.preventDefault(); contextMenu = { x: event.clientX, y: event.clientY }; }}
   >
     <Controls />
     <MiniMap />
@@ -508,9 +570,103 @@
   </SvelteFlow>
 </div>
 
+<!-- Escape key closes context menu -->
+<svelte:window onkeydown={(e) => { if (e.key === 'Escape') contextMenu = null; }} />
+
+{#if contextMenu}
+  <!-- Invisible backdrop to close menu on click outside -->
+  <button class="context-backdrop" onclick={closeContextMenu} aria-label="Close menu"></button>
+  <div class="context-menu" style="left: {contextMenu.x}px; top: {contextMenu.y}px;">
+    {#if contextMenu.nodeId}
+      <button class="context-menu-item" onclick={handleContextCopy}>
+        <span>Copy</span><span class="ctx-shortcut">Ctrl+C</span>
+      </button>
+      <button class="context-menu-item" onclick={handleContextDuplicate}>
+        <span>Duplicate</span><span class="ctx-shortcut">Ctrl+D</span>
+      </button>
+      <div class="context-menu-separator"></div>
+      <button class="context-menu-item" onclick={handleContextSelectAll}>
+        <span>Select All</span><span class="ctx-shortcut">Ctrl+A</span>
+      </button>
+      <div class="context-menu-separator"></div>
+      <button class="context-menu-item context-menu-danger" onclick={handleContextDelete}>
+        <span>Delete</span><span class="ctx-shortcut">Del</span>
+      </button>
+    {:else if contextMenu.edgeId}
+      <button class="context-menu-item context-menu-danger" onclick={handleContextDelete}>
+        <span>Delete Edge</span><span class="ctx-shortcut">Del</span>
+      </button>
+    {:else}
+      <button class="context-menu-item" onclick={handleContextPaste} disabled={!diagram.hasClipboard}>
+        <span>Paste</span><span class="ctx-shortcut">Ctrl+V</span>
+      </button>
+      <div class="context-menu-separator"></div>
+      <button class="context-menu-item" onclick={handleContextSelectAll}>
+        <span>Select All</span><span class="ctx-shortcut">Ctrl+A</span>
+      </button>
+      <button class="context-menu-item" onclick={handleContextFitView}>
+        <span>Fit View</span>
+      </button>
+    {/if}
+  </div>
+{/if}
+
 <style>
   .dnd-flow-wrapper {
     width: 100%;
     height: 100%;
+  }
+
+  /* Context menu */
+  .context-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    background: transparent;
+    border: none;
+    cursor: default;
+  }
+  .context-menu {
+    position: fixed;
+    z-index: 1000;
+    min-width: 170px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 4px 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  .context-menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 6px 12px;
+    border: none;
+    background: none;
+    color: var(--color-text);
+    font-size: 12px;
+    cursor: pointer;
+    text-align: left;
+  }
+  .context-menu-item:hover:not(:disabled) {
+    background: var(--color-surface-hover);
+  }
+  .context-menu-item:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  .context-menu-danger:hover:not(:disabled) {
+    color: #ef4444;
+  }
+  .ctx-shortcut {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    margin-left: 24px;
+  }
+  .context-menu-separator {
+    height: 1px;
+    background: var(--color-border);
+    margin: 4px 0;
   }
 </style>

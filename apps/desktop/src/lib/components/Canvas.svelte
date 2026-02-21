@@ -27,12 +27,29 @@
     diagram.selectAll();
     return;
   }
+  if ((event.ctrlKey || event.metaKey) && event.key === 'c') {
+    const ids = diagram.nodes.filter((n) => n.selected).map((n) => n.id);
+    if (ids.length === 0 && diagram.selectedNodeId) ids.push(diagram.selectedNodeId);
+    if (ids.length > 0) { event.preventDefault(); diagram.copyNodes(ids); }
+    return;
+  }
+  if ((event.ctrlKey || event.metaKey) && event.key === 'v') {
+    if (diagram.hasClipboard) { event.preventDefault(); diagram.pasteNodes(); }
+    return;
+  }
+  if ((event.ctrlKey || event.metaKey) && event.key === 'd') {
+    event.preventDefault();
+    const ids = diagram.nodes.filter((n) => n.selected).map((n) => n.id);
+    if (ids.length === 0 && diagram.selectedNodeId) ids.push(diagram.selectedNodeId);
+    if (ids.length > 0) { diagram.copyNodes(ids); diagram.pasteNodes(); }
+    return;
+  }
   if (event.key === 'Delete' || event.key === 'Backspace') {
     const hasSelected = diagram.nodes.some((n) => n.selected);
     if (hasSelected) {
-      diagram.removeSelectedNodes();
+      diagram.confirmAndRemoveSelectedNodes();
     } else if (diagram.selectedNodeId) {
-      diagram.removeNode(diagram.selectedNodeId);
+      diagram.confirmAndRemoveNode(diagram.selectedNodeId);
     }
   }
 }} />

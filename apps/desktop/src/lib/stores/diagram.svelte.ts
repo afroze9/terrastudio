@@ -1,7 +1,9 @@
 import type { Node, Edge } from '@xyflow/svelte';
 import type { ResourceNodeData, ResourceTypeId } from '@terrastudio/types';
+import { generateNodeId, generateUniqueTerraformName } from '@terrastudio/core';
 import { project } from './project.svelte';
 import { registry } from '$lib/bootstrap';
+import { ui } from './ui.svelte';
 
 export type DiagramNode = Node<ResourceNodeData>;
 export type DiagramEdge = Edge;
@@ -12,6 +14,17 @@ interface DiagramSnapshot {
 }
 
 const MAX_HISTORY = 50;
+
+/** Generate a "(copy)" / "(copy 2)" label for pasted nodes. */
+function generateCopyLabel(label: string): string {
+  const match = label.match(/^(.+?) \(copy(?: (\d+))?\)$/);
+  if (match) {
+    const base = match[1];
+    const num = match[2] ? parseInt(match[2], 10) + 1 : 2;
+    return `${base} (copy ${num})`;
+  }
+  return `${label} (copy)`;
+}
 
 class DiagramStore {
   nodes = $state<DiagramNode[]>([]);
@@ -29,6 +42,10 @@ class DiagramStore {
 
   canUndo = $derived(this.historyIndex > 0);
   canRedo = $derived(this.historyIndex < this.history.length - 1);
+
+  // Clipboard for copy/paste
+  private clipboard = $state<{ nodes: DiagramNode[]; edges: DiagramEdge[] } | null>(null);
+  hasClipboard = $derived(this.clipboard !== null && this.clipboard.nodes.length > 0);
 
   selectedNode = $derived(
     this.selectedNodeId
@@ -131,10 +148,26 @@ class DiagramStore {
   removeNode(id: string) {
     this.flushPendingSnapshot();
     this.ensureInitialSnapshot();
-    this.nodes = this.nodes.filter((n) => n.id !== id);
-    this.edges = this.edges.filter((e) => e.source !== id && e.target !== id);
-    this.cleanStaleReferences(id);
-    if (this.selectedNodeId === id) {
+
+    // Collect the node and all its descendants
+    const toRemove = new Set<string>([id]);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const n of this.nodes) {
+        if (!toRemove.has(n.id) && n.parentId && toRemove.has(n.parentId as string)) {
+          toRemove.add(n.id);
+          changed = true;
+        }
+      }
+    }
+
+    this.nodes = this.nodes.filter((n) => !toRemove.has(n.id));
+    this.edges = this.edges.filter((e) => !toRemove.has(e.source) && !toRemove.has(e.target));
+    for (const removedId of toRemove) {
+      this.cleanStaleReferences(removedId);
+    }
+    if (this.selectedNodeId && toRemove.has(this.selectedNodeId)) {
       this.selectedNodeId = null;
     }
     this.pushSnapshot();
@@ -200,17 +233,95 @@ class DiagramStore {
   }
 
   removeSelectedNodes() {
-    const selectedIds = new Set(this.nodes.filter((n) => n.selected).map((n) => n.id));
-    if (selectedIds.size === 0) return;
+    const toRemove = new Set(this.nodes.filter((n) => n.selected).map((n) => n.id));
+    if (toRemove.size === 0) return;
+
+    // Expand to include all descendants of selected containers
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const n of this.nodes) {
+        if (!toRemove.has(n.id) && n.parentId && toRemove.has(n.parentId as string)) {
+          toRemove.add(n.id);
+          changed = true;
+        }
+      }
+    }
+
     this.flushPendingSnapshot();
     this.ensureInitialSnapshot();
-    this.nodes = this.nodes.filter((n) => !selectedIds.has(n.id));
-    this.edges = this.edges.filter((e) => !selectedIds.has(e.source) && !selectedIds.has(e.target));
-    for (const deletedId of selectedIds) {
+    this.nodes = this.nodes.filter((n) => !toRemove.has(n.id));
+    this.edges = this.edges.filter((e) => !toRemove.has(e.source) && !toRemove.has(e.target));
+    for (const deletedId of toRemove) {
       this.cleanStaleReferences(deletedId);
     }
     this.selectedNodeId = null;
     this.pushSnapshot();
+  }
+
+  /**
+   * Count child nodes (recursively) for a set of node IDs.
+   * Only counts children that are NOT already in the set.
+   */
+  private countChildren(nodeIds: Set<string>): number {
+    let count = 0;
+    for (const n of this.nodes) {
+      if (nodeIds.has(n.id)) continue;
+      if (n.parentId && nodeIds.has(n.parentId as string)) count++;
+    }
+    // Also count deeper descendants
+    const allIds = new Set(nodeIds);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const n of this.nodes) {
+        if (allIds.has(n.id)) continue;
+        if (n.parentId && allIds.has(n.parentId as string)) {
+          allIds.add(n.id);
+          count++;
+          changed = true;
+        }
+      }
+    }
+    // Subtract direct children already counted in first pass
+    return allIds.size - nodeIds.size;
+  }
+
+  /**
+   * Delete a node, prompting for confirmation if it has children.
+   */
+  async confirmAndRemoveNode(id: string) {
+    const childCount = this.countChildren(new Set([id]));
+    if (childCount > 0) {
+      const confirmed = await ui.confirm({
+        title: 'Delete Container',
+        message: `This will also delete ${childCount} child resource${childCount > 1 ? 's' : ''} inside this container. Are you sure?`,
+        confirmLabel: 'Delete All',
+        danger: true,
+      });
+      if (!confirmed) return;
+    }
+    this.removeNode(id);
+  }
+
+  /**
+   * Delete selected nodes, prompting for confirmation if any have children.
+   */
+  async confirmAndRemoveSelectedNodes() {
+    const selectedIds = new Set(this.nodes.filter((n) => n.selected).map((n) => n.id));
+    if (selectedIds.size === 0) return;
+
+    const childCount = this.countChildren(selectedIds);
+    if (childCount > 0) {
+      const confirmed = await ui.confirm({
+        title: 'Delete Containers',
+        message: `This will also delete ${childCount} child resource${childCount > 1 ? 's' : ''} inside the selected containers. Are you sure?`,
+        confirmLabel: 'Delete All',
+        danger: true,
+      });
+      if (!confirmed) return;
+    }
+    this.removeSelectedNodes();
   }
 
   /** Remove references pointing to a deleted node from all remaining nodes. */
@@ -231,6 +342,132 @@ class DiagramStore {
     this.flushPendingSnapshot();
     this.ensureInitialSnapshot();
     this.edges = this.edges.filter((e) => e.id !== id);
+    this.pushSnapshot();
+  }
+
+  /**
+   * Copy specified nodes (and their children/internal edges) to the clipboard.
+   */
+  copyNodes(nodeIds: string[]) {
+    const idSet = new Set(nodeIds);
+
+    // Recursively collect children whose parent is in the set
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const n of this.nodes) {
+        if (n.parentId && idSet.has(n.parentId as string) && !idSet.has(n.id)) {
+          idSet.add(n.id);
+          changed = true;
+        }
+      }
+    }
+
+    const copiedNodes = this.nodes.filter((n) => idSet.has(n.id));
+    const copiedEdges = this.edges.filter(
+      (e) => idSet.has(e.source) && idSet.has(e.target),
+    );
+
+    // Deep clone via snapshot + structuredClone to strip reactivity
+    const nodesSnap = $state.snapshot(copiedNodes) as unknown;
+    const edgesSnap = $state.snapshot(copiedEdges) as unknown;
+    this.clipboard = {
+      nodes: structuredClone(nodesSnap) as DiagramNode[],
+      edges: structuredClone(edgesSnap) as DiagramEdge[],
+    };
+  }
+
+  /**
+   * Paste nodes from clipboard with new IDs, offset positions, and unique names.
+   */
+  pasteNodes() {
+    if (!this.clipboard || this.clipboard.nodes.length === 0) return;
+
+    this.flushPendingSnapshot();
+    this.ensureInitialSnapshot();
+
+    const oldToNew = new Map<string, string>();
+    const existingNames = new Set(this.nodes.map((n) => n.data.terraformName));
+
+    // Generate new IDs for each clipboard node
+    for (const node of this.clipboard.nodes) {
+      const newId = generateNodeId(node.type as ResourceTypeId);
+      oldToNew.set(node.id, newId);
+    }
+
+    const newNodes: DiagramNode[] = [];
+    for (const node of this.clipboard.nodes) {
+      const newId = oldToNew.get(node.id)!;
+      const newTfName = generateUniqueTerraformName(
+        node.data.terraformName,
+        existingNames,
+      );
+      existingNames.add(newTfName);
+
+      // Generate copy label
+      const label = generateCopyLabel(node.data.label);
+
+      // Remap parentId (only if parent was also copied)
+      const remappedParentId = node.parentId
+        ? oldToNew.get(node.parentId as string)
+        : undefined;
+
+      // Remap references (keep only those pointing to copied nodes)
+      const remappedRefs: Record<string, string> = {};
+      for (const [key, refId] of Object.entries(node.data.references)) {
+        const newRef = oldToNew.get(refId as string);
+        if (newRef) remappedRefs[key] = newRef;
+      }
+
+      const newNode: DiagramNode = {
+        ...structuredClone($state.snapshot(node) as unknown) as DiagramNode,
+        id: newId,
+        position: {
+          x: node.position.x + 30,
+          y: node.position.y + 30,
+        },
+        data: {
+          ...node.data,
+          terraformName: newTfName,
+          label,
+          references: remappedRefs,
+          validationErrors: [],
+        },
+        selected: true,
+      };
+
+      if (remappedParentId) {
+        newNode.parentId = remappedParentId;
+      } else {
+        delete (newNode as any).parentId;
+        delete (newNode as any).extent;
+      }
+
+      newNodes.push(newNode);
+    }
+
+    const newEdges: DiagramEdge[] = [];
+    for (const edge of this.clipboard.edges) {
+      const newSource = oldToNew.get(edge.source);
+      const newTarget = oldToNew.get(edge.target);
+      if (!newSource || !newTarget) continue;
+
+      newEdges.push({
+        ...edge,
+        id: `e-${newSource}-${edge.sourceHandle ?? 'default'}-${newTarget}`,
+        source: newSource,
+        target: newTarget,
+      });
+    }
+
+    // Deselect existing nodes, add new ones
+    this.nodes = [
+      ...this.nodes.map((n) => ({ ...n, selected: false })),
+      ...newNodes,
+    ];
+    this.edges = [...this.edges, ...newEdges];
+
+    this.selectedNodeId = null;
     this.pushSnapshot();
   }
 
