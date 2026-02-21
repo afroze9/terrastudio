@@ -10,10 +10,10 @@ export const fileShareHclGenerator: HclGenerator = {
     const accessTier = props['access_tier'] as string | undefined;
     const protocol = props['enabled_protocol'] as string | undefined;
 
-    const saRef = resource.references['storage_account_name'];
-    const saNameExpr = saRef
-      ? context.getAttributeReference(saRef, 'name')
-      : '"<storage-account-name>"';
+    const saRef = resource.references['storage_account_id'];
+    const saIdExpr = saRef
+      ? context.getAttributeReference(saRef, 'id')
+      : '"<storage-account-id>"';
 
     const dependsOn: string[] = [];
     if (saRef) {
@@ -24,7 +24,7 @@ export const fileShareHclGenerator: HclGenerator = {
     const lines: string[] = [
       `resource "azurerm_storage_share" "${resource.terraformName}" {`,
       `  name                 = "${name}"`,
-      `  storage_account_name = ${saNameExpr}`,
+      `  storage_account_id   = ${saIdExpr}`,
       `  quota                = ${quota}`,
     ];
 

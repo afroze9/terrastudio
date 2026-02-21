@@ -70,6 +70,16 @@ export const vmSchema: ResourceSchema = {
       placeholder: 'azureuser',
     },
     {
+      key: 'admin_password',
+      label: 'Admin Password',
+      type: 'string',
+      required: false,
+      group: 'Authentication',
+      order: 5,
+      description: 'Required for Windows VMs. Will be stored as a sensitive Terraform variable.',
+      visibleWhen: { field: 'os_type', operator: 'eq', value: 'windows' },
+    },
+    {
       key: 'image_publisher',
       label: 'Image Publisher',
       type: 'string',

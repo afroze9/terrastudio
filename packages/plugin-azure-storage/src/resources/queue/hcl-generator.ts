@@ -7,10 +7,10 @@ export const queueHclGenerator: HclGenerator = {
     const props = resource.properties;
     const name = props['name'] as string;
 
-    const saRef = resource.references['storage_account_name'];
-    const saNameExpr = saRef
-      ? context.getAttributeReference(saRef, 'name')
-      : '"<storage-account-name>"';
+    const saRef = resource.references['storage_account_id'];
+    const saIdExpr = saRef
+      ? context.getAttributeReference(saRef, 'id')
+      : '"<storage-account-id>"';
 
     const dependsOn: string[] = [];
     if (saRef) {
@@ -21,7 +21,7 @@ export const queueHclGenerator: HclGenerator = {
     const lines: string[] = [
       `resource "azurerm_storage_queue" "${resource.terraformName}" {`,
       `  name                 = "${name}"`,
-      `  storage_account_name = ${saNameExpr}`,
+      `  storage_account_id   = ${saIdExpr}`,
       '}',
     ];
 

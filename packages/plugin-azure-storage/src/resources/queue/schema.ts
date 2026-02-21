@@ -31,7 +31,7 @@ export const queueSchema: ResourceSchema = {
     },
   ],
 
-  parentReference: { propertyKey: 'storage_account_name' },
+  parentReference: { propertyKey: 'storage_account_id' },
 
   handles: [],
 

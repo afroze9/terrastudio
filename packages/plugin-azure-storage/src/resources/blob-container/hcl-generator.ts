@@ -8,10 +8,10 @@ export const blobContainerHclGenerator: HclGenerator = {
     const name = props['name'] as string;
     const accessType = (props['container_access_type'] as string) ?? 'private';
 
-    const saRef = resource.references['storage_account_name'];
-    const saNameExpr = saRef
-      ? context.getAttributeReference(saRef, 'name')
-      : '"<storage-account-name>"';
+    const saRef = resource.references['storage_account_id'];
+    const saIdExpr = saRef
+      ? context.getAttributeReference(saRef, 'id')
+      : '"<storage-account-id>"';
 
     const dependsOn: string[] = [];
     if (saRef) {
@@ -22,7 +22,7 @@ export const blobContainerHclGenerator: HclGenerator = {
     const lines: string[] = [
       `resource "azurerm_storage_container" "${resource.terraformName}" {`,
       `  name                  = "${name}"`,
-      `  storage_account_name  = ${saNameExpr}`,
+      `  storage_account_id    = ${saIdExpr}`,
       `  container_access_type = "${accessType}"`,
       '}',
     ];

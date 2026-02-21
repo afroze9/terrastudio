@@ -72,7 +72,16 @@ export const vmHclGenerator: HclGenerator = {
       `  network_interface_ids = [azurerm_network_interface.${nicName}.id]`,
     ];
 
-    if (osType === 'linux') {
+    if (osType === 'windows') {
+      const passwordVarName = `${resource.terraformName}_admin_password`;
+      context.addVariable({
+        name: passwordVarName,
+        type: 'string',
+        description: `Admin password for Windows VM ${name}`,
+        sensitive: true,
+      });
+      vmLines.push(`  admin_password      = var.${passwordVarName}`);
+    } else {
       vmLines.push('');
       vmLines.push('  admin_ssh_key {');
       vmLines.push(`    username   = "${adminUsername}"`);
