@@ -1,6 +1,9 @@
 # TerraStudio
 
+
 Visual infrastructure diagram builder that generates and executes Terraform. Drag-and-drop Azure resources onto a canvas, configure them visually, and export production-ready Terraform code.
+
+![](docs/assets/screenshot.png)
 
 ## Tech Stack
 
