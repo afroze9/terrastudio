@@ -35,9 +35,18 @@ importers:
       '@terrastudio/plugin-azure-compute':
         specifier: workspace:*
         version: link:../../packages/plugin-azure-compute
+      '@terrastudio/plugin-azure-database':
+        specifier: workspace:*
+        version: link:../../packages/plugin-azure-database
+      '@terrastudio/plugin-azure-monitoring':
+        specifier: workspace:*
+        version: link:../../packages/plugin-azure-monitoring
       '@terrastudio/plugin-azure-networking':
         specifier: workspace:*
         version: link:../../packages/plugin-azure-networking
+      '@terrastudio/plugin-azure-security':
+        specifier: workspace:*
+        version: link:../../packages/plugin-azure-security
       '@terrastudio/plugin-azure-storage':
         specifier: workspace:*
         version: link:../../packages/plugin-azure-storage
@@ -111,7 +120,37 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
+  packages/plugin-azure-database:
+    dependencies:
+      '@terrastudio/types':
+        specifier: workspace:*
+        version: link:../types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
+  packages/plugin-azure-monitoring:
+    dependencies:
+      '@terrastudio/types':
+        specifier: workspace:*
+        version: link:../types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
   packages/plugin-azure-networking:
+    dependencies:
+      '@terrastudio/types':
+        specifier: workspace:*
+        version: link:../types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
+  packages/plugin-azure-security:
     dependencies:
       '@terrastudio/types':
         specifier: workspace:*

@@ -5,6 +5,8 @@ import { vmRegistration } from './resources/virtual-machine/index.js';
 import { keyVaultRegistration } from './resources/key-vault/index.js';
 import { appServicePlanRegistration } from './resources/app-service-plan/index.js';
 import { appServiceRegistration } from './resources/app-service/index.js';
+import { functionAppRegistration } from './resources/function-app/index.js';
+import { containerRegistryRegistration } from './resources/container-registry/index.js';
 import { computeConnectionRules } from './connections/rules.js';
 import { keyVaultSecretBinding } from './bindings/keyvault-secret.js';
 
@@ -15,6 +17,8 @@ const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
   ['azurerm/security/key_vault', keyVaultRegistration],
   ['azurerm/compute/app_service_plan', appServicePlanRegistration],
   ['azurerm/compute/app_service', appServiceRegistration],
+  ['azurerm/compute/function_app', functionAppRegistration],
+  ['azurerm/containers/container_registry', containerRegistryRegistration],
 ]);
 
 const plugin: InfraPlugin = {
@@ -37,6 +41,11 @@ const plugin: InfraPlugin = {
       id: 'compute',
       label: 'Compute',
       order: 20,
+    },
+    {
+      id: 'containers',
+      label: 'Containers',
+      order: 35,
     },
     {
       id: 'security',

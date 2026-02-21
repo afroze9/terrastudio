@@ -2,6 +2,9 @@ import { PluginRegistry, EdgeRuleValidator, type OutputAcceptingHandle } from '@
 import networkingPlugin from '@terrastudio/plugin-azure-networking';
 import computePlugin from '@terrastudio/plugin-azure-compute';
 import storagePlugin from '@terrastudio/plugin-azure-storage';
+import databasePlugin from '@terrastudio/plugin-azure-database';
+import monitoringPlugin from '@terrastudio/plugin-azure-monitoring';
+import securityPlugin from '@terrastudio/plugin-azure-security';
 import DefaultResourceNode from '$lib/components/DefaultResourceNode.svelte';
 import ContainerResourceNode from '$lib/components/ContainerResourceNode.svelte';
 import { checkTerraform } from '$lib/services/terraform-service';
@@ -18,6 +21,9 @@ export function initializePlugins(): void {
   registry.registerPlugin(networkingPlugin);
   registry.registerPlugin(computePlugin);
   registry.registerPlugin(storagePlugin);
+  registry.registerPlugin(databasePlugin);
+  registry.registerPlugin(monitoringPlugin);
+  registry.registerPlugin(securityPlugin);
   registry.finalize();
 
   // Collect handles that accept any dynamic output

@@ -1,0 +1,113 @@
+import type { ResourceSchema } from '@terrastudio/types';
+
+export const functionAppSchema: ResourceSchema = {
+  typeId: 'azurerm/compute/function_app',
+  provider: 'azurerm',
+  displayName: 'Function App',
+  category: 'compute',
+  description: 'Azure Functions serverless compute for event-driven applications',
+  terraformType: 'azurerm_linux_function_app',
+  supportsTags: true,
+  requiresResourceGroup: true,
+
+  canBeChildOf: [
+    'azurerm/core/resource_group',
+    'azurerm/compute/app_service_plan',
+  ],
+
+  parentReference: { propertyKey: 'service_plan_id' },
+
+  properties: [
+    {
+      key: 'name',
+      label: 'Name',
+      type: 'string',
+      required: true,
+      placeholder: 'func-myapp-dev',
+      group: 'General',
+      order: 1,
+      validation: {
+        minLength: 2,
+        maxLength: 60,
+        pattern: '^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]$',
+        patternMessage: 'Alphanumerics and hyphens, must start and end with alphanumeric',
+      },
+    },
+    {
+      key: 'os_type',
+      label: 'OS Type',
+      type: 'select',
+      required: true,
+      group: 'General',
+      order: 2,
+      defaultValue: 'linux',
+      description: 'Must match the App Service Plan OS type',
+      options: [
+        { label: 'Linux', value: 'linux' },
+        { label: 'Windows', value: 'windows' },
+      ],
+    },
+    {
+      key: 'runtime_stack',
+      label: 'Runtime Stack',
+      type: 'select',
+      required: false,
+      group: 'General',
+      order: 3,
+      defaultValue: 'node',
+      options: [
+        { label: 'Node.js', value: 'node' },
+        { label: 'Python', value: 'python' },
+        { label: '.NET', value: 'dotnet' },
+        { label: 'Java', value: 'java' },
+        { label: 'PowerShell', value: 'powershell' },
+      ],
+    },
+    {
+      key: 'runtime_version',
+      label: 'Runtime Version',
+      type: 'string',
+      required: false,
+      group: 'General',
+      order: 4,
+      defaultValue: '20',
+      placeholder: '20',
+      description: 'Version depends on runtime stack (e.g., 20 for Node, 3.11 for Python, 8.0 for .NET)',
+    },
+    {
+      key: 'https_only',
+      label: 'HTTPS Only',
+      type: 'boolean',
+      required: false,
+      group: 'Security',
+      order: 5,
+      defaultValue: true,
+    },
+    {
+      key: 'enabled',
+      label: 'Enabled',
+      type: 'boolean',
+      required: false,
+      group: 'General',
+      order: 6,
+      defaultValue: true,
+    },
+    {
+      key: 'storage_account_name',
+      label: 'Storage Account',
+      type: 'reference',
+      required: true,
+      group: 'Storage',
+      order: 10,
+      referenceTargetTypes: ['azurerm/storage/storage_account'],
+      description: 'Backend storage account required by Azure Functions',
+    },
+  ],
+
+  handles: [],
+
+  outputs: [
+    { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
+    { key: 'default_hostname', label: 'Default Hostname', terraformAttribute: 'default_hostname' },
+  ],
+};
