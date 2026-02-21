@@ -1,9 +1,20 @@
 <script lang="ts">
   import { project } from '$lib/stores/project.svelte';
   import { terraform } from '$lib/stores/terraform.svelte';
+  import type { LayoutAlgorithm } from '@terrastudio/core';
 
   let newTagKey = $state('');
   let newTagValue = $state('');
+
+  const layoutOptions: { value: LayoutAlgorithm; label: string; desc: string }[] = [
+    { value: 'dagre', label: 'Dagre', desc: 'Hierarchical layout based on edges' },
+    { value: 'hybrid', label: 'Hybrid Grid', desc: 'Grid layout with reference-aware clustering' },
+  ];
+
+  function setLayoutAlgorithm(algo: LayoutAlgorithm) {
+    project.projectConfig.layoutAlgorithm = algo;
+    project.markDirty();
+  }
 
   // Debounce timer for variable value changes
   let varDebounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -43,6 +54,24 @@
 
 <div class="config-panel">
   <div class="config-panel-content">
+    <!-- Layout Algorithm -->
+    <div class="config-section">
+      <div class="group-header">Layout</div>
+      <p class="section-hint">Algorithm used by Auto Layout.</p>
+      <div class="layout-options">
+        {#each layoutOptions as opt (opt.value)}
+          <button
+            class="layout-option"
+            class:active={(project.projectConfig.layoutAlgorithm ?? 'dagre') === opt.value}
+            onclick={() => setLayoutAlgorithm(opt.value)}
+          >
+            <span class="layout-option-label">{opt.label}</span>
+            <span class="layout-option-desc">{opt.desc}</span>
+          </button>
+        {/each}
+      </div>
+    </div>
+
     <!-- Common Tags Section -->
     <div class="config-section">
       <div class="group-header">Common Tags</div>
@@ -150,6 +179,43 @@
     font-size: 11px;
     color: var(--color-text-muted);
     margin: 0 0 8px;
+  }
+
+  /* Layout algorithm */
+  .layout-options {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .layout-option {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 8px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.1s, border-color 0.1s;
+  }
+  .layout-option:hover {
+    background: var(--color-surface-hover);
+  }
+  .layout-option.active {
+    border-color: var(--color-accent);
+    color: var(--color-text);
+    background: var(--color-surface-hover);
+  }
+  .layout-option-label {
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .layout-option-desc {
+    font-size: 10px;
+    color: var(--color-text-muted);
+    margin-top: 2px;
   }
 
   /* Tags */

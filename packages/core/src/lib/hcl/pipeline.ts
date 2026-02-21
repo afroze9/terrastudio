@@ -13,6 +13,8 @@ import { VariableCollector, OutputCollector } from './variable-collector.js';
 import { ProviderConfigBuilder } from './provider-config-builder.js';
 import { HclBlockBuilder, type GeneratedFiles } from './block-builder.js';
 
+export type LayoutAlgorithm = 'dagre' | 'hybrid';
+
 export interface ProjectConfig {
   providerConfigs: Record<ProviderId, Record<string, unknown>>;
   resourceGroupName: string;
@@ -21,6 +23,7 @@ export interface ProjectConfig {
   locationAsVariable: boolean;
   commonTags: Record<string, string>;
   variableValues: Record<string, string>;
+  layoutAlgorithm?: LayoutAlgorithm;
   backend?: {
     type: string;
     config: Record<string, string>;
