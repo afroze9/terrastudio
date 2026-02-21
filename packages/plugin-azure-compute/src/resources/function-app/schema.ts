@@ -10,10 +10,7 @@ export const functionAppSchema: ResourceSchema = {
   supportsTags: true,
   requiresResourceGroup: true,
 
-  canBeChildOf: [
-    'azurerm/core/resource_group',
-    'azurerm/compute/app_service_plan',
-  ],
+  canBeChildOf: ['azurerm/compute/app_service_plan'],
 
   parentReference: { propertyKey: 'service_plan_id' },
 

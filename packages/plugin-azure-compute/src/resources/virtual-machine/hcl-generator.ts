@@ -39,6 +39,17 @@ export const vmHclGenerator: HclGenerator = {
       if (subnetAddr) dependsOn.push(subnetAddr);
     }
 
+    // Resolve public IP reference for the NIC
+    const publicIpRef = resource.references['public_ip_id'];
+    const publicIpIdExpr = publicIpRef
+      ? context.getAttributeReference(publicIpRef, 'id')
+      : undefined;
+
+    if (publicIpRef) {
+      const pipAddr = context.getTerraformAddress(publicIpRef);
+      if (pipAddr) dependsOn.push(pipAddr);
+    }
+
     const terraformType = osType === 'windows'
       ? 'azurerm_windows_virtual_machine'
       : 'azurerm_linux_virtual_machine';
@@ -54,11 +65,18 @@ export const vmHclGenerator: HclGenerator = {
       '    name                          = "internal"',
       `    subnet_id                     = ${subnetIdExpr}`,
       '    private_ip_address_allocation = "Dynamic"',
+    ];
+
+    if (publicIpIdExpr) {
+      nicLines.push(`    public_ip_address_id           = ${publicIpIdExpr}`);
+    }
+
+    nicLines.push(
       '  }',
       '',
       '  tags = local.common_tags',
       '}',
-    ];
+    );
 
     // Generate VM
     const vmLines: string[] = [

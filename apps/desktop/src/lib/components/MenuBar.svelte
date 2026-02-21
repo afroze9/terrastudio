@@ -3,7 +3,7 @@
   import { diagram } from '$lib/stores/diagram.svelte';
   import { project } from '$lib/stores/project.svelte';
   import { registry } from '$lib/bootstrap';
-  import { openProject, saveDiagram } from '$lib/services/project-service';
+  import { openProject, saveDiagram, guardUnsavedChanges } from '$lib/services/project-service';
   import { exportPNG, exportSVG, copyDiagramToClipboard, exportDocumentation } from '$lib/services/export-service';
   import { autoLayout, type LayoutDirection } from '$lib/services/layout-service';
 
@@ -48,8 +48,9 @@
     try { await openProject(); } catch { /* cancelled */ }
   }
 
-  function handleClose() {
+  async function handleClose() {
     close();
+    if (!(await guardUnsavedChanges())) return;
     diagram.clear();
     project.close();
   }

@@ -1,5 +1,8 @@
 <script lang="ts">
   import { getCurrentWindow } from '@tauri-apps/api/window';
+  import { project } from '$lib/stores/project.svelte';
+  import { ui } from '$lib/stores/ui.svelte';
+  import { saveDiagram } from '$lib/services/project-service';
 
   const appWindow = getCurrentWindow();
 
@@ -10,6 +13,15 @@
   appWindow.onResized(async () => {
     isMaximized = await appWindow.isMaximized();
   });
+
+  async function handleClose() {
+    if (project.isOpen && project.isDirty) {
+      const result = await ui.confirmUnsaved();
+      if (result === 'cancel') return;
+      if (result === 'save') await saveDiagram();
+    }
+    await appWindow.destroy();
+  }
 </script>
 
 <div class="window-controls">
@@ -30,7 +42,7 @@
       </svg>
     {/if}
   </button>
-  <button class="win-btn win-btn-close" onclick={() => appWindow.close()} aria-label="Close">
+  <button class="win-btn win-btn-close" onclick={handleClose} aria-label="Close">
     <svg width="10" height="10" viewBox="0 0 10 10">
       <line x1="1" y1="1" x2="9" y2="9" stroke="currentColor" stroke-width="1.2" />
       <line x1="9" y1="1" x2="1" y2="9" stroke="currentColor" stroke-width="1.2" />

@@ -9,10 +9,7 @@ export const appServiceSchema: ResourceSchema = {
   terraformType: 'azurerm_linux_web_app',
   supportsTags: true,
   requiresResourceGroup: true,
-  canBeChildOf: [
-    'azurerm/core/resource_group',
-    'azurerm/compute/app_service_plan',
-  ],
+  canBeChildOf: ['azurerm/compute/app_service_plan'],
 
   properties: [
     {

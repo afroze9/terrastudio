@@ -1,0 +1,142 @@
+import type { Template } from '../types';
+
+export const serverlessFunctionsTemplate: Template = {
+  templateVersion: 1,
+  metadata: {
+    id: 'serverless-functions',
+    name: 'Serverless Functions',
+    description: 'Function App with Storage Account and Application Insights',
+    categories: ['Compute'],
+    icon: 'compute',
+  },
+  diagram: {
+    nodes: [
+      {
+        id: 'tmpl-sub',
+        type: 'azurerm/core/subscription',
+        position: { x: 50, y: 50 },
+        data: {
+          typeId: 'azurerm/core/subscription',
+          properties: {},
+          references: {},
+          terraformName: 'sub_1',
+          label: 'Subscription',
+          validationErrors: [],
+          enabledOutputs: [],
+        },
+        width: 1100,
+        height: 750,
+        style: 'width: 1100px; height: 750px;',
+      },
+      {
+        id: 'tmpl-rg',
+        type: 'azurerm/core/resource_group',
+        position: { x: 50, y: 60 },
+        parentId: 'tmpl-sub',
+        data: {
+          typeId: 'azurerm/core/resource_group',
+          properties: { location: 'eastus' },
+          references: {},
+          terraformName: 'rg_1',
+          label: 'Resource Group',
+          validationErrors: [],
+          enabledOutputs: [],
+        },
+        width: 1000,
+        height: 650,
+        style: 'width: 1000px; height: 650px;',
+      },
+      // App Service Plan (consumption)
+      {
+        id: 'tmpl-plan',
+        type: 'azurerm/compute/app_service_plan',
+        position: { x: 30, y: 60 },
+        parentId: 'tmpl-rg',
+        data: {
+          typeId: 'azurerm/compute/app_service_plan',
+          properties: {
+            name: 'asp-functions',
+            os_type: 'Linux',
+            sku_name: 'Y1',
+          },
+          references: {},
+          terraformName: 'asp_1',
+          label: 'Consumption Plan',
+          validationErrors: [],
+          enabledOutputs: [],
+        },
+        width: 350,
+        height: 250,
+        style: 'width: 350px; height: 250px;',
+      },
+      // Function App inside plan
+      {
+        id: 'tmpl-func',
+        type: 'azurerm/compute/function_app',
+        position: { x: 30, y: 60 },
+        parentId: 'tmpl-plan',
+        data: {
+          typeId: 'azurerm/compute/function_app',
+          properties: {
+            name: 'func-api',
+            os_type: 'linux',
+            runtime_stack: 'node',
+            runtime_version: '20',
+            https_only: true,
+          },
+          references: {},
+          terraformName: 'func_1',
+          label: 'Function App',
+          validationErrors: [],
+          enabledOutputs: [],
+        },
+      },
+      // Storage Account (required for Function App)
+      {
+        id: 'tmpl-storage',
+        type: 'azurerm/storage/storage_account',
+        position: { x: 450, y: 60 },
+        parentId: 'tmpl-rg',
+        data: {
+          typeId: 'azurerm/storage/storage_account',
+          properties: {
+            name: 'stfunc',
+            account_tier: 'Standard',
+            account_replication_type: 'LRS',
+            account_kind: 'StorageV2',
+          },
+          references: {},
+          terraformName: 'st_1',
+          label: 'Storage Account',
+          validationErrors: [],
+          enabledOutputs: [],
+        },
+        width: 350,
+        height: 250,
+        style: 'width: 350px; height: 250px;',
+      },
+      // Application Insights
+      {
+        id: 'tmpl-appinsights',
+        type: 'azurerm/monitoring/application_insights',
+        position: { x: 30, y: 380 },
+        parentId: 'tmpl-rg',
+        data: {
+          typeId: 'azurerm/monitoring/application_insights',
+          properties: {
+            name: 'appi-functions',
+            application_type: 'web',
+            retention_in_days: 90,
+            sampling_percentage: 100,
+          },
+          references: {},
+          terraformName: 'appi_1',
+          label: 'Application Insights',
+          validationErrors: [],
+          enabledOutputs: [],
+        },
+      },
+    ],
+    edges: [],
+  },
+};

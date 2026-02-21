@@ -24,6 +24,8 @@ pub fn run() {
             project::commands::save_project_config,
             project::commands::get_recent_projects,
             project::commands::remove_recent_project,
+            project::commands::get_last_project_location,
+            project::commands::set_last_project_location,
             project::commands::write_export_file,
             terraform::commands::write_terraform_files,
             terraform::commands::check_terraform,
@@ -35,6 +37,10 @@ pub fn run() {
             terraform::commands::terraform_show,
             terraform::commands::read_terraform_file,
             terraform::commands::list_terraform_files,
+            project::templates::get_user_templates_dir,
+            project::templates::list_user_templates,
+            project::templates::load_user_template,
+            project::templates::open_templates_folder,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

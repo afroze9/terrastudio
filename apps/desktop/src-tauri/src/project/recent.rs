@@ -80,3 +80,21 @@ pub fn remove_recent(path: &str) -> Result<(), String> {
     projects.retain(|p| p.path != path);
     save_recent(&projects)
 }
+
+const LAST_LOCATION_FILE: &str = "last-project-location.txt";
+
+pub fn get_last_location() -> Option<String> {
+    let data_dir = dirs::data_dir()?;
+    let path = data_dir.join(APP_DIR_NAME).join(LAST_LOCATION_FILE);
+    std::fs::read_to_string(&path).ok().filter(|s| !s.is_empty())
+}
+
+pub fn set_last_location(location: &str) -> Result<(), String> {
+    let data_dir = dirs::data_dir()
+        .ok_or_else(|| "Could not determine app data directory".to_string())?;
+    let dir = data_dir.join(APP_DIR_NAME);
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| format!("Failed to create app data directory: {}", e))?;
+    std::fs::write(dir.join(LAST_LOCATION_FILE), location)
+        .map_err(|e| format!("Failed to write last location: {}", e))
+}

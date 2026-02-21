@@ -182,6 +182,24 @@ class UiStore {
     this.confirmDialog?.resolve(confirmed);
     this.confirmDialog = null;
   }
+
+  // --- Unsaved changes dialog ---
+  unsavedDialog = $state<{
+    resolve: (result: 'save' | 'discard' | 'cancel') => void;
+  } | null>(null);
+
+  /** Show an unsaved changes dialog. Returns 'save', 'discard', or 'cancel'. */
+  confirmUnsaved(): Promise<'save' | 'discard' | 'cancel'> {
+    return new Promise((resolve) => {
+      this.unsavedDialog = { resolve };
+    });
+  }
+
+  /** Called by UnsavedChangesDialog to close and resolve. */
+  resolveUnsaved(result: 'save' | 'discard' | 'cancel') {
+    this.unsavedDialog?.resolve(result);
+    this.unsavedDialog = null;
+  }
 }
 
 export const ui = new UiStore();

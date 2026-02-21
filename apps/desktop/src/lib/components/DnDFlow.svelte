@@ -548,7 +548,7 @@
     snapGrid={ui.snapToGrid ? [ui.gridSize, ui.gridSize] : undefined}
     selectionOnDrag
     panOnDrag={[1]}
-    panActivationKey="Space"
+    panActivationKey=" "
     selectionMode={SelectionMode.Full}
     {isValidConnection}
     onconnect={onConnect}

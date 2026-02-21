@@ -92,3 +92,28 @@ html, body {
   width: 10px;
   height: 10px;
 }
+
+/* Canvas cursor overrides */
+/* Pane: default arrow; selection drag keeps arrow (not pointer) */
+.svelte-flow__pane {
+  cursor: default;
+}
+.svelte-flow__pane.selection {
+  cursor: default;
+}
+/* Space held (pan activation): open hand */
+.svelte-flow__pane.draggable {
+  cursor: grab;
+}
+/* Actively panning: closed hand */
+.svelte-flow__pane.dragging {
+  cursor: grabbing;
+}
+/* Nodes: open hand on hover, closed hand while dragging */
+.svelte-flow__node.selectable,
+.svelte-flow__node.draggable {
+  cursor: grab;
+}
+.svelte-flow__node.draggable.dragging {
+  cursor: grabbing;
+}

@@ -188,3 +188,15 @@ pub async fn get_recent_projects() -> Result<Vec<recent::RecentProject>, String>
 pub async fn remove_recent_project(path: String) -> Result<(), String> {
     recent::remove_recent(&path)
 }
+
+/// Get the last used project location.
+#[command]
+pub async fn get_last_project_location() -> Result<Option<String>, String> {
+    Ok(recent::get_last_location())
+}
+
+/// Save the last used project location.
+#[command]
+pub async fn set_last_project_location(location: String) -> Result<(), String> {
+    recent::set_last_location(&location)
+}
