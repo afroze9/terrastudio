@@ -19,9 +19,15 @@ export const blobContainerHclGenerator: HclGenerator = {
       if (saAddr) dependsOn.push(saAddr);
     }
 
+    const nameExpr = context.getPropertyExpression(resource, 'name', name, {
+      variableName: `${resource.terraformName}_name`,
+      variableType: 'string',
+      variableDescription: `Name of the Blob Container ${name || resource.terraformName}`,
+    });
+
     const lines: string[] = [
       `resource "azurerm_storage_container" "${resource.terraformName}" {`,
-      `  name                  = "${name}"`,
+      `  name                  = ${nameExpr}`,
       `  storage_account_id    = ${saIdExpr}`,
       `  container_access_type = "${accessType}"`,
       '}',

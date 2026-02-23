@@ -478,6 +478,29 @@ class DiagramStore {
     this.nodes = this.nodes.map((n) => ({ ...n, selected: true }));
   }
 
+  /**
+   * Set validation errors on a single node.
+   * Does NOT mark the project dirty, files stale, or create undo history —
+   * validation errors are transient UI state that must not trigger auto-regen.
+   */
+  setNodeValidationErrors(id: string, errors: unknown[]) {
+    this.nodes = this.nodes.map((n) =>
+      n.id === id ? { ...n, data: { ...n.data, validationErrors: errors } } : n
+    );
+  }
+
+  /**
+   * Clear validation errors from all nodes.
+   * Same no-side-effects contract as setNodeValidationErrors.
+   */
+  clearAllValidationErrors() {
+    this.nodes = this.nodes.map((n) =>
+      (n.data.validationErrors as unknown[])?.length
+        ? { ...n, data: { ...n.data, validationErrors: [] } }
+        : n
+    );
+  }
+
   /** Load a saved diagram without marking dirty or pushing per-node history. */
   loadDiagram(nodes: DiagramNode[], edges: DiagramEdge[]) {
     this.skipHistory = true;

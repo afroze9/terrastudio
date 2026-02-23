@@ -69,6 +69,12 @@ class TerraformStore {
   /** Flag to suppress stale marking during status refresh (prevents loop) */
   private suppressStaleMarking = false;
 
+  /**
+   * Blocks auto-regen after a failed attempt so it doesn't loop.
+   * Cleared by markFilesStale() when the diagram actually changes.
+   */
+  autoRegenBlocked = $state(false);
+
   /** Last command result with diagnostics and resource changes */
   lastResult = $state<TerraformJsonResult | null>(null);
   /** Resource addresses that had errors in last run */
@@ -103,6 +109,7 @@ class TerraformStore {
   markFilesStale() {
     if (this.suppressStaleMarking) return;
     this.filesStale = true;
+    this.autoRegenBlocked = false; // Diagram changed — allow auto-regen to try again
   }
 
   /** Set auto-regenerate preference and persist */

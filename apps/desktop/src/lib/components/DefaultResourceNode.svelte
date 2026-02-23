@@ -70,6 +70,10 @@
   let hasNsg = $derived(!!data.references?.['nsg_id']);
   let nsgIcon = $derived(hasNsg ? registry.getIcon('azurerm/networking/network_security_group' as any) : null);
 
+  let validationErrors = $derived((data.validationErrors as { message: string; severity: string }[]) ?? []);
+  let hasValidationErrors = $derived(validationErrors.length > 0);
+  let validationTooltip = $derived(validationErrors.map((e) => e.message).join('\n'));
+
   let hoverTimer: ReturnType<typeof setTimeout> | null = null;
   let showTooltip = $state(false);
 
@@ -87,6 +91,7 @@
 <div
   class="resource-node"
   class:selected
+  class:has-validation-errors={hasValidationErrors}
   onmouseenter={onMouseEnter}
   onmouseleave={onMouseLeave}
 >
@@ -100,6 +105,9 @@
     </div>
     {#if hasNsg && nsgIcon?.type === 'svg' && nsgIcon.svg}
       <span class="nsg-badge" title="NSG attached">{@html nsgIcon.svg}</span>
+    {/if}
+    {#if hasValidationErrors}
+      <span class="validation-badge" title={validationTooltip}>!</span>
     {/if}
     <DeploymentBadge status={data.deploymentStatus} {errorMessage} />
   </div>
@@ -133,6 +141,14 @@
   .resource-node.selected {
     border-color: var(--color-accent, #3b82f6);
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+  }
+  .resource-node.has-validation-errors {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+  }
+  .resource-node.has-validation-errors.selected {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
   }
   .node-header {
     display: flex;
@@ -179,5 +195,20 @@
   .nsg-badge :global(svg) {
     width: 16px;
     height: 16px;
+  }
+  .validation-badge {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: #ef4444;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: help;
   }
 </style>

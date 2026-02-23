@@ -59,6 +59,9 @@ export async function generateAndWrite(): Promise<void> {
   terraform.appendInfo('--- Generating Terraform ---');
 
   try {
+    // Clear any previous validation errors from all nodes (no side-effects on stale/dirty)
+    diagram.clearAllValidationErrors();
+
     // Convert diagram to ResourceInstances
     const connectionRules = registry.getConnectionRules();
     const resources = convertToResourceInstances(
@@ -75,6 +78,7 @@ export async function generateAndWrite(): Promise<void> {
         terraform.appendError(
           `[${diagramError.label}] ${diagramError.errors.map((e) => e.message).join(', ')}`,
         );
+        diagram.setNodeValidationErrors(diagramError.instanceId, diagramError.errors);
       }
       terraform.appendError(
         `Validation failed with ${validation.errors.length} resource(s) having errors. Fix issues and try again.`,
@@ -90,6 +94,7 @@ export async function generateAndWrite(): Promise<void> {
       for (const topoError of topologyErrors) {
         const node = diagram.nodes.find((n) => n.id === topoError.instanceId);
         const label = node?.data?.label ?? topoError.instanceId;
+        diagram.setNodeValidationErrors(topoError.instanceId, topoError.errors);
         for (const err of topoError.errors) {
           if (err.severity === 'error') {
             terraform.appendError(`[${label}] ${err.message}`);

@@ -88,6 +88,10 @@
   let hasNsg = $derived(!!data.references?.['nsg_id']);
   let nsgIcon = $derived(hasNsg ? registry.getIcon('azurerm/networking/network_security_group' as any) : null);
 
+  let validationErrors = $derived((data.validationErrors as { message: string; severity: string }[]) ?? []);
+  let hasValidationErrors = $derived(validationErrors.length > 0);
+  let validationTooltip = $derived(validationErrors.map((e) => e.message).join('\n'));
+
   // CIDR subtitle: show address_space (VNet) or address_prefixes (Subnet) in the header
   let cidrSubtitle = $derived.by(() => {
     const props = data.properties;
@@ -167,11 +171,12 @@
   class:selected
   class:drop-valid={isValidDropTarget}
   class:drop-invalid={isInvalidDropTarget}
-  style="border-color: {isInvalidDropTarget ? '#ef4444' : isValidDropTarget ? '#22c55e' : selected ? 'var(--color-accent, #3b82f6)' : borderColor}; border-style: {useSvgBorder && !isInvalidDropTarget && !isValidDropTarget ? 'none' : isInvalidDropTarget || isValidDropTarget ? 'solid' : borderStyle}; background: {isInvalidDropTarget ? 'rgba(239, 68, 68, 0.06)' : isValidDropTarget ? 'rgba(34, 197, 94, 0.06)' : bg}; border-radius: {radius}px; border-width: {useSvgBorder && !isInvalidDropTarget && !isValidDropTarget ? 0 : isInvalidDropTarget || isValidDropTarget ? 2.5 : borderWidth}px;"
+  class:has-validation-errors={hasValidationErrors && !isInvalidDropTarget && !isValidDropTarget}
+  style="border-color: {isInvalidDropTarget ? '#ef4444' : isValidDropTarget ? '#22c55e' : hasValidationErrors ? '#ef4444' : selected ? 'var(--color-accent, #3b82f6)' : borderColor}; border-style: {useSvgBorder && !isInvalidDropTarget && !isValidDropTarget && !hasValidationErrors ? 'none' : isInvalidDropTarget || isValidDropTarget || hasValidationErrors ? 'solid' : borderStyle}; background: {isInvalidDropTarget ? 'rgba(239, 68, 68, 0.06)' : isValidDropTarget ? 'rgba(34, 197, 94, 0.06)' : hasValidationErrors ? 'rgba(239, 68, 68, 0.04)' : bg}; border-radius: {radius}px; border-width: {useSvgBorder && !isInvalidDropTarget && !isValidDropTarget && !hasValidationErrors ? 0 : isInvalidDropTarget || isValidDropTarget ? 2.5 : hasValidationErrors ? 2 : borderWidth}px;"
   onmouseenter={onMouseEnter}
   onmouseleave={onMouseLeave}
 >
-  {#if useSvgBorder && !isInvalidDropTarget && !isValidDropTarget}
+  {#if useSvgBorder && !isInvalidDropTarget && !isValidDropTarget && !hasValidationErrors}
     <svg class="svg-border" xmlns="http://www.w3.org/2000/svg" style="--bw: {borderWidth}px;">
       <rect
         x="{borderWidth / 2}" y="{borderWidth / 2}"
@@ -188,6 +193,9 @@
   <div class="deployment-badge-corner">
     {#if hasNsg && nsgIcon?.type === 'svg' && nsgIcon.svg}
       <span class="nsg-badge" title="NSG attached">{@html nsgIcon.svg}</span>
+    {/if}
+    {#if hasValidationErrors}
+      <span class="validation-badge" title={validationTooltip}>!</span>
     {/if}
     <DeploymentBadge status={data.deploymentStatus} {errorMessage} />
   </div>
@@ -311,5 +319,23 @@
   .nsg-badge :global(svg) {
     width: 16px;
     height: 16px;
+  }
+  .container-node.has-validation-errors {
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+  }
+  .validation-badge {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: #ef4444;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: help;
   }
 </style>

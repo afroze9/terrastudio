@@ -8,10 +8,57 @@
   import { ui } from '$lib/stores/ui.svelte';
   import { generateAndWrite, runTerraformCommand, refreshDeploymentStatus } from '$lib/services/terraform-service';
   import type { TerraformCommand } from '$lib/stores/terraform.svelte';
+  import { registry } from '$lib/bootstrap';
+  import type { ResourceTypeId, TerraformVariable } from '@terrastudio/types';
 
   // Use ui store for persistent collapse state
   const filesCollapsed = $derived(ui.isCategoryCollapsed('tf-files'));
   const variablesCollapsed = $derived(ui.isCategoryCollapsed('tf-variables'));
+
+  /**
+   * Variables derived directly from diagram nodes' variableOverrides.
+   * Updates in real-time as the user toggles properties to variable mode —
+   * no need to wait for a generation run.
+   */
+  const diagramVariables = $derived.by((): TerraformVariable[] => {
+    const vars: TerraformVariable[] = [];
+    for (const node of diagram.nodes) {
+      const overrides = node.data.variableOverrides as Record<string, string> | undefined;
+      if (!overrides) continue;
+      const schema = registry.getResourceSchema(node.data.typeId as ResourceTypeId);
+      if (!schema) continue;
+      for (const [propKey, mode] of Object.entries(overrides)) {
+        if (mode !== 'variable') continue;
+        const propSchema = schema.properties.find(p => p.key === propKey);
+        if (!propSchema) continue;
+        const varName = `${node.data.terraformName}_${propKey}`;
+        let varType = 'string';
+        if (propSchema.type === 'number') varType = 'number';
+        else if (propSchema.type === 'boolean') varType = 'bool';
+        const currentValue = node.data.properties[propKey];
+        vars.push({
+          name: varName,
+          type: varType,
+          description: `${propSchema.label} for ${node.data.label || node.data.terraformName}`,
+          defaultValue: currentValue !== undefined && currentValue !== '' ? currentValue : undefined,
+          sensitive: false,
+        });
+      }
+    }
+    return vars;
+  });
+
+  /**
+   * Merged display list: diagram-derived variables are the real-time source of truth.
+   * After generation, collectedVariables (from the pipeline) take precedence for any
+   * matching names since they carry richer metadata (sensitive flag, actual default).
+   */
+  const displayVariables = $derived.by((): TerraformVariable[] => {
+    if (terraform.collectedVariables.length === 0) return diagramVariables;
+    const collectedNames = new Set(terraform.collectedVariables.map(v => v.name));
+    const extra = diagramVariables.filter(v => !collectedNames.has(v.name));
+    return [...terraform.collectedVariables, ...extra];
+  });
 
   // Debounce timer for auto-regenerate
   let autoRegenTimer: ReturnType<typeof setTimeout> | null = null;
@@ -24,10 +71,11 @@
     const isOpen = project.isOpen;
     const hasNodes = diagram.nodes.length > 0;
     const isRunning = terraform.isRunning;
+    const isBlocked = terraform.autoRegenBlocked;
 
     // Use untrack for the regeneration logic to prevent re-triggering
     untrack(() => {
-      if (autoRegen && isStale && isOpen && hasNodes && !isRunning) {
+      if (autoRegen && isStale && isOpen && hasNodes && !isRunning && !isBlocked) {
         // Clear any existing timer
         if (autoRegenTimer) {
           clearTimeout(autoRegenTimer);
@@ -38,7 +86,8 @@
           try {
             await generateAndWrite();
           } catch {
-            // Error already logged to terraform store
+            // Block auto-regen until the diagram actually changes
+            terraform.autoRegenBlocked = true;
           }
         }, 1000);
       }
@@ -52,7 +101,7 @@
 
   /** Variables that have no default and no user-supplied value */
   const missingRequiredVars = $derived(
-    terraform.collectedVariables.filter(
+    displayVariables.filter(
       (v) =>
         (v.defaultValue === undefined || v.defaultValue === '') &&
         !(project.projectConfig.variableValues[v.name]),
@@ -163,7 +212,7 @@
   </div>
 
   <!-- Variables Section -->
-  {#if terraform.collectedVariables.length > 0}
+  {#if displayVariables.length > 0}
     <div class="section variables-section">
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -172,11 +221,11 @@
           <path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
         <span>VARIABLES</span>
-        <span class="section-count">{terraform.collectedVariables.length}</span>
+        <span class="section-count">{displayVariables.length}</span>
       </div>
       {#if !variablesCollapsed}
         <div class="section-content" transition:slide={{ duration: 150 }}>
-          {#each terraform.collectedVariables as v (v.name)}
+          {#each displayVariables as v (v.name)}
             {@const currentValue = project.projectConfig.variableValues[v.name] ?? ''}
             {@const hasDefault = v.defaultValue !== undefined && v.defaultValue !== ''}
             {@const isMissing = !hasDefault && !currentValue}

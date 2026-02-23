@@ -7,14 +7,18 @@ import { isValidCidr } from '../networking/cidr-utils.js';
 
 /**
  * Validates a single resource instance's properties against its schema.
+ * Properties set to 'variable' mode are skipped — they'll be supplied at runtime.
  */
 export function validateResourceProperties(
   schema: ResourceSchema,
   properties: Record<string, unknown>,
+  variableOverrides?: Record<string, string>,
 ): ValidationError[] {
   const errors: ValidationError[] = [];
 
   for (const propSchema of schema.properties) {
+    // If this property is delegated to a Terraform variable, skip all validation.
+    if (variableOverrides?.[propSchema.key] === 'variable') continue;
     const value = properties[propSchema.key];
     const propErrors = validateProperty(propSchema, value);
     errors.push(...propErrors);

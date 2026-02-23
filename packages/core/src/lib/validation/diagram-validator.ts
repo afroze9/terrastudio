@@ -49,6 +49,7 @@ export function validateDiagram(
     const propertyErrors = validateResourceProperties(
       schema,
       resource.properties,
+      resource.variableOverrides,
     );
 
     const referenceErrors = validateReferences(resource, resources);
