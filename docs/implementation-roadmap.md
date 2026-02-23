@@ -49,8 +49,11 @@ gantt
 
     section Upcoming
     Phase 15 Resource Output Bindings :done, p15, 2026-02-20, 2026-02-21
-    Phase 16 Subscription + Vars      :p16, 2026-02-25, 2026-03-02
-    Phase 17 CIDR + Name Validation   :p17, 2026-03-02, 2026-03-07
+    Phase 16 Subscription + Vars      :done, p16, 2026-02-21, 2026-02-22
+    Phase 16.5 Naming Conventions     :done, p165, 2026-02-22, 2026-02-24
+    Phase 17 CIDR + Validation UX     :done, p17, 2026-02-22, 2026-02-24
+    Phase 18 Template Gallery         :active, p18, 2026-02-24, 2026-03-02
+    Phase 19 Import Terraform         :p19, 2026-03-02, 2026-03-07
 ```
 
 ---
@@ -699,23 +702,63 @@ gantt
    - Container styling: outermost dashed border, Azure blue header
    - `canBeChildOf: []` (top-level only), Resource Group uses `canBeChildOf: ['azurerm/core/subscription']`
 
-2. **Terraform variable management UI** (`ProjectConfigPanel.svelte`)
+2. **Azure CLI subscription picker** (`SubscriptionPicker.svelte`)
+   - Inline browse-and-select UI on the Subscription node's properties panel
+   - Tauri `az_list_subscriptions` Rust command wraps `az account list --output json`
+   - Windows: spawned via `cmd /c az` (`.cmd` scripts can't be invoked directly); `CREATE_NO_WINDOW` flag
+   - Graceful states: `ok` (searchable list), `not_installed` (install link), `not_logged_in` (run `az login` message), `no_subscriptions` (wrong tenant hint), `error`
+   - Filter/search across subscription name and ID; default-subscription dot indicator
+   - PropertiesPanel hides raw `subscription_id`/`display_name` fields when picker is active
+
+3. **Terraform variable management UI** (`ProjectConfigPanel.svelte`)
    - Variables section shows collected Terraform variables after HCL generation
    - Displays variable name, type badge, description, and default values
    - Input fields for setting variable values (required variables highlighted with orange border)
    - Debounced variable value changes persisted to project config
    - Variables mapped to `terraform.tfvars` generation
 
-3. **Project config UI** (`ProjectConfigPanel.svelte`)
+4. **Project config UI** (`ProjectConfigPanel.svelte`)
    - Common Tags section: add/remove tags applied to all resources supporting tags
    - Theme toggle (dark/light) with palette support
    - Integrates with project store for persistence
 
 ---
 
-## Phase 17: Networking Intelligence + Azure Name Validation (Partial ✅)
+## Phase 16.5: Naming Convention System + Project Setup Wizard ✅
 
-**Goal**: Auto-populate subnet CIDR ranges based on VNet address space, and optionally validate resource name availability against Azure APIs during diagram creation.
+**Goal**: Project-level resource naming templates with token-based patterns and a guided new-project wizard that configures naming, layout, and edge preferences upfront.
+
+### What Was Implemented
+
+1. **Naming convention system**
+   - Per-resource naming templates stored in `project.config.namingConventions`
+   - Token system: `{name}`, `{env}`, `{location}`, `{type}`, `{random}`, etc.
+   - `applyNamingTemplate()` in `@terrastudio/core` applies templates during HCL generation
+   - Naming convention editor in Project Settings panel with token chip UI
+   - Live preview showing resolved name as tokens are inserted
+
+2. **Schema improvements alongside naming**
+   - `sensitive: true` flag on `PropertySchema` — renders as password field with show/hide toggle
+   - Credential validation: required sensitive fields validated on blur
+   - `property-as-variable` mode: any property can be toggled to emit a Terraform `var.name` reference instead of a hardcoded value
+
+3. **VS-style 3-step new project wizard**
+   - Inline wizard in the Welcome Screen (no modal)
+   - Step 1: Project name + directory selection
+   - Step 2: Naming convention — preset selector + custom token builder with live preview
+   - Step 3: Canvas preferences — layout direction (TB/LR/BT/RL) + edge style
+   - Accessible: token chips rendered as `<button>` elements, `aria-label` on interactive icons
+
+4. **Canvas UX improvements**
+   - Minimap toggle via `ControlButton` inside the SvelteFlow Controls panel (bottom-left); persisted to localStorage
+   - Tab bar right-click context menu: **Close** (file tabs only) and **Close Others**; Canvas tab cannot be closed
+   - `ui.closeOtherTabs(keepTabId)` in UiStore for batch-close
+
+---
+
+## Phase 17: Networking Intelligence + Validation UX ✅
+
+**Goal**: Auto-populate subnet CIDR ranges, validate network topology, and improve property validation UX in the properties panel.
 
 ### What Was Implemented
 
@@ -731,11 +774,23 @@ gantt
    - Detects overlapping CIDRs between sibling subnets
    - Integrated into diagram validation pipeline
 
+3. **Validation error highlights** ✅
+   - Property form fields with validation errors get inline red border + error message
+   - Real-time updates as the user types
+   - Pre-generation validation (`validateDiagram()`) surfaces errors in the Terraform panel before HCL generation runs
+
+4. **Variable-mode bypass + real-time variables panel** ✅
+   - Any property can be switched to "variable mode" — emits `var.name` in HCL instead of a hardcoded value
+   - Variables panel in sidebar shows all active Terraform variables with type badges, descriptions, and current values
+   - Auto-regenerate toggle: diagram changes trigger HCL regeneration automatically
+
+5. **Auto-regenerate toggle** ✅
+   - Toggle in TerraformPanel to auto-regenerate `.tf` files on every diagram change
+   - Debounced to avoid excessive writes
+
 ### Not Yet Implemented
 
-3. **Azure resource name availability validation** ❌
-   - Requires Azure REST API or `az` CLI integration via Rust backend
-   - Would need a settings toggle, debounced validation, and inline status indicators
+- **Azure resource name availability validation** — requires Azure REST API or `az` CLI; would need a settings toggle, debounced validation, and inline status indicators
 
 ---
 
@@ -746,31 +801,41 @@ These items were originally in "Future Phases" but have been completed:
 - **Auto-layout** ✅ — `dagre` hierarchical layout in `layout-service.ts` with TB/BT/LR/RL directions, bottom-up container processing
 - **Dark/light mode toggle** ✅ — Theme toggle in `AppSettingsPanel.svelte`, persisted to localStorage, palette support via `applyPalette()`
 - **SVG export** ✅ — SVG, PNG, and clipboard export in `export-service.ts` using `html-to-image`
+- **Canvas context menu** ✅ — Right-click on nodes/edges/pane for delete, duplicate, add-child actions
+- **Drag selection + copy/paste** ✅ — Marquee selection, Ctrl+C/V for duplicating nodes with new IDs
+- **Snap to grid + grid size** ✅ — Toggle and size picker in CanvasToolbar, persisted to localStorage
+- **Hybrid grid auto-layout** ✅ — Project setting for grid-based layout as alternative to dagre
+- **12 additional Azure resources across 3 plugins** ✅ — `plugin-azure-database`, `plugin-azure-monitoring`, `plugin-azure-security` added
+- **Unsaved changes protection** ✅ — Dialog on close/new/open when project has unsaved edits
 
 ---
 
-## Phase 18: Template Gallery
+## Phase 18: Template Gallery (Partial ✅)
 
 **Goal**: Pre-built architecture templates users can start from instead of a blank canvas.
 
-### Tasks
+### What Was Implemented
 
-1. **Template data model**
-   - Define a `DiagramTemplate` interface: name, description, thumbnail, category, serialized diagram state
-   - Ship built-in templates: hub-spoke networking, 3-tier web app, microservices with Key Vault
+1. **User/custom templates** ✅
+   - Export current diagram as a reusable template (`.terrastudio-template.json`)
+   - Import templates from file via Tauri dialog
+   - User templates listed on the Welcome Screen alongside recent projects
+   - Templates stored in `{app_data}/com.terrastudio.app/templates/`
+   - Rust commands: `list_user_templates`, `load_user_template`, `open_templates_folder`
 
-2. **Template gallery UI**
-   - Welcome screen shows templates alongside recent projects
+### Not Yet Implemented
+
+2. **Built-in bundled templates** ❌
+   - Ship curated templates: hub-spoke networking, 3-tier web app, microservices with Key Vault
    - Template browser with category filtering and preview thumbnails
-   - "Use Template" loads the diagram and opens the canvas
 
-3. **Community/custom templates**
-   - Export current diagram as a reusable template (save to `.terrastudio-template.json`)
-   - Import templates from file
+3. **Template metadata** ❌
+   - Thumbnail generation from diagram
+   - Category tags and description field in template file
 
 ---
 
-## Phase 19: Import Existing Terraform
+## Phase 19: Import Existing Terraform State
 
 **Goal**: Parse existing Terraform state into a visual diagram for brownfield adoption.
 
