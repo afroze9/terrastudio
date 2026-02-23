@@ -68,16 +68,27 @@ export const vmSchema: ResourceSchema = {
       order: 4,
       defaultValue: 'azureuser',
       placeholder: 'azureuser',
+      validation: {
+        minLength: 1,
+        maxLength: 64,
+        pattern: '^[a-zA-Z][a-zA-Z0-9_-]*$',
+        patternMessage: 'Must start with a letter, followed by letters, digits, underscores, or hyphens',
+      },
     },
     {
       key: 'admin_password',
       label: 'Admin Password',
       type: 'string',
       required: false,
+      sensitive: true,
       group: 'Authentication',
       order: 5,
       description: 'Required for Windows VMs. Will be stored as a sensitive Terraform variable.',
       visibleWhen: { field: 'os_type', operator: 'eq', value: 'windows' },
+      validation: {
+        minLength: 12,
+        maxLength: 123,
+      },
     },
     {
       key: 'image_publisher',

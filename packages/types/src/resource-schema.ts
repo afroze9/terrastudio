@@ -39,6 +39,9 @@ export interface PropertySchema {
 
   readonly validation?: PropertyValidation;
 
+  /** If true, render as a password input and mark as sensitive in generated variables */
+  readonly sensitive?: boolean;
+
   /** Collapsible group heading */
   readonly group?: string;
   /** Sort order within group */

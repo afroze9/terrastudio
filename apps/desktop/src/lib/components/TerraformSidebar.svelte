@@ -41,7 +41,7 @@
           type: varType,
           description: `${propSchema.label} for ${node.data.label || node.data.terraformName}`,
           defaultValue: currentValue !== undefined && currentValue !== '' ? currentValue : undefined,
-          sensitive: false,
+          sensitive: propSchema.sensitive ?? false,
         });
       }
     }

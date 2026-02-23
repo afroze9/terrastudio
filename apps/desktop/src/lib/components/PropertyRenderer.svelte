@@ -155,7 +155,7 @@
 
           {#if prop.type === 'string' || prop.type === 'cidr'}
             <input
-              type="text"
+              type={prop.sensitive && !isVariable ? 'password' : 'text'}
               placeholder={isVariable ? '(using variable)' : prop.placeholder}
               value={(values[prop.key] as string) ?? ''}
               oninput={(e) => handleStringInput(prop.key, e)}
@@ -342,6 +342,7 @@
     color: #ef4444;
   }
   input[type='text'],
+  input[type='password'],
   input[type='number'],
   select {
     padding: 6px 10px;

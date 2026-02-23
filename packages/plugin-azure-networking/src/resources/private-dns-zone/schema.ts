@@ -24,6 +24,12 @@ export const privateDnsZoneSchema: ResourceSchema = {
       group: 'General',
       order: 1,
       description: 'Common zones: privatelink.blob.core.windows.net, privatelink.vaultcore.azure.net, privatelink.database.windows.net, privatelink.azurecr.io, privatelink.azurewebsites.net',
+      validation: {
+        minLength: 3,
+        maxLength: 253,
+        pattern: '^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$',
+        patternMessage: 'Must be a valid DNS zone name (e.g. privatelink.blob.core.windows.net)',
+      },
     },
   ],
 

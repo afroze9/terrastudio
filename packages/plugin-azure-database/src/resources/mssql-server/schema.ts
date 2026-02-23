@@ -65,15 +65,26 @@ export const mssqlServerSchema: ResourceSchema = {
       group: 'Authentication',
       order: 3,
       placeholder: 'sqladmin',
+      validation: {
+        minLength: 1,
+        maxLength: 128,
+        pattern: '^[a-zA-Z][a-zA-Z0-9_]*$',
+        patternMessage: 'Must start with a letter, followed by letters, digits, or underscores',
+      },
     },
     {
       key: 'administrator_login_password',
       label: 'Admin Password',
       type: 'string',
       required: true,
+      sensitive: true,
       group: 'Authentication',
       order: 4,
       description: 'Will be stored as a sensitive Terraform variable',
+      validation: {
+        minLength: 8,
+        maxLength: 128,
+      },
     },
     {
       key: 'minimum_tls_version',

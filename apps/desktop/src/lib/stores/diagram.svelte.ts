@@ -1,5 +1,5 @@
 import type { Node, Edge } from '@xyflow/svelte';
-import type { ResourceNodeData, ResourceTypeId } from '@terrastudio/types';
+import type { ResourceNodeData, ResourceTypeId, ValidationError } from '@terrastudio/types';
 import { generateNodeId, generateUniqueTerraformName } from '@terrastudio/core';
 import { project } from './project.svelte';
 import { terraform } from './terraform.svelte';
@@ -483,7 +483,7 @@ class DiagramStore {
    * Does NOT mark the project dirty, files stale, or create undo history —
    * validation errors are transient UI state that must not trigger auto-regen.
    */
-  setNodeValidationErrors(id: string, errors: unknown[]) {
+  setNodeValidationErrors(id: string, errors: ValidationError[]) {
     this.nodes = this.nodes.map((n) =>
       n.id === id ? { ...n, data: { ...n.data, validationErrors: errors } } : n
     );
