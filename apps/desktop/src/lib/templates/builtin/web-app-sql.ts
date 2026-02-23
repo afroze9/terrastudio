@@ -57,7 +57,7 @@ export const webAppSqlTemplate: Template = {
         data: {
           typeId: 'azurerm/compute/app_service_plan',
           properties: {
-            name: 'asp-webapp',
+            name: 'webapp',
             os_type: 'Linux',
             sku_name: 'B1',
           },

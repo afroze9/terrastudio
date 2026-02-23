@@ -55,7 +55,7 @@ export const vmNetworkingTemplate: Template = {
         data: {
           typeId: 'azurerm/networking/virtual_network',
           properties: {
-            name: 'vnet-main',
+            name: 'main',
             address_space: ['10.0.0.0/16'],
           },
           references: {},
@@ -77,7 +77,7 @@ export const vmNetworkingTemplate: Template = {
         data: {
           typeId: 'azurerm/networking/subnet',
           properties: {
-            name: 'snet-default',
+            name: 'default',
             address_prefixes: ['10.0.1.0/24'],
             nsg_enabled: true,
           },
@@ -102,7 +102,7 @@ export const vmNetworkingTemplate: Template = {
         data: {
           typeId: 'azurerm/compute/virtual_machine',
           properties: {
-            name: 'vm-main',
+            name: 'main',
             os_type: 'linux',
             size: 'Standard_B2s',
             admin_username: 'azureuser',
@@ -131,7 +131,7 @@ export const vmNetworkingTemplate: Template = {
         data: {
           typeId: 'azurerm/networking/network_security_group',
           properties: {
-            name: 'nsg-default',
+            name: 'default',
             security_rules: [],
           },
           references: {},
@@ -150,7 +150,7 @@ export const vmNetworkingTemplate: Template = {
         data: {
           typeId: 'azurerm/networking/public_ip',
           properties: {
-            name: 'pip-vm',
+            name: 'vm',
             allocation_method: 'Static',
             sku: 'Standard',
           },

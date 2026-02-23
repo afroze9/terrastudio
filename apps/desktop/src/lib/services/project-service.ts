@@ -3,8 +3,11 @@ import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { project, type ProjectMetadata } from '$lib/stores/project.svelte';
 import { diagram } from '$lib/stores/diagram.svelte';
 import { ui } from '$lib/stores/ui.svelte';
+import { registry } from '$lib/bootstrap';
 import { applyTemplate } from '$lib/templates/service';
 import type { Template } from '$lib/templates/types';
+import type { NamingConvention } from '@terrastudio/types';
+import type { LayoutAlgorithm } from '@terrastudio/core';
 
 interface ProjectData {
   metadata: ProjectMetadata;
@@ -33,6 +36,8 @@ export async function createProject(
   name: string,
   parentPath: string,
   template?: Template,
+  namingConvention?: NamingConvention,
+  layoutAlgorithm?: LayoutAlgorithm,
 ): Promise<void> {
   const data = await invoke<ProjectData>('create_project', {
     name,
@@ -42,8 +47,19 @@ export async function createProject(
   diagram.clear();
   project.open(data.path, data.metadata);
 
+  // Apply any config overrides and persist them
+  const hasOverrides = namingConvention || layoutAlgorithm;
+  if (hasOverrides) {
+    if (namingConvention) project.projectConfig = { ...project.projectConfig, namingConvention };
+    if (layoutAlgorithm) project.projectConfig = { ...project.projectConfig, layoutAlgorithm };
+    await invoke('save_project_config', {
+      projectPath: data.path,
+      projectConfig: project.projectConfig,
+    });
+  }
+
   if (template) {
-    const { nodes, edges } = applyTemplate(template);
+    const { nodes, edges } = applyTemplate(template, namingConvention, registry);
     diagram.loadDiagram(nodes, edges);
     await saveDiagram();
   }

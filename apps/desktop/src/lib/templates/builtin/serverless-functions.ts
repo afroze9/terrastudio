@@ -55,7 +55,7 @@ export const serverlessFunctionsTemplate: Template = {
         data: {
           typeId: 'azurerm/compute/app_service_plan',
           properties: {
-            name: 'asp-functions',
+            name: 'functions',
             os_type: 'Linux',
             sku_name: 'Y1',
           },
@@ -78,7 +78,7 @@ export const serverlessFunctionsTemplate: Template = {
         data: {
           typeId: 'azurerm/compute/function_app',
           properties: {
-            name: 'func-api',
+            name: 'api',
             os_type: 'linux',
             runtime_stack: 'node',
             runtime_version: '20',
@@ -100,7 +100,7 @@ export const serverlessFunctionsTemplate: Template = {
         data: {
           typeId: 'azurerm/storage/storage_account',
           properties: {
-            name: 'stfunc',
+            name: 'functions',
             account_tier: 'Standard',
             account_replication_type: 'LRS',
             account_kind: 'StorageV2',

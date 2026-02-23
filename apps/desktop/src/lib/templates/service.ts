@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { PluginRegistry } from '@terrastudio/core';
-import { generateNodeId } from '@terrastudio/core';
-import type { ResourceTypeId } from '@terrastudio/types';
+import { generateNodeId, applyNamingTemplate, buildTokens, sanitizeTerraformName } from '@terrastudio/core';
+import type { ResourceTypeId, NamingConvention } from '@terrastudio/types';
 import type { DiagramNode, DiagramEdge } from '$lib/stores/diagram.svelte';
 import { builtinTemplates } from './builtin';
 import { validateTemplate } from './validator';
@@ -63,7 +63,11 @@ export async function getTemplateCategories(
   return categories;
 }
 
-export function applyTemplate(template: Template): {
+export function applyTemplate(
+  template: Template,
+  convention?: NamingConvention,
+  registry?: PluginRegistry,
+): {
   nodes: DiagramNode[];
   edges: DiagramEdge[];
 } {
@@ -101,6 +105,25 @@ export function applyTemplate(template: Template): {
     if (idMap.has(edge.target)) edge.target = idMap.get(edge.target)!;
     // Generate new edge ID
     edge.id = `e-${edge.source}-${edge.target}-${Math.random().toString(36).slice(2, 8)}`;
+  }
+
+  // Apply naming convention to nodes with a cafAbbreviation schema
+  if (convention?.enabled && registry) {
+    for (const node of rawNodes) {
+      const schema = registry.getResourceSchema(node.type as ResourceTypeId);
+      if (!schema?.cafAbbreviation) continue;
+      const nodeData = node.data as Record<string, unknown>;
+      const props = nodeData.properties as Record<string, unknown> | undefined;
+      const slug = props?.name as string | undefined;
+      if (!slug) continue;
+      const tokens = buildTokens(convention, schema.cafAbbreviation, slug);
+      const fullName = applyNamingTemplate(convention.template, tokens, schema.namingConstraints);
+      if (!fullName) continue;
+      nodeData.properties = { ...props, name: fullName };
+      nodeData.label = fullName;
+      const sanitized = sanitizeTerraformName(fullName);
+      if (sanitized) nodeData.terraformName = sanitized;
+    }
   }
 
   return { nodes: rawNodes, edges: rawEdges };

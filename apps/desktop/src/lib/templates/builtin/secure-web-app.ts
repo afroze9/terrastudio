@@ -55,7 +55,7 @@ export const secureWebAppTemplate: Template = {
         data: {
           typeId: 'azurerm/compute/app_service_plan',
           properties: {
-            name: 'asp-webapp',
+            name: 'webapp',
             os_type: 'Linux',
             sku_name: 'B1',
           },
@@ -147,7 +147,7 @@ export const secureWebAppTemplate: Template = {
         data: {
           typeId: 'azurerm/security/key_vault',
           properties: {
-            name: 'kv-webapp',
+            name: 'webapp',
             sku_name: 'standard',
             soft_delete_retention_days: 90,
             purge_protection_enabled: false,
