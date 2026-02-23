@@ -9,6 +9,7 @@ export const privateDnsZoneVnetLinkSchema: ResourceSchema = {
   terraformType: 'azurerm_private_dns_zone_virtual_network_link',
   supportsTags: true,
   requiresResourceGroup: true,
+  cafAbbreviation: 'pdnsl',
 
   canBeChildOf: [
     'azurerm/core/resource_group',

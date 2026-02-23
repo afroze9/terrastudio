@@ -9,6 +9,7 @@ export const publicIpSchema: ResourceSchema = {
   terraformType: 'azurerm_public_ip',
   supportsTags: true,
   requiresResourceGroup: true,
+  cafAbbreviation: 'pip',
 
   canBeChildOf: [
     'azurerm/core/resource_group',

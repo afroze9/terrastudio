@@ -9,6 +9,8 @@ export const containerRegistrySchema: ResourceSchema = {
   terraformType: 'azurerm_container_registry',
   supportsTags: true,
   requiresResourceGroup: true,
+  cafAbbreviation: 'cr',
+  namingConstraints: { lowercase: true, noHyphens: true, maxLength: 50 },
 
   canBeChildOf: [
     'azurerm/core/resource_group',

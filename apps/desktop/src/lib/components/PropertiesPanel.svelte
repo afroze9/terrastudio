@@ -1,6 +1,8 @@
 <script lang="ts">
   import { diagram } from '$lib/stores/diagram.svelte';
+  import { project } from '$lib/stores/project.svelte';
   import { registry } from '$lib/bootstrap';
+  import { applyNamingTemplate, extractSlug, sanitizeTerraformName, buildTokens } from '@terrastudio/core';
   import PropertyRenderer from './PropertyRenderer.svelte';
   import type { ResourceTypeId, PropertyVariableMode } from '@terrastudio/types';
 
@@ -9,6 +11,50 @@
       ? registry.getResourceSchema(diagram.selectedNode.data.typeId)
       : null
   );
+
+  // ─── Naming convention ────────────────────────────────────────────────────
+
+  /** True when a naming convention is active and this resource has a cafAbbreviation */
+  let conventionActive = $derived.by(() => {
+    const conv = project.projectConfig.namingConvention;
+    return !!(conv?.enabled && schema?.cafAbbreviation && schema.properties.some(p => p.key === 'name'));
+  });
+
+  /** The slug (user-typed distinctive part) derived from the stored full name */
+  let nameSlug = $derived.by(() => {
+    if (!conventionActive || !diagram.selectedNode || !schema?.cafAbbreviation) return '';
+    const conv = project.projectConfig.namingConvention!;
+    const fullName = (diagram.selectedNode.data.properties['name'] as string) ?? '';
+    const tokens = buildTokens(conv, schema.cafAbbreviation);
+    return extractSlug(fullName, conv.template, tokens, schema.namingConstraints);
+  });
+
+  /** Preview of the full Azure name as the user types */
+  let namePreview = $derived.by(() => {
+    if (!conventionActive || !schema?.cafAbbreviation) return '';
+    const conv = project.projectConfig.namingConvention!;
+    const tokens = buildTokens(conv, schema.cafAbbreviation, nameSlug);
+    return applyNamingTemplate(conv.template, tokens, schema.namingConstraints);
+  });
+
+  /** Properties to pass to PropertyRenderer — exclude 'name' when convention is active */
+  let renderedProperties = $derived(
+    conventionActive ? schema?.properties.filter(p => p.key !== 'name') ?? [] : schema?.properties ?? []
+  );
+
+  function onConventionNameChange(slug: string) {
+    if (!diagram.selectedNode || !schema?.cafAbbreviation) return;
+    const conv = project.projectConfig.namingConvention!;
+    const tokens = buildTokens(conv, schema.cafAbbreviation, slug);
+    const fullName = applyNamingTemplate(conv.template, tokens, schema.namingConstraints);
+    const newProps = { ...diagram.selectedNode.data.properties, name: fullName };
+    const tfName = sanitizeTerraformName(fullName) || diagram.selectedNode.data.terraformName;
+    diagram.updateNodeData(diagram.selectedNode.id, {
+      properties: newProps,
+      label: fullName || schema.displayName,
+      terraformName: tfName,
+    });
+  }
 
   /** Edges connected to handles with acceptsOutputs (e.g. Key Vault secret-in) */
   let connectedBindings = $derived.by(() => {
@@ -142,8 +188,28 @@
         </label>
       </div>
 
+      {#if conventionActive}
+        <div class="convention-name-field">
+          <label class="field-label">
+            <span class="label-row-conv">
+              <span class="label-text">Service Name <span class="required">*</span></span>
+              <span class="convention-badge">convention</span>
+            </span>
+            <input
+              type="text"
+              placeholder="e.g. backendapi"
+              value={nameSlug}
+              oninput={(e) => onConventionNameChange((e.target as HTMLInputElement).value)}
+            />
+            {#if namePreview}
+              <span class="name-preview">→ {namePreview}</span>
+            {/if}
+          </label>
+        </div>
+      {/if}
+
       <PropertyRenderer
-        properties={schema.properties}
+        properties={renderedProperties}
         values={diagram.selectedNode.data.properties}
         onChange={onPropertyChange}
         references={diagram.selectedNode.data.references}
@@ -296,6 +362,9 @@
   .tf-name-field {
     margin-bottom: 12px;
   }
+  .convention-name-field {
+    margin-bottom: 12px;
+  }
   .field-label {
     display: flex;
     flex-direction: column;
@@ -305,6 +374,29 @@
   }
   .label-text {
     font-weight: 500;
+  }
+  .label-row-conv {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .convention-badge {
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: rgba(59, 130, 246, 0.12);
+    color: var(--color-accent);
+    font-weight: 500;
+    letter-spacing: 0.03em;
+  }
+  .name-preview {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    opacity: 0.8;
+  }
+  .required {
+    color: #ef4444;
   }
   input[type='text'] {
     padding: 6px 10px;

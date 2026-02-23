@@ -9,6 +9,7 @@ export const appServicePlanSchema: ResourceSchema = {
   terraformType: 'azurerm_service_plan',
   supportsTags: true,
   requiresResourceGroup: true,
+  cafAbbreviation: 'asp',
   isContainer: true,
   canBeChildOf: [
     'azurerm/core/resource_group',

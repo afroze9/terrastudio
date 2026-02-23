@@ -9,6 +9,8 @@ export const storageAccountSchema: ResourceSchema = {
   terraformType: 'azurerm_storage_account',
   supportsTags: true,
   requiresResourceGroup: true,
+  cafAbbreviation: 'st',
+  namingConstraints: { lowercase: true, noHyphens: true, maxLength: 24 },
   isContainer: true,
   canBeChildOf: [
     'azurerm/core/resource_group',

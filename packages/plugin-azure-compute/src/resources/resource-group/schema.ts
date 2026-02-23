@@ -9,6 +9,7 @@ export const resourceGroupSchema: ResourceSchema = {
   terraformType: 'azurerm_resource_group',
   supportsTags: true,
   requiresResourceGroup: false,
+  cafAbbreviation: 'rg',
   isContainer: true,
   canBeChildOf: ['azurerm/core/subscription'],
   containerStyle: {

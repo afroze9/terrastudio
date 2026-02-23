@@ -9,6 +9,8 @@ export const keyVaultSchema: ResourceSchema = {
   terraformType: 'azurerm_key_vault',
   supportsTags: true,
   requiresResourceGroup: true,
+  cafAbbreviation: 'kv',
+  namingConstraints: { maxLength: 24 },
   canBeChildOf: [
     'azurerm/core/resource_group',
   ],

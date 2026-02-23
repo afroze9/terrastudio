@@ -9,6 +9,7 @@ export const privateEndpointSchema: ResourceSchema = {
   terraformType: 'azurerm_private_endpoint',
   supportsTags: true,
   requiresResourceGroup: true,
+  cafAbbreviation: 'pep',
 
   canBeChildOf: [
     'azurerm/networking/subnet',

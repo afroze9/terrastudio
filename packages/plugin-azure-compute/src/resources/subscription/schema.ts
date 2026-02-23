@@ -9,6 +9,7 @@ export const subscriptionSchema: ResourceSchema = {
   terraformType: '_subscription', // virtual — no Terraform resource
   supportsTags: false,
   requiresResourceGroup: false,
+  cafAbbreviation: 'sub',
   isContainer: true,
   containerStyle: {
     borderColor: '#2B7CF6',

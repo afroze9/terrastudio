@@ -9,6 +9,7 @@ export const nsgSchema: ResourceSchema = {
   terraformType: 'azurerm_network_security_group',
   supportsTags: true,
   requiresResourceGroup: true,
+  cafAbbreviation: 'nsg',
   canBeChildOf: [
     'azurerm/core/resource_group',
   ],

@@ -9,6 +9,8 @@ export const functionAppSchema: ResourceSchema = {
   terraformType: 'azurerm_linux_function_app',
   supportsTags: true,
   requiresResourceGroup: true,
+  cafAbbreviation: 'func',
+  namingConstraints: { maxLength: 60 },
 
   canBeChildOf: ['azurerm/compute/app_service_plan'],
 

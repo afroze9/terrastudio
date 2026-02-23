@@ -10,6 +10,7 @@ export type {
   ResourceSchema,
   ContainerStyle,
   OutputDefinition,
+  NamingConstraints,
 } from './resource-schema.js';
 
 // HCL types
@@ -48,3 +49,6 @@ export type {
 
 // Validation types
 export type { ValidationError, PropertyValidation } from './validation.js';
+
+// Naming convention types
+export type { NamingConvention } from './naming.js';

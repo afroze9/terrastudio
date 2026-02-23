@@ -14,7 +14,11 @@
   import { diagram, type DiagramNode } from '$lib/stores/diagram.svelte';
   import { ui } from '$lib/stores/ui.svelte';
   import { registry, edgeValidator } from '$lib/bootstrap';
-  import { createNodeData, generateNodeId, nextAvailableCidr } from '@terrastudio/core';
+  import {
+    createNodeData, generateNodeId, nextAvailableCidr,
+    applyNamingTemplate, buildTokens, sanitizeTerraformName, generateUniqueTerraformName,
+  } from '@terrastudio/core';
+  import { project } from '$lib/stores/project.svelte';
   import type { ResourceNodeComponent, ResourceTypeId } from '@terrastudio/types';
   import type { Action } from 'svelte/action';
   import { untrack } from 'svelte';
@@ -286,6 +290,23 @@
 
       const nodeData = createNodeData(schema);
       const id = generateNodeId(schema.typeId);
+
+      // Apply naming convention if active
+      const convention = project.projectConfig.namingConvention;
+      if (convention?.enabled && schema.cafAbbreviation) {
+        const instanceCount = diagram.nodes.filter(n => n.data.typeId === schema.typeId).length + 1;
+        const defaultSlug = String(instanceCount).padStart(2, '0');
+        const tokens = buildTokens(convention, schema.cafAbbreviation, defaultSlug);
+        const fullName = applyNamingTemplate(convention.template, tokens, schema.namingConstraints);
+        if (fullName) {
+          nodeData.properties['name'] = fullName;
+          nodeData.label = fullName;
+          nodeData.terraformName = generateUniqueTerraformName(
+            sanitizeTerraformName(fullName) || nodeData.terraformName,
+            new Set(diagram.nodes.map(n => n.data.terraformName)),
+          );
+        }
+      }
 
       // Check if dropped inside a container node
       const parentId = findContainerAtPosition(position.x, position.y, schema.typeId);

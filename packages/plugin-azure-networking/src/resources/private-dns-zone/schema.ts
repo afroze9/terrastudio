@@ -9,6 +9,7 @@ export const privateDnsZoneSchema: ResourceSchema = {
   terraformType: 'azurerm_private_dns_zone',
   supportsTags: true,
   requiresResourceGroup: true,
+  cafAbbreviation: 'pdz',
 
   canBeChildOf: [
     'azurerm/core/resource_group',

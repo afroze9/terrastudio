@@ -34,3 +34,12 @@ export {
   nextAvailableCidr,
 } from './lib/networking/cidr-utils.js';
 export type { ParsedCidr } from './lib/networking/cidr-utils.js';
+
+// Naming engine
+export {
+  applyNamingTemplate,
+  extractSlug,
+  sanitizeTerraformName,
+  buildTokens,
+} from './lib/naming/naming-engine.js';
+export type { NamingTokens } from './lib/naming/naming-engine.js';

@@ -6,6 +6,7 @@ import type {
   TerraformOutput,
   OutputBinding,
   ProviderId,
+  NamingConvention,
 } from '@terrastudio/types';
 import type { PluginRegistry } from '../registry/plugin-registry.js';
 import { DependencyGraph } from './dependency-graph.js';
@@ -20,6 +21,7 @@ export interface ProjectConfig {
   commonTags: Record<string, string>;
   variableValues: Record<string, string>;
   layoutAlgorithm?: LayoutAlgorithm;
+  namingConvention?: NamingConvention;
   backend?: {
     type: string;
     config: Record<string, string>;

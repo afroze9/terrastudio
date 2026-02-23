@@ -9,6 +9,7 @@ export const queueSchema: ResourceSchema = {
   terraformType: 'azurerm_storage_queue',
   supportsTags: false,
   requiresResourceGroup: false,
+  cafAbbreviation: 'queue',
   canBeChildOf: [
     'azurerm/storage/storage_account',
   ],

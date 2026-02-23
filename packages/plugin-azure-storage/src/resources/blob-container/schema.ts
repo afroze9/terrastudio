@@ -9,6 +9,7 @@ export const blobContainerSchema: ResourceSchema = {
   terraformType: 'azurerm_storage_container',
   supportsTags: false,
   requiresResourceGroup: false,
+  cafAbbreviation: 'blob',
   canBeChildOf: [
     'azurerm/storage/storage_account',
   ],

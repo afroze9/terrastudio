@@ -9,6 +9,8 @@ export const mssqlServerSchema: ResourceSchema = {
   terraformType: 'azurerm_mssql_server',
   supportsTags: true,
   requiresResourceGroup: true,
+  cafAbbreviation: 'sql',
+  namingConstraints: { lowercase: true, maxLength: 63 },
   isContainer: true,
 
   canBeChildOf: [

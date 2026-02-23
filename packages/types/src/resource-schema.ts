@@ -96,6 +96,15 @@ export interface OutputDefinition {
   readonly sensitive?: boolean;
 }
 
+export interface NamingConstraints {
+  /** Force the generated name to lowercase */
+  readonly lowercase?: boolean;
+  /** Strip all hyphens from the generated name (storage accounts, container registries) */
+  readonly noHyphens?: boolean;
+  /** Maximum character length for the generated name */
+  readonly maxLength?: number;
+}
+
 export interface ResourceSchema {
   readonly typeId: ResourceTypeId;
   readonly provider: string;
@@ -107,6 +116,10 @@ export interface ResourceSchema {
   readonly handles: ReadonlyArray<HandleDefinition>;
   readonly supportsTags: boolean;
   readonly requiresResourceGroup: boolean;
+  /** CAF abbreviation used as the {type} token in naming templates (e.g. 'vm', 'asp', 'st') */
+  readonly cafAbbreviation?: string;
+  /** Resource-specific constraints applied after naming template rendering */
+  readonly namingConstraints?: NamingConstraints;
   /** If true, this resource renders as a container that can hold child nodes */
   readonly isContainer?: boolean;
   /** Which container typeIds this resource can be placed inside */

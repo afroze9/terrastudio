@@ -9,6 +9,8 @@ export const appServiceSchema: ResourceSchema = {
   terraformType: 'azurerm_linux_web_app',
   supportsTags: true,
   requiresResourceGroup: true,
+  cafAbbreviation: 'app',
+  namingConstraints: { maxLength: 60 },
   canBeChildOf: ['azurerm/compute/app_service_plan'],
 
   properties: [

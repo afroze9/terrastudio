@@ -9,6 +9,7 @@ export const fileShareSchema: ResourceSchema = {
   terraformType: 'azurerm_storage_share',
   supportsTags: false,
   requiresResourceGroup: false,
+  cafAbbreviation: 'share',
   canBeChildOf: [
     'azurerm/storage/storage_account',
   ],

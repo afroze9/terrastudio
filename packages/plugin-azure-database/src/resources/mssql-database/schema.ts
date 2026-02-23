@@ -9,6 +9,7 @@ export const mssqlDatabaseSchema: ResourceSchema = {
   terraformType: 'azurerm_mssql_database',
   supportsTags: true,
   requiresResourceGroup: false,
+  cafAbbreviation: 'sqldb',
 
   canBeChildOf: [
     'azurerm/database/mssql_server',

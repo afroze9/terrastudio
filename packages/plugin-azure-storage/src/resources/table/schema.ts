@@ -9,6 +9,7 @@ export const tableSchema: ResourceSchema = {
   terraformType: 'azurerm_storage_table',
   supportsTags: false,
   requiresResourceGroup: false,
+  cafAbbreviation: 'table',
   canBeChildOf: [
     'azurerm/storage/storage_account',
   ],
