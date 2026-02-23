@@ -6,6 +6,8 @@
   import { openProject, saveDiagram, guardUnsavedChanges } from '$lib/services/project-service';
   import { exportPNG, exportSVG, copyDiagramToClipboard, exportDocumentation } from '$lib/services/export-service';
   import { autoLayout, type LayoutDirection } from '$lib/services/layout-service';
+  import ShortcutsModal from './ShortcutsModal.svelte';
+  import AboutModal from './AboutModal.svelte';
 
   import type { EdgeStyle } from '$lib/stores/ui.svelte';
   import { getAllPalettes } from '$lib/themes/theme-engine';
@@ -14,6 +16,8 @@
   let showLayoutSub = $state(false);
   let showEdgeStyleSub = $state(false);
   let showPaletteSub = $state(false);
+  let showShortcutsModal = $state(false);
+  let showAboutModal = $state(false);
 
   function handleAutoLayout(direction: LayoutDirection) {
     close();
@@ -81,9 +85,11 @@
       <div class="dropdown">
         <button class="dropdown-item" onclick={() => { close(); onNewProject(); }}>
           <span>New Project</span>
+          <span class="shortcut">Ctrl+N</span>
         </button>
         <button class="dropdown-item" onclick={handleOpen}>
           <span>Open Project</span>
+          <span class="shortcut">Ctrl+O</span>
         </button>
         {#if project.isOpen}
           <button class="dropdown-item" onclick={handleSave}>
@@ -92,6 +98,7 @@
           </button>
           <button class="dropdown-item" onclick={handleClose}>
             <span>Close Project</span>
+            <span class="shortcut">Ctrl+⇧W</span>
           </button>
         {/if}
         {#if canExport}
@@ -185,8 +192,14 @@
         </button>
         <button class="dropdown-item" onclick={() => { close(); ui.toggleTerminal(); }}>
           <span>{ui.showTerminal ? 'Hide' : 'Show'} Terminal</span>
-          <span class="shortcut">Ctrl+J</span>
+          <span class="shortcut">Ctrl+`</span>
         </button>
+        {#if project.isOpen}
+          <button class="dropdown-item" onclick={() => { close(); ui.fitView?.(); }}>
+            <span>Fit View</span>
+            <span class="shortcut">Ctrl+0</span>
+          </button>
+        {/if}
         <div class="dropdown-separator"></div>
         <button class="dropdown-item" onclick={() => { close(); ui.toggleTheme(); }}>
           <span>{ui.theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
@@ -242,21 +255,50 @@
         <div class="dropdown-separator"></div>
         <button class="dropdown-item" onclick={() => { close(); ui.setActiveView('explorer'); }}>
           <span>Resources</span>
+          <span class="shortcut">Alt+1</span>
         </button>
         <button class="dropdown-item" onclick={() => { close(); ui.setActiveView('terraform'); }}>
           <span>Terraform</span>
+          <span class="shortcut">Alt+2</span>
         </button>
         <button class="dropdown-item" onclick={() => { close(); ui.setActiveView('settings'); }}>
           <span>Project</span>
+          <span class="shortcut">Alt+3</span>
         </button>
         <div class="dropdown-separator"></div>
         <button class="dropdown-item" onclick={() => { close(); ui.setActiveView('app-settings'); }}>
           <span>Settings</span>
+          <span class="shortcut">Ctrl+,</span>
+        </button>
+      </div>
+    {/if}
+  </div>
+
+  <!-- Help -->
+  <div class="menu-item">
+    <button
+      class="menu-trigger"
+      class:open={openMenu === 'help'}
+      onclick={() => toggle('help')}
+      onmouseenter={() => { if (openMenu) openMenu = 'help'; }}
+    >Help</button>
+    {#if openMenu === 'help'}
+      <div class="dropdown">
+        <button class="dropdown-item" onclick={() => { close(); showShortcutsModal = true; }}>
+          <span>Keyboard Shortcuts</span>
+          <span class="shortcut">?</span>
+        </button>
+        <div class="dropdown-separator"></div>
+        <button class="dropdown-item" onclick={() => { close(); showAboutModal = true; }}>
+          <span>About TerraStudio</span>
         </button>
       </div>
     {/if}
   </div>
 </nav>
+
+<ShortcutsModal open={showShortcutsModal} onclose={() => (showShortcutsModal = false)} />
+<AboutModal open={showAboutModal} onclose={() => (showAboutModal = false)} />
 
 <style>
   .menu-bar {

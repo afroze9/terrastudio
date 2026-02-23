@@ -28,7 +28,7 @@
 
   const { screenToFlowPosition, fitView } = useSvelteFlow();
 
-  // Expose fitView globally so MenuBar can trigger it after auto-layout
+  // Expose fitView globally so toolbar / menu bar can trigger it
   $effect(() => {
     ui.fitView = () => fitView();
     return () => { ui.fitView = null; };

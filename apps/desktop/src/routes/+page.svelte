@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { getCurrentWindow } from '@tauri-apps/api/window';
 	import { initializePlugins, initializeTerraformCheck } from '$lib/bootstrap';
 	import Titlebar from '$lib/components/Titlebar.svelte';
@@ -14,7 +14,8 @@
 	import WelcomeScreen from '$lib/components/WelcomeScreen.svelte';
 	import { ui } from '$lib/stores/ui.svelte';
 	import { project } from '$lib/stores/project.svelte';
-	import { saveDiagram } from '$lib/services/project-service';
+	import { diagram } from '$lib/stores/diagram.svelte';
+	import { saveDiagram, openProject, guardUnsavedChanges } from '$lib/services/project-service';
 
 	let showNewProjectDialog = $state(false);
 
@@ -35,18 +36,85 @@
 			await appWindow.destroy();
 		});
 
-		function handleKeydown(e: KeyboardEvent) {
+		async function handleKeydown(e: KeyboardEvent) {
+			const tag = (e.target as HTMLElement).tagName;
+			const inInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+
 			if (e.ctrlKey && e.key === 's') {
 				e.preventDefault();
 				if (project.isOpen) saveDiagram();
+				return;
 			}
 			if (e.ctrlKey && e.key === 'b') {
 				e.preventDefault();
 				ui.showSidePanel = !ui.showSidePanel;
+				return;
 			}
-			if (e.ctrlKey && e.key === 'j') {
+			if (e.ctrlKey && e.key === '`') {
 				e.preventDefault();
 				ui.toggleTerminal();
+				return;
+			}
+			if (e.ctrlKey && e.key === 'n' && !inInput) {
+				e.preventDefault();
+				showNewProjectDialog = true;
+				return;
+			}
+			if (e.ctrlKey && e.key === 'o' && !inInput) {
+				e.preventDefault();
+				try { await openProject(); } catch { /* cancelled */ }
+				return;
+			}
+			if (e.ctrlKey && !e.shiftKey && e.key === 'w' && !inInput) {
+				e.preventDefault();
+				if (project.isOpen && ui.activeTabId !== 'canvas') {
+					ui.closeTab(ui.activeTabId);
+				}
+				return;
+			}
+			if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'w' && !inInput) {
+				e.preventDefault();
+				if (project.isOpen) {
+					if (!(await guardUnsavedChanges())) return;
+					diagram.clear();
+					project.close();
+				}
+				return;
+			}
+			if (e.ctrlKey && e.key === 'f' && !inInput) {
+				e.preventDefault();
+				if (!ui.showSidePanel) ui.showSidePanel = true;
+				await tick();
+				const searchInput = document.querySelector<HTMLInputElement>('.side-panel .search-input');
+				searchInput?.focus();
+				searchInput?.select();
+				return;
+			}
+			if (e.ctrlKey && e.key === '0' && !inInput) {
+				e.preventDefault();
+				if (project.isOpen) ui.fitView?.();
+				return;
+			}
+
+			if (e.altKey && e.key === '1' && !inInput) {
+				e.preventDefault();
+				ui.setActiveView('explorer');
+				return;
+			}
+			if (e.altKey && e.key === '2' && !inInput) {
+				e.preventDefault();
+				ui.setActiveView('terraform');
+				return;
+			}
+			if (e.altKey && e.key === '3' && !inInput) {
+				e.preventDefault();
+				ui.setActiveView('settings');
+				return;
+			}
+			if (e.ctrlKey && e.key === ',' && !inInput) {
+				e.preventDefault();
+				ui.setActiveView('app-settings');
+				return;
 			}
 		}
 
@@ -73,13 +141,14 @@
 		</div>
 		<StatusBar />
 	</div>
-	<NewProjectDialog
-		open={showNewProjectDialog}
-		onclose={() => (showNewProjectDialog = false)}
-	/>
 {:else}
 	<WelcomeScreen />
 {/if}
+
+<NewProjectDialog
+	open={showNewProjectDialog}
+	onclose={() => (showNewProjectDialog = false)}
+/>
 
 <ConfirmDialog />
 <UnsavedChangesDialog />
