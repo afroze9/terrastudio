@@ -4,6 +4,14 @@
   import { applyNamingTemplate, buildTokens } from '@terrastudio/core';
   import type { LayoutAlgorithm } from '@terrastudio/core';
   import type { NamingConvention } from '@terrastudio/types';
+  import CollapsibleSection from './CollapsibleSection.svelte';
+  import SearchBox from './SearchBox.svelte';
+
+  let searchQuery = $state('');
+
+  function sectionVisible(label: string) {
+    return !searchQuery || label.toLowerCase().includes(searchQuery.toLowerCase());
+  }
 
   let newTagKey = $state('');
   let newTagValue = $state('');
@@ -111,161 +119,161 @@
 </script>
 
 <div class="config-panel">
-  <div class="config-panel-content">
+  <SearchBox bind:value={searchQuery} placeholder="Search settings..." />
 
-    <!-- Naming Convention -->
-    <div class="config-section">
-      <div class="group-header">Naming Convention</div>
+  <!-- Naming Convention -->
+  {#if sectionVisible('Naming Convention')}
+  <CollapsibleSection id="project-naming" label="Naming Convention" forceExpand={!!searchQuery}>
+    <label class="toggle-row">
+      <input
+        type="checkbox"
+        checked={convention?.enabled ?? false}
+        onchange={(e) => setConventionEnabled((e.target as HTMLInputElement).checked)}
+      />
+      <span class="toggle-label">Enable naming convention</span>
+    </label>
 
-      <label class="toggle-row">
-        <input
-          type="checkbox"
-          checked={convention?.enabled ?? false}
-          onchange={(e) => setConventionEnabled((e.target as HTMLInputElement).checked)}
-        />
-        <span class="toggle-label">Enable naming convention</span>
-      </label>
-
-      {#if convention?.enabled}
-        <!-- Presets -->
-        <div class="preset-row">
-          {#each PRESETS as preset}
-            <button
-              class="preset-btn"
-              class:active={convention.template === preset.template}
-              onclick={() => setPreset(preset.template)}
-            >{preset.label}</button>
-          {/each}
+    {#if convention?.enabled}
+      <!-- Presets -->
+      <div class="preset-row">
+        {#each PRESETS as preset}
           <button
             class="preset-btn"
-            class:active={isCustomTemplate}
-            onclick={() => {}}
-          >Custom</button>
-        </div>
+            class:active={convention.template === preset.template}
+            onclick={() => setPreset(preset.template)}
+          >{preset.label}</button>
+        {/each}
+        <button
+          class="preset-btn"
+          class:active={isCustomTemplate}
+          onclick={() => {}}
+        >Custom</button>
+      </div>
 
-        <!-- Template input -->
-        <div class="conv-field">
-          <span class="conv-label">Template</span>
+      <!-- Template input -->
+      <div class="conv-field">
+        <span class="conv-label">Template</span>
+        <input
+          type="text"
+          class="conv-input"
+          value={convention.template}
+          oninput={(e) => setConventionField('template', (e.target as HTMLInputElement).value)}
+          placeholder={'{type}-{env}-{name}'}
+        />
+        <span class="conv-hint">Tokens: <code>{'{type}'}</code> <code>{'{env}'}</code> <code>{'{name}'}</code> <code>{'{region}'}</code> <code>{'{org}'}</code></span>
+      </div>
+
+      <!-- Token inputs -->
+      <div class="conv-tokens">
+        <div class="conv-field half">
+          <span class="conv-label">Environment <span class="required">*</span></span>
           <input
             type="text"
             class="conv-input"
-            value={convention.template}
-            oninput={(e) => setConventionField('template', (e.target as HTMLInputElement).value)}
-            placeholder={'{type}-{env}-{name}'}
+            value={convention.env}
+            oninput={(e) => setConventionField('env', (e.target as HTMLInputElement).value)}
+            placeholder="dev"
           />
-          <span class="conv-hint">Tokens: <code>{'{type}'}</code> <code>{'{env}'}</code> <code>{'{name}'}</code> <code>{'{region}'}</code> <code>{'{org}'}</code></span>
         </div>
-
-        <!-- Token inputs -->
-        <div class="conv-tokens">
-          <div class="conv-field half">
-            <span class="conv-label">Environment <span class="required">*</span></span>
-            <input
-              type="text"
-              class="conv-input"
-              value={convention.env}
-              oninput={(e) => setConventionField('env', (e.target as HTMLInputElement).value)}
-              placeholder="dev"
-            />
-          </div>
-          <div class="conv-field half">
-            <span class="conv-label">Region <span class="optional">(optional)</span></span>
-            <input
-              type="text"
-              class="conv-input"
-              value={convention.region ?? ''}
-              oninput={(e) => setConventionField('region', (e.target as HTMLInputElement).value)}
-              placeholder="eus2"
-            />
-          </div>
-          <div class="conv-field half">
-            <span class="conv-label">Org prefix <span class="optional">(optional)</span></span>
-            <input
-              type="text"
-              class="conv-input"
-              value={convention.org ?? ''}
-              oninput={(e) => setConventionField('org', (e.target as HTMLInputElement).value)}
-              placeholder="contoso"
-            />
-          </div>
+        <div class="conv-field half">
+          <span class="conv-label">Region <span class="optional">(optional)</span></span>
+          <input
+            type="text"
+            class="conv-input"
+            value={convention.region ?? ''}
+            oninput={(e) => setConventionField('region', (e.target as HTMLInputElement).value)}
+            placeholder="eus2"
+          />
         </div>
+        <div class="conv-field half">
+          <span class="conv-label">Org prefix <span class="optional">(optional)</span></span>
+          <input
+            type="text"
+            class="conv-input"
+            value={convention.org ?? ''}
+            oninput={(e) => setConventionField('org', (e.target as HTMLInputElement).value)}
+            placeholder="contoso"
+          />
+        </div>
+      </div>
 
-        <!-- Live preview -->
-        {#if previews.length > 0}
-          <div class="preview-block">
-            <span class="preview-title">Preview</span>
-            {#each previews as p}
-              <div class="preview-row">
-                <span class="preview-resource">{p.label}</span>
-                <span class="preview-name">{p.result}</span>
-              </div>
-            {/each}
-          </div>
-        {/if}
-
-        <p class="section-hint" style="margin-top: 6px;">Applied to new resources on drop. Existing resources are not renamed.</p>
+      <!-- Live preview -->
+      {#if previews.length > 0}
+        <div class="preview-block">
+          <span class="preview-title">Preview</span>
+          {#each previews as p}
+            <div class="preview-row">
+              <span class="preview-resource">{p.label}</span>
+              <span class="preview-name">{p.result}</span>
+            </div>
+          {/each}
+        </div>
       {/if}
-    </div>
 
-    <!-- Layout Algorithm -->
-    <div class="config-section">
-      <div class="group-header">Layout</div>
-      <p class="section-hint">Algorithm used by Auto Layout.</p>
-      <div class="layout-options">
-        {#each layoutOptions as opt (opt.value)}
-          <button
-            class="layout-option"
-            class:active={(project.projectConfig.layoutAlgorithm ?? 'dagre') === opt.value}
-            onclick={() => setLayoutAlgorithm(opt.value)}
-          >
-            <span class="layout-option-label">{opt.label}</span>
-            <span class="layout-option-desc">{opt.desc}</span>
-          </button>
-        {/each}
-      </div>
-    </div>
+      <p class="section-hint" style="margin-top: 6px;">Applied to new resources on drop. Existing resources are not renamed.</p>
+    {/if}
+  </CollapsibleSection>
+  {/if}
 
-    <!-- Common Tags Section -->
-    <div class="config-section">
-      <div class="group-header">Common Tags</div>
-      <p class="section-hint">Applied to all resources that support tags.</p>
-
-      {#each tagEntries as [key, value] (key)}
-        <div class="tag-row">
-          <span class="tag-key">{key}</span>
-          <span class="tag-value">{value}</span>
-          <button
-            class="remove-btn"
-            onclick={() => removeTag(key)}
-            aria-label="Remove tag"
-          >&times;</button>
-        </div>
-      {/each}
-
-      <div class="add-tag-row">
-        <input
-          type="text"
-          class="tag-input"
-          placeholder="key"
-          bind:value={newTagKey}
-          onkeydown={(e) => { if (e.key === 'Enter') addTag(); }}
-        />
-        <input
-          type="text"
-          class="tag-input"
-          placeholder="value"
-          bind:value={newTagValue}
-          onkeydown={(e) => { if (e.key === 'Enter') addTag(); }}
-        />
+  <!-- Layout Algorithm -->
+  {#if sectionVisible('Layout')}
+  <CollapsibleSection id="project-layout" label="Layout" forceExpand={!!searchQuery}>
+    <p class="section-hint">Algorithm used by Auto Layout.</p>
+    <div class="layout-options">
+      {#each layoutOptions as opt (opt.value)}
         <button
-          class="add-btn"
-          onclick={addTag}
-          disabled={!newTagKey.trim()}
-        >+</button>
-      </div>
+          class="layout-option"
+          class:active={(project.projectConfig.layoutAlgorithm ?? 'dagre') === opt.value}
+          onclick={() => setLayoutAlgorithm(opt.value)}
+        >
+          <span class="layout-option-label">{opt.label}</span>
+          <span class="layout-option-desc">{opt.desc}</span>
+        </button>
+      {/each}
     </div>
+  </CollapsibleSection>
+  {/if}
 
-  </div>
+  <!-- Common Tags Section -->
+  {#if sectionVisible('Common Tags')}
+  <CollapsibleSection id="project-tags" label="Common Tags" forceExpand={!!searchQuery}>
+    <p class="section-hint">Applied to all resources that support tags.</p>
+
+    {#each tagEntries as [key, value] (key)}
+      <div class="tag-row">
+        <span class="tag-key">{key}</span>
+        <span class="tag-value">{value}</span>
+        <button
+          class="remove-btn"
+          onclick={() => removeTag(key)}
+          aria-label="Remove tag"
+        >&times;</button>
+      </div>
+    {/each}
+
+    <div class="add-tag-row">
+      <input
+        type="text"
+        class="tag-input"
+        placeholder="key"
+        bind:value={newTagKey}
+        onkeydown={(e) => { if (e.key === 'Enter') addTag(); }}
+      />
+      <input
+        type="text"
+        class="tag-input"
+        placeholder="value"
+        bind:value={newTagValue}
+        onkeydown={(e) => { if (e.key === 'Enter') addTag(); }}
+      />
+      <button
+        class="add-btn"
+        onclick={addTag}
+        disabled={!newTagKey.trim()}
+      >+</button>
+    </div>
+  </CollapsibleSection>
+  {/if}
 </div>
 
 <style>
@@ -274,24 +282,6 @@
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-  }
-  .config-panel-content {
-    padding: 12px 16px;
-    flex: 1;
-    overflow-y: auto;
-  }
-  .config-section {
-    margin-bottom: 20px;
-  }
-  .group-header {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--color-accent);
-    padding: 8px 0 6px;
-    border-bottom: 1px solid var(--color-border);
-    margin-bottom: 8px;
   }
   .section-hint {
     font-size: 11px;
@@ -345,14 +335,10 @@
     gap: 3px;
     margin-bottom: 8px;
   }
-  .conv-field.half {
-    flex: 1;
-    min-width: 0;
-  }
   .conv-tokens {
     display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 6px;
   }
   .conv-label {
     font-size: 11px;

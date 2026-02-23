@@ -4,6 +4,14 @@
   import type { PaletteId, CustomThemeFile } from '$lib/themes/types';
   import { open as openDialog } from '@tauri-apps/plugin-dialog';
   import { readTextFile } from '@tauri-apps/plugin-fs';
+  import CollapsibleSection from './CollapsibleSection.svelte';
+  import SearchBox from './SearchBox.svelte';
+
+  let searchQuery = $state('');
+
+  function sectionVisible(label: string) {
+    return !searchQuery || label.toLowerCase().includes(searchQuery.toLowerCase());
+  }
 
   let palettes = $derived(getAllPalettes());
   let importError = $state('');
@@ -50,10 +58,11 @@
 </script>
 
 <div class="settings-panel">
-  <!-- Appearance -->
-  <section class="settings-section">
-    <h3 class="section-title">Appearance</h3>
+  <SearchBox bind:value={searchQuery} placeholder="Search settings..." />
 
+  <!-- Appearance -->
+  {#if sectionVisible('Appearance')}
+  <CollapsibleSection id="app-appearance" label="Appearance" forceExpand={!!searchQuery}>
     <div class="setting-row">
       <span class="setting-label">Mode</span>
       <div class="toggle-group">
@@ -114,12 +123,12 @@
         <div class="error-msg">{importError}</div>
       {/if}
     </div>
-  </section>
+  </CollapsibleSection>
+  {/if}
 
   <!-- Canvas -->
-  <section class="settings-section">
-    <h3 class="section-title">Canvas</h3>
-
+  {#if sectionVisible('Canvas')}
+  <CollapsibleSection id="app-canvas" label="Canvas" forceExpand={!!searchQuery}>
     <div class="setting-row">
       <span class="setting-label">Snap to Grid</span>
       <button
@@ -163,30 +172,14 @@
         {/each}
       </div>
     </div>
-  </section>
+  </CollapsibleSection>
+  {/if}
 </div>
 
 <style>
   .settings-panel {
-    padding: 12px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
-  }
-
-  .settings-section {
-    margin-bottom: 8px;
-  }
-
-  .section-title {
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--color-text-muted);
-    margin: 0 0 10px 0;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--color-border);
   }
 
   .setting-row {

@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
-  import { slide } from 'svelte/transition';
   import { invoke } from '@tauri-apps/api/core';
   import { project } from '$lib/stores/project.svelte';
   import { terraform } from '$lib/stores/terraform.svelte';
@@ -10,10 +9,8 @@
   import type { TerraformCommand } from '$lib/stores/terraform.svelte';
   import { registry } from '$lib/bootstrap';
   import type { ResourceTypeId, TerraformVariable } from '@terrastudio/types';
-
-  // Use ui store for persistent collapse state
-  const filesCollapsed = $derived(ui.isCategoryCollapsed('tf-files'));
-  const variablesCollapsed = $derived(ui.isCategoryCollapsed('tf-variables'));
+  import CollapsibleSection from './CollapsibleSection.svelte';
+  import SearchBox from './SearchBox.svelte';
 
   /**
    * Variables derived directly from diagram nodes' variableOverrides.
@@ -108,6 +105,21 @@
     ),
   );
 
+  // ─── Search ──────────────────────────────────────────────────────────────
+  let searchQuery = $state('');
+
+  const filteredFiles = $derived(
+    searchQuery.trim()
+      ? ui.generatedFiles.filter((f) => f.toLowerCase().includes(searchQuery.toLowerCase()))
+      : ui.generatedFiles,
+  );
+
+  const filteredVariables = $derived(
+    searchQuery.trim()
+      ? displayVariables.filter((v) => v.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      : displayVariables,
+  );
+
   let showVarWarning = $state(false);
 
   // Debounce timer for variable value changes
@@ -182,24 +194,19 @@
 </script>
 
 <div class="tf-sidebar">
-  <!-- Generated Files (top) -->
-  <div class="section files-section">
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <div class="section-header clickable" onclick={() => ui.toggleCategory('tf-files')}>
-      <svg class="chevron" class:collapsed={filesCollapsed} width="12" height="12" viewBox="0 0 12 12">
-        <path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
-      <span>FILES</span>
-      <span class="section-count">{ui.generatedFiles.length}</span>
-    </div>
-    {#if !filesCollapsed}
-      <div class="section-content" transition:slide={{ duration: 150 }}>
+  <SearchBox bind:value={searchQuery} placeholder="Search files, variables..." />
+
+  <!-- Generated Files (top, scrollable) -->
+  {#if !searchQuery || filteredFiles.length > 0}
+    <div class="files-wrapper">
+      <CollapsibleSection id="tf-files" label="FILES" count={filteredFiles.length} forceExpand={!!searchQuery}>
         {#if ui.generatedFiles.length === 0}
           <p class="empty-hint">No terraform files yet. Add resources and generate.</p>
+        {:else if filteredFiles.length === 0}
+          <p class="empty-hint">No files match "{searchQuery}".</p>
         {:else}
           <div class="file-list">
-            {#each ui.generatedFiles as filename (filename)}
+            {#each filteredFiles as filename (filename)}
               <button class="file-item" onclick={() => openFile(filename)}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 <span>{filename}</span>
@@ -207,47 +214,36 @@
             {/each}
           </div>
         {/if}
-      </div>
-    {/if}
-  </div>
+      </CollapsibleSection>
+    </div>
+  {/if}
 
   <!-- Variables Section -->
-  {#if displayVariables.length > 0}
-    <div class="section variables-section">
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <div class="section-header clickable" onclick={() => ui.toggleCategory('tf-variables')}>
-        <svg class="chevron" class:collapsed={variablesCollapsed} width="12" height="12" viewBox="0 0 12 12">
-          <path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-        <span>VARIABLES</span>
-        <span class="section-count">{displayVariables.length}</span>
-      </div>
-      {#if !variablesCollapsed}
-        <div class="section-content" transition:slide={{ duration: 150 }}>
-          {#each displayVariables as v (v.name)}
-            {@const currentValue = project.projectConfig.variableValues[v.name] ?? ''}
-            {@const hasDefault = v.defaultValue !== undefined && v.defaultValue !== ''}
-            {@const isMissing = !hasDefault && !currentValue}
-            <div class="var-row" class:var-missing={isMissing}>
-              <div class="var-header">
-                <span class="var-name">{v.name}</span>
-                <span class="var-type-badge">{v.type}</span>
-              </div>
-              {#if hasDefault}
-                <span class="var-default">default: {v.defaultValue}</span>
-              {/if}
-              <input
-                type={v.sensitive ? 'password' : 'text'}
-                class="var-input"
-                placeholder={hasDefault ? String(v.defaultValue) : 'required'}
-                value={currentValue}
-                oninput={(e) => onVariableValueChange(v.name, (e.target as HTMLInputElement).value)}
-              />
+  {#if displayVariables.length > 0 && (!searchQuery || filteredVariables.length > 0)}
+    <div class="variables-wrapper">
+      <CollapsibleSection id="tf-variables" label="VARIABLES" count={filteredVariables.length} forceExpand={!!searchQuery}>
+        {#each filteredVariables as v (v.name)}
+          {@const currentValue = project.projectConfig.variableValues[v.name] ?? ''}
+          {@const hasDefault = v.defaultValue !== undefined && v.defaultValue !== ''}
+          {@const isMissing = !hasDefault && !currentValue}
+          <div class="var-row" class:var-missing={isMissing}>
+            <div class="var-header">
+              <span class="var-name">{v.name}</span>
+              <span class="var-type-badge">{v.type}</span>
             </div>
-          {/each}
-        </div>
-      {/if}
+            {#if hasDefault}
+              <span class="var-default">default: {v.defaultValue}</span>
+            {/if}
+            <input
+              type={v.sensitive ? 'password' : 'text'}
+              class="var-input"
+              placeholder={hasDefault ? String(v.defaultValue) : 'required'}
+              value={currentValue}
+              oninput={(e) => onVariableValueChange(v.name, (e.target as HTMLInputElement).value)}
+            />
+          </div>
+        {/each}
+      </CollapsibleSection>
     </div>
   {/if}
 
@@ -276,50 +272,51 @@
     </div>
   {/if}
 
-  <!-- Commands (bottom) -->
-  <div class="section commands-section">
-    <div class="section-header">COMMANDS</div>
-    <div class="cmd-buttons">
-      <div class="generate-row">
-        <button class="cmd-btn cmd-btn-accent generate-btn" class:cmd-btn-stale={terraform.filesStale && ui.generatedFiles.length > 0} disabled={!canGenerate} onclick={handleGenerate}>
-          {#if terraform.filesStale && ui.generatedFiles.length > 0}
-            Regenerate
-          {:else}
-            Generate
-          {/if}
+  <!-- Commands (bottom, no border below last section) -->
+  <div class="commands-wrapper">
+    <CollapsibleSection id="tf-commands" label="COMMANDS">
+      <div class="cmd-buttons">
+        <div class="generate-row">
+          <button class="cmd-btn cmd-btn-accent generate-btn" class:cmd-btn-stale={terraform.filesStale && ui.generatedFiles.length > 0} disabled={!canGenerate} onclick={handleGenerate}>
+            {#if terraform.filesStale && ui.generatedFiles.length > 0}
+              Regenerate
+            {:else}
+              Generate
+            {/if}
+          </button>
+          <label class="auto-toggle" title="Auto-regenerate when diagram changes">
+            <input
+              type="checkbox"
+              checked={terraform.autoRegenerate}
+              onchange={(e) => terraform.setAutoRegenerate((e.target as HTMLInputElement).checked)}
+            />
+            <span class="auto-label">Auto</span>
+          </label>
+        </div>
+        <div class="cmd-row">
+          <button class="cmd-btn" disabled={!canRunCommand} onclick={() => handleCommand('init')}>Init</button>
+          <button class="cmd-btn" disabled={!canRunCommand} onclick={() => handleCommand('validate')}>Validate</button>
+        </div>
+        <div class="cmd-row">
+          <button class="cmd-btn" disabled={!canRunCommand} onclick={() => handleCommand('plan')}>Plan</button>
+          <button class="cmd-btn cmd-btn-primary" disabled={!canRunCommand} onclick={() => handleCommand('apply')}>Apply</button>
+        </div>
+        <button class="cmd-btn cmd-btn-danger" disabled={!canRunCommand} onclick={() => handleCommand('destroy')}>
+          Destroy
         </button>
-        <label class="auto-toggle" title="Auto-regenerate when diagram changes">
-          <input
-            type="checkbox"
-            checked={terraform.autoRegenerate}
-            onchange={(e) => terraform.setAutoRegenerate((e.target as HTMLInputElement).checked)}
-          />
-          <span class="auto-label">Auto</span>
-        </label>
+        <button
+          class="cmd-btn"
+          disabled={terraform.isRunning || !project.isOpen}
+          onclick={async () => {
+            terraform.appendInfo('\n--- Refreshing deployment status ---');
+            await refreshDeploymentStatus();
+            terraform.appendInfo('Status refreshed.');
+          }}
+        >
+          Refresh Status
+        </button>
       </div>
-      <div class="cmd-row">
-        <button class="cmd-btn" disabled={!canRunCommand} onclick={() => handleCommand('init')}>Init</button>
-        <button class="cmd-btn" disabled={!canRunCommand} onclick={() => handleCommand('validate')}>Validate</button>
-      </div>
-      <div class="cmd-row">
-        <button class="cmd-btn" disabled={!canRunCommand} onclick={() => handleCommand('plan')}>Plan</button>
-        <button class="cmd-btn cmd-btn-primary" disabled={!canRunCommand} onclick={() => handleCommand('apply')}>Apply</button>
-      </div>
-      <button class="cmd-btn cmd-btn-danger" disabled={!canRunCommand} onclick={() => handleCommand('destroy')}>
-        Destroy
-      </button>
-      <button
-        class="cmd-btn"
-        disabled={terraform.isRunning || !project.isOpen}
-        onclick={async () => {
-          terraform.appendInfo('\n--- Refreshing deployment status ---');
-          await refreshDeploymentStatus();
-          terraform.appendInfo('Status refreshed.');
-        }}
-      >
-        Refresh Status
-      </button>
-    </div>
+    </CollapsibleSection>
   </div>
 </div>
 
@@ -330,58 +327,25 @@
     height: 100%;
     min-height: 0;
   }
-  .section {
-    flex-shrink: 0;
-    border-bottom: 1px solid var(--color-border);
-  }
-  .files-section {
+  .files-wrapper {
     flex-shrink: 1;
     overflow-y: auto;
     min-height: 0;
   }
-  .commands-section {
-    border-bottom: none;
-    padding: 8px 12px;
+  .variables-wrapper {
+    max-height: 200px;
+    overflow-y: auto;
+    flex-shrink: 0;
+    margin-bottom: 8px;
   }
   .spacer {
     flex: 1;
   }
-  .section-header {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--color-accent);
-    padding: 10px 12px;
-    transition: background 0.1s;
-  }
-  .section-header.clickable {
-    cursor: pointer;
-    user-select: none;
-  }
-  .section-header.clickable:hover {
-    background: var(--color-surface-hover);
-  }
-  .chevron {
+  .commands-wrapper {
     flex-shrink: 0;
-    transition: transform 0.15s ease;
-    transform: rotate(90deg);
-    color: var(--color-text-muted);
   }
-  .chevron.collapsed {
-    transform: rotate(0deg);
-  }
-  .section-count {
-    margin-left: auto;
-    font-size: 10px;
-    color: var(--color-text-muted);
-    opacity: 0.6;
-  }
-  .section-content {
-    padding: 0 12px 8px;
+  .commands-wrapper :global(.collapsible-section) {
+    border-bottom: none;
   }
   .cmd-buttons {
     display: flex;
@@ -576,12 +540,6 @@
   @keyframes pulse-stale {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.7; }
-  }
-  .variables-section {
-    max-height: 200px;
-    overflow-y: auto;
-    flex-shrink: 0;
-    margin-bottom: 8px;
   }
   .var-row {
     padding: 6px 0;

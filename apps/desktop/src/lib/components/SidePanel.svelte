@@ -8,7 +8,15 @@
 
   const categoryIds = registry.getPaletteCategories().map((c) => c.id);
 
-  const allCollapsed = $derived(categoryIds.every((id) => ui.isCategoryCollapsed(id)));
+  const SECTION_IDS: Record<string, string[]> = {
+    explorer: categoryIds,
+    terraform: ['tf-files', 'tf-variables', 'tf-commands'],
+    settings: ['project-naming', 'project-layout', 'project-tags'],
+    'app-settings': ['app-appearance', 'app-canvas'],
+  };
+
+  const activeCategoryIds = $derived(SECTION_IDS[ui.activeView] ?? []);
+  const allCollapsed = $derived(activeCategoryIds.every((id) => ui.isCategoryCollapsed(id)));
 
   const viewTitle = $derived.by(() => {
     switch (ui.activeView) {
@@ -49,10 +57,10 @@
   <div class="panel-header">
     <span class="panel-title">{viewTitle}</span>
     <div class="header-spacer"></div>
-    {#if ui.activeView === 'explorer'}
+    {#if activeCategoryIds.length > 0}
       <button
         class="header-action"
-        onclick={() => ui.toggleAllCategories(categoryIds)}
+        onclick={() => ui.toggleAllCategories(activeCategoryIds)}
         title={allCollapsed ? 'Expand All' : 'Collapse All'}
         aria-label={allCollapsed ? 'Expand all categories' : 'Collapse all categories'}
       >

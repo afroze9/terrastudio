@@ -87,8 +87,14 @@ class UiStore {
   }
 
   toggleAllCategories(categoryIds: string[]) {
-    const allCollapsed = categoryIds.every((id) => this.collapsedCategories.has(id));
-    this.collapsedCategories = allCollapsed ? new Set() : new Set(categoryIds);
+    const next = new Set(this.collapsedCategories);
+    const allCollapsed = categoryIds.every((id) => next.has(id));
+    if (allCollapsed) {
+      categoryIds.forEach((id) => next.delete(id));
+    } else {
+      categoryIds.forEach((id) => next.add(id));
+    }
+    this.collapsedCategories = next;
   }
 
   /** Toggle sidebar view; collapse if already showing the same view */
