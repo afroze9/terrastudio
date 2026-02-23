@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.1.3](https://github.com/afroze9/terrastudio/compare/v0.1.2...v0.1.3) (2026-02-23)
+
+
+### Features
+
+* add project-level naming convention system ([7273dd8](https://github.com/afroze9/terrastudio/commit/7273dd88bcb29503684ba08d13c23bcb6503b35d))
+* add sensitive field support and credential validation to schemas ([b229c05](https://github.com/afroze9/terrastudio/commit/b229c0510fae857e730c8a4d7f28c63708908c27))
+* new project wizard with naming convention, layout, and edge style ([fa91fef](https://github.com/afroze9/terrastudio/commit/fa91fef05456b49f250e4a9ae1453cc5108984ba))
+* validation error highlights, variable-mode bypass, and real-time variables panel ([96ab2a2](https://github.com/afroze9/terrastudio/commit/96ab2a24cb08a10f51ade4dbf15fa97db05a5bfe))
+* VS-style 3-step new project wizard with naming convention UI ([8c7751d](https://github.com/afroze9/terrastudio/commit/8c7751d37804085ee590ee48e8bec907bfadcc32))
+
 ## [0.1.2](https://github.com/afroze9/terrastudio/compare/v0.1.1...v0.1.2) (2026-02-23)
 
 
