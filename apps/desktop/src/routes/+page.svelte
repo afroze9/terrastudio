@@ -73,14 +73,14 @@
 		</div>
 		<StatusBar />
 	</div>
+	<NewProjectDialog
+		open={showNewProjectDialog}
+		onclose={() => (showNewProjectDialog = false)}
+	/>
 {:else}
-	<WelcomeScreen onNewProject={() => (showNewProjectDialog = true)} />
+	<WelcomeScreen />
 {/if}
 
-<NewProjectDialog
-	open={showNewProjectDialog}
-	onclose={() => (showNewProjectDialog = false)}
-/>
 <ConfirmDialog />
 <UnsavedChangesDialog />
 
