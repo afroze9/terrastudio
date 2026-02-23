@@ -146,7 +146,7 @@
   }
 
   // Step 3 – configuration
-  let templateInputEl: HTMLInputElement | null = null;
+  let templateInputEl: HTMLInputElement | null = $state(null);
 
   function insertToken(token: string) {
     if (!templateInputEl) { conventionTemplate += token; return; }
@@ -405,8 +405,8 @@
                 bind:value={searchQuery}
               />
               {#if searchQuery}
-                <button class="search-clear" onclick={() => (searchQuery = '')}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <button class="search-clear" aria-label="Clear search" onclick={() => (searchQuery = '')}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
                     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                   </svg>
                 </button>
@@ -553,13 +553,11 @@
                   <span class="conv-label">Template</span>
                   <input type="text" class="conv-input" placeholder={'{type}-{env}-{name}'} bind:value={conventionTemplate} bind:this={templateInputEl} />
                   <div class="token-hints">
-                    <!-- svelte-ignore a11y_click_events_have_key_events -->
-                    <!-- svelte-ignore a11y_no_static_element_interactions -->
-                    <span class="token-chip" class:chip-in-use={conventionTemplate.includes('{type}')}   onclick={() => insertToken('{type}')}>{'{type}'}</span>
-                    <span class="token-chip" class:chip-in-use={conventionTemplate.includes('{env}')}    onclick={() => insertToken('{env}')}>{'{env}'}</span>
-                    <span class="token-chip" class:chip-in-use={conventionTemplate.includes('{name}')}   onclick={() => insertToken('{name}')}>{'{name}'}</span>
-                    <span class="token-chip token-chip-opt" class:chip-in-use={conventionTemplate.includes('{region}')} onclick={() => insertToken('{region}')}>{'{region}'}</span>
-                    <span class="token-chip token-chip-opt" class:chip-in-use={conventionTemplate.includes('{org}')}    onclick={() => insertToken('{org}')}>{'{org}'}</span>
+                    <button type="button" class="token-chip" class:chip-in-use={conventionTemplate.includes('{type}')}   onclick={() => insertToken('{type}')}>{'{type}'}</button>
+                    <button type="button" class="token-chip" class:chip-in-use={conventionTemplate.includes('{env}')}    onclick={() => insertToken('{env}')}>{'{env}'}</button>
+                    <button type="button" class="token-chip" class:chip-in-use={conventionTemplate.includes('{name}')}   onclick={() => insertToken('{name}')}>{'{name}'}</button>
+                    <button type="button" class="token-chip token-chip-opt" class:chip-in-use={conventionTemplate.includes('{region}')} onclick={() => insertToken('{region}')}>{'{region}'}</button>
+                    <button type="button" class="token-chip token-chip-opt" class:chip-in-use={conventionTemplate.includes('{org}')}    onclick={() => insertToken('{org}')}>{'{org}'}</button>
                   </div>
                 </div>
 
@@ -1070,6 +1068,7 @@
     padding: 2px 7px;
     font-size: 10px;
     font-family: monospace;
+    line-height: 1.4;
     background: color-mix(in srgb, var(--color-accent) 8%, transparent);
     color: var(--color-accent);
     border-radius: 3px;
@@ -1081,7 +1080,7 @@
   }
   .token-chip:hover { opacity: 0.8; }
   .token-chip.chip-in-use { opacity: 1; background: color-mix(in srgb, var(--color-accent) 14%, transparent); border-color: color-mix(in srgb, var(--color-accent) 40%, transparent); }
-  .token-chip-opt { /* optional tokens start even dimmer */ }
+  .token-chip-opt { opacity: 0.35; }
 
   .conv-tokens { display: flex; gap: 10px; }
   .conv-field { display: flex; flex-direction: column; gap: 4px; flex: 1; }

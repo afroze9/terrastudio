@@ -1,7 +1,34 @@
 <script lang="ts">
   import { ui } from '$lib/stores/ui.svelte';
   import { project } from '$lib/stores/project.svelte';
+
+  let contextMenu = $state<{ tabId: string; x: number; y: number } | null>(null);
+
+  function openContextMenu(e: MouseEvent, tabId: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    contextMenu = { tabId, x: e.clientX, y: e.clientY };
+  }
+
+  function closeContextMenu() {
+    contextMenu = null;
+  }
+
+  function handleClose(tabId: string) {
+    ui.closeTab(tabId);
+    closeContextMenu();
+  }
+
+  function handleCloseOthers(tabId: string) {
+    ui.closeOtherTabs(tabId);
+    closeContextMenu();
+  }
+
+  // Count non-canvas tabs to know if "Close Others" makes sense
+  let nonCanvasTabs = $derived(ui.tabs.filter((t) => t.id !== 'canvas'));
 </script>
+
+<svelte:window onclick={closeContextMenu} />
 
 <div class="tab-bar">
   {#each ui.tabs as tab (tab.id)}
@@ -9,6 +36,7 @@
       class="tab"
       class:active={ui.activeTabId === tab.id}
       onclick={() => (ui.activeTabId = tab.id)}
+      oncontextmenu={(e) => openContextMenu(e, tab.id)}
     >
       {#if tab.type === 'canvas'}
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
@@ -49,6 +77,31 @@
     </svg>
   </button>
 </div>
+
+<!-- Context menu -->
+{#if contextMenu}
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <div
+    class="tab-context-menu"
+    style="left: {contextMenu.x}px; top: {contextMenu.y}px;"
+    onclick={(e) => e.stopPropagation()}
+    oncontextmenu={(e) => e.stopPropagation()}
+  >
+    {#if contextMenu.tabId !== 'canvas'}
+      <button class="ctx-item" onclick={() => handleClose(contextMenu!.tabId)}>
+        Close
+      </button>
+    {/if}
+    <button
+      class="ctx-item"
+      disabled={nonCanvasTabs.length <= 1 && contextMenu.tabId === nonCanvasTabs[0]?.id}
+      onclick={() => handleCloseOthers(contextMenu!.tabId)}
+    >
+      Close Others
+    </button>
+  </div>
+{/if}
 
 <style>
   .tab-bar {
@@ -154,5 +207,38 @@
   }
   .toggle-props-btn.active {
     color: var(--color-accent);
+  }
+
+  /* Context menu */
+  .tab-context-menu {
+    position: fixed;
+    z-index: 9999;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 4px;
+    min-width: 140px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  }
+  .ctx-item {
+    display: block;
+    width: 100%;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--color-text-muted);
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s;
+  }
+  .ctx-item:hover:not(:disabled) {
+    background: var(--color-accent);
+    color: white;
+  }
+  .ctx-item:disabled {
+    opacity: 0.35;
+    cursor: default;
   }
 </style>

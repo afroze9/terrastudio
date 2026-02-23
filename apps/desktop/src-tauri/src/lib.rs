@@ -1,3 +1,4 @@
+mod azure;
 mod project;
 mod terraform;
 
@@ -41,6 +42,7 @@ pub fn run() {
             project::templates::list_user_templates,
             project::templates::load_user_template,
             project::templates::open_templates_folder,
+            azure::commands::az_list_subscriptions,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

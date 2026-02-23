@@ -4,6 +4,7 @@
   import { registry } from '$lib/bootstrap';
   import { applyNamingTemplate, extractSlug, sanitizeTerraformName, buildTokens } from '@terrastudio/core';
   import PropertyRenderer from './PropertyRenderer.svelte';
+  import SubscriptionPicker from './SubscriptionPicker.svelte';
   import type { ResourceTypeId, PropertyVariableMode } from '@terrastudio/types';
 
   let schema = $derived(
@@ -37,9 +38,16 @@
     return applyNamingTemplate(conv.template, tokens, schema.namingConstraints);
   });
 
-  /** Properties to pass to PropertyRenderer — exclude 'name' when convention is active */
+  let isSubscription = $derived(schema?.typeId === 'azurerm/core/subscription');
+
+  /** Properties to pass to PropertyRenderer — exclude 'name' when convention is active,
+   *  exclude display_name/subscription_id when subscription picker is shown */
   let renderedProperties = $derived(
-    conventionActive ? schema?.properties.filter(p => p.key !== 'name') ?? [] : schema?.properties ?? []
+    conventionActive
+      ? schema?.properties.filter(p => p.key !== 'name') ?? []
+      : isSubscription
+        ? schema?.properties.filter(p => p.key !== 'display_name' && p.key !== 'subscription_id') ?? []
+        : schema?.properties ?? []
   );
 
   function onConventionNameChange(slug: string) {
@@ -206,6 +214,17 @@
             {/if}
           </label>
         </div>
+      {/if}
+
+      {#if isSubscription}
+        <SubscriptionPicker
+          displayName={(diagram.selectedNode.data.properties['display_name'] as string) ?? ''}
+          subscriptionId={(diagram.selectedNode.data.properties['subscription_id'] as string) ?? ''}
+          onSelect={(name, id) => {
+            onPropertyChange('display_name', name);
+            onPropertyChange('subscription_id', id);
+          }}
+        />
       {/if}
 
       <PropertyRenderer

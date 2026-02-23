@@ -3,6 +3,7 @@
     SvelteFlow,
     useSvelteFlow,
     Controls,
+    ControlButton,
     MiniMap,
     Background,
     BackgroundVariant,
@@ -585,8 +586,20 @@
     onedgecontextmenu={({ event, edge }) => { event.preventDefault(); contextMenu = { x: event.clientX, y: event.clientY, edgeId: edge.id }; }}
     onpanecontextmenu={({ event }) => { event.preventDefault(); contextMenu = { x: event.clientX, y: event.clientY }; }}
   >
-    <Controls />
-    <MiniMap />
+    <Controls>
+      <ControlButton
+        onclick={() => ui.setShowMinimap(!ui.showMinimap)}
+        title={ui.showMinimap ? 'Hide Minimap' : 'Show Minimap'}
+      >
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style={ui.showMinimap ? 'opacity:1' : 'opacity:0.4'}>
+          <rect x="1" y="1" width="14" height="14" rx="1.5" />
+          <rect x="3" y="3" width="5" height="4" rx="0.5" fill="currentColor" stroke="none" opacity="0.6" />
+          <rect x="3" y="9" width="3" height="2" rx="0.5" fill="currentColor" stroke="none" opacity="0.4" />
+          <rect x="9" y="6" width="4" height="5" rx="0.5" fill="currentColor" stroke="none" opacity="0.4" />
+        </svg>
+      </ControlButton>
+    </Controls>
+    {#if ui.showMinimap}<MiniMap />{/if}
     <Background variant={BackgroundVariant.Dots} gap={ui.gridSize} size={1} />
   </SvelteFlow>
 </div>

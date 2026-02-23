@@ -55,6 +55,9 @@ class UiStore {
   snapToGrid = $state(typeof localStorage !== 'undefined' && localStorage.getItem('terrastudio-snap') === 'true');
   gridSize = $state(typeof localStorage !== 'undefined' && localStorage.getItem('terrastudio-grid-size') ? Number(localStorage.getItem('terrastudio-grid-size')) : 20);
 
+  // --- Minimap ---
+  showMinimap = $state(typeof localStorage !== 'undefined' ? localStorage.getItem('terrastudio-minimap') !== 'false' : true);
+
   // --- Theme ---
   theme = $state<Theme>((typeof localStorage !== 'undefined' && localStorage.getItem('terrastudio-theme') as Theme) || 'dark');
 
@@ -119,6 +122,14 @@ class UiStore {
     }
   }
 
+  /** Close all file tabs except the given one (canvas is always kept) */
+  closeOtherTabs(keepTabId: string) {
+    this.tabs = this.tabs.filter((t) => t.id === 'canvas' || t.id === keepTabId);
+    if (this.activeTabId !== 'canvas' && this.activeTabId !== keepTabId) {
+      this.activeTabId = keepTabId !== 'canvas' ? keepTabId : 'canvas';
+    }
+  }
+
   /** Toggle terminal visibility */
   toggleTerminal() {
     this.showTerminal = !this.showTerminal;
@@ -134,6 +145,12 @@ class UiStore {
   setGridSize(size: number) {
     this.gridSize = size;
     localStorage.setItem('terrastudio-grid-size', String(size));
+  }
+
+  /** Toggle minimap and persist */
+  setShowMinimap(show: boolean) {
+    this.showMinimap = show;
+    localStorage.setItem('terrastudio-minimap', String(show));
   }
 
   /** Set edge type and persist */
