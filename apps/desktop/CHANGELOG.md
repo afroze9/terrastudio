@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.4](https://github.com/afroze9/terrastudio/compare/v0.1.3...v0.1.4) (2026-02-23)
+
+
+### Features
+
+* Azure subscription picker, minimap toggle, and tab context menu (v0.3.0) ([d1aab02](https://github.com/afroze9/terrastudio/commit/d1aab025355d09202255b76dff28c298ba628d53))
+* keyboard shortcuts, Help menu with shortcuts/about modals (v0.3.2) ([d0cc051](https://github.com/afroze9/terrastudio/commit/d0cc051b7252f95ab970d8fb38b39e54a10241c8))
+* unified collapsible sections and search across all sidebar panels ([19b3e38](https://github.com/afroze9/terrastudio/commit/19b3e384e7e3c88d736291e2ef5902cd17cfcf5e))
+
 ## [0.1.3](https://github.com/afroze9/terrastudio/compare/v0.1.2...v0.1.3) (2026-02-23)
 
 
