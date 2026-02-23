@@ -10,6 +10,9 @@ export type DeploymentStatus =
   | 'failed'
   | 'destroyed';
 
+/** How a property value should be treated in HCL generation */
+export type PropertyVariableMode = 'literal' | 'variable';
+
 export interface ResourceNodeData {
   [key: string]: unknown;
   typeId: ResourceTypeId;
@@ -19,6 +22,8 @@ export interface ResourceNodeData {
   label: string;
   validationErrors: ValidationError[];
   deploymentStatus?: DeploymentStatus;
+  /** Per-property override for literal vs variable mode */
+  variableOverrides?: Record<string, PropertyVariableMode>;
 }
 
 /**

@@ -17,10 +17,6 @@ export type LayoutAlgorithm = 'dagre' | 'hybrid';
 
 export interface ProjectConfig {
   providerConfigs: Record<ProviderId, Record<string, unknown>>;
-  resourceGroupName: string;
-  resourceGroupAsVariable: boolean;
-  location: string;
-  locationAsVariable: boolean;
   commonTags: Record<string, string>;
   variableValues: Record<string, string>;
   layoutAlgorithm?: LayoutAlgorithm;
@@ -88,25 +84,6 @@ export class HclPipeline {
     const variableCollector = new VariableCollector();
     const outputCollector = new OutputCollector();
 
-    // Add standard variables
-    if (projectConfig.resourceGroupAsVariable) {
-      variableCollector.add({
-        name: 'resource_group_name',
-        type: 'string',
-        description: 'Name of the Azure Resource Group',
-        defaultValue: projectConfig.resourceGroupName || undefined,
-      });
-    }
-
-    if (projectConfig.locationAsVariable) {
-      variableCollector.add({
-        name: 'location',
-        type: 'string',
-        description: 'Azure region for resources',
-        defaultValue: projectConfig.location || undefined,
-      });
-    }
-
     // 4. Create generation context
     const context: HclGenerationContext = {
       getResource(instanceId: string) {
@@ -133,15 +110,69 @@ export class HclPipeline {
       getProviderConfig(providerId: string) {
         return projectConfig.providerConfigs[providerId] ?? {};
       },
-      getResourceGroupExpression() {
-        return projectConfig.resourceGroupAsVariable
-          ? 'var.resource_group_name'
-          : `"${projectConfig.resourceGroupName}"`;
+      getResourceGroupExpression(resource: ResourceInstance) {
+        // Get the _resource_group reference (set by diagram-converter for resources inside RG containers)
+        const rgInstanceId = resource.references['_resource_group'];
+        if (rgInstanceId) {
+          const rgAddr = addressMap.get(rgInstanceId);
+          if (rgAddr) {
+            return `${rgAddr}.name`;
+          }
+        }
+        // Fallback: no RG container found — this shouldn't happen for resources that requiresResourceGroup
+        throw new Error(
+          `Resource "${resource.terraformName}" requires a Resource Group but none was found. ` +
+          `Place the resource inside a Resource Group container on the canvas.`
+        );
       },
-      getLocationExpression() {
-        return projectConfig.locationAsVariable
-          ? 'var.location'
-          : `"${projectConfig.location}"`;
+      getLocationExpression(resource: ResourceInstance) {
+        // Get the _resource_group reference to derive location from the parent RG
+        const rgInstanceId = resource.references['_resource_group'];
+        if (rgInstanceId) {
+          const rgAddr = addressMap.get(rgInstanceId);
+          if (rgAddr) {
+            return `${rgAddr}.location`;
+          }
+        }
+        // Fallback: no RG container found
+        throw new Error(
+          `Resource "${resource.terraformName}" requires a location but no Resource Group was found. ` +
+          `Place the resource inside a Resource Group container on the canvas.`
+        );
+      },
+      getPropertyExpression(resource, propertyKey, value, options = {}) {
+        const mode = resource.variableOverrides?.[propertyKey] ?? 'literal';
+
+        if (mode === 'variable') {
+          // Register a variable and return var.xxx reference
+          const varName = options.variableName ?? `${resource.terraformName}_${propertyKey}`;
+          const varType = options.variableType ?? (typeof value === 'number' ? 'number' : 'string');
+          const varDesc = options.variableDescription ?? `${propertyKey} for ${resource.terraformName}`;
+
+          variableCollector.add({
+            name: varName,
+            type: varType,
+            description: varDesc,
+            defaultValue: value,
+            sensitive: options.sensitive,
+          });
+
+          return `var.${varName}`;
+        }
+
+        // Return literal value as HCL expression
+        if (typeof value === 'string') {
+          return `"${value}"`;
+        } else if (typeof value === 'number') {
+          return String(value);
+        } else if (typeof value === 'boolean') {
+          return value ? 'true' : 'false';
+        } else if (value === null || value === undefined) {
+          return 'null';
+        } else {
+          // For complex types, just stringify
+          return JSON.stringify(value);
+        }
       },
     };
 

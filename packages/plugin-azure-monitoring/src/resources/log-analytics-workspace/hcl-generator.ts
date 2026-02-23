@@ -10,8 +10,8 @@ export const logAnalyticsWorkspaceHclGenerator: HclGenerator = {
     const retention = props['retention_in_days'] as number | undefined;
     const dailyQuota = props['daily_quota_gb'] as number | undefined;
 
-    const rgExpr = context.getResourceGroupExpression();
-    const locExpr = context.getLocationExpression();
+    const rgExpr = context.getResourceGroupExpression(resource);
+    const locExpr = context.getLocationExpression(resource);
 
     const lines: string[] = [
       `resource "azurerm_log_analytics_workspace" "${resource.terraformName}" {`,

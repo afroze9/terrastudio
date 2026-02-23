@@ -17,8 +17,8 @@ export const appServiceHclGenerator: HclGenerator = {
     const alwaysOn = props['always_on'] as boolean | undefined;
     const httpsOnly = props['https_only'] as boolean | undefined;
 
-    const rgExpr = context.getResourceGroupExpression();
-    const locExpr = context.getLocationExpression();
+    const rgExpr = context.getResourceGroupExpression(resource);
+    const locExpr = context.getLocationExpression(resource);
     const dependsOn: string[] = [];
 
     // Resolve App Service Plan reference

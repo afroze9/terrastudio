@@ -8,7 +8,7 @@ export const privateDnsZoneVnetLinkHclGenerator: HclGenerator = {
     const name = props['name'] as string;
     const registrationEnabled = (props['registration_enabled'] as boolean) ?? false;
 
-    const rgExpr = context.getResourceGroupExpression();
+    const rgExpr = context.getResourceGroupExpression(resource);
 
     // Resolve Private DNS Zone reference → name
     const dnsZoneRef = resource.references['private_dns_zone_id'];

@@ -21,8 +21,8 @@ export const vmHclGenerator: HclGenerator = {
     const osDiskSizeGb = props['os_disk_size_gb'] as number | undefined;
     const osDiskType = (props['os_disk_type'] as string) ?? 'Standard_LRS';
 
-    const rgExpr = context.getResourceGroupExpression();
-    const locExpr = context.getLocationExpression();
+    const rgExpr = context.getResourceGroupExpression(resource);
+    const locExpr = context.getLocationExpression(resource);
     const dependsOn: string[] = [];
 
     // NIC resource name

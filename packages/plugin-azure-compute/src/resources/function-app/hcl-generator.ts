@@ -18,8 +18,8 @@ export const functionAppHclGenerator: HclGenerator = {
     const httpsOnly = props['https_only'] as boolean | undefined;
     const enabled = props['enabled'] as boolean | undefined;
 
-    const rgExpr = context.getResourceGroupExpression();
-    const locExpr = context.getLocationExpression();
+    const rgExpr = context.getResourceGroupExpression(resource);
+    const locExpr = context.getLocationExpression(resource);
     const dependsOn: string[] = [];
 
     const terraformType = osType === 'windows'

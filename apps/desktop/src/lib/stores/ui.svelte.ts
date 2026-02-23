@@ -166,12 +166,13 @@ class UiStore {
     title: string;
     message: string;
     confirmLabel?: string;
+    cancelLabel?: string;
     danger?: boolean;
     resolve: (confirmed: boolean) => void;
   } | null>(null);
 
   /** Show a confirm dialog and return a promise that resolves to true/false. */
-  confirm(opts: { title: string; message: string; confirmLabel?: string; danger?: boolean }): Promise<boolean> {
+  confirm(opts: { title: string; message: string; confirmLabel?: string; cancelLabel?: string; danger?: boolean }): Promise<boolean> {
     return new Promise((resolve) => {
       this.confirmDialog = { ...opts, resolve };
     });

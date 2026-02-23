@@ -13,8 +13,8 @@ export const keyVaultHclGenerator: HclGenerator = {
     const forDiskEncryption = props['enabled_for_disk_encryption'] as boolean | undefined;
     const forTemplateDeployment = props['enabled_for_template_deployment'] as boolean | undefined;
 
-    const rgExpr = context.getResourceGroupExpression();
-    const locExpr = context.getLocationExpression();
+    const rgExpr = context.getResourceGroupExpression(resource);
+    const locExpr = context.getLocationExpression(resource);
 
     const lines: string[] = [
       `resource "azurerm_key_vault" "${resource.terraformName}" {`,

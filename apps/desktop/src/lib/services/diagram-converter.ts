@@ -45,6 +45,7 @@ export function convertToResourceInstances(
       properties: { ...data.properties },
       references,
       terraformName: data.terraformName,
+      variableOverrides: data.variableOverrides,
     });
   }
 
@@ -123,4 +124,39 @@ function deriveParentReferences(
       references[childSchema.parentReference.propertyKey] = parentNode.id;
     }
   }
+
+  // If parent is a Resource Group and child requires RG, set _resource_group reference
+  if (parentNode.data.typeId === 'azurerm/core/resource_group' && childSchema?.requiresResourceGroup) {
+    if (!references['_resource_group']) {
+      references['_resource_group'] = parentNode.id;
+    }
+  }
+
+  // Walk up the hierarchy to find enclosing Resource Group for nested resources
+  // (e.g., VM inside Subnet inside VNet inside RG)
+  if (!references['_resource_group'] && childSchema?.requiresResourceGroup) {
+    const rgNode = findAncestorResourceGroup(childNode, allNodes);
+    if (rgNode) {
+      references['_resource_group'] = rgNode.id;
+    }
+  }
+}
+
+/**
+ * Walk up the parent chain to find an enclosing Resource Group container.
+ */
+function findAncestorResourceGroup(
+  node: DiagramNode,
+  allNodes: DiagramNode[],
+): DiagramNode | undefined {
+  let current: DiagramNode | undefined = node;
+  while (current?.parentId) {
+    const parent = allNodes.find((n) => n.id === current!.parentId);
+    if (!parent) break;
+    if (parent.data.typeId === 'azurerm/core/resource_group') {
+      return parent;
+    }
+    current = parent;
+  }
+  return undefined;
 }

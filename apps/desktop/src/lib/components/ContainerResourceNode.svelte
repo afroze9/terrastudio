@@ -2,6 +2,7 @@
   import { NodeResizer, useUpdateNodeInternals } from '@xyflow/svelte';
   import { registry } from '$lib/bootstrap';
   import { diagram } from '$lib/stores/diagram.svelte';
+  import { terraform } from '$lib/stores/terraform.svelte';
   import { ui } from '$lib/stores/ui.svelte';
   import DeploymentBadge from './DeploymentBadge.svelte';
   import NodeTooltip from './NodeTooltip.svelte';
@@ -14,6 +15,18 @@
 
   let schema = $derived(registry.getResourceSchema(data.typeId));
   let icon = $derived(schema ? registry.getIcon(data.typeId) : null);
+
+  // Get error message for this resource if any
+  let errorMessage = $derived.by(() => {
+    if (data.deploymentStatus !== 'failed') return undefined;
+    if (!schema) return undefined;
+    const generator = registry.getHclGenerator(data.typeId);
+    const tfType = generator?.resolveTerraformType
+      ? generator.resolveTerraformType(data.properties)
+      : schema.terraformType;
+    const address = `${tfType}.${data.terraformName}`;
+    return terraform.errorAddresses.get(address);
+  });
   let staticHandles = $derived(schema?.handles ?? []);
   let dynamicOutputHandles = $derived.by(() => {
     if (!schema?.outputs) return [];
@@ -176,7 +189,7 @@
     {#if hasNsg && nsgIcon?.type === 'svg' && nsgIcon.svg}
       <span class="nsg-badge" title="NSG attached">{@html nsgIcon.svg}</span>
     {/if}
-    <DeploymentBadge status={data.deploymentStatus} />
+    <DeploymentBadge status={data.deploymentStatus} {errorMessage} />
   </div>
   <div class="container-header" style="border-bottom-color: {borderColor}; {hideHeaderBorder ? 'border-bottom: none;' : ''}">
     {#if icon?.type === 'svg' && icon.svg && iconSize > 0}

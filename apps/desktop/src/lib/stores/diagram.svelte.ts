@@ -2,6 +2,7 @@ import type { Node, Edge } from '@xyflow/svelte';
 import type { ResourceNodeData, ResourceTypeId } from '@terrastudio/types';
 import { generateNodeId, generateUniqueTerraformName } from '@terrastudio/core';
 import { project } from './project.svelte';
+import { terraform } from './terraform.svelte';
 import { registry } from '$lib/bootstrap';
 import { ui } from './ui.svelte';
 
@@ -79,6 +80,7 @@ class DiagramStore {
   private pushSnapshot() {
     if (this.skipHistory) return;
     project.markDirty();
+    terraform.markFilesStale();
 
     // Discard any future history (redo branch) if we're not at the end
     const newHistory = this.history.slice(0, this.historyIndex + 1);
@@ -182,6 +184,7 @@ class DiagramStore {
     }
 
     project.markDirty();
+    terraform.markFilesStale();
 
     this.nodes = this.nodes.map((n) =>
       n.id === id ? { ...n, data: { ...n.data, ...data } } : n

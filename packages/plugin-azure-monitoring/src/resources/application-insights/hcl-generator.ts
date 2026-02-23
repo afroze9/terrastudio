@@ -11,8 +11,8 @@ export const applicationInsightsHclGenerator: HclGenerator = {
     const dailyCap = props['daily_data_cap_in_gb'] as number | undefined;
     const sampling = props['sampling_percentage'] as number | undefined;
 
-    const rgExpr = context.getResourceGroupExpression();
-    const locExpr = context.getLocationExpression();
+    const rgExpr = context.getResourceGroupExpression(resource);
+    const locExpr = context.getLocationExpression(resource);
     const dependsOn: string[] = [];
 
     const lines: string[] = [

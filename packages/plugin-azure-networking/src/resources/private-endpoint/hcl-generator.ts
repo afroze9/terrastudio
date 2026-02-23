@@ -9,8 +9,8 @@ export const privateEndpointHclGenerator: HclGenerator = {
     const subresource = (props['subresource_names'] as string) ?? 'blob';
     const dnsEnabled = (props['dns_zone_enabled'] as boolean) ?? false;
 
-    const rgExpr = context.getResourceGroupExpression();
-    const locExpr = context.getLocationExpression();
+    const rgExpr = context.getResourceGroupExpression(resource);
+    const locExpr = context.getLocationExpression(resource);
 
     // Resolve subnet reference (parent)
     const subnetRef = resource.references['subnet_id'];

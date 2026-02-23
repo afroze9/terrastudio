@@ -20,8 +20,8 @@ export const nsgHclGenerator: HclGenerator = {
     const name = props['name'] as string;
     const rules = (props['security_rules'] as SecurityRule[] | undefined) ?? [];
 
-    const rgExpr = context.getResourceGroupExpression();
-    const locExpr = context.getLocationExpression();
+    const rgExpr = context.getResourceGroupExpression(resource);
+    const locExpr = context.getLocationExpression(resource);
 
     const lines: string[] = [
       `resource "azurerm_network_security_group" "${resource.terraformName}" {`,

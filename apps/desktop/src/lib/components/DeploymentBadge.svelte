@@ -1,7 +1,14 @@
 <script lang="ts">
   import type { DeploymentStatus } from '@terrastudio/types';
 
-  let { status }: { status?: DeploymentStatus } = $props();
+  let { status, errorMessage }: { status?: DeploymentStatus; errorMessage?: string } = $props();
+
+  let tooltipText = $derived.by(() => {
+    if (status === 'failed' && errorMessage) {
+      return `Failed: ${errorMessage}`;
+    }
+    return status ?? 'pending';
+  });
 </script>
 
 <span
@@ -12,7 +19,7 @@
   class:created={status === 'created'}
   class:failed={status === 'failed'}
   class:destroyed={status === 'destroyed'}
-  title={status ?? 'pending'}
+  title={tooltipText}
 ></span>
 
 <style>

@@ -12,8 +12,8 @@ export const publicIpHclGenerator: HclGenerator = {
     const idleTimeout = props['idle_timeout_in_minutes'] as number | undefined;
     const domainLabel = props['domain_name_label'] as string | undefined;
 
-    const rgExpr = context.getResourceGroupExpression();
-    const locExpr = context.getLocationExpression();
+    const rgExpr = context.getResourceGroupExpression(resource);
+    const locExpr = context.getLocationExpression(resource);
 
     const lines: string[] = [
       `resource "azurerm_public_ip" "${resource.terraformName}" {`,

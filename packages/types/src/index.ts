@@ -27,6 +27,7 @@ export type {
 // Node types
 export type {
   DeploymentStatus,
+  PropertyVariableMode,
   ResourceNodeData,
   ResourceNodeComponent,
   PropertyEditorProps,

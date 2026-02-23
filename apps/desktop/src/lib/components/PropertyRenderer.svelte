@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { PropertySchema, ResourceTypeId } from '@terrastudio/types';
+  import type { PropertySchema, ResourceTypeId, PropertyVariableMode } from '@terrastudio/types';
 
   interface DiagramNodeRef {
     id: string;
@@ -14,9 +14,41 @@
     references?: Record<string, string>;
     diagramNodes?: DiagramNodeRef[];
     onReferenceChange?: (key: string, targetId: string | null) => void;
+    /** Per-property variable mode overrides */
+    variableOverrides?: Record<string, PropertyVariableMode>;
+    /** Callback when variable mode changes */
+    onVariableModeChange?: (key: string, mode: PropertyVariableMode) => void;
+    /** Show variable toggle buttons (disabled by default for backwards compat) */
+    showVariableToggle?: boolean;
   }
 
-  let { properties, values, onChange, references = {}, diagramNodes = [], onReferenceChange }: Props = $props();
+  let {
+    properties,
+    values,
+    onChange,
+    references = {},
+    diagramNodes = [],
+    onReferenceChange,
+    variableOverrides = {},
+    onVariableModeChange,
+    showVariableToggle = false,
+  }: Props = $props();
+
+  function getVariableMode(key: string): PropertyVariableMode {
+    return variableOverrides[key] ?? 'literal';
+  }
+
+  function toggleVariableMode(key: string) {
+    const current = getVariableMode(key);
+    const next = current === 'literal' ? 'variable' : 'literal';
+    onVariableModeChange?.(key, next);
+  }
+
+  /** Check if a property type supports variable mode toggle */
+  function supportsVariableToggle(type: string): boolean {
+    // Only simple scalar types can be variables
+    return ['string', 'number', 'cidr'].includes(type);
+  }
 
   function isVisible(prop: PropertySchema, vals: Record<string, unknown>): boolean {
     if (!prop.visibleWhen) return true;
@@ -89,29 +121,58 @@
   <div class="property-group">
     <div class="group-header">{groupName}</div>
     {#each props as prop}
+      {@const isVariable = showVariableToggle && supportsVariableToggle(prop.type) && getVariableMode(prop.key) === 'variable'}
       <div class="field">
         <label class="field-label">
-          <span class="label-text">
-            {prop.label}
-            {#if prop.required}<span class="required">*</span>{/if}
+          <span class="label-row">
+            <span class="label-text">
+              {prop.label}
+              {#if prop.required}<span class="required">*</span>{/if}
+            </span>
+            {#if showVariableToggle && supportsVariableToggle(prop.type)}
+              <button
+                type="button"
+                class="var-toggle"
+                class:is-variable={isVariable}
+                onclick={(e) => { e.preventDefault(); toggleVariableMode(prop.key); }}
+                title={isVariable ? 'Using variable (click to use literal value)' : 'Using literal value (click to make variable)'}
+              >
+                {#if isVariable}
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                  </svg>
+                  <span>var</span>
+                {:else}
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                {/if}
+              </button>
+            {/if}
           </span>
 
           {#if prop.type === 'string' || prop.type === 'cidr'}
             <input
               type="text"
-              placeholder={prop.placeholder}
+              placeholder={isVariable ? '(using variable)' : prop.placeholder}
               value={(values[prop.key] as string) ?? ''}
               oninput={(e) => handleStringInput(prop.key, e)}
+              disabled={isVariable}
+              class:is-variable-input={isVariable}
             />
 
           {:else if prop.type === 'number'}
             <input
               type="number"
-              placeholder={prop.placeholder}
+              placeholder={isVariable ? '(using variable)' : prop.placeholder}
               value={(values[prop.key] as number) ?? ''}
               min={prop.validation?.min}
               max={prop.validation?.max}
               oninput={(e) => handleNumberInput(prop.key, e)}
+              disabled={isVariable}
+              class:is-variable-input={isVariable}
             />
 
           {:else if prop.type === 'boolean'}
@@ -364,5 +425,51 @@
   .help-text {
     font-size: 11px;
     color: var(--color-text-muted);
+  }
+  .label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .var-toggle {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--color-text-muted);
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .var-toggle:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+  .var-toggle.is-variable {
+    border-color: rgba(34, 197, 94, 0.4);
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.08);
+  }
+  .var-toggle.is-variable:hover {
+    border-color: rgba(34, 197, 94, 0.6);
+    background: rgba(34, 197, 94, 0.12);
+  }
+  .var-toggle svg {
+    flex-shrink: 0;
+  }
+  .is-variable-input {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--color-surface-hover) !important;
+    border-style: dashed !important;
+  }
+  .is-variable-input::placeholder {
+    color: #22c55e;
+    font-style: italic;
   }
 </style>

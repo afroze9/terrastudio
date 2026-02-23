@@ -9,8 +9,8 @@ export const appServicePlanHclGenerator: HclGenerator = {
     const osType = (props['os_type'] as string) ?? 'Linux';
     const skuName = (props['sku_name'] as string) ?? 'B1';
 
-    const rgExpr = context.getResourceGroupExpression();
-    const locExpr = context.getLocationExpression();
+    const rgExpr = context.getResourceGroupExpression(resource);
+    const locExpr = context.getLocationExpression(resource);
 
     const lines: string[] = [
       `resource "azurerm_service_plan" "${resource.terraformName}" {`,

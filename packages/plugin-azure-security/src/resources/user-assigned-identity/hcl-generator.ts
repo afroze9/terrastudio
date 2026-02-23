@@ -7,8 +7,8 @@ export const userAssignedIdentityHclGenerator: HclGenerator = {
     const props = resource.properties;
     const name = props['name'] as string;
 
-    const rgExpr = context.getResourceGroupExpression();
-    const locExpr = context.getLocationExpression();
+    const rgExpr = context.getResourceGroupExpression(resource);
+    const locExpr = context.getLocationExpression(resource);
 
     const lines: string[] = [
       `resource "azurerm_user_assigned_identity" "${resource.terraformName}" {`,

@@ -9,7 +9,7 @@ export const subnetHclGenerator: HclGenerator = {
     const addressPrefixes = (props['address_prefixes'] as string[]) ?? ['10.0.1.0/24'];
     const serviceEndpoints = props['service_endpoints'] as string[] | undefined;
 
-    const rgExpr = context.getResourceGroupExpression();
+    const rgExpr = context.getResourceGroupExpression(resource);
 
     // Resolve VNet reference
     const vnetRef = resource.references['virtual_network_name'];

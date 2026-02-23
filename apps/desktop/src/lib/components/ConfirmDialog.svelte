@@ -24,7 +24,9 @@
       <h2 class="dialog-title">{ui.confirmDialog.title}</h2>
       <p class="dialog-message">{ui.confirmDialog.message}</p>
       <div class="dialog-actions">
-        <button class="btn btn-secondary" onclick={handleCancel}>Cancel</button>
+        <button class="btn btn-secondary" onclick={handleCancel}>
+          {ui.confirmDialog.cancelLabel ?? 'Cancel'}
+        </button>
         <button
           class="btn {ui.confirmDialog.danger ? 'btn-danger' : 'btn-primary'}"
           onclick={handleConfirm}

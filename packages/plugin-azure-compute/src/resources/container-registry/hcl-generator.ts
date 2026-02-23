@@ -10,8 +10,8 @@ export const containerRegistryHclGenerator: HclGenerator = {
     const adminEnabled = props['admin_enabled'] as boolean | undefined;
     const publicAccess = props['public_network_access_enabled'] as boolean | undefined;
 
-    const rgExpr = context.getResourceGroupExpression();
-    const locExpr = context.getLocationExpression();
+    const rgExpr = context.getResourceGroupExpression(resource);
+    const locExpr = context.getLocationExpression(resource);
 
     const lines: string[] = [
       `resource "azurerm_container_registry" "${resource.terraformName}" {`,

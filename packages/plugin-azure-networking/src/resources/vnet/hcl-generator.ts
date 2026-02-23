@@ -9,8 +9,8 @@ export const vnetHclGenerator: HclGenerator = {
     const addressSpace = (props['address_space'] as string[]) ?? ['10.0.0.0/16'];
     const dnsServers = props['dns_servers'] as string[] | undefined;
 
-    const rgExpr = context.getResourceGroupExpression();
-    const locExpr = context.getLocationExpression();
+    const rgExpr = context.getResourceGroupExpression(resource);
+    const locExpr = context.getLocationExpression(resource);
     const addrList = addressSpace.map((a) => `"${a}"`).join(', ');
 
     const lines: string[] = [

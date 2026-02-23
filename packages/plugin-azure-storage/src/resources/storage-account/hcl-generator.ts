@@ -13,8 +13,8 @@ export const storageAccountHclGenerator: HclGenerator = {
     const minTlsVersion = props['min_tls_version'] as string | undefined;
     const httpsOnly = props['https_traffic_only_enabled'] as boolean | undefined;
 
-    const rgExpr = context.getResourceGroupExpression();
-    const locExpr = context.getLocationExpression();
+    const rgExpr = context.getResourceGroupExpression(resource);
+    const locExpr = context.getLocationExpression(resource);
 
     const lines: string[] = [
       `resource "azurerm_storage_account" "${resource.terraformName}" {`,

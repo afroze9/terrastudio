@@ -2,7 +2,7 @@
   import { diagram } from '$lib/stores/diagram.svelte';
   import { registry } from '$lib/bootstrap';
   import PropertyRenderer from './PropertyRenderer.svelte';
-  import type { ResourceTypeId } from '@terrastudio/types';
+  import type { ResourceTypeId, PropertyVariableMode } from '@terrastudio/types';
 
   let schema = $derived(
     diagram.selectedNode
@@ -84,6 +84,17 @@
     diagram.updateNodeData(diagram.selectedNode.id, { references: newRefs });
   }
 
+  function onVariableModeChange(key: string, mode: PropertyVariableMode) {
+    if (!diagram.selectedNode) return;
+    const current = diagram.selectedNode.data.variableOverrides ?? {};
+    const newOverrides = { ...current, [key]: mode };
+    // Clean up if resetting to default (literal)
+    if (mode === 'literal') {
+      delete newOverrides[key];
+    }
+    diagram.updateNodeData(diagram.selectedNode.id, { variableOverrides: newOverrides });
+  }
+
   let diagramNodesForRef = $derived(
     diagram.nodes
       .filter((n) => diagram.selectedNode ? n.id !== diagram.selectedNode.id : true)
@@ -138,6 +149,9 @@
         references={diagram.selectedNode.data.references}
         diagramNodes={diagramNodesForRef}
         onReferenceChange={onReferenceChange}
+        variableOverrides={diagram.selectedNode.data.variableOverrides ?? {}}
+        onVariableModeChange={onVariableModeChange}
+        showVariableToggle={true}
       />
 
       {#if schema.outputs && schema.outputs.length > 0}

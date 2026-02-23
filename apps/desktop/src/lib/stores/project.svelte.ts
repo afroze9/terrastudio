@@ -18,10 +18,6 @@ class ProjectStore {
         features: {},
       },
     },
-    resourceGroupName: 'rg-terrastudio',
-    resourceGroupAsVariable: true,
-    location: 'eastus',
-    locationAsVariable: true,
     commonTags: {
       managed_by: 'terrastudio',
     },

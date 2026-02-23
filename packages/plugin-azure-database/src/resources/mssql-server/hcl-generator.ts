@@ -8,20 +8,25 @@ export const mssqlServerHclGenerator: HclGenerator = {
     const name = props['name'] as string;
     const version = (props['version'] as string) ?? '12.0';
     const adminLogin = (props['administrator_login'] as string) ?? 'sqladmin';
+    const adminPassword = (props['administrator_login_password'] as string) ?? '';
     const minTls = props['minimum_tls_version'] as string | undefined;
     const publicAccess = props['public_network_access_enabled'] as boolean | undefined;
 
-    const rgExpr = context.getResourceGroupExpression();
-    const locExpr = context.getLocationExpression();
+    const rgExpr = context.getResourceGroupExpression(resource);
+    const locExpr = context.getLocationExpression(resource);
 
-    // Register admin password as a sensitive variable
-    const passwordVarName = `${resource.terraformName}_sql_admin_password`;
-    context.addVariable({
-      name: passwordVarName,
-      type: 'string',
-      description: `Admin password for SQL Server ${name}`,
-      sensitive: true,
-    });
+    // Use getPropertyExpression to respect variable mode
+    const passwordExpr = context.getPropertyExpression(
+      resource,
+      'administrator_login_password',
+      adminPassword,
+      {
+        variableName: `${resource.terraformName}_sql_admin_password`,
+        variableType: 'string',
+        variableDescription: `Admin password for SQL Server ${name}`,
+        sensitive: true,
+      },
+    );
 
     const lines: string[] = [
       `resource "azurerm_mssql_server" "${resource.terraformName}" {`,
@@ -30,7 +35,7 @@ export const mssqlServerHclGenerator: HclGenerator = {
       `  location                     = ${locExpr}`,
       `  version                      = "${version}"`,
       `  administrator_login          = "${adminLogin}"`,
-      `  administrator_login_password = var.${passwordVarName}`,
+      `  administrator_login_password = ${passwordExpr}`,
     ];
 
     if (minTls && minTls !== '1.2') {

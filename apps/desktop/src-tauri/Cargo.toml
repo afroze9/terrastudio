@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "0.2.1"
+version = "0.2.2"
 description = "TerraStudio - Visual infrastructure diagram builder"
 authors = ["afroze9 <afrozeamjad@gmail.com>"]
 license = "AGPL-3.0-only"

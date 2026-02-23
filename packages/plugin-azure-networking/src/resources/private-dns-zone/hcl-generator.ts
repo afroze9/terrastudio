@@ -7,7 +7,7 @@ export const privateDnsZoneHclGenerator: HclGenerator = {
     const props = resource.properties;
     const name = props['name'] as string;
 
-    const rgExpr = context.getResourceGroupExpression();
+    const rgExpr = context.getResourceGroupExpression(resource);
 
     const lines: string[] = [
       `resource "azurerm_private_dns_zone" "${resource.terraformName}" {`,

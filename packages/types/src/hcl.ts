@@ -1,4 +1,5 @@
 import type { ResourceTypeId } from './resource-schema.js';
+import type { PropertyVariableMode } from './node.js';
 
 export interface ResourceInstance {
   readonly instanceId: string;
@@ -6,6 +7,8 @@ export interface ResourceInstance {
   readonly properties: Record<string, unknown>;
   readonly references: Record<string, string>;
   readonly terraformName: string;
+  /** Per-property override for literal vs variable mode */
+  readonly variableOverrides?: Record<string, PropertyVariableMode>;
 }
 
 export interface HclGenerationContext {
@@ -15,8 +18,32 @@ export interface HclGenerationContext {
   addVariable(variable: TerraformVariable): void;
   addOutput(output: TerraformOutput): void;
   getProviderConfig(providerId: string): Record<string, unknown>;
-  getResourceGroupExpression(): string;
-  getLocationExpression(): string;
+  /**
+   * Get the resource group name expression for a resource.
+   * Resolves to the parent Resource Group's .name attribute via _resource_group reference.
+   */
+  getResourceGroupExpression(resource: ResourceInstance): string;
+  /**
+   * Get the location expression for a resource.
+   * Resolves to the parent Resource Group's .location attribute via _resource_group reference.
+   */
+  getLocationExpression(resource: ResourceInstance): string;
+  /**
+   * Get the HCL expression for a property value, respecting variable overrides.
+   * If property is set to 'variable' mode, registers a variable and returns var.xxx.
+   * Otherwise returns the literal value as HCL string.
+   */
+  getPropertyExpression(
+    resource: ResourceInstance,
+    propertyKey: string,
+    value: unknown,
+    options?: {
+      variableName?: string;
+      variableType?: string;
+      variableDescription?: string;
+      sensitive?: boolean;
+    },
+  ): string;
 }
 
 export interface HclGenerator {
