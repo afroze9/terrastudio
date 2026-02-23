@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.2](https://github.com/afroze9/terrastudio/compare/v0.1.1...v0.1.2) (2026-02-23)
+
+
+### Features
+
+* add 12 new Azure resources across 3 new plugins ([0d46bb6](https://github.com/afroze9/terrastudio/commit/0d46bb65ecd67061f449af7b78c1e3a6dee92212))
+* add auto-regenerate toggle, property-as-variable, and RG containment ([c21d788](https://github.com/afroze9/terrastudio/commit/c21d7884a59b8d49fd18e65ab1363b4e56c7e040))
+* add canvas interactions - context menu, drag selection, copy/paste ([9f8a4b2](https://github.com/afroze9/terrastudio/commit/9f8a4b226def92d5f6d2454ff2c50bdb5a98fc48))
+* add hybrid grid layout algorithm as project setting ([e50bee6](https://github.com/afroze9/terrastudio/commit/e50bee6876d47a0f17b54a48a3b6efdd00bfe4f8))
+* add project templates, unsaved changes protection, and VM improvements ([51b1957](https://github.com/afroze9/terrastudio/commit/51b1957b174997e1d10c930015daa230925c3314))
+* replace NSG edge connections with property-based reference system ([f8ca2a2](https://github.com/afroze9/terrastudio/commit/f8ca2a2e037e82486d0b514da74d5b0b77a0e00f))
+* restyle container nodes and add drag-drop containment validation ([68aba0d](https://github.com/afroze9/terrastudio/commit/68aba0d21c36d034d3340f109d42b0ef5a4ff6a4))
+
 ## [0.1.1](https://github.com/afroze9/terrastudio/compare/v0.1.0...v0.1.1) (2026-02-20)
 
 
