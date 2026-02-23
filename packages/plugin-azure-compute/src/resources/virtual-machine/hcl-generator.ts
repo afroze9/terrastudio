@@ -100,10 +100,17 @@ export const vmHclGenerator: HclGenerator = {
       });
       vmLines.push(`  admin_password      = var.${passwordVarName}`);
     } else {
+      const sshKeyVarName = `${resource.terraformName}_ssh_public_key`;
+      context.addVariable({
+        name: sshKeyVarName,
+        type: 'string',
+        description: `SSH public key for Linux VM ${name}`,
+        sensitive: false,
+      });
       vmLines.push('');
       vmLines.push('  admin_ssh_key {');
       vmLines.push(`    username   = "${adminUsername}"`);
-      vmLines.push('    public_key = file("~/.ssh/id_rsa.pub")');
+      vmLines.push(`    public_key = var.${sshKeyVarName}`);
       vmLines.push('  }');
 
       vmLines.push('');

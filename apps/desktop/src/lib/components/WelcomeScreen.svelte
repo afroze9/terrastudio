@@ -12,7 +12,7 @@
   import WindowControls from './WindowControls.svelte';
 
   // ── View state ─────────────────────────────────────────────────────────────
-  type View = 'home' | 'step1' | 'step2';
+  type View = 'home' | 'step1' | 'step2' | 'step3';
   let view = $state<View>('home');
 
   // ── Recent projects ────────────────────────────────────────────────────────
@@ -60,13 +60,17 @@
     try { await openProject(); } catch { /* user cancelled */ }
   }
 
-  // ── Wizard: Step 1 ─────────────────────────────────────────────────────────
+  // ── Wizard state ───────────────────────────────────────────────────────────
   let projectName = $state('');
-  let folderPath = $state('');
-  let step1Error = $state('');
+  let folderPath  = $state('');
+  let step1Error  = $state('');
+  let step2Error  = $state('');
+  let step3Error  = $state('');
 
-  let categories = $state<TemplateCategory[]>([]);
-  let activeCategory = $state('');
+  // Step 1 – template selection
+  let categories       = $state<TemplateCategory[]>([]);
+  let activeCategory   = $state('');
+  let searchQuery      = $state('');
   let selectedTemplate = $state<Template | null>(null);
   let loadingTemplates = $state(false);
 
@@ -81,16 +85,23 @@
     return result;
   });
 
-  let visibleTemplates = $derived(
-    activeCategory
-      ? categories.find((c) => c.name === activeCategory)?.templates ?? []
-      : allTemplates(),
-  );
+  let visibleTemplates = $derived.by(() => {
+    let templates = activeCategory
+      ? (categories.find((c) => c.name === activeCategory)?.templates ?? [])
+      : allTemplates();
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      templates = templates.filter((t) =>
+        t.metadata.name.toLowerCase().includes(q) ||
+        t.metadata.description.toLowerCase().includes(q),
+      );
+    }
+    return templates;
+  });
 
   async function enterWizard() {
     view = 'step1';
-    step1Error = '';
-    step2Error = '';
+    step1Error = step2Error = step3Error = '';
     if (categories.length === 0) {
       loadingTemplates = true;
       try {
@@ -115,35 +126,54 @@
 
   function goToStep2() {
     step1Error = '';
-    if (!projectName.trim()) { step1Error = 'Project name is required'; return; }
-    if (!folderPath)          { step1Error = 'Please select a folder'; return; }
-    if (!selectedTemplate)    { step1Error = 'Please select a template'; return; }
+    if (!selectedTemplate) { step1Error = 'Please select a template'; return; }
     view = 'step2';
   }
 
-  function goBackToStep1() { step2Error = ''; view = 'step1'; }
+  function goToStep3() {
+    step2Error = '';
+    if (!projectName.trim()) { step2Error = 'Project name is required'; return; }
+    if (!folderPath)          { step2Error = 'Please select a location'; return; }
+    view = 'step3';
+  }
+
+  function goBackToStep1() { view = 'step1'; }
+  function goBackToStep2() { view = 'step2'; }
 
   function goHome() {
     view = 'home';
-    step1Error = '';
-    step2Error = '';
+    step1Error = step2Error = step3Error = '';
   }
 
-  // ── Wizard: Step 2 ─────────────────────────────────────────────────────────
+  // Step 3 – configuration
+  let templateInputEl: HTMLInputElement | null = null;
+
+  function insertToken(token: string) {
+    if (!templateInputEl) { conventionTemplate += token; return; }
+    const start = templateInputEl.selectionStart ?? conventionTemplate.length;
+    const end   = templateInputEl.selectionEnd   ?? start;
+    conventionTemplate = conventionTemplate.slice(0, start) + token + conventionTemplate.slice(end);
+    requestAnimationFrame(() => {
+      if (!templateInputEl) return;
+      const pos = start + token.length;
+      templateInputEl.setSelectionRange(pos, pos);
+      templateInputEl.focus();
+    });
+  }
+
   const CONV_PRESETS = [
     { label: 'CAF Standard', template: '{type}-{env}-{name}' },
     { label: 'CAF + Region', template: '{type}-{env}-{region}-{name}' },
     { label: 'Org Prefix',   template: '{org}-{type}-{env}-{name}' },
   ];
-  let conventionEnabled = $state(false);
+  let conventionEnabled  = $state(false);
   let conventionTemplate = $state('{type}-{env}-{name}');
-  let conventionEnv = $state('dev');
-  let conventionRegion = $state('');
-  let conventionOrg = $state('');
-  let layoutAlgorithm = $state<LayoutAlgorithm>('dagre');
-  let edgeStyle = $state<EdgeStyle>('default');
-  let creating = $state(false);
-  let step2Error = $state('');
+  let conventionEnv      = $state('dev');
+  let conventionRegion   = $state('');
+  let conventionOrg      = $state('');
+  let layoutAlgorithm    = $state<LayoutAlgorithm>('dagre');
+  let edgeStyle          = $state<EdgeStyle>('default');
+  let creating           = $state(false);
 
   let convPreviewExamples = $derived.by(() => {
     if (!conventionEnabled) return [];
@@ -159,7 +189,7 @@
   });
 
   async function handleCreate() {
-    step2Error = '';
+    step3Error = '';
     creating = true;
     try {
       const namingConvention: NamingConvention | undefined = conventionEnabled
@@ -170,7 +200,7 @@
       invoke('set_last_project_location', { location: folderPath }).catch(() => {});
       resetWizard();
     } catch (e) {
-      step2Error = String(e);
+      step3Error = String(e);
     } finally {
       creating = false;
     }
@@ -179,14 +209,14 @@
   function resetWizard() {
     projectName = '';
     selectedTemplate = null;
+    searchQuery = '';
     conventionEnabled = false;
     conventionEnv = 'dev';
     conventionRegion = '';
     conventionOrg = '';
     layoutAlgorithm = 'dagre';
     edgeStyle = 'default';
-    step1Error = '';
-    step2Error = '';
+    step1Error = step2Error = step3Error = '';
     view = 'home';
   }
 
@@ -203,10 +233,10 @@
 
   // ── Option data ────────────────────────────────────────────────────────────
   const EDGE_STYLES: { value: EdgeStyle; label: string; desc: string; path: string }[] = [
-    { value: 'default',    label: 'Bezier',      desc: 'Smooth curves',     path: 'M 6,24 C 20,24 28,8 42,8' },
-    { value: 'smoothstep', label: 'Smooth Step', desc: 'Rounded corners',   path: 'M 6,24 L 16,24 Q 24,24 24,16 L 24,8 Q 24,8 32,8 L 42,8' },
-    { value: 'step',       label: 'Step',        desc: 'Right angles',      path: 'M 6,24 L 24,24 L 24,8 L 42,8' },
-    { value: 'straight',   label: 'Straight',    desc: 'Direct line',       path: 'M 6,24 L 42,8' },
+    { value: 'default',    label: 'Bezier',      desc: 'Smooth curves',   path: 'M 6,24 C 20,24 28,8 42,8' },
+    { value: 'smoothstep', label: 'Smooth Step', desc: 'Rounded corners', path: 'M 6,24 L 16,24 Q 24,24 24,16 L 24,8 Q 24,8 32,8 L 42,8' },
+    { value: 'step',       label: 'Step',        desc: 'Right angles',    path: 'M 6,24 L 24,24 L 24,8 L 42,8' },
+    { value: 'straight',   label: 'Straight',    desc: 'Direct line',     path: 'M 6,24 L 42,8' },
   ];
 
   const LAYOUT_OPTIONS: { value: LayoutAlgorithm; label: string; desc: string; icon: string }[] = [
@@ -323,81 +353,129 @@
   {/if}
 
   <!-- ── WIZARD ────────────────────────────────────────────────────────────── -->
-  {#if view === 'step1' || view === 'step2'}
+  {#if view !== 'home'}
     <div class="wizard-shell">
 
       <!-- Step indicator -->
       <div class="step-indicator">
-        <div class="step" class:active={view === 'step1'} class:done={view === 'step2'}>
-          <div class="step-circle">{view === 'step2' ? '✓' : '1'}</div>
-          <span class="step-label">Template &amp; Details</span>
+        <div class="step" class:active={view === 'step1'} class:done={view === 'step2' || view === 'step3'}>
+          <div class="step-circle">{view === 'step2' || view === 'step3' ? '✓' : '1'}</div>
+          <span class="step-label">Template</span>
         </div>
-        <div class="step-connector" class:done={view === 'step2'}></div>
-        <div class="step" class:active={view === 'step2'}>
-          <div class="step-circle">2</div>
+        <div class="step-connector" class:done={view === 'step2' || view === 'step3'}></div>
+        <div class="step" class:active={view === 'step2'} class:done={view === 'step3'}>
+          <div class="step-circle">{view === 'step3' ? '✓' : '2'}</div>
+          <span class="step-label">Project Details</span>
+        </div>
+        <div class="step-connector" class:done={view === 'step3'}></div>
+        <div class="step" class:active={view === 'step3'}>
+          <div class="step-circle">3</div>
           <span class="step-label">Configuration</span>
         </div>
       </div>
 
-      <!-- ── Step 1 ─────────────────────────────────────────────────────────── -->
+      <!-- ── Step 1: Template selection ─────────────────────────────────────── -->
       {#if view === 'step1'}
         <div class="step1-layout">
-          <!-- Left: template gallery -->
-          <div class="template-col">
-            <div class="col-label">Choose a template</div>
+          <!-- Left: category sidebar -->
+          <div class="category-sidebar">
+            <button class="sidebar-item" class:active={activeCategory === ''} onclick={() => (activeCategory = '')}>All templates</button>
+            {#each categories as cat}
+              <button class="sidebar-item" class:active={activeCategory === cat.name} onclick={() => (activeCategory = cat.name)}>{cat.name}</button>
+            {/each}
+            <div class="sidebar-spacer"></div>
+            <button class="sidebar-item sidebar-import" onclick={async () => { try { await invoke('open_templates_folder'); } catch {} }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              </svg>
+              Import...
+            </button>
+          </div>
 
-            <div class="category-tabs">
-              <button class="tab" class:active={activeCategory === ''} onclick={() => (activeCategory = '')}>All</button>
-              {#each categories as cat}
-                <button class="tab" class:active={activeCategory === cat.name} onclick={() => (activeCategory = cat.name)}>{cat.name}</button>
-              {/each}
-              <div class="tab-spacer"></div>
-              <button class="tab tab-action" onclick={async () => { try { await invoke('open_templates_folder'); } catch {} }} title="Import user templates">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                </svg>
-                Import
-              </button>
+          <!-- Right: search + template list -->
+          <div class="template-panel">
+            <div class="template-search-bar">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+              </svg>
+              <input
+                type="text"
+                class="template-search-input"
+                placeholder="Search templates..."
+                bind:value={searchQuery}
+              />
+              {#if searchQuery}
+                <button class="search-clear" onclick={() => (searchQuery = '')}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              {/if}
             </div>
 
-            <div class="template-grid">
+            <div class="template-list">
               {#if loadingTemplates}
-                <div class="loading">Loading templates...</div>
+                <div class="list-placeholder">Loading templates...</div>
+              {:else if visibleTemplates.length === 0}
+                <div class="list-placeholder">No templates match "{searchQuery}"</div>
               {:else}
                 {#each visibleTemplates as tmpl}
                   <!-- svelte-ignore a11y_click_events_have_key_events -->
                   <!-- svelte-ignore a11y_no_static_element_interactions -->
                   <div
-                    class="template-card"
+                    class="template-row"
                     class:selected={selectedTemplate?.metadata.id === tmpl.metadata.id}
                     onclick={() => (selectedTemplate = tmpl)}
                   >
-                    <div class="template-icon">
-                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none">{@html getIcon(tmpl.metadata.icon)}</svg>
+                    <div class="template-row-icon">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">{@html getIcon(tmpl.metadata.icon)}</svg>
                     </div>
-                    <div class="template-info">
-                      <div class="template-name">{tmpl.metadata.name}</div>
-                      <div class="template-desc">{tmpl.metadata.description}</div>
+                    <div class="template-row-body">
+                      <div class="template-row-name">{tmpl.metadata.name}</div>
+                      <div class="template-row-desc">{tmpl.metadata.description}</div>
                     </div>
                   </div>
                 {/each}
               {/if}
             </div>
+
+            <div class="panel-footer">
+              {#if step1Error}<div class="field-error">{step1Error}</div>{/if}
+              <div class="step-actions">
+                <button class="wizard-btn wizard-btn-primary" onclick={goToStep2} disabled={!selectedTemplate}>
+                  Next
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
+        </div>
+      {/if}
 
-          <!-- Right: project details -->
-          <div class="details-col">
-            <div class="col-label">Project details</div>
+      <!-- ── Step 2: Project details ──────────────────────────────────────────── -->
+      {#if view === 'step2'}
+        <div class="step2-details-layout">
+          {#if selectedTemplate}
+            <div class="selected-badge">
+              <div class="badge-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">{@html getIcon(selectedTemplate.metadata.icon)}</svg>
+              </div>
+              <span class="badge-name">{selectedTemplate.metadata.name}</span>
+            </div>
+          {/if}
 
+          <div class="details-form">
             <div class="field">
-              <label class="field-label" for="proj-name">Name</label>
+              <label class="field-label" for="proj-name">Project name</label>
               <input
                 id="proj-name"
                 type="text"
                 class="field-input"
                 placeholder="my-infrastructure"
                 bind:value={projectName}
-                onkeydown={(e) => e.key === 'Enter' && goToStep2()}
+                onkeydown={(e) => e.key === 'Enter' && goToStep3()}
               />
             </div>
 
@@ -406,39 +484,41 @@
               <label class="field-label">Location</label>
               <div class="folder-picker">
                 <span class="folder-path">{folderPath || 'No folder selected'}</span>
-                <button class="browse-btn" onclick={handlePickFolder}>Browse</button>
+                <button class="browse-btn" onclick={handlePickFolder}>Browse...</button>
               </div>
             </div>
 
             {#if folderPath && projectName.trim()}
-              <div class="path-preview">
-                <code>{folderPath}{folderPath.includes('\\') ? '\\' : '/'}{projectName.trim()}</code>
+              <div class="path-hint">
+                Project will be created in "<code>{folderPath}{folderPath.includes('\\') ? '\\' : '/'}{projectName.trim()}</code>"
               </div>
             {/if}
 
-            {#if step1Error}
-              <div class="field-error">{step1Error}</div>
+            {#if step2Error}
+              <div class="field-error">{step2Error}</div>
             {/if}
+          </div>
 
-            <div class="step-actions">
-              <button
-                class="wizard-btn wizard-btn-primary"
-                onclick={goToStep2}
-                disabled={!projectName.trim() || !folderPath || !selectedTemplate}
-              >
-                Next
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M9 18l6-6-6-6"/>
-                </svg>
-              </button>
-            </div>
+          <div class="step-actions">
+            <button class="wizard-btn wizard-btn-secondary" onclick={goBackToStep1}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 18l-6-6 6-6"/>
+              </svg>
+              Back
+            </button>
+            <button class="wizard-btn wizard-btn-primary" onclick={goToStep3} disabled={!projectName.trim() || !folderPath}>
+              Next
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
+            </button>
           </div>
         </div>
       {/if}
 
-      <!-- ── Step 2 ─────────────────────────────────────────────────────────── -->
-      {#if view === 'step2'}
-        <div class="step2-layout">
+      <!-- ── Step 3: Configuration ────────────────────────────────────────────── -->
+      {#if view === 'step3'}
+        <div class="step3-layout">
 
           <!-- Naming Convention -->
           <div class="config-section">
@@ -462,6 +542,25 @@
                       onclick={() => (conventionTemplate = preset.template)}
                     >{preset.label}</button>
                   {/each}
+                  <button
+                    class="preset-btn"
+                    class:active={!CONV_PRESETS.some((p) => p.template === conventionTemplate)}
+                    onclick={() => { conventionTemplate = ''; templateInputEl?.focus(); }}
+                  >Custom</button>
+                </div>
+
+                <div class="template-field">
+                  <span class="conv-label">Template</span>
+                  <input type="text" class="conv-input" placeholder={'{type}-{env}-{name}'} bind:value={conventionTemplate} bind:this={templateInputEl} />
+                  <div class="token-hints">
+                    <!-- svelte-ignore a11y_click_events_have_key_events -->
+                    <!-- svelte-ignore a11y_no_static_element_interactions -->
+                    <span class="token-chip" class:chip-in-use={conventionTemplate.includes('{type}')}   onclick={() => insertToken('{type}')}>{'{type}'}</span>
+                    <span class="token-chip" class:chip-in-use={conventionTemplate.includes('{env}')}    onclick={() => insertToken('{env}')}>{'{env}'}</span>
+                    <span class="token-chip" class:chip-in-use={conventionTemplate.includes('{name}')}   onclick={() => insertToken('{name}')}>{'{name}'}</span>
+                    <span class="token-chip token-chip-opt" class:chip-in-use={conventionTemplate.includes('{region}')} onclick={() => insertToken('{region}')}>{'{region}'}</span>
+                    <span class="token-chip token-chip-opt" class:chip-in-use={conventionTemplate.includes('{org}')}    onclick={() => insertToken('{org}')}>{'{org}'}</span>
+                  </div>
                 </div>
 
                 <div class="conv-tokens">
@@ -495,7 +594,6 @@
 
           <!-- Layout + Connection side-by-side -->
           <div class="options-row">
-            <!-- Layout -->
             <div class="config-section flex1">
               <div class="config-section-title">Auto Layout</div>
               <div class="option-grid cols-1">
@@ -515,7 +613,6 @@
               </div>
             </div>
 
-            <!-- Connection Style -->
             <div class="config-section flex2">
               <div class="config-section-title">Connection Style</div>
               <div class="option-grid cols-4">
@@ -536,12 +633,12 @@
             </div>
           </div>
 
-          {#if step2Error}
-            <div class="field-error">{step2Error}</div>
+          {#if step3Error}
+            <div class="field-error">{step3Error}</div>
           {/if}
 
           <div class="step-actions">
-            <button class="wizard-btn wizard-btn-secondary" onclick={goBackToStep1} disabled={creating}>
+            <button class="wizard-btn wizard-btn-secondary" onclick={goBackToStep2} disabled={creating}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M15 18l-6-6 6-6"/>
               </svg>
@@ -567,7 +664,7 @@
     height: 100vh;
     width: 100vw;
     background: var(--color-bg);
-    overflow: hidden;
+    overflow: clip;
   }
 
   /* ── Titlebar ───────────────────────────────────────────────────────────── */
@@ -600,7 +697,6 @@
     border-radius: 4px;
     -webkit-app-region: no-drag;
   }
-
   .back-btn:hover { color: var(--color-text); background: var(--color-surface-hover); }
 
   /* ── Home layout ────────────────────────────────────────────────────────── */
@@ -612,8 +708,8 @@
     width: 100%;
     padding: 48px;
     margin: auto;
-    flex: 1;
     overflow-y: auto;
+    box-sizing: border-box;
   }
 
   .section-title {
@@ -650,11 +746,8 @@
 
   .project-icon {
     flex-shrink: 0;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
     background: var(--color-surface);
     border-radius: 6px;
     color: var(--color-accent);
@@ -708,13 +801,15 @@
     max-width: 960px;
     width: 100%;
     margin: 0 auto;
-    padding: 24px 48px 32px;
+    padding: 20px 32px 28px;
     overflow-y: auto;
-    gap: 20px;
+    gap: 16px;
+    box-sizing: border-box;
+    min-height: 0;
   }
 
   /* ── Step indicator ─────────────────────────────────────────────────────── */
-  .step-indicator { display: flex; align-items: center; }
+  .step-indicator { display: flex; align-items: center; flex-shrink: 0; }
 
   .step { display: flex; align-items: center; gap: 8px; }
 
@@ -737,84 +832,172 @@
   .step-connector { flex: 1; height: 1px; background: var(--color-border); margin: 0 12px; transition: background 0.15s; }
   .step-connector.done { background: var(--color-accent); }
 
-  /* ── Step 1: two-column ─────────────────────────────────────────────────── */
+  /* ── Step 1: VS-style sidebar + list ────────────────────────────────────── */
   .step1-layout {
     display: grid;
-    grid-template-columns: 1fr 340px;
-    gap: 32px;
+    grid-template-columns: 180px 1fr;
     flex: 1;
     min-height: 0;
   }
 
-  .template-col, .details-col {
+  .category-sidebar {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-  }
-
-  .col-label {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--color-text-muted);
-  }
-
-  .category-tabs {
-    display: flex;
-    gap: 2px;
-    border-bottom: 1px solid var(--color-border);
-    overflow-x: auto;
-    align-items: center;
-  }
-
-  .tab {
-    padding: 5px 12px; font-size: 12px;
-    color: var(--color-text-muted);
-    background: none; border: none;
-    border-bottom: 2px solid transparent;
-    cursor: pointer; white-space: nowrap; margin-bottom: -1px;
-  }
-  .tab:hover { color: var(--color-text); }
-  .tab.active { color: var(--color-accent); border-bottom-color: var(--color-accent); }
-  .tab-spacer { flex: 1; }
-  .tab-action { display: flex; align-items: center; gap: 4px; font-size: 11px; }
-  .tab-action:hover { color: var(--color-accent); }
-
-  .template-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-    gap: 8px;
     overflow-y: auto;
-    flex: 1;
-    padding: 2px;
-    max-height: 380px;
+    padding: 0;
+    border-right: 1px solid var(--color-border);
+    padding-right: 2px;
   }
 
-  .loading { grid-column: 1/-1; text-align: center; padding: 32px; color: var(--color-text-muted); font-size: 13px; }
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+    background: none;
+    border: none;
+    border-left: 2px solid transparent;
+    cursor: pointer;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    font-family: inherit;
+    transition: color 0.1s, background 0.1s;
+  }
+  .sidebar-item:hover { color: var(--color-text); background: var(--color-surface-hover); }
+  .sidebar-item.active { color: var(--color-accent); border-left-color: var(--color-accent); background: color-mix(in srgb, var(--color-accent) 8%, transparent); font-weight: 500; }
 
-  .template-card {
-    display: flex; flex-direction: column; gap: 6px;
-    padding: 12px;
+  .sidebar-spacer { flex: 1; min-height: 16px; }
+  .sidebar-import { font-size: 11px; opacity: 0.55; border-top: 1px solid var(--color-border); margin-top: 4px; }
+  .sidebar-import:hover { opacity: 1; }
+
+  .template-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding-left: 2px;
+  }
+
+  .template-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 10px 14px 6px;
+    padding: 7px 12px;
     border: 1px solid var(--color-border);
-    border-radius: 6px; background: var(--color-surface);
-    cursor: pointer; transition: border-color 0.12s, background 0.12s;
+    border-radius: 6px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+    transition: border-color 0.15s;
   }
-  .template-card:hover { border-color: var(--color-text-muted); background: var(--color-surface-hover); }
-  .template-card.selected { border-color: var(--color-accent); background: var(--color-surface-hover); }
-  .template-icon { color: var(--color-text-muted); display: flex; align-items: center; }
-  .template-card.selected .template-icon { color: var(--color-accent); }
-  .template-name { font-size: 12px; font-weight: 500; color: var(--color-text); }
-  .template-desc { font-size: 11px; color: var(--color-text-muted); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .template-search-bar:focus-within { border-color: var(--color-accent); color: var(--color-accent); }
 
-  /* Details column */
+  .template-search-input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--color-text);
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .template-search-input::placeholder { color: var(--color-text-muted); opacity: 0.6; }
+
+  .search-clear {
+    display: flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px;
+    background: none; border: none; cursor: pointer;
+    color: var(--color-text-muted); border-radius: 3px;
+  }
+  .search-clear:hover { color: var(--color-text); }
+
+  .template-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 0;
+  }
+
+  .list-placeholder {
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 13px;
+  }
+
+  .template-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 11px 16px;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    transition: background 0.1s;
+  }
+  .template-row:hover { background: var(--color-surface-hover); }
+  .template-row.selected { background: color-mix(in srgb, var(--color-accent) 8%, transparent); border-left-color: var(--color-accent); }
+
+  .template-row-icon {
+    flex-shrink: 0;
+    width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 6px;
+    color: var(--color-text-muted);
+    margin-top: 1px;
+  }
+  .template-row.selected .template-row-icon { color: var(--color-accent); }
+
+  .template-row-body { flex: 1; min-width: 0; }
+  .template-row-name { font-size: 13px; font-weight: 500; color: var(--color-text); }
+  .template-row-desc { font-size: 11px; color: var(--color-text-muted); line-height: 1.4; margin-top: 3px; }
+
+  .panel-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 10px 14px;
+    flex-shrink: 0;
+  }
+
+  /* ── Step 2: Project details ─────────────────────────────────────────────── */
+  .step2-details-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex: 1;
+  }
+
+  .selected-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px 6px 8px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    align-self: flex-start;
+  }
+  .badge-icon { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; color: var(--color-accent); }
+  .badge-name { font-size: 12px; font-weight: 500; color: var(--color-text); }
+
+  .details-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 520px;
+  }
+
   .field { display: flex; flex-direction: column; gap: 6px; }
   .field-label { font-size: 12px; color: var(--color-text-muted); }
   .field-input {
     width: 100%; padding: 8px 12px;
     border: 1px solid var(--color-border); border-radius: 5px;
     background: var(--color-surface); color: var(--color-text); font-size: 13px;
-    outline: none; box-sizing: border-box;
+    outline: none; box-sizing: border-box; font-family: inherit;
   }
   .field-input:focus { border-color: var(--color-accent); }
 
@@ -829,39 +1012,21 @@
     padding: 8px 14px;
     border: 1px solid var(--color-border); border-radius: 5px;
     background: var(--color-surface); color: var(--color-text);
-    font-size: 12px; cursor: pointer; flex-shrink: 0;
+    font-size: 12px; cursor: pointer; flex-shrink: 0; font-family: inherit;
   }
   .browse-btn:hover { background: var(--color-surface-hover); }
 
-  .path-preview {
-    padding: 6px 10px;
-    border-radius: 4px; background: var(--color-surface);
-    border: 1px solid var(--color-border); font-size: 11px;
-    color: var(--color-text-muted); overflow: hidden;
+  .path-hint {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    line-height: 1.5;
   }
-  .path-preview code { color: var(--color-accent); font-size: 11px; word-break: break-all; }
+  .path-hint code { font-size: 11px; color: var(--color-accent); word-break: break-all; }
 
   .field-error { padding: 7px 10px; border-radius: 4px; background: rgba(239,68,68,0.1); color: #ef4444; font-size: 12px; }
 
-  /* Navigation buttons */
-  .step-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: auto; padding-top: 8px; }
-
-  .wizard-btn {
-    display: flex; align-items: center; gap: 6px;
-    padding: 9px 20px; border-radius: 5px;
-    font-size: 13px; font-weight: 500;
-    cursor: pointer; border: 1px solid transparent;
-  }
-  .wizard-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .wizard-btn-secondary {
-    background: var(--color-surface); border-color: var(--color-border); color: var(--color-text-muted);
-  }
-  .wizard-btn-secondary:hover:not(:disabled) { background: var(--color-surface-hover); }
-  .wizard-btn-primary { background: var(--color-accent); color: white; }
-  .wizard-btn-primary:hover:not(:disabled) { background: var(--color-accent-hover); }
-
-  /* ── Step 2 ─────────────────────────────────────────────────────────────── */
-  .step2-layout {
+  /* ── Step 3: Configuration ──────────────────────────────────────────────── */
+  .step3-layout {
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -893,10 +1058,30 @@
   .preset-btn {
     padding: 4px 10px; font-size: 11px;
     border: 1px solid var(--color-border); border-radius: 4px;
-    background: none; color: var(--color-text-muted); cursor: pointer;
+    background: none; color: var(--color-text-muted); cursor: pointer; font-family: inherit;
   }
   .preset-btn:hover { border-color: var(--color-accent); color: var(--color-text); }
   .preset-btn.active { border-color: var(--color-accent); color: var(--color-accent); background: color-mix(in srgb, var(--color-accent) 8%, transparent); }
+
+  .template-field { display: flex; flex-direction: column; gap: 5px; }
+
+  .token-hints { display: flex; gap: 4px; flex-wrap: wrap; }
+  .token-chip {
+    padding: 2px 7px;
+    font-size: 10px;
+    font-family: monospace;
+    background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+    color: var(--color-accent);
+    border-radius: 3px;
+    border: 1px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
+    cursor: pointer;
+    opacity: 0.45;
+    transition: opacity 0.12s, background 0.12s;
+    user-select: none;
+  }
+  .token-chip:hover { opacity: 0.8; }
+  .token-chip.chip-in-use { opacity: 1; background: color-mix(in srgb, var(--color-accent) 14%, transparent); border-color: color-mix(in srgb, var(--color-accent) 40%, transparent); }
+  .token-chip-opt { /* optional tokens start even dimmer */ }
 
   .conv-tokens { display: flex; gap: 10px; }
   .conv-field { display: flex; flex-direction: column; gap: 4px; flex: 1; }
@@ -907,7 +1092,7 @@
     padding: 6px 8px;
     border: 1px solid var(--color-border); border-radius: 4px;
     background: var(--color-bg); color: var(--color-text);
-    font-size: 12px; outline: none; width: 100%; box-sizing: border-box;
+    font-size: 12px; outline: none; width: 100%; box-sizing: border-box; font-family: inherit;
   }
   .conv-input:focus { border-color: var(--color-accent); }
 
@@ -939,11 +1124,24 @@
   .option-label { font-size: 12px; font-weight: 500; color: var(--color-text); }
   .option-desc { font-size: 11px; color: var(--color-text-muted); line-height: 1.3; }
 
-  /* Edge style cards (column layout) */
   .edge-card { flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 10px 6px; }
   .edge-card .option-label { font-size: 11px; }
   .edge-card .option-desc { font-size: 10px; }
-
   .edge-preview { width: 100%; height: 28px; color: var(--color-text-muted); }
   .edge-card.selected .edge-preview { color: var(--color-accent); }
+
+  /* ── Shared: nav buttons ────────────────────────────────────────────────── */
+  .step-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: auto; padding-top: 8px; }
+
+  .wizard-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 9px 20px; border-radius: 5px;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer; border: 1px solid transparent; font-family: inherit;
+  }
+  .wizard-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .wizard-btn-secondary { background: var(--color-surface); border-color: var(--color-border); color: var(--color-text-muted); }
+  .wizard-btn-secondary:hover:not(:disabled) { background: var(--color-surface-hover); }
+  .wizard-btn-primary { background: var(--color-accent); color: white; }
+  .wizard-btn-primary:hover:not(:disabled) { background: var(--color-accent-hover); }
 </style>
