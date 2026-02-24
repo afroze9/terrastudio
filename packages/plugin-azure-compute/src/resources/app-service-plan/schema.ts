@@ -66,6 +66,7 @@ export const appServicePlanSchema: ResourceSchema = {
       order: 3,
       defaultValue: 'B1',
       options: [
+        { label: 'Y1 (Consumption)', value: 'Y1' },
         { label: 'F1 (Free)', value: 'F1' },
         { label: 'B1 (Basic)', value: 'B1' },
         { label: 'B2 (Basic)', value: 'B2' },

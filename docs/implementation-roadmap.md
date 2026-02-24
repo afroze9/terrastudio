@@ -52,7 +52,8 @@ gantt
     Phase 16 Subscription + Vars      :done, p16, 2026-02-21, 2026-02-22
     Phase 16.5 Naming Conventions     :done, p165, 2026-02-22, 2026-02-24
     Phase 17 CIDR + Validation UX     :done, p17, 2026-02-22, 2026-02-24
-    Phase 18 Template Gallery         :active, p18, 2026-02-24, 2026-03-02
+    Phase 18 Template Gallery         :done, p18, 2026-02-24, 2026-02-25
+    Phase 20.5 More Azure Resources   :done, p205, 2026-02-25, 2026-02-26
     Phase 19 Import Terraform         :p19, 2026-03-02, 2026-03-07
 ```
 
@@ -810,7 +811,7 @@ These items were originally in "Future Phases" but have been completed:
 
 ---
 
-## Phase 18: Template Gallery (Partial ✅)
+## Phase 18: Template Gallery ✅
 
 **Goal**: Pre-built architecture templates users can start from instead of a blank canvas.
 
@@ -823,15 +824,51 @@ These items were originally in "Future Phases" but have been completed:
    - Templates stored in `{app_data}/com.terrastudio.app/templates/`
    - Rust commands: `list_user_templates`, `load_user_template`, `open_templates_folder`
 
-### Not Yet Implemented
+2. **Built-in bundled templates** ✅
+   - 3 curated templates: Hub-Spoke Networking, Microservices + Key Vault, Serverless Data API
+   - Welcome Screen displays built-in and user templates in separate sections
+   - Keyboard shortcut (`Ctrl+T`) to open template browser
 
-2. **Built-in bundled templates** ❌
-   - Ship curated templates: hub-spoke networking, 3-tier web app, microservices with Key Vault
-   - Template browser with category filtering and preview thumbnails
+3. **Template metadata + thumbnails** ✅
+   - `generateThumbnailPng()` in `export-service.ts` captures diagram canvas as PNG data URL
+   - "Save as Template..." in File menu opens dialog to set name/description, auto-generates thumbnail
+   - Thumbnails displayed on template cards in the Welcome Screen
 
-3. **Template metadata** ❌
-   - Thumbnail generation from diagram
-   - Category tags and description field in template file
+---
+
+---
+
+## Phase 20.5: Additional Azure Data & Messaging Resources ✅
+
+**Goal**: Expand data and messaging resource coverage with high-value resources commonly used in Azure architectures.
+
+### New Resources Added
+
+**plugin-azure-database** — 5 new resources, 3 new palette categories:
+
+| Resource | TypeId | Terraform Type | Kind |
+|---|---|---|---|
+| Redis Cache | `azurerm/database/redis_cache` | `azurerm_redis_cache` | Leaf in RG |
+| PostgreSQL Flexible Server | `azurerm/database/postgresql_flexible_server` | `azurerm_postgresql_flexible_server` | Container in RG |
+| PostgreSQL Database | `azurerm/database/postgresql_flexible_server_database` | `azurerm_postgresql_flexible_server_database` | Leaf in Pg Server |
+| Cosmos DB Account | `azurerm/database/cosmosdb_account` | `azurerm_cosmosdb_account` | Container in RG |
+| Cosmos DB SQL Database | `azurerm/database/cosmosdb_sql_database` | `azurerm_cosmosdb_sql_database` | Leaf in Cosmos Account |
+
+New palette categories: PostgreSQL (order 26), Cache (order 27), Cosmos DB (order 28)
+
+**plugin-azure-compute** — 3 new resources, 1 new palette category:
+
+| Resource | TypeId | Terraform Type | Kind |
+|---|---|---|---|
+| Service Bus Namespace | `azurerm/messaging/servicebus_namespace` | `azurerm_servicebus_namespace` | Container in RG |
+| Service Bus Queue | `azurerm/messaging/servicebus_queue` | `azurerm_servicebus_queue` | Leaf in Namespace |
+| Service Bus Topic | `azurerm/messaging/servicebus_topic` | `azurerm_servicebus_topic` | Leaf in Namespace |
+
+New palette category: Messaging (order 38)
+
+### Also Fixed
+- App Service Plan: added `Y1 (Consumption)` SKU option — required by serverless templates but was missing from the dropdown
+- Naming convention audit: added `cafAbbreviation` and `namingConstraints` to all resources that were missing them (Log Analytics, App Insights, Managed Identity, VNet, Subnet, NSG, App Service Plan, VM, blob containers, file shares, queues, tables)
 
 ---
 
@@ -862,23 +899,34 @@ These items were originally in "Future Phases" but have been completed:
 
 **Goal**: Broaden Azure resource coverage beyond networking, compute, and storage.
 
-### Tasks
+### Already Done (see Phase 20.5 and "Previously Future" section)
 
-1. **Database plugin** (`@terrastudio/plugin-azure-database`)
-   - Azure SQL Server + Database, Cosmos DB Account + Database + Container
-   - Connection rules: App Service → SQL Database, Function → Cosmos DB
+- `plugin-azure-database`: SQL Server + Database, Cosmos DB Account + SQL Database, Redis Cache, PostgreSQL Flexible Server + Database ✅
+- `plugin-azure-monitoring`: Application Insights, Log Analytics Workspace ✅
+- `plugin-azure-security`: Managed Identity ✅
+- `plugin-azure-storage`: Storage Account, Blob Container, File Share, Queue, Table ✅
+- Container Registry (`azurerm/containers/container_registry`) ✅
+- Function App (`azurerm/compute/function_app`) ✅
 
-2. **Containers plugin** (`@terrastudio/plugin-azure-containers`)
-   - AKS Cluster, Container Registry, Container Instance
-   - AKS generates complex HCL (node pools, network profiles)
+### Future Resource Additions
 
-3. **Serverless plugin** (`@terrastudio/plugin-azure-serverless`)
-   - Azure Functions, Logic Apps
-   - Functions reference App Service Plan (consumption/premium)
+1. **Containers/Kubernetes**
+   - AKS Cluster (`azurerm_kubernetes_cluster`) — complex HCL with node pools, network profiles, RBAC
+   - Container Instance / ACI (`azurerm_container_group`) — single-container or sidecar patterns
 
-4. **Monitoring plugin** (`@terrastudio/plugin-azure-monitoring`)
-   - Application Insights, Log Analytics Workspace
-   - Most resources can reference a Log Analytics Workspace
+2. **Networking (advanced)**
+   - Load Balancer Standard (`azurerm_lb` + `azurerm_lb_backend_address_pool` + `azurerm_lb_rule`)
+   - Application Gateway (`azurerm_application_gateway`) — WAF, routing rules, backend pools
+   - Azure Bastion (`azurerm_bastion_host`) — secure RDP/SSH access
+   - NAT Gateway (`azurerm_nat_gateway`) — outbound SNAT for subnets
+   - Route Table + Route (`azurerm_route_table` + `azurerm_route`) — custom UDR
+
+3. **Observability**
+   - Diagnostic Settings (`azurerm_monitor_diagnostic_setting`) — link any resource to Log Analytics
+
+4. **Messaging**
+   - Event Hub Namespace + Event Hub (`azurerm_eventhub_namespace` + `azurerm_eventhub`)
+   - Event Grid Topic + Subscription
 
 ---
 

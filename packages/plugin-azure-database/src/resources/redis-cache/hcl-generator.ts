@@ -1,0 +1,54 @@
+import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+
+export const redisCacheHclGenerator: HclGenerator = {
+  typeId: 'azurerm/database/redis_cache',
+
+  generate(resource: ResourceInstance, context: HclGenerationContext): HclBlock[] {
+    const props = resource.properties;
+    const name = props['name'] as string;
+    const skuName = (props['sku_name'] as string) ?? 'Standard';
+    const family = (props['family'] as string) ?? 'C';
+    const capacity = props['capacity'] !== undefined ? Number(props['capacity']) : 1;
+    const redisVersion = props['redis_version'] as string | undefined;
+    const minTls = props['minimum_tls_version'] as string | undefined;
+    const enableNonSsl = props['enable_non_ssl_port'] as boolean | undefined;
+
+    const rgExpr = context.getResourceGroupExpression(resource);
+    const locExpr = context.getLocationExpression(resource);
+
+    const lines: string[] = [
+      `resource "azurerm_redis_cache" "${resource.terraformName}" {`,
+      `  name                = "${name}"`,
+      `  location            = ${locExpr}`,
+      `  resource_group_name = ${rgExpr}`,
+      `  sku_name            = "${skuName}"`,
+      `  family              = "${family}"`,
+      `  capacity            = ${capacity}`,
+    ];
+
+    if (redisVersion) {
+      lines.push(`  redis_version       = ${redisVersion}`);
+    }
+
+    if (minTls && minTls !== '1.2') {
+      lines.push(`  minimum_tls_version = "${minTls}"`);
+    }
+
+    if (enableNonSsl === true) {
+      lines.push('  enable_non_ssl_port = true');
+    }
+
+    lines.push('');
+    lines.push('  tags = local.common_tags');
+    lines.push('}');
+
+    return [
+      {
+        blockType: 'resource',
+        terraformType: 'azurerm_redis_cache',
+        name: resource.terraformName,
+        content: lines.join('\n'),
+      },
+    ];
+  },
+};

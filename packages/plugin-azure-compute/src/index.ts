@@ -7,6 +7,9 @@ import { appServicePlanRegistration } from './resources/app-service-plan/index.j
 import { appServiceRegistration } from './resources/app-service/index.js';
 import { functionAppRegistration } from './resources/function-app/index.js';
 import { containerRegistryRegistration } from './resources/container-registry/index.js';
+import { serviceBusNamespaceRegistration } from './resources/servicebus-namespace/index.js';
+import { serviceBusQueueRegistration } from './resources/servicebus-queue/index.js';
+import { serviceBusTopicRegistration } from './resources/servicebus-topic/index.js';
 import { computeConnectionRules } from './connections/rules.js';
 import { keyVaultSecretBinding } from './bindings/keyvault-secret.js';
 
@@ -19,6 +22,9 @@ const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
   ['azurerm/compute/app_service', appServiceRegistration],
   ['azurerm/compute/function_app', functionAppRegistration],
   ['azurerm/containers/container_registry', containerRegistryRegistration],
+  ['azurerm/messaging/servicebus_namespace', serviceBusNamespaceRegistration],
+  ['azurerm/messaging/servicebus_queue', serviceBusQueueRegistration],
+  ['azurerm/messaging/servicebus_topic', serviceBusTopicRegistration],
 ]);
 
 const plugin: InfraPlugin = {
@@ -46,6 +52,11 @@ const plugin: InfraPlugin = {
       id: 'containers',
       label: 'Containers',
       order: 35,
+    },
+    {
+      id: 'messaging',
+      label: 'Messaging',
+      order: 38,
     },
     {
       id: 'security',
