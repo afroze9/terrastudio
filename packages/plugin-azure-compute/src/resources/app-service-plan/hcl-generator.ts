@@ -8,6 +8,8 @@ export const appServicePlanHclGenerator: HclGenerator = {
     const name = props['name'] as string;
     const osType = (props['os_type'] as string) ?? 'Linux';
     const skuName = (props['sku_name'] as string) ?? 'B1';
+    const workerCount = props['worker_count'] as number | undefined;
+    const zoneBalancing = props['zone_balancing_enabled'] as boolean | undefined;
 
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
@@ -19,10 +21,16 @@ export const appServicePlanHclGenerator: HclGenerator = {
       `  location            = ${locExpr}`,
       `  os_type             = "${osType}"`,
       `  sku_name            = "${skuName}"`,
-      '',
-      '  tags = local.common_tags',
-      '}',
     ];
+
+    if (workerCount !== undefined && workerCount !== 1) {
+      lines.push(`  worker_count        = ${workerCount}`);
+    }
+    if (zoneBalancing) {
+      lines.push(`  zone_balancing_enabled = true`);
+    }
+
+    lines.push('', '  tags = local.common_tags', '}');
 
     return [
       {
