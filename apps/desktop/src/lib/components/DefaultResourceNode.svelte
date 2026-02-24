@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { useUpdateNodeInternals } from '@xyflow/svelte';
+  import { Handle, Position, useUpdateNodeInternals } from '@xyflow/svelte';
   import { registry } from '$lib/bootstrap';
   import { terraform } from '$lib/stores/terraform.svelte';
   import DeploymentBadge from './DeploymentBadge.svelte';
@@ -115,6 +115,12 @@
   {#each handles as handle, i (handle.id)}
     <HandleWithLabel {handle} nodeTypeId={data.typeId} style={handleStyles[i]} />
   {/each}
+
+  <!-- Ghost handles: invisible, non-connectable anchors used by reference edges
+       (showAsEdge: true). React Flow needs a null-id handle on each node to
+       resolve the edge endpoints; these provide that without any visual impact. -->
+  <Handle type="source" position={Position.Right} style="opacity:0;pointer-events:none;" isConnectable={false} />
+  <Handle type="target" position={Position.Left}  style="opacity:0;pointer-events:none;" isConnectable={false} />
 
   {#if schema && !selected}
     <NodeTooltip

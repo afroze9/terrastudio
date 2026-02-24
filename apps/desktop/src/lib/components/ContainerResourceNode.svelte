@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { NodeResizer, useUpdateNodeInternals } from '@xyflow/svelte';
+  import { Handle, NodeResizer, Position, useUpdateNodeInternals } from '@xyflow/svelte';
   import { registry } from '$lib/bootstrap';
   import { diagram } from '$lib/stores/diagram.svelte';
   import { terraform } from '$lib/stores/terraform.svelte';
@@ -213,6 +213,10 @@
   {#each handles as handle, i (handle.id)}
     <HandleWithLabel {handle} nodeTypeId={data.typeId} style={handleStyles[i]} />
   {/each}
+
+  <!-- Ghost handles: invisible, non-connectable anchors for reference edges -->
+  <Handle type="source" position={Position.Right} style="opacity:0;pointer-events:none;" isConnectable={false} />
+  <Handle type="target" position={Position.Left}  style="opacity:0;pointer-events:none;" isConnectable={false} />
 
   {#if schema && !selected}
     <NodeTooltip
