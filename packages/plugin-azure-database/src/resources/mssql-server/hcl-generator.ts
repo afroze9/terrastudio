@@ -16,12 +16,12 @@ export const mssqlServerHclGenerator: HclGenerator = {
     const locExpr = context.getLocationExpression(resource);
 
     // Use getPropertyExpression to respect variable mode
+    // Use default naming pattern (terraformName_propertyKey) to match UI-derived variables
     const passwordExpr = context.getPropertyExpression(
       resource,
       'administrator_login_password',
       adminPassword,
       {
-        variableName: `${resource.terraformName}_sql_admin_password`,
         variableType: 'string',
         variableDescription: `Admin password for SQL Server ${name}`,
         sensitive: true,

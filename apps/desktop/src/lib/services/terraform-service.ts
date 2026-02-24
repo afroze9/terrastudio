@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { getCurrentWindow, ProgressBarStatus } from '@tauri-apps/api/window';
 import type { UnlistenFn } from '@tauri-apps/api/event';
 import type { DeploymentStatus, ResourceTypeId } from '@terrastudio/types';
 import { HclPipeline, validateDiagram, validateNetworkTopology } from '@terrastudio/core';
@@ -13,6 +14,89 @@ import {
 } from '$lib/stores/terraform.svelte';
 import { ui } from '$lib/stores/ui.svelte';
 import { convertToResourceInstances, extractOutputBindings } from './diagram-converter';
+
+// Lazy-load notification plugin to avoid errors if not available
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let notificationModule: any = null;
+async function getNotificationModule() {
+  if (notificationModule === null) {
+    try {
+      // Dynamic import - module may not be installed
+      notificationModule = await import('@tauri-apps/plugin-notification' as string);
+    } catch {
+      // Plugin not available
+      notificationModule = undefined;
+    }
+  }
+  return notificationModule;
+}
+
+/**
+ * Send a system notification when a long-running terraform command completes.
+ * Only sends notification if the app is not focused (user switched away).
+ */
+async function notifyCompletion(command: string, success: boolean): Promise<void> {
+  try {
+    // Only notify if app is not focused
+    const appWindow = getCurrentWindow();
+    const isFocused = await appWindow.isFocused();
+    if (isFocused) return;
+
+    const notifications = await getNotificationModule();
+    if (!notifications) return;
+
+    let permissionGranted = await notifications.isPermissionGranted();
+    if (!permissionGranted) {
+      const permission = await notifications.requestPermission();
+      permissionGranted = permission === 'granted';
+    }
+
+    if (permissionGranted) {
+      // Use Notification class for more control over appearance
+      const { Notification } = notifications;
+      if (Notification) {
+        const notification = new Notification({
+          title: success ? 'Terraform Complete' : 'Terraform Failed',
+          body: `terraform ${command} ${success ? 'completed successfully' : 'failed'}`,
+        });
+        notification.show();
+      } else {
+        // Fallback to simple notification
+        notifications.sendNotification({
+          title: success ? 'Terraform Complete' : 'Terraform Failed',
+          body: `terraform ${command} ${success ? 'completed successfully' : 'failed'}`,
+        });
+      }
+    }
+  } catch {
+    // Notifications not available, silently ignore
+  }
+}
+
+/**
+ * Set taskbar progress indicator for long-running operations.
+ */
+async function setTaskbarProgress(status: 'indeterminate' | 'success' | 'error' | 'none'): Promise<void> {
+  try {
+    const appWindow = getCurrentWindow();
+    switch (status) {
+      case 'indeterminate':
+        await appWindow.setProgressBar({ status: ProgressBarStatus.Indeterminate });
+        break;
+      case 'success':
+        await appWindow.setProgressBar({ status: ProgressBarStatus.Normal, progress: 100 });
+        break;
+      case 'error':
+        await appWindow.setProgressBar({ status: ProgressBarStatus.Error });
+        break;
+      case 'none':
+        await appWindow.setProgressBar({ status: ProgressBarStatus.None });
+        break;
+    }
+  } catch {
+    // Progress bar not available on this platform
+  }
+}
 
 /**
  * Compute a simple hash of diagram state for change detection.
@@ -227,6 +311,18 @@ export async function runTerraformCommand(
 ): Promise<boolean> {
   if (!project.path) throw new Error('No project open');
 
+  // Confirm before destroying infrastructure
+  if (command === 'destroy') {
+    const confirmed = await ui.confirm({
+      title: 'Destroy Infrastructure',
+      message: 'This will permanently destroy all managed infrastructure. This action cannot be undone. Are you sure?',
+      confirmLabel: 'Destroy',
+      cancelLabel: 'Cancel',
+      danger: true,
+    });
+    if (!confirmed) return false;
+  }
+
   // For commands that modify infrastructure, check for stale files
   if (['plan', 'apply', 'destroy'].includes(command) && terraform.filesStale) {
     const proceed = await ui.confirm({
@@ -255,6 +351,12 @@ export async function runTerraformCommand(
       terraform.setStatus('error');
       return false;
     }
+  }
+
+  // Show taskbar progress for long-running commands
+  const isLongRunning = ['plan', 'apply', 'destroy'].includes(command);
+  if (isLongRunning) {
+    await setTaskbarProgress('indeterminate');
   }
 
   terraform.setStatus('running', command);
@@ -287,6 +389,7 @@ export async function runTerraformCommand(
     ),
   );
 
+  let success = false;
   try {
     // Commands with JSON output (plan, apply, destroy)
     if (['plan', 'apply', 'destroy'].includes(command)) {
@@ -317,16 +420,17 @@ export async function runTerraformCommand(
       }
 
       terraform.setStatus(result.success ? 'success' : 'error');
-      return result.success;
+      success = result.success;
+    } else {
+      // Commands without JSON output (init, validate)
+      success = await invoke<boolean>(
+        `terraform_${command}`,
+        { projectPath: project.path },
+      );
+
+      terraform.setStatus(success ? 'success' : 'error');
     }
 
-    // Commands without JSON output (init, validate)
-    const success = await invoke<boolean>(
-      `terraform_${command}`,
-      { projectPath: project.path },
-    );
-
-    terraform.setStatus(success ? 'success' : 'error');
     return success;
   } catch (err) {
     terraform.appendError(`Command failed: ${err}`);
@@ -335,6 +439,14 @@ export async function runTerraformCommand(
   } finally {
     for (const unlisten of unlisteners) {
       unlisten();
+    }
+
+    // Update taskbar progress and send notification for long-running commands
+    if (isLongRunning) {
+      await setTaskbarProgress(success ? 'success' : 'error');
+      await notifyCompletion(command, success);
+      // Clear progress bar after a brief delay
+      setTimeout(() => setTaskbarProgress('none'), 2000);
     }
   }
 }

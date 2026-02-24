@@ -140,6 +140,57 @@ For each new resource, create these files in the plugin's `src/resources/{resour
 
 Then register it in the plugin's `src/index.ts` resourceTypes Map and add its category to `paletteCategories` if new.
 
+## Git Workflow & Versioning
+
+### Commit Strategy
+- Commit after completing a logical unit of work (feature, bugfix, refactor)
+- Use conventional commit prefixes: `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`
+- Keep commits atomic — one concern per commit
+- Do NOT push automatically; wait for explicit user request
+
+### Version Bumping (Semantic Versioning)
+Version is tracked in `apps/desktop/package.json` and `apps/desktop/src-tauri/tauri.conf.json`.
+
+**PATCH (0.0.x)** — Bug fixes, minor tweaks:
+- Fixing a bug that doesn't change behavior
+- Typo fixes, CSS adjustments
+- Performance improvements with no API changes
+- Dependency updates (non-breaking)
+
+**MINOR (0.x.0)** — New features, backward-compatible:
+- Adding a new resource type
+- New UI feature (e.g., keyboard shortcuts, export options)
+- New plugin capability
+- Adding optional configuration options
+
+**MAJOR (x.0.0)** — Breaking changes:
+- Changing project file format (requires migration)
+- Removing or renaming public APIs
+- Major architectural changes
+- Dropping support for old Terraform versions
+
+### When to Bump Version
+- Bump version when creating a release-worthy commit (not every commit)
+- Group related changes into a single version bump
+- Update version in BOTH locations:
+  - `apps/desktop/package.json` → `"version": "x.y.z"`
+  - `apps/desktop/src-tauri/tauri.conf.json` → `"version": "x.y.z"`
+- Include version bump in the same commit as the feature (e.g., `feat: add dark mode (v0.4.0)`)
+
+### Commit Message Format
+```
+<type>: <description> (v<version> if bumping)
+
+[optional body with details]
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+Examples:
+- `fix: resolve naming convention feedback loop`
+- `feat: add terraform destroy confirmation dialog (v0.3.3)`
+- `chore: bump dependencies`
+
 ## Documentation
 
 Detailed architecture docs in `docs/`:

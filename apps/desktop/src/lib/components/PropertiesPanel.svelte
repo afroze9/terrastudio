@@ -21,20 +21,31 @@
     return !!(conv?.enabled && schema?.cafAbbreviation && schema.properties.some(p => p.key === 'name'));
   });
 
-  /** The slug (user-typed distinctive part) derived from the stored full name */
-  let nameSlug = $derived.by(() => {
-    if (!conventionActive || !diagram.selectedNode || !schema?.cafAbbreviation) return '';
-    const conv = project.projectConfig.namingConvention!;
-    const fullName = (diagram.selectedNode.data.properties['name'] as string) ?? '';
-    const tokens = buildTokens(conv, schema.cafAbbreviation);
-    return extractSlug(fullName, conv.template, tokens, schema.namingConstraints);
+  // Local state for the slug input — prevents feedback loop from derived values
+  let localSlugValue = $state('');
+  let lastSelectedNodeId = $state<string | null>(null);
+
+  // Sync local slug from stored name when node selection changes
+  $effect(() => {
+    const nodeId = diagram.selectedNode?.id ?? null;
+    if (nodeId !== lastSelectedNodeId) {
+      lastSelectedNodeId = nodeId;
+      if (conventionActive && diagram.selectedNode && schema?.cafAbbreviation) {
+        const conv = project.projectConfig.namingConvention!;
+        const fullName = (diagram.selectedNode.data.properties['name'] as string) ?? '';
+        const tokens = buildTokens(conv, schema.cafAbbreviation);
+        localSlugValue = extractSlug(fullName, conv.template, tokens, schema.namingConstraints);
+      } else {
+        localSlugValue = '';
+      }
+    }
   });
 
   /** Preview of the full Azure name as the user types */
   let namePreview = $derived.by(() => {
     if (!conventionActive || !schema?.cafAbbreviation) return '';
     const conv = project.projectConfig.namingConvention!;
-    const tokens = buildTokens(conv, schema.cafAbbreviation, nameSlug);
+    const tokens = buildTokens(conv, schema.cafAbbreviation, localSlugValue);
     return applyNamingTemplate(conv.template, tokens, schema.namingConstraints);
   });
 
@@ -52,6 +63,8 @@
 
   function onConventionNameChange(slug: string) {
     if (!diagram.selectedNode || !schema?.cafAbbreviation) return;
+    // Update local state first to prevent feedback loop
+    localSlugValue = slug;
     const conv = project.projectConfig.namingConvention!;
     const tokens = buildTokens(conv, schema.cafAbbreviation, slug);
     const fullName = applyNamingTemplate(conv.template, tokens, schema.namingConstraints);
@@ -206,7 +219,7 @@
             <input
               type="text"
               placeholder="e.g. backendapi"
-              value={nameSlug}
+              bind:value={localSlugValue}
               oninput={(e) => onConventionNameChange((e.target as HTMLInputElement).value)}
             />
             {#if namePreview}

@@ -15,6 +15,7 @@
 	import { ui } from '$lib/stores/ui.svelte';
 	import { project } from '$lib/stores/project.svelte';
 	import { diagram } from '$lib/stores/diagram.svelte';
+	import { terraform } from '$lib/stores/terraform.svelte';
 	import { saveDiagram, openProject, guardUnsavedChanges } from '$lib/services/project-service';
 
 	let showNewProjectDialog = $state(false);
@@ -28,6 +29,20 @@
 		const appWindow = getCurrentWindow();
 		const unlistenClose = appWindow.onCloseRequested(async (event) => {
 			event.preventDefault();
+
+			// Warn if terraform operation is running
+			if (terraform.isRunning) {
+				const proceed = await ui.confirm({
+					title: 'Operation in Progress',
+					message: `Terraform ${terraform.currentCommand || 'operation'} is still running. Closing the app may leave your infrastructure in an inconsistent state. Are you sure you want to close?`,
+					confirmLabel: 'Close Anyway',
+					cancelLabel: 'Wait',
+					danger: true,
+				});
+				if (!proceed) return;
+			}
+
+			// Check for unsaved changes
 			if (project.isOpen && project.isDirty) {
 				const result = await ui.confirmUnsaved();
 				if (result === 'cancel') return;

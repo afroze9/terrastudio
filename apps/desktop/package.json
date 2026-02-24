@@ -4,7 +4,7 @@
   "author": "afroze9 <afrozeamjad@gmail.com>",
   "license": "AGPL-3.0-only",
   "private": true,
-  "version": "0.3.2",
+  "version": "0.3.3",
   "type": "module",
   "scripts": {
     "dev": "vite dev",
@@ -20,6 +20,7 @@
     "@tauri-apps/api": "^2.0.0",
     "@tauri-apps/plugin-dialog": "^2.6.0",
     "@tauri-apps/plugin-fs": "^2.4.5",
+    "@tauri-apps/plugin-notification": "^2.2.1",
     "@terrastudio/core": "workspace:*",
     "@terrastudio/plugin-azure-compute": "workspace:*",
     "@terrastudio/plugin-azure-networking": "workspace:*",

@@ -28,3 +28,4 @@ tauri-plugin-fs = "2"
 tokio = { version = "1", features = ["process", "io-util", "fs"] }
 dirs = "6"
 tauri-plugin-window-state = "2.4.1"
+tauri-plugin-notification = "2"
