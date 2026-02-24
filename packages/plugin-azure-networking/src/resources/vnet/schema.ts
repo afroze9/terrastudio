@@ -10,6 +10,7 @@ export const vnetSchema: ResourceSchema = {
   supportsTags: true,
   requiresResourceGroup: true,
   cafAbbreviation: 'vnet',
+  namingConstraints: { maxLength: 64 },
   isContainer: true,
   canBeChildOf: [
     'azurerm/core/resource_group',

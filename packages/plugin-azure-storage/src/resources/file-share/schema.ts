@@ -10,6 +10,7 @@ export const fileShareSchema: ResourceSchema = {
   supportsTags: false,
   requiresResourceGroup: false,
   cafAbbreviation: 'share',
+  namingConstraints: { lowercase: true, maxLength: 63 },
   canBeChildOf: [
     'azurerm/storage/storage_account',
   ],

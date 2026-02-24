@@ -10,6 +10,7 @@ export const vmSchema: ResourceSchema = {
   supportsTags: true,
   requiresResourceGroup: true,
   cafAbbreviation: 'vm',
+  namingConstraints: { maxLength: 64 },
   canBeChildOf: [
     'azurerm/networking/subnet',
   ],

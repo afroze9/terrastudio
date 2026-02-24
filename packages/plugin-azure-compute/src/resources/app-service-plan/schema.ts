@@ -10,6 +10,7 @@ export const appServicePlanSchema: ResourceSchema = {
   supportsTags: true,
   requiresResourceGroup: true,
   cafAbbreviation: 'asp',
+  namingConstraints: { maxLength: 60 },
   isContainer: true,
   canBeChildOf: [
     'azurerm/core/resource_group',

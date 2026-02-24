@@ -9,6 +9,8 @@ export const userAssignedIdentitySchema: ResourceSchema = {
   terraformType: 'azurerm_user_assigned_identity',
   supportsTags: true,
   requiresResourceGroup: true,
+  cafAbbreviation: 'id',
+  namingConstraints: { maxLength: 128 },
 
   canBeChildOf: [
     'azurerm/core/resource_group',

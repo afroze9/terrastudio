@@ -9,6 +9,8 @@ export const logAnalyticsWorkspaceSchema: ResourceSchema = {
   terraformType: 'azurerm_log_analytics_workspace',
   supportsTags: true,
   requiresResourceGroup: true,
+  cafAbbreviation: 'log',
+  namingConstraints: { maxLength: 63 },
 
   canBeChildOf: [
     'azurerm/core/resource_group',

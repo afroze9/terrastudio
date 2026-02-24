@@ -10,6 +10,7 @@ export const queueSchema: ResourceSchema = {
   supportsTags: false,
   requiresResourceGroup: false,
   cafAbbreviation: 'queue',
+  namingConstraints: { lowercase: true, maxLength: 63 },
   canBeChildOf: [
     'azurerm/storage/storage_account',
   ],

@@ -9,6 +9,7 @@ export const applicationInsightsSchema: ResourceSchema = {
   terraformType: 'azurerm_application_insights',
   supportsTags: true,
   requiresResourceGroup: true,
+  cafAbbreviation: 'appi',
 
   canBeChildOf: [
     'azurerm/core/resource_group',

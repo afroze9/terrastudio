@@ -10,6 +10,7 @@ export const subnetSchema: ResourceSchema = {
   supportsTags: false,
   requiresResourceGroup: true,
   cafAbbreviation: 'snet',
+  namingConstraints: { maxLength: 80 },
   isContainer: true,
   canBeChildOf: [
     'azurerm/networking/virtual_network',

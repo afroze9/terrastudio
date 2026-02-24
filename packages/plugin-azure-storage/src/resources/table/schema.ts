@@ -10,6 +10,7 @@ export const tableSchema: ResourceSchema = {
   supportsTags: false,
   requiresResourceGroup: false,
   cafAbbreviation: 'table',
+  namingConstraints: { noHyphens: true, maxLength: 63 },
   canBeChildOf: [
     'azurerm/storage/storage_account',
   ],

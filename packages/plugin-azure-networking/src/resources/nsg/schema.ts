@@ -10,6 +10,7 @@ export const nsgSchema: ResourceSchema = {
   supportsTags: true,
   requiresResourceGroup: true,
   cafAbbreviation: 'nsg',
+  namingConstraints: { maxLength: 80 },
   canBeChildOf: [
     'azurerm/core/resource_group',
   ],

@@ -10,6 +10,7 @@ export const blobContainerSchema: ResourceSchema = {
   supportsTags: false,
   requiresResourceGroup: false,
   cafAbbreviation: 'blob',
+  namingConstraints: { lowercase: true, maxLength: 63 },
   canBeChildOf: [
     'azurerm/storage/storage_account',
   ],
