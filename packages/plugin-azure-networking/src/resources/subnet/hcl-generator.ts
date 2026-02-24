@@ -8,6 +8,8 @@ export const subnetHclGenerator: HclGenerator = {
     const name = props['name'] as string;
     const addressPrefixes = (props['address_prefixes'] as string[]) ?? ['10.0.1.0/24'];
     const serviceEndpoints = props['service_endpoints'] as string[] | undefined;
+    const delegationEnabled = props['delegation_enabled'] as boolean | undefined;
+    const delegationService = (props['delegation_service'] as string | undefined) ?? 'Microsoft.Web/serverFarms';
 
     const rgExpr = context.getResourceGroupExpression(resource);
 
@@ -36,6 +38,30 @@ export const subnetHclGenerator: HclGenerator = {
     if (serviceEndpoints && serviceEndpoints.length > 0) {
       const epList = serviceEndpoints.map((e) => `"${e}"`).join(', ');
       lines.push(`  service_endpoints    = [${epList}]`);
+    }
+
+    if (delegationEnabled) {
+      const delegationActionsMap: Record<string, string[]> = {
+        'Microsoft.Web/serverFarms': ['Microsoft.Network/virtualNetworks/subnets/action'],
+        'Microsoft.ContainerInstance/containerGroups': ['Microsoft.Network/virtualNetworks/subnets/action'],
+        'Microsoft.Databricks/workspaces': [
+          'Microsoft.Network/virtualNetworks/subnets/join/action',
+          'Microsoft.Network/virtualNetworks/subnets/prepareNetworkPolicies/action',
+          'Microsoft.Network/virtualNetworks/subnets/unprepareNetworkPolicies/action',
+        ],
+        'Microsoft.ApiManagement/service': ['Microsoft.Network/virtualNetworks/subnets/join/action'],
+      };
+      const actions = delegationActionsMap[delegationService] ?? [];
+      lines.push('');
+      lines.push('  delegation {');
+      lines.push('    name = "delegation"');
+      lines.push('    service_delegation {');
+      lines.push(`      name    = "${delegationService}"`);
+      if (actions.length > 0) {
+        lines.push(`      actions = [${actions.map((a) => `"${a}"`).join(', ')}]`);
+      }
+      lines.push('    }');
+      lines.push('  }');
     }
 
     lines.push('}');

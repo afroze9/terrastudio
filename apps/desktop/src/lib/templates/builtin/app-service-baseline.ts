@@ -84,6 +84,8 @@ export const appServiceBaselineTemplate: Template = {
             name: 'app-integration',
             address_prefixes: ['10.0.0.0/24'],
             nsg_enabled: true,
+            delegation_enabled: true,
+            delegation_service: 'Microsoft.Web/serverFarms',
           },
           references: { nsg_id: 'tmpl-nsg-app' },
           terraformName: 'snet_app_integration',
