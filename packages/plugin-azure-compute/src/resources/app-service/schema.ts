@@ -80,6 +80,16 @@ export const appServiceSchema: ResourceSchema = {
       order: 5,
       defaultValue: true,
     },
+    {
+      key: 'vnet_integration_subnet_id',
+      label: 'VNet Integration Subnet',
+      type: 'reference',
+      required: false,
+      group: 'Networking',
+      order: 6,
+      description: 'Subnet for outbound VNet integration (must have delegation for Microsoft.Web/serverFarms)',
+      referenceTargetTypes: ['azurerm/networking/subnet'],
+    },
   ],
 
   parentReference: { propertyKey: 'service_plan_id' },

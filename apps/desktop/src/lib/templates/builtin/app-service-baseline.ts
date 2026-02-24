@@ -259,7 +259,7 @@ export const appServiceBaselineTemplate: Template = {
             https_only: true,
             always_on: true,
           },
-          references: {},
+          references: { vnet_integration_subnet_id: 'tmpl-snet-app' },
           terraformName: 'app_webapp',
           label: 'Web App',
           validationErrors: [],

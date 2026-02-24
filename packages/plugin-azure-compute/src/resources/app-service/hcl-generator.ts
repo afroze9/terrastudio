@@ -32,6 +32,15 @@ export const appServiceHclGenerator: HclGenerator = {
       if (planAddr) dependsOn.push(planAddr);
     }
 
+    // Resolve VNet integration subnet reference
+    const subnetRef = resource.references['vnet_integration_subnet_id'];
+    let subnetIdExpr: string | undefined;
+    if (subnetRef) {
+      subnetIdExpr = context.getAttributeReference(subnetRef, 'id');
+      const subnetAddr = context.getTerraformAddress(subnetRef);
+      if (subnetAddr) dependsOn.push(subnetAddr);
+    }
+
     const terraformType = osType === 'windows'
       ? 'azurerm_windows_web_app'
       : 'azurerm_linux_web_app';
@@ -43,6 +52,10 @@ export const appServiceHclGenerator: HclGenerator = {
       `  location            = ${locExpr}`,
       `  service_plan_id     = ${planIdExpr}`,
     ];
+
+    if (subnetIdExpr) {
+      lines.push(`  virtual_network_subnet_id = ${subnetIdExpr}`);
+    }
 
     if (httpsOnly !== false) {
       lines.push('  https_only          = true');
