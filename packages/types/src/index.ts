@@ -52,3 +52,12 @@ export type { ValidationError, PropertyValidation } from './validation.js';
 
 // Naming convention types
 export type { NamingConvention } from './naming.js';
+
+// Access control types
+export type { AccessModel, IdentityType, AccessGrant } from './access-control.js';
+export {
+  KEY_VAULT_RBAC_ROLES,
+  KEY_PERMISSIONS,
+  SECRET_PERMISSIONS,
+  CERTIFICATE_PERMISSIONS,
+} from './access-control.js';

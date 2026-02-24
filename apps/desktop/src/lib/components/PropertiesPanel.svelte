@@ -1,11 +1,14 @@
 <script lang="ts">
   import { diagram } from '$lib/stores/diagram.svelte';
   import { project } from '$lib/stores/project.svelte';
+  import { ui } from '$lib/stores/ui.svelte';
   import { registry } from '$lib/bootstrap';
   import { applyNamingTemplate, extractSlug, sanitizeTerraformName, buildTokens } from '@terrastudio/core';
   import PropertyRenderer from './PropertyRenderer.svelte';
   import SubscriptionPicker from './SubscriptionPicker.svelte';
-  import type { ResourceTypeId, PropertyVariableMode } from '@terrastudio/types';
+  import KeyVaultAccessControlSection from './KeyVaultAccessControlSection.svelte';
+  import CollapsiblePanelSection from './CollapsiblePanelSection.svelte';
+  import type { ResourceTypeId, PropertyVariableMode, AccessModel, AccessGrant } from '@terrastudio/types';
 
   let schema = $derived(
     diagram.selectedNode
@@ -50,16 +53,24 @@
   });
 
   let isSubscription = $derived(schema?.typeId === 'azurerm/core/subscription');
+  let isKeyVault = $derived(schema?.typeId === 'azurerm/security/key_vault');
 
   /** Properties to pass to PropertyRenderer — exclude 'name' when convention is active,
-   *  exclude display_name/subscription_id when subscription picker is shown */
-  let renderedProperties = $derived(
-    conventionActive
-      ? schema?.properties.filter(p => p.key !== 'name') ?? []
-      : isSubscription
-        ? schema?.properties.filter(p => p.key !== 'display_name' && p.key !== 'subscription_id') ?? []
-        : schema?.properties ?? []
-  );
+   *  exclude display_name/subscription_id when subscription picker is shown,
+   *  exclude access_grants for Key Vault (rendered by custom section) */
+  let renderedProperties = $derived.by(() => {
+    let props = schema?.properties ?? [];
+    if (conventionActive) {
+      props = props.filter(p => p.key !== 'name');
+    }
+    if (isSubscription) {
+      props = props.filter(p => p.key !== 'display_name' && p.key !== 'subscription_id');
+    }
+    if (isKeyVault) {
+      props = props.filter(p => p.key !== 'access_model' && p.key !== 'access_grants');
+    }
+    return props;
+  });
 
   function onConventionNameChange(slug: string) {
     if (!diagram.selectedNode || !schema?.cafAbbreviation) return;
@@ -173,20 +184,60 @@
     if (diagram.selectedEdge) return 'Connection';
     return 'Properties';
   });
+
+  // Collect all collapsible section IDs for this panel
+  let propsSectionIds = $derived.by(() => {
+    const ids: string[] = [];
+    if (!schema) return ids;
+    // Property groups from PropertyRenderer
+    const groups = new Set<string>();
+    for (const prop of schema.properties) {
+      groups.add(prop.group ?? 'General');
+    }
+    for (const group of groups) {
+      ids.push(`props-group-${group.toLowerCase().replace(/\s+/g, '-')}`);
+    }
+    // Key Vault access control
+    if (isKeyVault) {
+      ids.push('props-kv-access-control');
+    }
+    // Outputs
+    if (schema.outputs && schema.outputs.length > 0) {
+      ids.push('props-outputs');
+    }
+    // Connected secrets (if Key Vault)
+    if (connectedBindings.length > 0) {
+      ids.push('props-connected-secrets');
+    }
+    return ids;
+  });
+
+  let allCollapsed = $derived(propsSectionIds.length > 0 && propsSectionIds.every((id) => ui.isCategoryCollapsed(id)));
 </script>
 
 <aside class="properties-panel">
   <div class="panel-header">
     <h3>{panelTitle}</h3>
-    {#if diagram.selectedNode || diagram.selectedEdge}
+    <div class="header-spacer"></div>
+    {#if propsSectionIds.length > 0}
       <button
-        class="close-btn"
-        onclick={() => {
-          diagram.selectedNodeId = null;
-          diagram.selectedEdgeId = null;
-        }}
-        aria-label="Close"
-      >&times;</button>
+        class="header-action"
+        onclick={() => ui.toggleAllCategories(propsSectionIds)}
+        title={allCollapsed ? 'Expand All' : 'Collapse All'}
+        aria-label={allCollapsed ? 'Expand all sections' : 'Collapse all sections'}
+      >
+        {#if allCollapsed}
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 6 8 2 12 6"/>
+            <polyline points="4 10 8 14 12 10"/>
+          </svg>
+        {:else}
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 2 8 6 12 2"/>
+            <polyline points="4 14 8 10 12 14"/>
+          </svg>
+        {/if}
+      </button>
     {/if}
   </div>
 
@@ -252,9 +303,17 @@
         showVariableToggle={true}
       />
 
+      {#if isKeyVault}
+        <KeyVaultAccessControlSection
+          accessModel={(diagram.selectedNode.data.properties['access_model'] as AccessModel) ?? 'rbac'}
+          accessGrants={(diagram.selectedNode.data.properties['access_grants'] as AccessGrant[]) ?? []}
+          onAccessModelChange={(model) => onPropertyChange('access_model', model)}
+          onGrantsChange={(grants) => onPropertyChange('access_grants', grants)}
+        />
+      {/if}
+
       {#if schema.outputs && schema.outputs.length > 0}
-        <div class="outputs-section">
-          <div class="group-header">Outputs</div>
+        <CollapsiblePanelSection id="props-outputs" label="Outputs" count={schema.outputs.length}>
           {#each schema.outputs as output}
             <label class="output-toggle">
               <input
@@ -268,12 +327,11 @@
               {/if}
             </label>
           {/each}
-        </div>
+        </CollapsiblePanelSection>
       {/if}
 
       {#if connectedBindings.length > 0}
-        <div class="bindings-section">
-          <div class="group-header">Connected Secrets</div>
+        <CollapsiblePanelSection id="props-connected-secrets" label="Connected Secrets" count={connectedBindings.length}>
           {#each connectedBindings as binding (binding.edgeId)}
             <div class="binding-item">
               <div class="binding-info">
@@ -293,7 +351,7 @@
               </div>
             </div>
           {/each}
-        </div>
+        </CollapsiblePanelSection>
       {/if}
 
     {:else if diagram.selectedEdge}
@@ -374,16 +432,23 @@
     letter-spacing: 0.05em;
     color: var(--color-text-muted);
   }
-  .close-btn {
+  .header-spacer {
+    flex: 1;
+  }
+  .header-action {
     background: none;
     border: none;
     color: var(--color-text-muted);
-    font-size: 18px;
     cursor: pointer;
-    padding: 0 4px;
-    line-height: 1;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.1s, color 0.1s;
   }
-  .close-btn:hover {
+  .header-action:hover {
+    background: var(--color-surface-hover);
     color: var(--color-text);
   }
   .panel-content {
@@ -492,19 +557,6 @@
     background: #ef4444;
     color: #fff;
   }
-  .outputs-section {
-    margin-top: 16px;
-  }
-  .group-header {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--color-accent);
-    padding: 8px 0 6px;
-    border-bottom: 1px solid var(--color-border);
-    margin-bottom: 8px;
-  }
   .output-toggle {
     display: flex;
     align-items: center;
@@ -527,9 +579,6 @@
     background: rgba(239, 68, 68, 0.15);
     color: #ef4444;
     font-weight: 500;
-  }
-  .bindings-section {
-    margin-top: 16px;
   }
   .binding-item {
     display: flex;

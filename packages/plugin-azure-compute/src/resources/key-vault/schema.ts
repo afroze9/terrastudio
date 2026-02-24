@@ -91,6 +91,29 @@ export const keyVaultSchema: ResourceSchema = {
       order: 7,
       defaultValue: false,
     },
+    {
+      key: 'access_model',
+      label: 'Access Model',
+      type: 'select',
+      required: true,
+      group: 'Access Control',
+      order: 10,
+      defaultValue: 'rbac',
+      options: [
+        { label: 'Azure RBAC (Recommended)', value: 'rbac' },
+        { label: 'Vault Access Policy', value: 'access_policy' },
+      ],
+      description: 'RBAC is recommended for new deployments',
+    },
+    {
+      key: 'access_grants',
+      label: 'Access Grants',
+      type: 'array',
+      required: false,
+      group: 'Access Control',
+      order: 11,
+      description: 'Configured via the Access Control section below',
+    },
   ],
 
   handles: [

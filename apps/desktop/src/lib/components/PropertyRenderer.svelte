@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { PropertySchema, ResourceTypeId, PropertyVariableMode } from '@terrastudio/types';
+  import CollapsiblePanelSection from './CollapsiblePanelSection.svelte';
 
   interface DiagramNodeRef {
     id: string;
@@ -118,8 +119,7 @@
 </script>
 
 {#each grouped as [groupName, props]}
-  <div class="property-group">
-    <div class="group-header">{groupName}</div>
+  <CollapsiblePanelSection id="props-group-{groupName.toLowerCase().replace(/\s+/g, '-')}" label={groupName} count={props.length}>
     {#each props as prop}
       {@const isVariable = showVariableToggle && supportsVariableToggle(prop.type) && getVariableMode(prop.key) === 'variable'}
       <div class="field">
@@ -308,23 +308,10 @@
         </label>
       </div>
     {/each}
-  </div>
+  </CollapsiblePanelSection>
 {/each}
 
 <style>
-  .property-group {
-    margin-bottom: 16px;
-  }
-  .group-header {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--color-accent);
-    padding: 8px 0 6px;
-    border-bottom: 1px solid var(--color-border);
-    margin-bottom: 8px;
-  }
   .field {
     margin-bottom: 10px;
   }
