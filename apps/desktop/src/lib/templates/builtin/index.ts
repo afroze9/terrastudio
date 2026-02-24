@@ -7,6 +7,7 @@ import { vmNetworkingTemplate } from './vm-networking';
 import { hubSpokeNetworkingTemplate } from './hub-spoke-networking';
 import { microservicesKeyVaultTemplate } from './microservices-keyvault';
 import { serverlessDataApiTemplate } from './serverless-data-api';
+import { appServiceBaselineTemplate } from './app-service-baseline';
 
 export const builtinTemplates: Template[] = [
   blankTemplate,
@@ -17,4 +18,5 @@ export const builtinTemplates: Template[] = [
   hubSpokeNetworkingTemplate,
   microservicesKeyVaultTemplate,
   serverlessDataApiTemplate,
+  appServiceBaselineTemplate,
 ];
