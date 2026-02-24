@@ -7,6 +7,10 @@ import { publicIpRegistration } from './resources/public-ip/index.js';
 import { privateDnsZoneRegistration } from './resources/private-dns-zone/index.js';
 import { privateDnsZoneVnetLinkRegistration } from './resources/private-dns-zone-vnet-link/index.js';
 import { privateEndpointRegistration } from './resources/private-endpoint/index.js';
+import { routeTableRegistration } from './resources/route-table/index.js';
+import { routeRegistration } from './resources/route/index.js';
+import { natGatewayRegistration } from './resources/nat-gateway/index.js';
+import { bastionRegistration } from './resources/bastion/index.js';
 import { networkingConnectionRules } from './connections/rules.js';
 
 const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
@@ -17,6 +21,10 @@ const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
   ['azurerm/networking/private_dns_zone', privateDnsZoneRegistration],
   ['azurerm/networking/private_dns_zone_vnet_link', privateDnsZoneVnetLinkRegistration],
   ['azurerm/networking/private_endpoint', privateEndpointRegistration],
+  ['azurerm/networking/route_table', routeTableRegistration],
+  ['azurerm/networking/route', routeRegistration],
+  ['azurerm/networking/nat_gateway', natGatewayRegistration],
+  ['azurerm/networking/bastion_host', bastionRegistration],
 ]);
 
 const plugin: InfraPlugin = {

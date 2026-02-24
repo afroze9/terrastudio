@@ -73,6 +73,50 @@ export const subnetHclGenerator: HclGenerator = {
       });
     }
 
+    // Route table association
+    const rtRef = resource.references['route_table_id'];
+    if (rtRef) {
+      const rtIdExpr = context.getAttributeReference(rtRef, 'id');
+      const rtAddr = context.getTerraformAddress(rtRef);
+      const rtDeps = [`azurerm_subnet.${resource.terraformName}`];
+      if (rtAddr) rtDeps.push(rtAddr);
+
+      blocks.push({
+        blockType: 'resource',
+        terraformType: 'azurerm_subnet_route_table_association',
+        name: `${resource.terraformName}_rt`,
+        content: [
+          `resource "azurerm_subnet_route_table_association" "${resource.terraformName}_rt" {`,
+          `  subnet_id      = azurerm_subnet.${resource.terraformName}.id`,
+          `  route_table_id = ${rtIdExpr}`,
+          `}`,
+        ].join('\n'),
+        dependsOn: rtDeps,
+      });
+    }
+
+    // NAT gateway association
+    const natRef = resource.references['nat_gateway_id'];
+    if (natRef) {
+      const natIdExpr = context.getAttributeReference(natRef, 'id');
+      const natAddr = context.getTerraformAddress(natRef);
+      const natDeps = [`azurerm_subnet.${resource.terraformName}`];
+      if (natAddr) natDeps.push(natAddr);
+
+      blocks.push({
+        blockType: 'resource',
+        terraformType: 'azurerm_subnet_nat_gateway_association',
+        name: `${resource.terraformName}_natgw`,
+        content: [
+          `resource "azurerm_subnet_nat_gateway_association" "${resource.terraformName}_natgw" {`,
+          `  subnet_id      = azurerm_subnet.${resource.terraformName}.id`,
+          `  nat_gateway_id = ${natIdExpr}`,
+          `}`,
+        ].join('\n'),
+        dependsOn: natDeps,
+      });
+    }
+
     return blocks;
   },
 };
