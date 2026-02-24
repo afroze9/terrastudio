@@ -163,6 +163,36 @@ async function generatePngDataUrl(): Promise<string | null> {
 }
 
 /**
+ * Generate a small PNG thumbnail data URL suitable for embedding in template metadata.
+ * Returns a 480×360 png data URL, or null if the diagram is empty.
+ */
+export async function generateThumbnailPng(): Promise<string | null> {
+  const viewportEl = getViewportElement();
+  if (!viewportEl || diagram.nodes.length === 0) return null;
+
+  const nodesBounds = getNodesBounds(diagram.nodes);
+  const thumbWidth = 480;
+  const thumbHeight = 360;
+
+  const viewport = getViewportForBounds(nodesBounds, thumbWidth, thumbHeight, 0.5, 2, 0.15);
+  if (!viewport) return null;
+
+  const bgColor = getCSSVariable('color-bg') || '#0f111a';
+
+  return toPng(viewportEl, {
+    backgroundColor: bgColor,
+    width: thumbWidth,
+    height: thumbHeight,
+    style: {
+      width: `${thumbWidth}px`,
+      height: `${thumbHeight}px`,
+      transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
+    },
+    pixelRatio: 1,
+  });
+}
+
+/**
  * Export architecture documentation as Markdown.
  */
 export async function exportDocumentation(): Promise<void> {

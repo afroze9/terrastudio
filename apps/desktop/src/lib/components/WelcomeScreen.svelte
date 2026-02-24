@@ -427,9 +427,15 @@
                     class:selected={selectedTemplate?.metadata.id === tmpl.metadata.id}
                     onclick={() => (selectedTemplate = tmpl)}
                   >
-                    <div class="template-row-icon">
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">{@html getIcon(tmpl.metadata.icon)}</svg>
-                    </div>
+                    {#if tmpl.metadata.thumbnail}
+                      <div class="template-row-thumb">
+                        <img src={tmpl.metadata.thumbnail} alt={tmpl.metadata.name} class="thumb-img" />
+                      </div>
+                    {:else}
+                      <div class="template-row-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">{@html getIcon(tmpl.metadata.icon)}</svg>
+                      </div>
+                    {/if}
                     <div class="template-row-body">
                       <div class="template-row-name">{tmpl.metadata.name}</div>
                       <div class="template-row-desc">{tmpl.metadata.description}</div>
@@ -947,6 +953,22 @@
     margin-top: 1px;
   }
   .template-row.selected .template-row-icon { color: var(--color-accent); }
+
+  .template-row-thumb {
+    flex-shrink: 0;
+    width: 72px; height: 48px;
+    border-radius: 5px;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+    margin-top: 1px;
+  }
+  .thumb-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
 
   .template-row-body { flex: 1; min-width: 0; }
   .template-row-name { font-size: 13px; font-weight: 500; color: var(--color-text); }

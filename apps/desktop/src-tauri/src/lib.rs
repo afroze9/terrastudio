@@ -42,6 +42,7 @@ pub fn run() {
             project::templates::get_user_templates_dir,
             project::templates::list_user_templates,
             project::templates::load_user_template,
+            project::templates::save_user_template,
             project::templates::open_templates_folder,
             azure::commands::az_list_subscriptions,
         ])

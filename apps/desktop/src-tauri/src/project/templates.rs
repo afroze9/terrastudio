@@ -118,3 +118,32 @@ pub async fn load_user_template(path: String) -> Result<serde_json::Value, Strin
 
     serde_json::from_str(&content).map_err(|e| format!("Failed to parse template JSON: {}", e))
 }
+
+#[tauri::command]
+pub async fn save_user_template(
+    category: String,
+    id: String,
+    json: String,
+) -> Result<(), String> {
+    // Validate id — only lowercase alphanumeric, hyphens, underscores
+    if id.is_empty()
+        || !id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+    {
+        return Err(format!(
+            "Invalid template id '{}': use only letters, numbers, hyphens and underscores",
+            id
+        ));
+    }
+
+    let dir = get_templates_dir()?.join(&category);
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| format!("Failed to create template directory: {}", e))?;
+
+    let path = dir.join(format!("{}.json", id));
+    std::fs::write(&path, &json)
+        .map_err(|e| format!("Failed to write template file: {}", e))?;
+
+    Ok(())
+}

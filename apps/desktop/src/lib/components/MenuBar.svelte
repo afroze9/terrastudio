@@ -8,6 +8,7 @@
   import { autoLayout, type LayoutDirection } from '$lib/services/layout-service';
   import ShortcutsModal from './ShortcutsModal.svelte';
   import AboutModal from './AboutModal.svelte';
+  import SaveTemplateDialog from './SaveTemplateDialog.svelte';
 
   import type { EdgeStyle } from '$lib/stores/ui.svelte';
   import { getAllPalettes } from '$lib/themes/theme-engine';
@@ -18,6 +19,7 @@
   let showPaletteSub = $state(false);
   let showShortcutsModal = $state(false);
   let showAboutModal = $state(false);
+  let showSaveTemplateDialog = $state(false);
 
   function handleAutoLayout(direction: LayoutDirection) {
     close();
@@ -114,6 +116,10 @@
           </button>
           <button class="dropdown-item" onclick={() => { close(); exportDocumentation(); }}>
             <span>Export Docs (.md)</span>
+          </button>
+          <div class="dropdown-separator"></div>
+          <button class="dropdown-item" onclick={() => { close(); showSaveTemplateDialog = true; }}>
+            <span>Save as Template...</span>
           </button>
         {/if}
       </div>
@@ -299,6 +305,10 @@
 
 <ShortcutsModal open={showShortcutsModal} onclose={() => (showShortcutsModal = false)} />
 <AboutModal open={showAboutModal} onclose={() => (showAboutModal = false)} />
+<SaveTemplateDialog
+  open={showSaveTemplateDialog}
+  onclose={() => (showSaveTemplateDialog = false)}
+/>
 
 <style>
   .menu-bar {

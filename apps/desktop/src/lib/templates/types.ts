@@ -4,6 +4,8 @@ export interface TemplateMetadata {
   description: string;
   categories: string[];
   icon: string;
+  /** Base64 PNG data URL generated at save time. Optional — built-in templates don't have one. */
+  thumbnail?: string;
 }
 
 export interface Template {
