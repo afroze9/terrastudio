@@ -6,7 +6,7 @@ export const serviceBusTopicHclGenerator: HclGenerator = {
   generate(resource: ResourceInstance, context: HclGenerationContext): HclBlock[] {
     const props = resource.properties;
     const name = props['name'] as string;
-    const maxSizeMb = props['max_size_in_megabytes'] as number | undefined;
+    const maxSizeMb = props['max_size_in_megabytes'] !== undefined ? Number(props['max_size_in_megabytes']) : undefined;
     const requiresDedupe = props['requires_duplicate_detection'] as boolean | undefined;
     const supportOrdering = props['support_ordering'] as boolean | undefined;
 

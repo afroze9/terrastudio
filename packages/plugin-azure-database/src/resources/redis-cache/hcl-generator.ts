@@ -7,11 +7,11 @@ export const redisCacheHclGenerator: HclGenerator = {
     const props = resource.properties;
     const name = props['name'] as string;
     const skuName = (props['sku_name'] as string) ?? 'Standard';
-    const family = (props['family'] as string) ?? 'C';
+    const family = skuName === 'Premium' ? 'P' : 'C';
     const capacity = props['capacity'] !== undefined ? Number(props['capacity']) : 1;
     const redisVersion = props['redis_version'] as string | undefined;
     const minTls = props['minimum_tls_version'] as string | undefined;
-    const enableNonSsl = props['enable_non_ssl_port'] as boolean | undefined;
+    const enableNonSsl = props['non_ssl_port_enabled'] as boolean | undefined;
 
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
@@ -27,7 +27,7 @@ export const redisCacheHclGenerator: HclGenerator = {
     ];
 
     if (redisVersion) {
-      lines.push(`  redis_version       = ${redisVersion}`);
+      lines.push(`  redis_version       = "${redisVersion}"`);
     }
 
     if (minTls && minTls !== '1.2') {
@@ -35,7 +35,7 @@ export const redisCacheHclGenerator: HclGenerator = {
     }
 
     if (enableNonSsl === true) {
-      lines.push('  enable_non_ssl_port = true');
+      lines.push('  non_ssl_port_enabled = true');
     }
 
     lines.push('');

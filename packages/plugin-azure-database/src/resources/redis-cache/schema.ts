@@ -47,20 +47,6 @@ export const redisCacheSchema: ResourceSchema = {
       ],
     },
     {
-      key: 'family',
-      label: 'Family',
-      type: 'select',
-      required: true,
-      group: 'General',
-      order: 3,
-      defaultValue: 'C',
-      options: [
-        { label: 'C (Basic/Standard)', value: 'C' },
-        { label: 'P (Premium)', value: 'P' },
-      ],
-      description: 'Must match SKU: C for Basic/Standard, P for Premium',
-    },
-    {
       key: 'capacity',
       label: 'Capacity',
       type: 'select',
@@ -106,7 +92,7 @@ export const redisCacheSchema: ResourceSchema = {
       ],
     },
     {
-      key: 'enable_non_ssl_port',
+      key: 'non_ssl_port_enabled',
       label: 'Enable Non-SSL Port (6379)',
       type: 'boolean',
       required: false,

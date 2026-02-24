@@ -7,7 +7,7 @@ export const serviceBusNamespaceHclGenerator: HclGenerator = {
     const props = resource.properties;
     const name = props['name'] as string;
     const sku = (props['sku'] as string) ?? 'Standard';
-    const capacity = props['capacity'] as number | undefined;
+    const capacity = props['capacity'] !== undefined ? Number(props['capacity']) : undefined;
     const zoneRedundant = props['zone_redundant'] as boolean | undefined;
 
     const rgExpr = context.getResourceGroupExpression(resource);
