@@ -34,6 +34,33 @@ class DiagramStore {
   selectedNodeId = $state<string | null>(null);
   selectedEdgeId = $state<string | null>(null);
 
+  /**
+   * Auto-generated visual-only edges for reference properties marked showAsEdge: true.
+   * These are never stored in `edges` — they are derived and rendered via displayEdges in DnDFlow.
+   */
+  referenceEdges = $derived.by((): DiagramEdge[] => {
+    const result: DiagramEdge[] = [];
+    for (const node of this.nodes) {
+      const schema = registry.getResourceSchema(node.type as ResourceTypeId);
+      if (!schema) continue;
+      for (const prop of schema.properties) {
+        if (prop.type !== 'reference' || !prop.showAsEdge) continue;
+        const targetId = node.data.references[prop.key] as string | undefined;
+        if (!targetId) continue;
+        if (!this.nodes.some((n) => n.id === targetId)) continue;
+        result.push({
+          id: `ref-${node.id}-${prop.key}`,
+          source: node.id,
+          target: targetId,
+          deletable: false,
+          selectable: false,
+          style: 'stroke: #94a3b8; stroke-dasharray: 5 4; stroke-width: 1.5;',
+        });
+      }
+    }
+    return result;
+  });
+
   // Undo/redo history — each entry is a complete state snapshot.
   // historyIndex points to the entry representing the current state.
   private history = $state<DiagramSnapshot[]>([]);
@@ -346,6 +373,23 @@ class DiagramStore {
     this.ensureInitialSnapshot();
     this.edges = this.edges.filter((e) => e.id !== id);
     this.pushSnapshot();
+  }
+
+  /**
+   * Update the real edges array from DnDFlow's displayEdges sync effect.
+   * Only pushes a history snapshot when edges are structurally added/removed
+   * (not for selection-state-only changes).
+   */
+  setEdges(edges: DiagramEdge[]) {
+    const prev = this.edges;
+    const idsChanged =
+      edges.length !== prev.length || edges.some((e, i) => e.id !== prev[i]?.id);
+    this.edges = edges;
+    if (idsChanged) {
+      this.flushPendingSnapshot();
+      this.ensureInitialSnapshot();
+      this.pushSnapshot();
+    }
   }
 
   /**

@@ -42,6 +42,7 @@ export const privateEndpointSchema: ResourceSchema = {
       group: 'Connection',
       order: 2,
       description: 'The PaaS resource to connect to privately',
+      showAsEdge: true,
       referenceTargetTypes: [
         'azurerm/storage/storage_account',
         'azurerm/security/key_vault',

@@ -53,6 +53,13 @@ export interface PropertySchema {
     operator: 'eq' | 'neq' | 'in' | 'notIn' | 'truthy' | 'falsy';
     value?: unknown;
   };
+
+  /**
+   * If true, automatically render a dashed visual edge on the canvas when this
+   * reference property is set — useful for "logical" connections like VNet
+   * Integration → App Service or Private Endpoint → target resource.
+   */
+  readonly showAsEdge?: boolean;
 }
 
 export interface HandleDefinition {

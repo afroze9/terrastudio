@@ -51,6 +51,7 @@ export const applicationInsightsSchema: ResourceSchema = {
       order: 3,
       referenceTargetTypes: ['azurerm/monitoring/log_analytics_workspace'],
       description: 'Log Analytics Workspace for data storage (recommended)',
+      showAsEdge: true,
     },
     {
       key: 'retention_in_days',

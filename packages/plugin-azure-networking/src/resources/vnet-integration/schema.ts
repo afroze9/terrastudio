@@ -27,6 +27,7 @@ export const vnetIntegrationSchema: ResourceSchema = {
         'azurerm/compute/app_service',
         'azurerm/compute/function_app',
       ],
+      showAsEdge: true,
     },
   ],
 

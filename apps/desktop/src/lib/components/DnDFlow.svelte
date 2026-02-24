@@ -12,7 +12,7 @@
     type OnDelete,
     type IsValidConnection,
   } from '@xyflow/svelte';
-  import { diagram, type DiagramNode } from '$lib/stores/diagram.svelte';
+  import { diagram, type DiagramNode, type DiagramEdge } from '$lib/stores/diagram.svelte';
   import { ui } from '$lib/stores/ui.svelte';
   import { registry, edgeValidator } from '$lib/bootstrap';
   import {
@@ -39,6 +39,47 @@
     const type = ui.edgeType;
     untrack(() => {
       diagram.edges = diagram.edges.map((e) => ({ ...e, type }));
+    });
+  });
+
+  // ── Reference edge display ──────────────────────────────────────────────
+  // displayEdges merges diagram.edges (real, persisted) with diagram.referenceEdges
+  // (auto-generated visual edges from showAsEdge: true reference properties).
+  // We use a local $state so bind:edges can write selection state back to the array.
+  let displayEdges = $state<DiagramEdge[]>([]);
+
+  // diagram state → displayEdges
+  $effect(() => {
+    const real = diagram.edges;
+    const refs = diagram.referenceEdges;
+    const combined = [...real, ...refs];
+    untrack(() => {
+      // Early-exit when nothing meaningful changed — prevents the loop with the
+      // reverse effect below.
+      if (
+        displayEdges.length === combined.length &&
+        displayEdges.every((e, i) => {
+          const c = combined[i];
+          return (
+            e.id === c?.id &&
+            e.type === c?.type &&
+            e.label === c?.label &&
+            e.selected === c?.selected &&
+            e.animated === c?.animated
+          );
+        })
+      )
+        return;
+      displayEdges = combined;
+    });
+  });
+
+  // displayEdges → diagram.edges (user-driven changes: deletion, selection state)
+  $effect(() => {
+    const current = displayEdges;
+    untrack(() => {
+      const realEdges = current.filter((e) => !e.id.startsWith('ref-'));
+      diagram.setEdges(realEdges);
     });
   });
 
@@ -560,7 +601,7 @@
 <div class="dnd-flow-wrapper" use:dndHandler>
   <SvelteFlow
     bind:nodes={diagram.nodes}
-    bind:edges={diagram.edges}
+    bind:edges={displayEdges}
     {nodeTypes}
     {defaultEdgeOptions}
     colorMode={ui.theme}
