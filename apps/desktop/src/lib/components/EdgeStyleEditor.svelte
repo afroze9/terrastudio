@@ -61,6 +61,20 @@
     return projectSetting ?? categoryDefault;
   });
 
+  // Map CSS variable colors to hex values for color picker
+  const CATEGORY_DEFAULT_COLORS: Record<EdgeCategoryId, string> = {
+    structural: '#64748b',
+    binding: '#8b5cf6',
+    reference: '#94a3b8',
+    annotation: '#f59e0b',
+  };
+
+  let effectiveColor = $derived.by(() => {
+    const categoryDefault = CATEGORY_DEFAULT_COLORS[categoryId] ?? '#64748b';
+    const projectSetting = project.projectConfig.edgeStyles?.[categoryId]?.color;
+    return projectSetting ?? categoryDefault;
+  });
+
   function update(updates: Partial<EdgeStyleSettings>) {
     const newSettings = { ...settings, ...updates };
     // Clean up undefined values
@@ -130,8 +144,12 @@
         <input
           type="color"
           class="color-picker"
-          value={settings.color ?? '#64748b'}
-          onchange={(e) => update({ color: (e.target as HTMLInputElement).value })}
+          value={settings.color ?? effectiveColor}
+          onchange={(e) => {
+            const val = (e.target as HTMLInputElement).value;
+            // Only store if different from effective default
+            update({ color: val.toLowerCase() === effectiveColor.toLowerCase() ? undefined : val });
+          }}
         />
         {#if settings.color}
           <button

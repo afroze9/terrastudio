@@ -58,6 +58,18 @@
     return cat?.defaultStyle.animated ?? false;
   }
 
+  // Map CSS variable colors to hex values for color picker
+  const CATEGORY_DEFAULT_COLORS: Record<EdgeCategoryId, string> = {
+    structural: '#64748b',
+    binding: '#8b5cf6',
+    reference: '#94a3b8',
+    annotation: '#f59e0b',
+  };
+
+  function getCategoryDefaultColor(categoryId: EdgeCategoryId): string {
+    return CATEGORY_DEFAULT_COLORS[categoryId] ?? '#64748b';
+  }
+
   function getSettings(categoryId: EdgeCategoryId): EdgeStyleSettings {
     return project.projectConfig.edgeStyles?.[categoryId] ?? {};
   }
@@ -103,6 +115,7 @@
     {@const defaultMarker = getCategoryDefaultMarker(category.id)}
     {@const defaultThickness = getCategoryDefaultThickness(category.id)}
     {@const defaultAnimated = getCategoryDefaultAnimated(category.id)}
+    {@const defaultColor = getCategoryDefaultColor(category.id)}
     <div class="edge-category">
       <div class="category-header">
         <span class="category-label">{category.label}</span>
@@ -159,8 +172,12 @@
             <input
               type="color"
               class="color-picker"
-              value={settings.color ?? '#64748b'}
-              onchange={(e) => updateSettings(category.id, { color: (e.target as HTMLInputElement).value })}
+              value={settings.color ?? defaultColor}
+              onchange={(e) => {
+                const val = (e.target as HTMLInputElement).value;
+                // Only store if different from default
+                updateSettings(category.id, { color: val.toLowerCase() === defaultColor.toLowerCase() ? undefined : val });
+              }}
             />
             {#if settings.color}
               <button
