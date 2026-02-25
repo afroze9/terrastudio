@@ -29,6 +29,9 @@ export type {
 export type {
   DeploymentStatus,
   PropertyVariableMode,
+  ConnectionPointPosition,
+  ConnectionPointConfig,
+  HandlePositionOverrides,
   ResourceNodeData,
   ResourceNodeComponent,
   PropertyEditorProps,
@@ -37,6 +40,15 @@ export type {
 
 // Connection types
 export type { ConnectionRule } from './connection.js';
+
+// Edge types
+export type {
+  EdgeCategoryId,
+  EdgeMarkerType,
+  EdgeStyleDefinition,
+  EdgeCategoryDefinition,
+  TerraStudioEdgeData,
+} from './edge.js';
 
 // Plugin types
 export type {

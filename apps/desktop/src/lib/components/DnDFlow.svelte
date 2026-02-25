@@ -11,18 +11,22 @@
     type OnConnect,
     type OnDelete,
     type IsValidConnection,
+    type Edge,
   } from '@xyflow/svelte';
   import { diagram, type DiagramNode } from '$lib/stores/diagram.svelte';
   import { ui } from '$lib/stores/ui.svelte';
-  import { registry, edgeValidator } from '$lib/bootstrap';
+  import { registry, edgeValidator, edgeTypes } from '$lib/bootstrap';
   import {
     createNodeData, generateNodeId, nextAvailableCidr,
     applyNamingTemplate, buildTokens, sanitizeTerraformName, generateUniqueTerraformName,
   } from '@terrastudio/core';
   import { project } from '$lib/stores/project.svelte';
-  import type { ResourceNodeComponent, ResourceTypeId } from '@terrastudio/types';
+  import type { ResourceNodeComponent, ResourceTypeId, EdgeCategoryId, TerraStudioEdgeData } from '@terrastudio/types';
   import type { Action } from 'svelte/action';
   import { untrack } from 'svelte';
+  import { EdgeMarkers } from './edges';
+  import ConnectionPointsModal from './ConnectionPointsModal.svelte';
+  import type { ConnectionPointConfig, HandlePositionOverrides, HandleDefinition, OutputDefinition, ResourceTypeId as TypeId } from '@terrastudio/types';
 
   let { nodeTypes }: { nodeTypes: Record<string, ResourceNodeComponent> } = $props();
 
@@ -45,7 +49,8 @@
   // ── Reference edge display ──────────────────────────────────────────────
   // Merge real (persisted) edges with auto-generated reference edges.
   // $derived re-computes reactively whenever diagram.edges or diagram.nodes changes.
-  const displayEdges = $derived([...diagram.edges, ...diagram.referenceEdges]);
+  // Type assertion to Edge[] for SvelteFlow compatibility (our TerraStudioEdgeData extends Record<string, unknown>).
+  const displayEdges = $derived([...diagram.edges, ...diagram.referenceEdges] as Edge[]);
 
   let defaultEdgeOptions = $derived({ type: ui.edgeType });
 
@@ -58,6 +63,47 @@
   } | null>(null);
 
   function closeContextMenu() { contextMenu = null; }
+
+  // ── Handle Manager Modal state ───────────────────────────────────
+  let handleManagerModal = $state<{
+    nodeId: string;
+    nodeLabel: string;
+    initialConnectionPoints: ConnectionPointConfig;
+    initialHandlePositions: HandlePositionOverrides;
+    schemaHandles: ReadonlyArray<HandleDefinition>;
+    enabledOutputs: ReadonlyArray<OutputDefinition>;
+  } | null>(null);
+
+  function handleManageConnectionPoints() {
+    const nodeId = contextMenu?.nodeId;
+    if (!nodeId) return;
+    const node = diagram.nodes.find((n) => n.id === nodeId);
+    if (!node) return;
+
+    const schema = registry.getResourceSchema(node.type as TypeId);
+    const enabledOutputKeys = (node.data.enabledOutputs as string[]) ?? [];
+    const enabledOutputs = (schema?.outputs ?? []).filter(o => enabledOutputKeys.includes(o.key));
+
+    handleManagerModal = {
+      nodeId: node.id,
+      nodeLabel: node.data.label || 'Node',
+      initialConnectionPoints: (node.data.connectionPoints as ConnectionPointConfig) ?? { top: 0, bottom: 0, left: 0, right: 0 },
+      initialHandlePositions: (node.data.handlePositions as HandlePositionOverrides) ?? {},
+      schemaHandles: schema?.handles ?? [],
+      enabledOutputs,
+    };
+    closeContextMenu();
+  }
+
+  function handleSaveHandleManager(connectionPoints: ConnectionPointConfig, handlePositions: HandlePositionOverrides) {
+    if (!handleManagerModal) return;
+    diagram.updateNodeData(handleManagerModal.nodeId, { connectionPoints, handlePositions });
+    handleManagerModal = null;
+  }
+
+  function handleCloseHandleManager() {
+    handleManagerModal = null;
+  }
 
   function handleContextCopy() {
     const ids = diagram.nodes.filter((n) => n.selected).map((n) => n.id);
@@ -388,32 +434,45 @@
 
   const onConnect: OnConnect = (connection) => {
     // Include sourceHandle in ID to support multiple outputs from same source to same target
-    const edgeId = `e-${connection.source}-${connection.sourceHandle ?? 'default'}-${connection.target}`;
+    const edgeId = `e-${connection.source}-${connection.sourceHandle ?? 'default'}-${connection.target}-${connection.targetHandle ?? 'default'}`;
 
-    // Look up the connection rule to get the default edge label
+    // Check if this is a connection between user-defined connection points (annotation edge)
+    const isConnectionPointEdge =
+      connection.sourceHandle?.startsWith('cp-') || connection.targetHandle?.startsWith('cp-');
+
+    // Look up the connection rule to get the default edge label and category
     const sourceNode = diagram.nodes.find((n) => n.id === connection.source);
     const targetNode = diagram.nodes.find((n) => n.id === connection.target);
     let label: string | undefined;
-    let isBinding = false;
-    if (sourceNode && targetNode) {
+    let category: EdgeCategoryId = isConnectionPointEdge ? 'annotation' : 'structural';
+    let ruleMatch: TerraStudioEdgeData['ruleMatch'];
+
+    if (sourceNode && targetNode && !isConnectionPointEdge) {
       const result = edgeValidator.validate(
         sourceNode.type as ResourceTypeId,
         connection.sourceHandle ?? '',
         targetNode.type as ResourceTypeId,
         connection.targetHandle ?? '',
       );
-      if (result.valid && result.rule?.label) {
+      if (result.valid && result.rule) {
         label = result.rule.label;
-      }
-      if (result.valid && result.rule?.outputBinding) {
-        isBinding = true;
-        // Enhance label with source output definition
-        const sourceSchema = registry.getResourceSchema(sourceNode.type as ResourceTypeId);
-        const outputDef = sourceSchema?.outputs?.find(
-          (o) => o.key === result.rule!.outputBinding!.sourceAttribute,
-        );
-        if (outputDef) {
-          label = `Store ${outputDef.label} as secret`;
+        ruleMatch = {
+          sourceType: result.rule.sourceType,
+          targetType: result.rule.targetType,
+          createsReference: result.rule.createsReference,
+          outputBinding: result.rule.outputBinding,
+        };
+
+        if (result.rule.outputBinding) {
+          category = 'binding';
+          // Enhance label with source output definition
+          const sourceSchema = registry.getResourceSchema(sourceNode.type as ResourceTypeId);
+          const outputDef = sourceSchema?.outputs?.find(
+            (o) => o.key === result.rule!.outputBinding!.sourceAttribute,
+          );
+          if (outputDef) {
+            label = `Store ${outputDef.label} as secret`;
+          }
         }
       }
     }
@@ -424,8 +483,11 @@
       target: connection.target,
       sourceHandle: connection.sourceHandle,
       targetHandle: connection.targetHandle,
-      ...(label ? { label } : {}),
-      ...(isBinding ? { animated: true } : {}),
+      data: {
+        category,
+        label,
+        ruleMatch,
+      },
     });
   };
 
@@ -433,6 +495,18 @@
     const sourceNode = diagram.nodes.find((n) => n.id === connection.source);
     const targetNode = diagram.nodes.find((n) => n.id === connection.target);
     if (!sourceNode || !targetNode) return false;
+
+    // Connection point handles (cp-*) can connect to any other connection point handle
+    const isSourceCp = connection.sourceHandle?.startsWith('cp-');
+    const isTargetCp = connection.targetHandle?.startsWith('cp-');
+    if (isSourceCp && isTargetCp) {
+      // Both ends are connection points - always valid for annotation edges
+      return true;
+    }
+    if (isSourceCp || isTargetCp) {
+      // One end is a connection point, other is not - invalid
+      return false;
+    }
 
     const result = edgeValidator.validate(
       sourceNode.type as ResourceTypeId,
@@ -574,6 +648,7 @@
     bind:nodes={diagram.nodes}
     edges={displayEdges}
     {nodeTypes}
+    {edgeTypes}
     {defaultEdgeOptions}
     colorMode={ui.theme}
     fitView
@@ -613,6 +688,7 @@
     </Controls>
     {#if ui.showMinimap}<MiniMap />{/if}
     <Background variant={BackgroundVariant.Dots} gap={ui.gridSize} size={1} />
+    <EdgeMarkers />
   </SvelteFlow>
 </div>
 
@@ -629,6 +705,10 @@
       </button>
       <button class="context-menu-item" onclick={handleContextDuplicate}>
         <span>Duplicate</span><span class="ctx-shortcut">Ctrl+D</span>
+      </button>
+      <div class="context-menu-separator"></div>
+      <button class="context-menu-item" onclick={handleManageConnectionPoints}>
+        <span>Manage Connection Points</span>
       </button>
       <div class="context-menu-separator"></div>
       <button class="context-menu-item" onclick={handleContextSelectAll}>
@@ -656,6 +736,18 @@
     {/if}
   </div>
 {/if}
+
+<!-- Handle Manager Modal -->
+<ConnectionPointsModal
+  isOpen={handleManagerModal !== null}
+  nodeLabel={handleManagerModal?.nodeLabel ?? ''}
+  initialConnectionPoints={handleManagerModal?.initialConnectionPoints ?? { top: 0, bottom: 0, left: 0, right: 0 }}
+  initialHandlePositions={handleManagerModal?.initialHandlePositions ?? {}}
+  schemaHandles={handleManagerModal?.schemaHandles ?? []}
+  enabledOutputs={handleManagerModal?.enabledOutputs ?? []}
+  onSave={handleSaveHandleManager}
+  onClose={handleCloseHandleManager}
+/>
 
 <style>
   .dnd-flow-wrapper {

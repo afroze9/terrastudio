@@ -13,6 +13,27 @@ export type DeploymentStatus =
 /** How a property value should be treated in HCL generation */
 export type PropertyVariableMode = 'literal' | 'variable';
 
+/** Position for connection points */
+export type ConnectionPointPosition = 'top' | 'bottom' | 'left' | 'right';
+
+/**
+ * User-defined connection points for annotation edges.
+ * Each side can have 0+ connection points for creating annotation edges.
+ */
+export interface ConnectionPointConfig {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+}
+
+/**
+ * User overrides for handle positions.
+ * Keys are handle IDs (e.g., 'secret-in', 'out-connection_string').
+ * Values are the new position ('top' | 'bottom' | 'left' | 'right').
+ */
+export type HandlePositionOverrides = Record<string, ConnectionPointPosition>;
+
 export interface ResourceNodeData {
   [key: string]: unknown;
   typeId: ResourceTypeId;
@@ -24,6 +45,12 @@ export interface ResourceNodeData {
   deploymentStatus?: DeploymentStatus;
   /** Per-property override for literal vs variable mode */
   variableOverrides?: Record<string, PropertyVariableMode>;
+  /** User-defined connection points for annotation edges */
+  connectionPoints?: ConnectionPointConfig;
+  /** User overrides for schema/output handle positions */
+  handlePositions?: HandlePositionOverrides;
+  /** Which outputs are enabled (creates dynamic out-* handles) */
+  enabledOutputs?: string[];
 }
 
 /**

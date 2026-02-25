@@ -372,7 +372,7 @@
           <span class="label-text">Label</span>
           <input
             type="text"
-            value={typeof diagram.selectedEdge.label === 'string' ? diagram.selectedEdge.label : ''}
+            value={typeof diagram.selectedEdge.data?.label === 'string' ? diagram.selectedEdge.data.label : ''}
             oninput={(e) => {
               if (diagram.selectedEdge) {
                 diagram.updateEdgeLabel(diagram.selectedEdge.id, (e.target as HTMLInputElement).value);

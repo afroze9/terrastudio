@@ -7,8 +7,10 @@ import monitoringPlugin from '@terrastudio/plugin-azure-monitoring';
 import securityPlugin from '@terrastudio/plugin-azure-security';
 import DefaultResourceNode from '$lib/components/DefaultResourceNode.svelte';
 import ContainerResourceNode from '$lib/components/ContainerResourceNode.svelte';
+import { TerraStudioEdge } from '$lib/components/edges';
 import { checkTerraform } from '$lib/services/terraform-service';
 import type { Component } from 'svelte';
+import type { EdgeTypes } from '@xyflow/svelte';
 
 export let registry = new PluginRegistry();
 export let edgeValidator: EdgeRuleValidator;
@@ -56,3 +58,15 @@ export function buildNodeTypes(): Record<string, Component<any>> {
   }
   return map;
 }
+
+/**
+ * Builds the Svelte Flow edgeTypes map.
+ * All edge types use TerraStudioEdge which handles category-based styling.
+ * Type assertion needed because TerraStudioEdge uses typed props.
+ */
+export const edgeTypes = {
+  default: TerraStudioEdge,
+  smoothstep: TerraStudioEdge,
+  step: TerraStudioEdge,
+  straight: TerraStudioEdge,
+} as EdgeTypes;

@@ -14,6 +14,13 @@
   --color-shadow: rgba(0, 0, 0, 0.4);
   --scrollbar-thumb: rgba(129, 140, 248, 0.15);
   --scrollbar-thumb-hover: rgba(129, 140, 248, 0.3);
+
+  /* Edge category colors */
+  --edge-structural: #64748b;
+  --edge-binding: #8b5cf6;
+  --edge-reference: #94a3b8;
+  --edge-annotation: #f59e0b;
+  --edge-selected: #3b82f6;
 }
 
 html, body {

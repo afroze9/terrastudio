@@ -25,22 +25,67 @@
     const address = `${tfType}.${data.terraformName}`;
     return terraform.errorAddresses.get(address);
   });
-  let staticHandles = $derived(schema?.handles ?? []);
+  // User position overrides for handles
+  let handlePositions = $derived((data.handlePositions as Record<string, string>) ?? {});
+
+  // Apply position overrides to schema handles
+  let staticHandles = $derived.by(() => {
+    const schemaHandles = schema?.handles ?? [];
+    return schemaHandles.map(h => ({
+      ...h,
+      position: (handlePositions[h.id] ?? h.position) as 'top' | 'bottom' | 'left' | 'right',
+    }));
+  });
+
+  // Apply position overrides to dynamic output handles
   let dynamicOutputHandles = $derived.by(() => {
     if (!schema?.outputs) return [];
     const enabled = (data.enabledOutputs as string[]) ?? [];
     return schema.outputs
       .filter((o: { key: string }) => enabled.includes(o.key))
-      .map((o: { key: string; label: string }) => ({
-        id: `out-${o.key}`,
-        type: 'source' as const,
-        position: 'right' as const,
-        label: o.label,
-      }));
+      .map((o: { key: string; label: string }) => {
+        const handleId = `out-${o.key}`;
+        return {
+          id: handleId,
+          type: 'source' as const,
+          position: (handlePositions[handleId] ?? 'right') as 'top' | 'bottom' | 'left' | 'right',
+          label: o.label,
+        };
+      });
   });
+
+  // User-defined connection point handles for annotation edges
+  let connectionPointHandles = $derived.by(() => {
+    const config = data.connectionPoints as { top: number; bottom: number; left: number; right: number } | undefined;
+    if (!config) return [];
+
+    const handles: Array<{ id: string; type: 'source' | 'target'; position: string }> = [];
+    const sides = ['top', 'bottom', 'left', 'right'] as const;
+
+    for (const side of sides) {
+      const count = config[side] ?? 0;
+      for (let i = 0; i < count; i++) {
+        // Each connection point creates both a source and target handle
+        handles.push({
+          id: `cp-${side}-${i}-source`,
+          type: 'source',
+          position: side,
+        });
+        handles.push({
+          id: `cp-${side}-${i}-target`,
+          type: 'target',
+          position: side,
+        });
+      }
+    }
+    return handles;
+  });
+
   let handles = $derived([...staticHandles, ...dynamicOutputHandles]);
 
-  // Compute top offsets so handles on the same side are evenly spaced
+  // Compute offsets so handles on the same side are evenly spaced
+  // For left/right sides: use top percentage
+  // For top/bottom sides: use left percentage
   let handleStyles = $derived.by(() => {
     const all = handles;
     const bySide = new Map<string, number[]>();
@@ -50,20 +95,51 @@
       bySide.set(h.position, list);
     });
     const styles: (string | undefined)[] = new Array(all.length);
-    for (const [, indices] of bySide) {
+    for (const [side, indices] of bySide) {
       if (indices.length <= 1) continue;
+      const isVerticalSide = side === 'left' || side === 'right';
       indices.forEach((idx, rank) => {
         const pct = ((rank + 1) / (indices.length + 1)) * 100;
-        styles[idx] = `top: ${pct}%;`;
+        styles[idx] = isVerticalSide ? `top: ${pct}%;` : `left: ${pct}%;`;
       });
     }
     return styles;
   });
 
-  // When dynamic handles change, tell SvelteFlow to re-read handle positions
+  // Compute styles for connection point handles (positioned along edges)
+  let connectionPointStyles = $derived.by(() => {
+    const config = data.connectionPoints as { top: number; bottom: number; left: number; right: number } | undefined;
+    if (!config) return new Map<string, string>();
+
+    const styles = new Map<string, string>();
+    const sides = ['top', 'bottom', 'left', 'right'] as const;
+
+    for (const side of sides) {
+      const count = config[side] ?? 0;
+      for (let i = 0; i < count; i++) {
+        const pct = ((i + 1) / (count + 1)) * 100;
+        const sourceId = `cp-${side}-${i}-source`;
+        const targetId = `cp-${side}-${i}-target`;
+
+        if (side === 'top' || side === 'bottom') {
+          styles.set(sourceId, `left: ${pct}%;`);
+          styles.set(targetId, `left: ${pct}%;`);
+        } else {
+          styles.set(sourceId, `top: ${pct}%;`);
+          styles.set(targetId, `top: ${pct}%;`);
+        }
+      }
+    }
+    return styles;
+  });
+
+  // When handles or their positions change, tell SvelteFlow to re-read handle positions
   // Must wait for DOM paint (tick is not enough — handles need to be in the DOM)
   $effect(() => {
+    staticHandles;
     dynamicOutputHandles;
+    connectionPointHandles;
+    handlePositions;
     updateNodeInternals();
   });
 
@@ -114,6 +190,17 @@
 
   {#each handles as handle, i (handle.id)}
     <HandleWithLabel {handle} nodeTypeId={data.typeId} style={handleStyles[i]} />
+  {/each}
+
+  <!-- User-defined connection point handles for annotation edges -->
+  {#each connectionPointHandles as cpHandle (cpHandle.id)}
+    <Handle
+      type={cpHandle.type}
+      position={cpHandle.position === 'top' ? Position.Top : cpHandle.position === 'bottom' ? Position.Bottom : cpHandle.position === 'left' ? Position.Left : Position.Right}
+      id={cpHandle.id}
+      class="connection-point-handle"
+      style={connectionPointStyles.get(cpHandle.id)}
+    />
   {/each}
 
   <!-- Ghost handles: invisible, non-connectable anchors used by reference edges
@@ -216,5 +303,18 @@
     justify-content: center;
     flex-shrink: 0;
     cursor: help;
+  }
+
+  /* Connection point handles for annotation edges */
+  :global(.connection-point-handle) {
+    width: 8px !important;
+    height: 8px !important;
+    background: var(--edge-annotation, #f59e0b) !important;
+    border: 2px solid var(--color-surface, #1a1d27) !important;
+    border-radius: 50% !important;
+  }
+  :global(.connection-point-handle:hover) {
+    background: var(--color-accent, #3b82f6) !important;
+    transform: scale(1.3);
   }
 </style>

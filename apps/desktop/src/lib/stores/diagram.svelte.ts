@@ -1,5 +1,5 @@
 import type { Node, Edge } from '@xyflow/svelte';
-import type { ResourceNodeData, ResourceTypeId, ValidationError } from '@terrastudio/types';
+import type { ResourceNodeData, ResourceTypeId, ValidationError, TerraStudioEdgeData, EdgeCategoryId } from '@terrastudio/types';
 import { generateNodeId, generateUniqueTerraformName } from '@terrastudio/core';
 import { project } from './project.svelte';
 import { terraform } from './terraform.svelte';
@@ -7,7 +7,7 @@ import { registry } from '$lib/bootstrap';
 import { ui } from './ui.svelte';
 
 export type DiagramNode = Node<ResourceNodeData>;
-export type DiagramEdge = Edge;
+export type DiagramEdge = Edge<TerraStudioEdgeData>;
 
 interface DiagramSnapshot {
   nodes: DiagramNode[];
@@ -54,7 +54,10 @@ class DiagramStore {
           target: targetId,
           deletable: false,
           selectable: false,
-          style: 'stroke: #94a3b8; stroke-dasharray: 5 4; stroke-width: 1.5;',
+          data: {
+            category: 'reference',
+            sourceProperty: prop.key,
+          },
         });
       }
     }
@@ -252,8 +255,11 @@ class DiagramStore {
 
     project.markDirty();
 
+    // Update label in edge.data (TerraStudioEdgeData)
     this.edges = this.edges.map((e) =>
-      e.id === edgeId ? { ...e, label } : e
+      e.id === edgeId
+        ? { ...e, data: { ...e.data, label } } as DiagramEdge
+        : e
     );
 
     this.debounceTimer = setTimeout(() => {

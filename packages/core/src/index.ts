@@ -15,6 +15,7 @@ export { ProviderConfigBuilder } from './lib/hcl/provider-config-builder.js';
 export { EdgeRuleValidator } from './lib/diagram/edge-rules.js';
 export type { EdgeValidationResult, OutputAcceptingHandle } from './lib/diagram/edge-rules.js';
 export { createNodeData, generateNodeId, generateUniqueTerraformName } from './lib/diagram/node-factory.js';
+export { EdgeCategoryRegistry, edgeCategoryRegistry } from './lib/diagram/edge-category-registry.js';
 
 // Validation
 export { validateResourceProperties } from './lib/validation/resource-validator.js';

@@ -1,13 +1,45 @@
 import { invoke } from '@tauri-apps/api/core';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { project, type ProjectMetadata } from '$lib/stores/project.svelte';
-import { diagram } from '$lib/stores/diagram.svelte';
+import { diagram, type DiagramEdge } from '$lib/stores/diagram.svelte';
 import { ui } from '$lib/stores/ui.svelte';
 import { registry } from '$lib/bootstrap';
 import { applyTemplate } from '$lib/templates/service';
 import type { Template } from '$lib/templates/types';
-import type { NamingConvention } from '@terrastudio/types';
+import type { NamingConvention, EdgeCategoryId } from '@terrastudio/types';
 import type { LayoutAlgorithm } from '@terrastudio/core';
+
+/**
+ * Migrate edges from old format (no data.category) to new format.
+ * Infers category from edge properties:
+ * - animated: true -> binding
+ * - id starts with 'ref-' -> reference
+ * - otherwise -> structural
+ */
+function migrateEdges(edges: unknown[]): DiagramEdge[] {
+  return edges.map((edge: any) => {
+    // Already migrated - has data.category
+    if (edge.data?.category) return edge as DiagramEdge;
+
+    // Infer category from existing properties
+    let category: EdgeCategoryId = 'structural';
+    if (edge.animated) {
+      category = 'binding';
+    } else if (edge.id?.startsWith('ref-')) {
+      category = 'reference';
+    }
+
+    // Create new edge with data.category, preserving existing label
+    const { animated, style, label, ...rest } = edge;
+    return {
+      ...rest,
+      data: {
+        category,
+        label: label ?? undefined,
+      },
+    } as DiagramEdge;
+  });
+}
 
 interface ProjectData {
   metadata: ProjectMetadata;
@@ -85,10 +117,12 @@ export async function openProject(): Promise<void> {
   diagram.clear();
   project.open(data.path, data.metadata);
 
-  // Restore diagram if it exists
+  // Restore diagram if it exists, migrating old edges to new format
   if (data.diagram) {
     const d = data.diagram as { nodes?: unknown[]; edges?: unknown[] };
-    diagram.loadDiagram((d.nodes ?? []) as any[], (d.edges ?? []) as any[]);
+    const nodes = (d.nodes ?? []) as any[];
+    const edges = migrateEdges(d.edges ?? []);
+    diagram.loadDiagram(nodes, edges);
   }
 }
 
@@ -106,9 +140,12 @@ export async function loadProjectByPath(path: string): Promise<void> {
   diagram.clear();
   project.open(data.path, data.metadata);
 
+  // Restore diagram if it exists, migrating old edges to new format
   if (data.diagram) {
     const d = data.diagram as { nodes?: unknown[]; edges?: unknown[] };
-    diagram.loadDiagram((d.nodes ?? []) as any[], (d.edges ?? []) as any[]);
+    const nodes = (d.nodes ?? []) as any[];
+    const edges = migrateEdges(d.edges ?? []);
+    diagram.loadDiagram(nodes, edges);
   }
 }
 
