@@ -15,11 +15,11 @@
   --scrollbar-thumb: rgba(129, 140, 248, 0.15);
   --scrollbar-thumb-hover: rgba(129, 140, 248, 0.3);
 
-  /* Edge category colors */
-  --edge-structural: #64748b;
-  --edge-binding: #8b5cf6;
-  --edge-reference: #94a3b8;
-  --edge-annotation: #f59e0b;
+  /* Edge category colors - muted, industry-standard palette */
+  --edge-structural: #6b7280;  /* neutral gray - dependencies */
+  --edge-binding: #7c9eb8;     /* muted steel blue - data flow */
+  --edge-reference: #9ca3af;   /* light gray - subtle visual refs */
+  --edge-annotation: #a1a1aa;  /* zinc gray - user notes */
   --edge-selected: #3b82f6;
 }
 

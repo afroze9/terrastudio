@@ -59,11 +59,12 @@
   }
 
   // Map CSS variable colors to hex values for color picker
+  // Muted, industry-standard palette
   const CATEGORY_DEFAULT_COLORS: Record<EdgeCategoryId, string> = {
-    structural: '#64748b',
-    binding: '#8b5cf6',
-    reference: '#94a3b8',
-    annotation: '#f59e0b',
+    structural: '#6b7280',  // neutral gray - dependencies
+    binding: '#7c9eb8',     // muted steel blue - data flow
+    reference: '#9ca3af',   // light gray - subtle visual refs
+    annotation: '#a1a1aa',  // zinc gray - user notes
   };
 
   function getCategoryDefaultColor(categoryId: EdgeCategoryId): string {
