@@ -9,7 +9,7 @@
   import KeyVaultAccessControlSection from './KeyVaultAccessControlSection.svelte';
   import CollapsiblePanelSection from './CollapsiblePanelSection.svelte';
   import EdgeStyleEditor from './EdgeStyleEditor.svelte';
-  import type { ResourceTypeId, PropertyVariableMode, AccessModel, AccessGrant, EdgeStyleSettings } from '@terrastudio/types';
+  import type { ResourceTypeId, PropertyVariableMode, AccessModel, AccessGrant, EdgeStyleSettings, EdgeCategoryId } from '@terrastudio/types';
 
   let schema = $derived(
     diagram.selectedNode
@@ -391,6 +391,7 @@
 
       <EdgeStyleEditor
         settings={(diagram.selectedEdge.data?.styleOverrides as EdgeStyleSettings) ?? {}}
+        categoryId={(diagram.selectedEdge.data?.category as EdgeCategoryId) ?? 'structural'}
         onChange={(newSettings) => {
           if (diagram.selectedEdge) {
             diagram.updateEdgeData(diagram.selectedEdge.id, {

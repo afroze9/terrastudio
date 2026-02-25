@@ -1,5 +1,6 @@
 <script lang="ts">
   import { project } from '$lib/stores/project.svelte';
+  import { edgeCategoryRegistry } from '@terrastudio/core';
   import type { EdgeCategoryId, EdgeStyleSettings, EdgeLineStyle, EdgeMarkerType } from '@terrastudio/types';
   import CollapsibleSection from './CollapsibleSection.svelte';
 
@@ -27,6 +28,35 @@
     { value: 'arrowClosed', label: 'Filled Arrow' },
     { value: 'dot', label: 'Dot' },
   ];
+
+  // Get default line style from category definition's dashArray
+  function getCategoryDefaultLineStyle(categoryId: EdgeCategoryId): EdgeLineStyle {
+    const cat = edgeCategoryRegistry.get(categoryId);
+    if (!cat) return 'solid';
+    const dashArray = cat.defaultStyle.dashArray;
+    if (!dashArray) return 'solid';
+    if (dashArray.includes('5')) return 'dashed';
+    if (dashArray.includes('2') || dashArray.includes('3')) return 'dotted';
+    return 'dashed';
+  }
+
+  // Get default marker from category definition
+  function getCategoryDefaultMarker(categoryId: EdgeCategoryId): EdgeMarkerType {
+    const cat = edgeCategoryRegistry.get(categoryId);
+    return cat?.defaultStyle.markerEnd ?? 'none';
+  }
+
+  // Get default thickness from category definition
+  function getCategoryDefaultThickness(categoryId: EdgeCategoryId): number {
+    const cat = edgeCategoryRegistry.get(categoryId);
+    return cat?.defaultStyle.strokeWidth ?? 2;
+  }
+
+  // Get default animated from category definition
+  function getCategoryDefaultAnimated(categoryId: EdgeCategoryId): boolean {
+    const cat = edgeCategoryRegistry.get(categoryId);
+    return cat?.defaultStyle.animated ?? false;
+  }
 
   function getSettings(categoryId: EdgeCategoryId): EdgeStyleSettings {
     return project.projectConfig.edgeStyles?.[categoryId] ?? {};
@@ -69,6 +99,10 @@
   {#each CATEGORIES as category (category.id)}
     {@const settings = getSettings(category.id)}
     {@const hasCustom = hasOverrides(category.id)}
+    {@const defaultLineStyle = getCategoryDefaultLineStyle(category.id)}
+    {@const defaultMarker = getCategoryDefaultMarker(category.id)}
+    {@const defaultThickness = getCategoryDefaultThickness(category.id)}
+    {@const defaultAnimated = getCategoryDefaultAnimated(category.id)}
     <div class="edge-category">
       <div class="category-header">
         <span class="category-label">{category.label}</span>
@@ -87,13 +121,13 @@
           <span class="field-label">Line</span>
           <select
             class="style-select"
-            value={settings.lineStyle ?? ''}
+            value={settings.lineStyle ?? defaultLineStyle}
             onchange={(e) => {
-              const val = (e.target as HTMLSelectElement).value as EdgeLineStyle | '';
-              updateSettings(category.id, { lineStyle: val || undefined });
+              const val = (e.target as HTMLSelectElement).value as EdgeLineStyle;
+              // Only store if different from default
+              updateSettings(category.id, { lineStyle: val === defaultLineStyle ? undefined : val });
             }}
           >
-            <option value="">Default</option>
             {#each LINE_STYLES as opt (opt.value)}
               <option value={opt.value}>{opt.label}</option>
             {/each}
@@ -104,13 +138,13 @@
           <span class="field-label">Arrow</span>
           <select
             class="style-select"
-            value={settings.markerEnd ?? ''}
+            value={settings.markerEnd ?? defaultMarker}
             onchange={(e) => {
-              const val = (e.target as HTMLSelectElement).value as EdgeMarkerType | '';
-              updateSettings(category.id, { markerEnd: val || undefined });
+              const val = (e.target as HTMLSelectElement).value as EdgeMarkerType;
+              // Only store if different from default
+              updateSettings(category.id, { markerEnd: val === defaultMarker ? undefined : val });
             }}
           >
-            <option value="">Default</option>
             {#each MARKER_OPTIONS as opt (opt.value)}
               <option value={opt.value}>{opt.label}</option>
             {/each}
@@ -146,11 +180,11 @@
             min="1"
             max="5"
             step="0.5"
-            value={settings.thickness ?? ''}
-            placeholder="2"
+            value={settings.thickness ?? defaultThickness}
             oninput={(e) => {
               const val = parseFloat((e.target as HTMLInputElement).value);
-              updateSettings(category.id, { thickness: isNaN(val) ? undefined : val });
+              // Only store if different from default
+              updateSettings(category.id, { thickness: isNaN(val) || val === defaultThickness ? undefined : val });
             }}
           />
         </label>
@@ -159,8 +193,12 @@
       <label class="style-checkbox">
         <input
           type="checkbox"
-          checked={settings.animated ?? false}
-          onchange={(e) => updateSettings(category.id, { animated: (e.target as HTMLInputElement).checked || undefined })}
+          checked={settings.animated ?? defaultAnimated}
+          onchange={(e) => {
+            const checked = (e.target as HTMLInputElement).checked;
+            // Only store if different from default
+            updateSettings(category.id, { animated: checked === defaultAnimated ? undefined : checked });
+          }}
         />
         <span>Animated</span>
       </label>

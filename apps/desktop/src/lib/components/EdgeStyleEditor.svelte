@@ -1,32 +1,71 @@
 <script lang="ts">
-  import type { EdgeStyleSettings, EdgeLineStyle, EdgeMarkerType } from '@terrastudio/types';
+  import { project } from '$lib/stores/project.svelte';
+  import { edgeCategoryRegistry } from '@terrastudio/core';
+  import type { EdgeStyleSettings, EdgeLineStyle, EdgeMarkerType, EdgeCategoryId } from '@terrastudio/types';
 
   interface Props {
     settings: EdgeStyleSettings;
+    categoryId: EdgeCategoryId;
     onChange: (settings: EdgeStyleSettings) => void;
   }
-  let { settings, onChange }: Props = $props();
+  let { settings, categoryId, onChange }: Props = $props();
 
-  const LINE_STYLES: { value: EdgeLineStyle | ''; label: string }[] = [
-    { value: '', label: 'Default' },
+  const LINE_STYLES: { value: EdgeLineStyle; label: string }[] = [
     { value: 'solid', label: 'Solid' },
     { value: 'dashed', label: 'Dashed' },
     { value: 'dotted', label: 'Dotted' },
   ];
 
-  const MARKER_OPTIONS: { value: EdgeMarkerType | ''; label: string }[] = [
-    { value: '', label: 'Default' },
+  const MARKER_OPTIONS: { value: EdgeMarkerType; label: string }[] = [
     { value: 'none', label: 'None' },
     { value: 'arrow', label: 'Arrow' },
     { value: 'arrowClosed', label: 'Filled Arrow' },
     { value: 'dot', label: 'Dot' },
   ];
 
+  // Get default line style from category definition's dashArray
+  function getCategoryDefaultLineStyle(): EdgeLineStyle {
+    const cat = edgeCategoryRegistry.get(categoryId);
+    if (!cat) return 'solid';
+    const dashArray = cat.defaultStyle.dashArray;
+    if (!dashArray) return 'solid';
+    if (dashArray.includes('5')) return 'dashed';
+    if (dashArray.includes('2') || dashArray.includes('3')) return 'dotted';
+    return 'dashed';
+  }
+
+  // Get effective default (project setting > category default)
+  let effectiveLineStyle = $derived.by(() => {
+    const projectSetting = project.projectConfig.edgeStyles?.[categoryId]?.lineStyle;
+    return projectSetting ?? getCategoryDefaultLineStyle();
+  });
+
+  let effectiveMarker = $derived.by(() => {
+    const cat = edgeCategoryRegistry.get(categoryId);
+    const categoryDefault = cat?.defaultStyle.markerEnd ?? 'none';
+    const projectSetting = project.projectConfig.edgeStyles?.[categoryId]?.markerEnd;
+    return projectSetting ?? categoryDefault;
+  });
+
+  let effectiveThickness = $derived.by(() => {
+    const cat = edgeCategoryRegistry.get(categoryId);
+    const categoryDefault = cat?.defaultStyle.strokeWidth ?? 2;
+    const projectSetting = project.projectConfig.edgeStyles?.[categoryId]?.thickness;
+    return projectSetting ?? categoryDefault;
+  });
+
+  let effectiveAnimated = $derived.by(() => {
+    const cat = edgeCategoryRegistry.get(categoryId);
+    const categoryDefault = cat?.defaultStyle.animated ?? false;
+    const projectSetting = project.projectConfig.edgeStyles?.[categoryId]?.animated;
+    return projectSetting ?? categoryDefault;
+  });
+
   function update(updates: Partial<EdgeStyleSettings>) {
     const newSettings = { ...settings, ...updates };
     // Clean up undefined values
     for (const key of Object.keys(newSettings) as (keyof EdgeStyleSettings)[]) {
-      if (newSettings[key] === undefined || newSettings[key] === null || newSettings[key] === '') {
+      if (newSettings[key] === undefined || newSettings[key] === null) {
         delete newSettings[key];
       }
     }
@@ -38,12 +77,12 @@
 
 <div class="edge-style-editor">
   <div class="editor-header">
-    <span class="editor-title">Style</span>
+    <span class="editor-title">Style Override</span>
     {#if hasOverrides}
       <button
         class="reset-btn"
         onclick={() => onChange({})}
-        title="Reset to category default"
+        title="Reset to project/category default"
       >Reset</button>
     {/if}
   </div>
@@ -53,8 +92,12 @@
       <span class="field-label">Line</span>
       <select
         class="style-select"
-        value={settings.lineStyle ?? ''}
-        onchange={(e) => update({ lineStyle: (e.target as HTMLSelectElement).value as EdgeLineStyle || undefined })}
+        value={settings.lineStyle ?? effectiveLineStyle}
+        onchange={(e) => {
+          const val = (e.target as HTMLSelectElement).value as EdgeLineStyle;
+          // Only store if different from effective default
+          update({ lineStyle: val === effectiveLineStyle ? undefined : val });
+        }}
       >
         {#each LINE_STYLES as opt (opt.value)}
           <option value={opt.value}>{opt.label}</option>
@@ -66,8 +109,12 @@
       <span class="field-label">Arrow</span>
       <select
         class="style-select"
-        value={settings.markerEnd ?? ''}
-        onchange={(e) => update({ markerEnd: (e.target as HTMLSelectElement).value as EdgeMarkerType || undefined })}
+        value={settings.markerEnd ?? effectiveMarker}
+        onchange={(e) => {
+          const val = (e.target as HTMLSelectElement).value as EdgeMarkerType;
+          // Only store if different from effective default
+          update({ markerEnd: val === effectiveMarker ? undefined : val });
+        }}
       >
         {#each MARKER_OPTIONS as opt (opt.value)}
           <option value={opt.value}>{opt.label}</option>
@@ -104,11 +151,11 @@
         min="1"
         max="5"
         step="0.5"
-        value={settings.thickness ?? ''}
-        placeholder="2"
+        value={settings.thickness ?? effectiveThickness}
         oninput={(e) => {
           const val = parseFloat((e.target as HTMLInputElement).value);
-          update({ thickness: isNaN(val) ? undefined : val });
+          // Only store if different from effective default
+          update({ thickness: isNaN(val) || val === effectiveThickness ? undefined : val });
         }}
       />
     </label>
@@ -117,8 +164,12 @@
   <label class="style-checkbox">
     <input
       type="checkbox"
-      checked={settings.animated ?? false}
-      onchange={(e) => update({ animated: (e.target as HTMLInputElement).checked || undefined })}
+      checked={settings.animated ?? effectiveAnimated}
+      onchange={(e) => {
+        const checked = (e.target as HTMLInputElement).checked;
+        // Only store if different from effective default
+        update({ animated: checked === effectiveAnimated ? undefined : checked });
+      }}
     />
     <span>Animated</span>
   </label>
