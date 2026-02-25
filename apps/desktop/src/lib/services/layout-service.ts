@@ -1,8 +1,35 @@
 import dagre from '@dagrejs/dagre';
-import type { ResourceTypeId } from '@terrastudio/types';
+import type { ResourceTypeId, EdgeCategoryId } from '@terrastudio/types';
 import type { PluginRegistry } from '@terrastudio/core';
 import { diagram } from '$lib/stores/diagram.svelte';
 import { project } from '$lib/stores/project.svelte';
+
+/**
+ * Edge categories that should affect layout positioning.
+ * - structural: Terraform dependencies - YES, affects hierarchy
+ * - binding: Data flow connections - YES, shows data relationships
+ * - reference: Visual property refs (showAsEdge) - YES, shows relationships
+ * - annotation: User documentation - NO, purely visual/documentation
+ */
+const LAYOUT_AFFECTING_CATEGORIES: Set<EdgeCategoryId> = new Set([
+  'structural',
+  'binding',
+  'reference',
+]);
+
+/**
+ * Get all edges that should be considered for layout.
+ * Includes persisted edges (structural, binding) and auto-generated reference edges,
+ * filtered to only layout-affecting categories (excludes annotation edges).
+ */
+function getLayoutEdges(): { source: string; target: string }[] {
+  // Combine persisted edges with auto-generated reference edges
+  const allEdges = [...diagram.edges, ...diagram.referenceEdges];
+  return allEdges.filter((e) => {
+    const category = (e.data?.category as EdgeCategoryId) ?? 'structural';
+    return LAYOUT_AFFECTING_CATEGORIES.has(category);
+  });
+}
 
 const HEADER_HEIGHT = 40;
 const CONTAINER_PAD_X = 20;
@@ -40,7 +67,7 @@ export function autoLayout(registry: PluginRegistry, direction: LayoutDirection 
 
 function dagreLayout(registry: PluginRegistry, direction: LayoutDirection): void {
   const nodes = diagram.nodes;
-  const edges = diagram.edges;
+  const edges = getLayoutEdges();
   if (nodes.length === 0) return;
 
   const nodeMap = new Map(nodes.map((n) => [n.id, n]));
@@ -174,7 +201,7 @@ class UnionFind {
 
 function hybridLayout(registry: PluginRegistry, direction: LayoutDirection): void {
   const nodes = diagram.nodes;
-  const edges = diagram.edges;
+  const edges = getLayoutEdges();
   if (nodes.length === 0) return;
 
   const nodeMap = new Map(nodes.map((n) => [n.id, n]));
