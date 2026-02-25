@@ -8,7 +8,8 @@
   import SubscriptionPicker from './SubscriptionPicker.svelte';
   import KeyVaultAccessControlSection from './KeyVaultAccessControlSection.svelte';
   import CollapsiblePanelSection from './CollapsiblePanelSection.svelte';
-  import type { ResourceTypeId, PropertyVariableMode, AccessModel, AccessGrant } from '@terrastudio/types';
+  import EdgeStyleEditor from './EdgeStyleEditor.svelte';
+  import type { ResourceTypeId, PropertyVariableMode, AccessModel, AccessGrant, EdgeStyleSettings } from '@terrastudio/types';
 
   let schema = $derived(
     diagram.selectedNode
@@ -383,6 +384,22 @@
         </label>
       </div>
 
+      <div class="edge-category-info">
+        <span class="category-label">Category</span>
+        <span class="category-value">{diagram.selectedEdge.data?.category ?? 'structural'}</span>
+      </div>
+
+      <EdgeStyleEditor
+        settings={(diagram.selectedEdge.data?.styleOverrides as EdgeStyleSettings) ?? {}}
+        onChange={(newSettings) => {
+          if (diagram.selectedEdge) {
+            diagram.updateEdgeData(diagram.selectedEdge.id, {
+              styleOverrides: Object.keys(newSettings).length > 0 ? newSettings : undefined,
+            });
+          }
+        }}
+      />
+
       <button
         class="delete-edge-btn"
         onclick={() => {
@@ -540,6 +557,25 @@
   .edge-arrow {
     color: var(--color-text-muted);
     font-size: 14px;
+  }
+  .edge-category-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    background: var(--color-bg);
+    border-radius: 6px;
+    margin-bottom: 8px;
+  }
+  .category-label {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    font-weight: 500;
+  }
+  .category-value {
+    font-size: 11px;
+    color: var(--color-text);
+    text-transform: capitalize;
   }
   .delete-edge-btn {
     margin-top: 16px;

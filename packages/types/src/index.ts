@@ -45,7 +45,10 @@ export type { ConnectionRule } from './connection.js';
 export type {
   EdgeCategoryId,
   EdgeMarkerType,
+  EdgeLineStyle,
   EdgeStyleDefinition,
+  EdgeStyleSettings,
+  ProjectEdgeStyles,
   EdgeCategoryDefinition,
   TerraStudioEdgeData,
 } from './edge.js';

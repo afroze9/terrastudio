@@ -268,6 +268,19 @@ class DiagramStore {
     }, 500);
   }
 
+  updateEdgeData(edgeId: string, updates: Partial<TerraStudioEdgeData>) {
+    this.ensureInitialSnapshot();
+    project.markDirty();
+
+    this.edges = this.edges.map((e) =>
+      e.id === edgeId
+        ? { ...e, data: { ...e.data, ...updates } } as DiagramEdge
+        : e
+    );
+
+    this.pushSnapshot();
+  }
+
   removeSelectedNodes() {
     const toRemove = new Set(this.nodes.filter((n) => n.selected).map((n) => n.id));
     if (toRemove.size === 0) return;

@@ -6,6 +6,7 @@
   import type { NamingConvention } from '@terrastudio/types';
   import CollapsibleSection from './CollapsibleSection.svelte';
   import SearchBox from './SearchBox.svelte';
+  import EdgeStylesSection from './EdgeStylesSection.svelte';
 
   let searchQuery = $state('');
 
@@ -232,6 +233,11 @@
       {/each}
     </div>
   </CollapsibleSection>
+  {/if}
+
+  <!-- Edge Styles Section -->
+  {#if sectionVisible('Edge Styles')}
+    <EdgeStylesSection forceExpand={!!searchQuery} />
   {/if}
 
   <!-- Common Tags Section -->

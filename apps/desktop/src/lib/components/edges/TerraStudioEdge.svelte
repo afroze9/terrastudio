@@ -10,7 +10,8 @@
   import type { TerraStudioEdgeData, EdgeCategoryId } from '@terrastudio/types';
   import { edgeCategoryRegistry } from '@terrastudio/core';
   import { ui } from '$lib/stores/ui.svelte';
-  import { computeEdgeStyle, getMarkerUrl, DEFAULT_EDGE_STYLE } from './edge-utils';
+  import { project } from '$lib/stores/project.svelte';
+  import { mergeEdgeStyles, computeEdgeStyle, getMarkerUrl, DEFAULT_EDGE_STYLE } from './edge-utils';
 
   // Props from SvelteFlow EdgeTypes - using explicit types instead of EdgeProps generic
   // because svelte-check doesn't properly infer the generic parameter
@@ -46,7 +47,13 @@
   // Get category definition
   const categoryId = $derived<EdgeCategoryId>(edgeData?.category ?? 'structural');
   const category = $derived(edgeCategoryRegistry.get(categoryId));
-  const defaultStyle = $derived(category?.defaultStyle ?? DEFAULT_EDGE_STYLE);
+  const categoryDefault = $derived(category?.defaultStyle ?? DEFAULT_EDGE_STYLE);
+
+  // Get project-level style settings for this category
+  const projectSettings = $derived(project.projectConfig.edgeStyles?.[categoryId]);
+
+  // Merge styles: category default < project settings < edge overrides
+  const mergedStyle = $derived(mergeEdgeStyles(categoryDefault, projectSettings, edgeData?.styleOverrides));
 
   // Compute path based on global edge type setting
   const pathData = $derived.by(() => {
@@ -63,15 +70,15 @@
     }
   });
 
-  // Compute final style merging defaults with overrides
-  const style = $derived(computeEdgeStyle(defaultStyle, edgeData?.styleOverrides, selected ?? false));
+  // Compute final CSS style string
+  const style = $derived(computeEdgeStyle(mergedStyle, selected ?? false));
 
-  // Determine markers
-  const markerStart = $derived(getMarkerUrl(edgeData?.styleOverrides?.markerStart ?? defaultStyle?.markerStart));
-  const markerEnd = $derived(getMarkerUrl(edgeData?.styleOverrides?.markerEnd ?? defaultStyle?.markerEnd));
+  // Determine markers from merged style
+  const markerStart = $derived(getMarkerUrl(mergedStyle.markerStart));
+  const markerEnd = $derived(getMarkerUrl(mergedStyle.markerEnd));
 
   // Check if edge should be animated
-  const isAnimated = $derived(edgeData?.styleOverrides?.animated ?? defaultStyle?.animated ?? false);
+  const isAnimated = $derived(mergedStyle.animated ?? false);
 
   // Use data.label if available, fall back to the label prop
   const displayLabel = $derived(edgeData?.label ?? label);

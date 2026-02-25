@@ -15,6 +15,11 @@ export type EdgeCategoryId = 'structural' | 'binding' | 'reference' | 'annotatio
 export type EdgeMarkerType = 'none' | 'arrow' | 'arrowClosed' | 'dot';
 
 /**
+ * Line style types for user-friendly edge configuration.
+ */
+export type EdgeLineStyle = 'solid' | 'dashed' | 'dotted';
+
+/**
  * Style definition for an edge category or custom edge styling.
  */
 export interface EdgeStyleDefinition {
@@ -31,6 +36,28 @@ export interface EdgeStyleDefinition {
   /** Arrow marker at target end */
   readonly markerEnd?: EdgeMarkerType;
 }
+
+/**
+ * User-configurable edge style settings (simplified from EdgeStyleDefinition).
+ * Used for project-level defaults and per-edge overrides.
+ */
+export interface EdgeStyleSettings {
+  /** Line style: solid, dashed, or dotted */
+  lineStyle?: EdgeLineStyle;
+  /** Whether the edge animates */
+  animated?: boolean;
+  /** Stroke color (hex color like #ff0000) */
+  color?: string;
+  /** Stroke width in pixels (1-5) */
+  thickness?: number;
+  /** Arrow marker at target end */
+  markerEnd?: EdgeMarkerType;
+}
+
+/**
+ * Project-level edge style defaults per category.
+ */
+export type ProjectEdgeStyles = Partial<Record<EdgeCategoryId, EdgeStyleSettings>>;
 
 /**
  * Definition of an edge category with default styling and behavior flags.
@@ -61,8 +88,8 @@ export interface TerraStudioEdgeData extends Record<string, unknown> {
   category: EdgeCategoryId;
   /** User label (editable for annotation edges) */
   label?: string;
-  /** Style overrides (for annotation edges with custom styling) */
-  styleOverrides?: Partial<EdgeStyleDefinition>;
+  /** User style overrides for this specific edge */
+  styleOverrides?: EdgeStyleSettings;
   /**
    * For structural/binding edges: information about the connection rule
    * that validated this edge.

@@ -7,6 +7,7 @@ import type {
   OutputBinding,
   ProviderId,
   NamingConvention,
+  ProjectEdgeStyles,
 } from '@terrastudio/types';
 import type { PluginRegistry } from '../registry/plugin-registry.js';
 import { DependencyGraph } from './dependency-graph.js';
@@ -26,6 +27,8 @@ export interface ProjectConfig {
     type: string;
     config: Record<string, string>;
   };
+  /** Project-level edge style defaults per category */
+  edgeStyles?: ProjectEdgeStyles;
 }
 
 export interface PipelineInput {
