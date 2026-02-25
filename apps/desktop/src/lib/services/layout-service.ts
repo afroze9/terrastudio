@@ -4,6 +4,20 @@ import type { PluginRegistry } from '@terrastudio/core';
 import { diagram } from '$lib/stores/diagram.svelte';
 import { project } from '$lib/stores/project.svelte';
 
+type HandlePosition = 'top' | 'bottom' | 'left' | 'right';
+
+/**
+ * Enhanced edge info with handle positions for layout optimization.
+ */
+interface LayoutEdgeWithHandles {
+  source: string;
+  target: string;
+  sourceHandle?: string;
+  targetHandle?: string;
+  sourcePosition?: HandlePosition;
+  targetPosition?: HandlePosition;
+}
+
 /**
  * Edge categories that should affect layout positioning.
  * - structural: Terraform dependencies - YES, affects hierarchy
@@ -21,14 +35,114 @@ const LAYOUT_AFFECTING_CATEGORIES: Set<EdgeCategoryId> = new Set([
  * Get all edges that should be considered for layout.
  * Includes persisted edges (structural, binding) and auto-generated reference edges,
  * filtered to only layout-affecting categories (excludes annotation edges).
+ * Returns enhanced edge info including handle IDs for handle-aware layout.
  */
-function getLayoutEdges(): { source: string; target: string }[] {
+function getLayoutEdges(): LayoutEdgeWithHandles[] {
   // Combine persisted edges with auto-generated reference edges
   const allEdges = [...diagram.edges, ...diagram.referenceEdges];
-  return allEdges.filter((e) => {
-    const category = (e.data?.category as EdgeCategoryId) ?? 'structural';
-    return LAYOUT_AFFECTING_CATEGORIES.has(category);
-  });
+  return allEdges
+    .filter((e) => {
+      const category = (e.data?.category as EdgeCategoryId) ?? 'structural';
+      return LAYOUT_AFFECTING_CATEGORIES.has(category);
+    })
+    .map((e) => ({
+      source: e.source,
+      target: e.target,
+      sourceHandle: e.sourceHandle ?? undefined,
+      targetHandle: e.targetHandle ?? undefined,
+    }));
+}
+
+/**
+ * Resolve handle positions for edges using schema definitions.
+ * This enriches edges with the actual position (top/bottom/left/right) of each handle.
+ */
+function resolveHandlePositions(
+  edges: LayoutEdgeWithHandles[],
+  nodeMap: Map<string, DiagramNode>,
+  registry: PluginRegistry,
+): LayoutEdgeWithHandles[] {
+  // Build a cache of handle positions per node type
+  const handleCache = new Map<ResourceTypeId, Map<string, HandlePosition>>();
+
+  function getHandlePosition(
+    nodeId: string,
+    handleId: string | undefined,
+  ): HandlePosition | undefined {
+    if (!handleId) return undefined;
+
+    const node = nodeMap.get(nodeId);
+    if (!node) return undefined;
+
+    const typeId = node.type as ResourceTypeId;
+
+    // Check cache first
+    if (!handleCache.has(typeId)) {
+      const schema = registry.getResourceSchema(typeId);
+      const handleMap = new Map<string, HandlePosition>();
+      if (schema?.handles) {
+        for (const h of schema.handles) {
+          handleMap.set(h.id, h.position);
+        }
+      }
+      handleCache.set(typeId, handleMap);
+    }
+
+    // Check for per-node handle position overrides
+    const nodeData = node.data as { handlePositions?: Record<string, HandlePosition> };
+    if (nodeData.handlePositions?.[handleId]) {
+      return nodeData.handlePositions[handleId];
+    }
+
+    return handleCache.get(typeId)?.get(handleId);
+  }
+
+  return edges.map((e) => ({
+    ...e,
+    sourcePosition: getHandlePosition(e.source, e.sourceHandle),
+    targetPosition: getHandlePosition(e.target, e.targetHandle),
+  }));
+}
+
+/**
+ * Check if an edge's handle positions are compatible with a given layout direction.
+ * Returns true if the handles align well with the direction.
+ */
+function isEdgeCompatibleWithDirection(
+  edge: { sourcePosition?: HandlePosition; targetPosition?: HandlePosition },
+  direction: LayoutDirection,
+): boolean {
+  const { sourcePosition, targetPosition } = edge;
+  if (!sourcePosition || !targetPosition) return true; // No info, assume compatible
+
+  // Check if handles align with the layout direction
+  switch (direction) {
+    case 'LR':
+      return sourcePosition === 'right' && targetPosition === 'left';
+    case 'RL':
+      return sourcePosition === 'left' && targetPosition === 'right';
+    case 'TB':
+      return sourcePosition === 'bottom' && targetPosition === 'top';
+    case 'BT':
+      return sourcePosition === 'top' && targetPosition === 'bottom';
+    default:
+      return true;
+  }
+}
+
+/**
+ * Calculate edge weight based on handle compatibility with layout direction.
+ * Higher weight = more important edge for layout ordering.
+ * Edges with handles that align with the layout direction get higher weight.
+ */
+function getEdgeWeight(
+  edge: { sourcePosition?: HandlePosition; targetPosition?: HandlePosition },
+  direction: LayoutDirection,
+): number {
+  if (isEdgeCompatibleWithDirection(edge, direction)) {
+    return 2; // Higher weight for compatible edges
+  }
+  return 1; // Default weight
 }
 
 const HEADER_HEIGHT = 40;
@@ -67,10 +181,13 @@ export function autoLayout(registry: PluginRegistry, direction: LayoutDirection 
 
 function dagreLayout(registry: PluginRegistry, direction: LayoutDirection): void {
   const nodes = diagram.nodes;
-  const edges = getLayoutEdges();
+  const rawEdges = getLayoutEdges();
   if (nodes.length === 0) return;
 
   const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+
+  // Resolve handle positions for layout optimization
+  const edges = resolveHandlePositions(rawEdges, nodeMap, registry);
 
   const groups = new Map<string | undefined, string[]>();
   for (const node of nodes) {
@@ -88,6 +205,11 @@ function dagreLayout(registry: PluginRegistry, direction: LayoutDirection): void
     const childIds = groups.get(parentId) ?? [];
     if (childIds.length === 0) continue;
 
+    const childSet = new Set(childIds);
+    const childEdges = edges.filter(
+      (e) => childSet.has(e.source) && childSet.has(e.target),
+    );
+
     const g = new dagre.graphlib.Graph();
     g.setGraph({
       rankdir: direction,
@@ -104,11 +226,10 @@ function dagreLayout(registry: PluginRegistry, direction: LayoutDirection): void
       g.setNode(id, { width, height });
     }
 
-    const childSet = new Set(childIds);
-    for (const edge of edges) {
-      if (childSet.has(edge.source) && childSet.has(edge.target)) {
-        g.setEdge(edge.source, edge.target);
-      }
+    // Add edges with weights based on handle compatibility
+    for (const edge of childEdges) {
+      const weight = getEdgeWeight(edge, direction);
+      g.setEdge(edge.source, edge.target, { weight });
     }
 
     dagre.layout(g);
@@ -154,6 +275,8 @@ function dagreLayout(registry: PluginRegistry, direction: LayoutDirection): void
 interface LayoutEdge {
   source: string;
   target: string;
+  sourcePosition?: HandlePosition;
+  targetPosition?: HandlePosition;
 }
 
 interface LayoutBlock {
@@ -201,10 +324,13 @@ class UnionFind {
 
 function hybridLayout(registry: PluginRegistry, direction: LayoutDirection): void {
   const nodes = diagram.nodes;
-  const edges = getLayoutEdges();
+  const rawEdges = getLayoutEdges();
   if (nodes.length === 0) return;
 
   const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+
+  // Resolve handle positions for layout optimization
+  const edges = resolveHandlePositions(rawEdges, nodeMap, registry);
 
   const groups = new Map<string | undefined, string[]>();
   for (const node of nodes) {
@@ -226,7 +352,7 @@ function hybridLayout(registry: PluginRegistry, direction: LayoutDirection): voi
 
     // Synthesize virtual edges from property-based references
     const virtualEdges = synthesizeVirtualEdges(childIds, childSet, nodeMap, registry);
-    const combinedEdges = combineEdges(childSet, edges, virtualEdges);
+    const combinedEdges = combineEdgesWithHandles(childSet, edges, virtualEdges);
 
     // Find connected components
     const components = findComponents(childIds, combinedEdges);
@@ -338,6 +464,44 @@ function combineEdges(
   return combined;
 }
 
+/**
+ * Combine real edges (with handle positions) and virtual edges.
+ * Preserves handle position info from real edges.
+ */
+function combineEdgesWithHandles(
+  childSet: Set<string>,
+  realEdges: LayoutEdgeWithHandles[],
+  virtualEdges: LayoutEdge[],
+): LayoutEdge[] {
+  const seen = new Set<string>();
+  const combined: LayoutEdge[] = [];
+
+  for (const edge of realEdges) {
+    if (childSet.has(edge.source) && childSet.has(edge.target)) {
+      const key = `${edge.source}->${edge.target}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        combined.push({
+          source: edge.source,
+          target: edge.target,
+          sourcePosition: edge.sourcePosition,
+          targetPosition: edge.targetPosition,
+        });
+      }
+    }
+  }
+
+  for (const ve of virtualEdges) {
+    const key = `${ve.source}->${ve.target}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      combined.push(ve);
+    }
+  }
+
+  return combined;
+}
+
 function findComponents(
   childIds: string[],
   edges: LayoutEdge[],
@@ -378,7 +542,8 @@ function layoutCluster(
 
   for (const e of edges) {
     if (nodeIdSet.has(e.source) && nodeIdSet.has(e.target)) {
-      g.setEdge(e.source, e.target);
+      const weight = getEdgeWeight(e, direction);
+      g.setEdge(e.source, e.target, { weight });
     }
   }
 
