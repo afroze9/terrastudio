@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.1.4](https://github.com/afroze9/terrastudio/compare/v0.1.3...v0.1.4) (2026-02-26)
+
+
+### Features
+
+* add App Service Baseline (Zone-Redundant) template ([012d381](https://github.com/afroze9/terrastudio/commit/012d38113c82b80b7d6aecd692fea6ac8a74d7c8))
+* add edge style settings with project-level defaults and per-edge overrides ([7da323c](https://github.com/afroze9/terrastudio/commit/7da323cf4fe12a818d9fd9d34fce43aa0538d0e6))
+* add edge type framework with connection point management ([a68a829](https://github.com/afroze9/terrastudio/commit/a68a829d9b4fb9def3588908620a1651bdeab73f))
+* add subnet service delegation + wire into App Service Baseline template ([b5f3025](https://github.com/afroze9/terrastudio/commit/b5f30256a8b536d8de6d9b9d2cefdc5784854f63))
+* add VNet Integration resource for visual NIC representation in subnet ([b93650f](https://github.com/afroze9/terrastudio/commit/b93650f6de2eae414d268b6b7002c4542f9683c5))
+* add VNet integration to App Service + wire into baseline template ([b17cc8c](https://github.com/afroze9/terrastudio/commit/b17cc8c11e28a656b6f2cfb151aa9ef10eee7e6e))
+* add zone redundancy to App Service Plan + enhance App Service Baseline template ([3228fe6](https://github.com/afroze9/terrastudio/commit/3228fe69ce9bd5c616e8fb1563e8ce74f2aaa28d))
+* auto-spawn dashed reference edges for showAsEdge properties ([69f08ea](https://github.com/afroze9/terrastudio/commit/69f08eaade4bfb926c3e80377700125b57c903a0))
+* Azure subscription picker, minimap toggle, and tab context menu (v0.3.0) ([d1aab02](https://github.com/afroze9/terrastudio/commit/d1aab025355d09202255b76dff28c298ba628d53))
+* edge styling enhancements and visibility toggles (v0.4.2) ([63eef1f](https://github.com/afroze9/terrastudio/commit/63eef1f5ac443536139bdaf346a9e37a8626a52f))
+* edge styling system with project and per-edge overrides (v0.4.0) ([4f7519f](https://github.com/afroze9/terrastudio/commit/4f7519f1fd99c3f63813045323d6536e785e38b0))
+* handle-aware auto layout with edge weighting (v0.4.1) ([729a11c](https://github.com/afroze9/terrastudio/commit/729a11ca8692e22ee6bd5dc27aac13b7eaa58a03))
+* Key Vault access control and collapsible property sections (v0.3.4) ([571c5f1](https://github.com/afroze9/terrastudio/commit/571c5f1ba5d87613ba829713fbd14eae3a75c44a))
+* keyboard shortcuts, Help menu with shortcuts/about modals (v0.3.2) ([d0cc051](https://github.com/afroze9/terrastudio/commit/d0cc051b7252f95ab970d8fb38b39e54a10241c8))
+* QoL improvements - destroy confirmation, close protection, notifications, taskbar progress (v0.3.3) ([737f377](https://github.com/afroze9/terrastudio/commit/737f377e537aad5ba64285ca35391d537a9b5882))
+* selectable reference edges with handle placement (v0.4.3) ([6e19ab4](https://github.com/afroze9/terrastudio/commit/6e19ab485c4d6fec3a793721fbd1db2bd4c1ea4c))
+* template gallery completion and 3 new built-in templates (v0.3.3) ([89fd21c](https://github.com/afroze9/terrastudio/commit/89fd21cc21f6dd11dea474161c475e1b759acd38))
+* unified collapsible sections and search across all sidebar panels ([19b3e38](https://github.com/afroze9/terrastudio/commit/19b3e384e7e3c88d736291e2ef5902cd17cfcf5e))
+
+
+### Bug Fixes
+
+* add ghost handles to all nodes for reference edge routing ([6aabfcf](https://github.com/afroze9/terrastudio/commit/6aabfcf474e5706c51db9b6c935c563424b9f42e))
+* auto layout now considers all edge categories appropriately ([c4d3395](https://github.com/afroze9/terrastudio/commit/c4d3395673887db0619265853f167d15d2365dc3))
+* replace $state+effects ref-edge approach with $derived ([77c3aaf](https://github.com/afroze9/terrastudio/commit/77c3aaf78a2f8ec25b3daee8722315c63409e481))
+* show actual default values in edge style dropdowns instead of 'Default' option ([45e5dc4](https://github.com/afroze9/terrastudio/commit/45e5dc4e3442b2ec9695e005d49d07de3d23c06b))
+* show correct category default colors in edge style pickers ([2755d17](https://github.com/afroze9/terrastudio/commit/2755d17fd17173602baeb9ce2486af6f425bbc77))
+
 ## [0.1.3](https://github.com/afroze9/terrastudio/compare/v0.1.2...v0.1.3) (2026-02-23)
 
 
