@@ -40,6 +40,23 @@
     }));
   });
 
+  // Render a source handle for each showAsEdge reference property (ref-{propKey})
+  // so users can reposition the edge exit point via the Manage Handles dialog.
+  let referenceHandles = $derived.by(() => {
+    if (!schema?.properties) return [];
+    return schema.properties
+      .filter((p: { type: string; showAsEdge?: boolean; key: string; label: string }) => p.type === 'reference' && p.showAsEdge)
+      .map((p: { key: string; label: string }) => {
+        const handleId = `ref-${p.key}`;
+        return {
+          id: handleId,
+          type: 'source' as const,
+          position: (handlePositions[handleId] ?? 'right') as 'top' | 'bottom' | 'left' | 'right',
+          label: p.label,
+        };
+      });
+  });
+
   // Apply position overrides to dynamic output handles
   let dynamicOutputHandles = $derived.by(() => {
     if (!schema?.outputs) return [];
@@ -140,6 +157,7 @@
   // Must wait for DOM paint (tick is not enough — handles need to be in the DOM)
   $effect(() => {
     staticHandles;
+    referenceHandles;
     dynamicOutputHandles;
     connectionPointHandles;
     handlePositions;
@@ -220,9 +238,20 @@
     />
   {/each}
 
+  <!-- Reference edge handles: non-connectable anchors for showAsEdge properties.
+       Position is user-overridable via the Manage Handles dialog. -->
+  {#each referenceHandles as refHandle (refHandle.id)}
+    <Handle
+      type="source"
+      position={refHandle.position === 'top' ? Position.Top : refHandle.position === 'bottom' ? Position.Bottom : refHandle.position === 'left' ? Position.Left : Position.Right}
+      id={refHandle.id}
+      class="reference-handle"
+      isConnectable={false}
+    />
+  {/each}
+
   <!-- Ghost handles: invisible, non-connectable anchors used by reference edges
-       (showAsEdge: true). React Flow needs a null-id handle on each node to
-       resolve the edge endpoints; these provide that without any visual impact. -->
+       when no specific handle is defined on the node. -->
   <Handle type="source" position={Position.Right} style="opacity:0;pointer-events:none;" isConnectable={false} />
   <Handle type="target" position={Position.Left}  style="opacity:0;pointer-events:none;" isConnectable={false} />
 
@@ -330,6 +359,17 @@
     margin-top: 3px;
     opacity: 0.75;
     letter-spacing: 0.02em;
+  }
+
+  /* Reference edge handles — subtle dot, non-interactive */
+  :global(.reference-handle) {
+    width: 6px !important;
+    height: 6px !important;
+    background: var(--color-text-muted, #8b90a0) !important;
+    border: 1px solid var(--color-surface, #1a1d27) !important;
+    border-radius: 50% !important;
+    pointer-events: none !important;
+    opacity: 0.6 !important;
   }
 
   /* Connection point handles for annotation edges */

@@ -90,12 +90,24 @@
     const enabledOutputKeys = (node.data.enabledOutputs as string[]) ?? [];
     const enabledOutputs = (schema?.outputs ?? []).filter((o: OutputDefinition) => enabledOutputKeys.includes(o.key));
 
+    // Build the list of schema-defined handles for the modal.
+    // Also include synthetic handles for showAsEdge reference properties so users
+    // can reposition those edge exit points (using the ref-{propKey} convention).
+    const referenceHandles: HandleDefinition[] = (schema?.properties ?? [])
+      .filter((p: { type: string; showAsEdge?: boolean }) => p.type === 'reference' && p.showAsEdge)
+      .map((p: { key: string; label: string }) => ({
+        id: `ref-${p.key}`,
+        type: 'source' as const,
+        position: 'right' as const,
+        label: p.label,
+      }));
+
     handleManagerModal = {
       nodeId: node.id,
       nodeLabel: node.data.label || 'Node',
       initialConnectionPoints: (node.data.connectionPoints as ConnectionPointConfig) ?? { top: 0, bottom: 0, left: 0, right: 0 },
       initialHandlePositions: (node.data.handlePositions as HandlePositionOverrides) ?? {},
-      schemaHandles: schema?.handles ?? [],
+      schemaHandles: [...(schema?.handles ?? []), ...referenceHandles],
       enabledOutputs,
     };
     closeContextMenu();

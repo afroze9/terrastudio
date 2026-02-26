@@ -40,6 +40,22 @@
     }));
   });
 
+  // Render a source handle for each showAsEdge reference property (ref-{propKey})
+  let referenceHandles = $derived.by(() => {
+    if (!schema?.properties) return [];
+    return schema.properties
+      .filter((p: { type: string; showAsEdge?: boolean; key: string; label: string }) => p.type === 'reference' && p.showAsEdge)
+      .map((p: { key: string; label: string }) => {
+        const handleId = `ref-${p.key}`;
+        return {
+          id: handleId,
+          type: 'source' as const,
+          position: (handlePositions[handleId] ?? 'right') as 'top' | 'bottom' | 'left' | 'right',
+          label: p.label,
+        };
+      });
+  });
+
   // Apply position overrides to dynamic output handles
   let dynamicOutputHandles = $derived.by(() => {
     if (!schema?.outputs) return [];
@@ -137,6 +153,7 @@
   // When handles or their positions change, tell SvelteFlow to re-read handle positions
   $effect(() => {
     staticHandles;
+    referenceHandles;
     dynamicOutputHandles;
     connectionPointHandles;
     handlePositions;
@@ -314,6 +331,18 @@
     />
   {/each}
 
+  <!-- Reference edge handles: non-connectable anchors for showAsEdge properties.
+       Position is user-overridable via the Manage Handles dialog. -->
+  {#each referenceHandles as refHandle (refHandle.id)}
+    <Handle
+      type="source"
+      position={refHandle.position === 'top' ? Position.Top : refHandle.position === 'bottom' ? Position.Bottom : refHandle.position === 'left' ? Position.Left : Position.Right}
+      id={refHandle.id}
+      class="reference-handle"
+      isConnectable={false}
+    />
+  {/each}
+
   <!-- Ghost handles: invisible, non-connectable anchors for reference edges -->
   <Handle type="source" position={Position.Right} style="opacity:0;pointer-events:none;" isConnectable={false} />
   <Handle type="target" position={Position.Left}  style="opacity:0;pointer-events:none;" isConnectable={false} />
@@ -449,6 +478,17 @@
     justify-content: center;
     flex-shrink: 0;
     cursor: help;
+  }
+
+  /* Reference edge handles — subtle dot, non-interactive */
+  :global(.reference-handle) {
+    width: 6px !important;
+    height: 6px !important;
+    background: var(--color-text-muted, #8b90a0) !important;
+    border: 1px solid var(--color-surface, #1a1d27) !important;
+    border-radius: 50% !important;
+    pointer-events: none !important;
+    opacity: 0.6 !important;
   }
 
   /* Connection point handles for annotation edges */

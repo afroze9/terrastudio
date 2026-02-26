@@ -52,8 +52,10 @@ class DiagramStore {
         const targetNode = this.nodes.find((n) => n.id === targetId);
         if (!targetNode) continue;
 
-        // Find a matching source handle (e.g., pep-source for Private Endpoint)
-        const sourceHandle = schema.handles?.find((h: HandleDefinition) => h.id === 'pep-source' && h.type === 'source');
+        // Use convention-based handle IDs so every showAsEdge property gets
+        // a dedicated source handle on the source node (ref-{propKey}) and,
+        // if the target schema has a matching pep-target handle, a target handle.
+        const sourceHandleId = `ref-${prop.key}`;
 
         // Find a matching target handle (e.g., pep-target for Private Endpoint references)
         const targetSchema = registry.getResourceSchema(targetNode.type as ResourceTypeId);
@@ -63,7 +65,7 @@ class DiagramStore {
         result.push({
           id: `ref-${node.id}-${prop.key}`,
           source: node.id,
-          sourceHandle: sourceHandle?.id,
+          sourceHandle: sourceHandleId,
           target: targetId,
           targetHandle: targetHandle?.id,
           deletable: false,
