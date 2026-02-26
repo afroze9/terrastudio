@@ -109,3 +109,21 @@ export interface TerraStudioEdgeData extends Record<string, unknown> {
   /** For reference edges: which property triggered this edge */
   sourceProperty?: string;
 }
+
+/**
+ * User customizations for a reference edge (stored on source node).
+ * Reference edges are derived from node.references, but users can
+ * add labels and style overrides which are stored on the source node.
+ */
+export interface ReferenceEdgeOverride {
+  /** User-defined label for this reference edge */
+  label?: string;
+  /** User-defined style overrides for this reference edge */
+  styleOverrides?: EdgeStyleSettings;
+}
+
+/**
+ * Map of reference edge overrides keyed by property key.
+ * Example: { 'target_resource_id': { label: 'Private Link', styleOverrides: { color: '#ff0000' } } }
+ */
+export type ReferenceEdgeOverrides = Record<string, ReferenceEdgeOverride>;

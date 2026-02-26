@@ -41,8 +41,8 @@ const builtInCategories: EdgeCategoryDefinition[] = [
     },
     affectsHcl: false,
     userCreatable: false,
-    persisted: false,
-    selectable: false,
+    persisted: false, // Edge itself is derived, but overrides are stored on node
+    selectable: true,
   },
   {
     id: 'annotation',

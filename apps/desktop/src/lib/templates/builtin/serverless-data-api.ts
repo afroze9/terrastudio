@@ -251,8 +251,10 @@ export const serverlessDataApiTemplate: Template = {
         target: 'tmpl-kv',
         sourceHandle: 'out-primary_connection_string',
         targetHandle: 'secret-in',
-        animated: true,
-        label: 'Storage connection string',
+        data: {
+          category: 'binding',
+          label: 'Storage connection string',
+        },
       },
       // SQL FQDN → Key Vault secret
       {
@@ -261,8 +263,10 @@ export const serverlessDataApiTemplate: Template = {
         target: 'tmpl-kv',
         sourceHandle: 'out-fully_qualified_domain_name',
         targetHandle: 'secret-in',
-        animated: true,
-        label: 'SQL server hostname',
+        data: {
+          category: 'binding',
+          label: 'SQL server hostname',
+        },
       },
     ],
   },

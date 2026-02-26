@@ -1,5 +1,5 @@
 import type { Node, Edge } from '@xyflow/svelte';
-import type { ResourceNodeData, ResourceTypeId, ValidationError, TerraStudioEdgeData, EdgeCategoryId } from '@terrastudio/types';
+import type { ResourceNodeData, ResourceTypeId, ValidationError, TerraStudioEdgeData, EdgeCategoryId, ReferenceEdgeOverrides } from '@terrastudio/types';
 import { generateNodeId, generateUniqueTerraformName } from '@terrastudio/core';
 import { project } from './project.svelte';
 import { terraform } from './terraform.svelte';
@@ -37,26 +37,42 @@ class DiagramStore {
   /**
    * Auto-generated visual-only edges for reference properties marked showAsEdge: true.
    * These are never stored in `edges` — they are derived and rendered via displayEdges in DnDFlow.
+   * They are selectable so users can add labels/style overrides, but not deletable.
    */
   referenceEdges = $derived.by((): DiagramEdge[] => {
     const result: DiagramEdge[] = [];
     for (const node of this.nodes) {
       const schema = registry.getResourceSchema(node.type as ResourceTypeId);
       if (!schema) continue;
+      const overrides = (node.data.referenceEdgeOverrides as ReferenceEdgeOverrides) ?? {};
       for (const prop of schema.properties) {
         if (prop.type !== 'reference' || !prop.showAsEdge) continue;
         const targetId = node.data.references[prop.key] as string | undefined;
         if (!targetId) continue;
-        if (!this.nodes.some((n) => n.id === targetId)) continue;
+        const targetNode = this.nodes.find((n) => n.id === targetId);
+        if (!targetNode) continue;
+
+        // Find a matching source handle (e.g., pep-source for Private Endpoint)
+        const sourceHandle = schema.handles?.find(h => h.id === 'pep-source' && h.type === 'source');
+
+        // Find a matching target handle (e.g., pep-target for Private Endpoint references)
+        const targetSchema = registry.getResourceSchema(targetNode.type as ResourceTypeId);
+        const targetHandle = targetSchema?.handles?.find(h => h.id === 'pep-target' && h.type === 'target');
+
+        const edgeOverride = overrides[prop.key];
         result.push({
           id: `ref-${node.id}-${prop.key}`,
           source: node.id,
+          sourceHandle: sourceHandle?.id,
           target: targetId,
+          targetHandle: targetHandle?.id,
           deletable: false,
-          selectable: false,
+          selectable: true,
           data: {
             category: 'reference',
             sourceProperty: prop.key,
+            label: edgeOverride?.label,
+            styleOverrides: edgeOverride?.styleOverrides,
           },
         });
       }
@@ -86,7 +102,9 @@ class DiagramStore {
 
   selectedEdge = $derived(
     this.selectedEdgeId
-      ? this.edges.find((e) => e.id === this.selectedEdgeId) ?? null
+      ? this.edges.find((e) => e.id === this.selectedEdgeId)
+        ?? this.referenceEdges.find((e) => e.id === this.selectedEdgeId)
+        ?? null
       : null
   );
 
@@ -247,6 +265,12 @@ class DiagramStore {
   }
 
   updateEdgeLabel(edgeId: string, label: string) {
+    // Check if this is a reference edge (format: ref-{nodeId}-{propKey})
+    if (edgeId.startsWith('ref-')) {
+      this.updateReferenceEdgeData(edgeId, { label });
+      return;
+    }
+
     this.ensureInitialSnapshot();
 
     if (this.debounceTimer !== null) {
@@ -269,6 +293,12 @@ class DiagramStore {
   }
 
   updateEdgeData(edgeId: string, updates: Partial<TerraStudioEdgeData>) {
+    // Check if this is a reference edge (format: ref-{nodeId}-{propKey})
+    if (edgeId.startsWith('ref-')) {
+      this.updateReferenceEdgeData(edgeId, updates);
+      return;
+    }
+
     this.ensureInitialSnapshot();
     project.markDirty();
 
@@ -279,6 +309,63 @@ class DiagramStore {
     );
 
     this.pushSnapshot();
+  }
+
+  /**
+   * Update customizations for a reference edge (stored on source node).
+   * Reference edges are derived, so customizations (label, styleOverrides) are
+   * stored in node.data.referenceEdgeOverrides.
+   */
+  private updateReferenceEdgeData(edgeId: string, updates: Partial<TerraStudioEdgeData>) {
+    // Parse edge ID: ref-{nodeId}-{propKey}
+    const match = edgeId.match(/^ref-(.+)-([^-]+)$/);
+    if (!match) return;
+    const [, nodeId, propKey] = match;
+
+    this.ensureInitialSnapshot();
+
+    if (this.debounceTimer !== null) {
+      clearTimeout(this.debounceTimer);
+    }
+
+    project.markDirty();
+
+    this.nodes = this.nodes.map((n) => {
+      if (n.id !== nodeId) return n;
+      const currentOverrides = (n.data.referenceEdgeOverrides as ReferenceEdgeOverrides) ?? {};
+      const currentEdgeOverride = currentOverrides[propKey] ?? {};
+      const newEdgeOverride = {
+        ...currentEdgeOverride,
+        ...(updates.label !== undefined ? { label: updates.label } : {}),
+        ...(updates.styleOverrides !== undefined ? { styleOverrides: updates.styleOverrides } : {}),
+      };
+      // Clean up empty overrides
+      if (!newEdgeOverride.label && !newEdgeOverride.styleOverrides) {
+        const { [propKey]: _, ...rest } = currentOverrides;
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            referenceEdgeOverrides: Object.keys(rest).length > 0 ? rest : undefined,
+          },
+        };
+      }
+      return {
+        ...n,
+        data: {
+          ...n.data,
+          referenceEdgeOverrides: {
+            ...currentOverrides,
+            [propKey]: newEdgeOverride,
+          },
+        },
+      };
+    });
+
+    this.debounceTimer = setTimeout(() => {
+      this.debounceTimer = null;
+      this.pushSnapshot();
+    }, 500);
   }
 
   removeSelectedNodes() {

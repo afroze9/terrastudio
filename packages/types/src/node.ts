@@ -1,6 +1,7 @@
 import type { ResourceTypeId } from './resource-schema.js';
 import type { ResourceSchema } from './resource-schema.js';
 import type { ValidationError } from './validation.js';
+import type { ReferenceEdgeOverrides } from './edge.js';
 
 export type DeploymentStatus =
   | 'pending'
@@ -51,6 +52,8 @@ export interface ResourceNodeData {
   handlePositions?: HandlePositionOverrides;
   /** Which outputs are enabled (creates dynamic out-* handles) */
   enabledOutputs?: string[];
+  /** User customizations (label, style) for reference edges originating from this node */
+  referenceEdgeOverrides?: ReferenceEdgeOverrides;
 }
 
 /**

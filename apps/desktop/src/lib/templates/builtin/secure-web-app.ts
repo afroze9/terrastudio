@@ -210,6 +210,10 @@ export const secureWebAppTemplate: Template = {
         target: 'tmpl-kv',
         sourceHandle: 'out-fully_qualified_domain_name',
         targetHandle: 'secret-in',
+        data: {
+          category: 'binding',
+          label: 'SQL FQDN',
+        },
       },
     ],
   },

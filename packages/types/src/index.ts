@@ -51,6 +51,8 @@ export type {
   ProjectEdgeStyles,
   EdgeCategoryDefinition,
   TerraStudioEdgeData,
+  ReferenceEdgeOverride,
+  ReferenceEdgeOverrides,
 } from './edge.js';
 
 // Plugin types

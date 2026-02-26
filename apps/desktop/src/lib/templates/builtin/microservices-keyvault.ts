@@ -228,8 +228,10 @@ export const microservicesKeyVaultTemplate: Template = {
         target: 'tmpl-kv',
         sourceHandle: 'out-primary_connection_string',
         targetHandle: 'secret-in',
-        animated: true,
-        label: 'Storage connection string',
+        data: {
+          category: 'binding',
+          label: 'Storage connection string',
+        },
       },
     ],
   },

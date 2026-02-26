@@ -401,18 +401,24 @@
         }}
       />
 
-      <button
-        class="delete-edge-btn"
-        onclick={() => {
-          if (diagram.selectedEdge) {
-            const edgeId = diagram.selectedEdge.id;
-            diagram.selectedEdgeId = null;
-            diagram.removeEdge(edgeId);
-          }
-        }}
-      >
-        Delete Connection
-      </button>
+      {#if diagram.selectedEdge.deletable !== false}
+        <button
+          class="delete-edge-btn"
+          onclick={() => {
+            if (diagram.selectedEdge) {
+              const edgeId = diagram.selectedEdge.id;
+              diagram.selectedEdgeId = null;
+              diagram.removeEdge(edgeId);
+            }
+          }}
+        >
+          Delete Connection
+        </button>
+      {:else}
+        <div class="edge-info-hint">
+          This connection is auto-generated from a reference property and cannot be deleted.
+        </div>
+      {/if}
 
     {:else}
       <div class="empty-state">
@@ -679,5 +685,15 @@
     opacity: 0.5;
     text-align: center;
     margin: 0;
+  }
+  .edge-info-hint {
+    margin-top: 16px;
+    padding: 10px 12px;
+    font-size: 11px;
+    color: var(--color-text-muted);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    line-height: 1.4;
   }
 </style>

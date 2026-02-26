@@ -103,7 +103,14 @@ export const functionAppSchema: ResourceSchema = {
     },
   ],
 
-  handles: [],
+  handles: [
+    {
+      id: 'pep-target',
+      type: 'target',
+      position: 'left',
+      label: 'Private Endpoint',
+    },
+  ],
 
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },

@@ -124,6 +124,12 @@ export const keyVaultSchema: ResourceSchema = {
       label: 'Secret',
       acceptsOutputs: true,
     },
+    {
+      id: 'pep-target',
+      type: 'target',
+      position: 'left',
+      label: 'Private Endpoint',
+    },
   ],
 
   outputs: [

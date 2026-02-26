@@ -97,7 +97,14 @@ export const privateEndpointSchema: ResourceSchema = {
     },
   ],
 
-  handles: [],
+  handles: [
+    {
+      id: 'pep-source',
+      type: 'source',
+      position: 'right',
+      label: 'Target Resource',
+    },
+  ],
 
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
