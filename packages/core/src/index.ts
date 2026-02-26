@@ -1,5 +1,6 @@
 // Registry
 export { PluginRegistry } from './lib/registry/plugin-registry.js';
+import type { IReactivePluginRegistry } from './lib/registry/reactive-plugin-registry.interface.js';
 export type { IReactivePluginRegistry } from './lib/registry/reactive-plugin-registry.interface.js';
 export { NodeTypeResolver } from './lib/registry/node-type-resolver.js';
 
