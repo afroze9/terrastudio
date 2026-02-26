@@ -1,9 +1,10 @@
 <script lang="ts">
   import { project } from '$lib/stores/project.svelte';
-  import { registry } from '$lib/bootstrap';
+  import { registry, loadPluginsForProject } from '$lib/bootstrap';
   import { applyNamingTemplate, buildTokens } from '@terrastudio/core';
   import type { LayoutAlgorithm } from '@terrastudio/core';
   import type { NamingConvention } from '@terrastudio/types';
+  import type { ProviderId } from '@terrastudio/types';
   import CollapsibleSection from './CollapsibleSection.svelte';
   import SearchBox from './SearchBox.svelte';
   import EdgeStylesSection from './EdgeStylesSection.svelte';
@@ -88,6 +89,34 @@
     !PRESETS.some(p => p.template === convention?.template)
   );
 
+  // ─── Cloud Provider ──────────────────────────────────────────────────────
+
+  const PROVIDER_OPTIONS: { id: string; label: string; available: boolean }[] = [
+    { id: 'azurerm', label: 'Azure',       available: true  },
+    { id: 'aws',     label: 'AWS',         available: false },
+    { id: 'google',  label: 'GCP',         available: false },
+    { id: 'all',     label: 'Multi-Cloud', available: true  },
+  ];
+
+  let activeProviderKey = $derived.by(() => {
+    const ap = project.projectConfig.activeProviders;
+    if (!ap || ap.length === 0) return 'all';
+    if (ap.length === 1) return ap[0];
+    return 'all';
+  });
+
+  function setProvider(providerId: string) {
+    const newProviders: ProviderId[] | undefined = providerId === 'all'
+      ? undefined
+      : [providerId as ProviderId];
+    project.projectConfig = { ...project.projectConfig, activeProviders: newProviders };
+    project.markDirty();
+    // Load plugins if not already loaded
+    if (newProviders?.length) {
+      loadPluginsForProject(newProviders);
+    }
+  }
+
   // ─── Layout ──────────────────────────────────────────────────────────────
 
   function setLayoutAlgorithm(algo: LayoutAlgorithm) {
@@ -121,6 +150,29 @@
 
 <div class="config-panel">
   <SearchBox bind:value={searchQuery} placeholder="Search settings..." />
+
+  <!-- Cloud Provider -->
+  {#if sectionVisible('Cloud Provider')}
+  <CollapsibleSection id="project-provider" label="Cloud Provider" forceExpand={!!searchQuery}>
+    <p class="section-hint">Resources shown in the palette are filtered by the selected provider.</p>
+    <div class="provider-options">
+      {#each PROVIDER_OPTIONS as opt (opt.id)}
+        <button
+          class="provider-option"
+          class:active={activeProviderKey === opt.id}
+          class:unavailable={!opt.available}
+          onclick={() => { if (opt.available) setProvider(opt.id); }}
+          disabled={!opt.available}
+        >
+          <span class="provider-option-label">{opt.label}</span>
+          {#if !opt.available}
+            <span class="provider-option-soon">Soon</span>
+          {/if}
+        </button>
+      {/each}
+    </div>
+  </CollapsibleSection>
+  {/if}
 
   <!-- Naming Convention -->
   {#if sectionVisible('Naming Convention')}
@@ -421,6 +473,53 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  /* Cloud provider */
+  .provider-options {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .provider-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.1s, border-color 0.1s;
+  }
+  .provider-option:hover:not(:disabled) {
+    background: var(--color-surface-hover);
+  }
+  .provider-option.active {
+    border-color: var(--color-accent);
+    color: var(--color-text);
+    background: var(--color-surface-hover);
+  }
+  .provider-option.unavailable {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .provider-option-label {
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .provider-option-soon {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    background: var(--color-surface-hover);
+    border: 1px solid var(--color-border);
+    border-radius: 3px;
+    padding: 1px 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
   /* Layout algorithm */

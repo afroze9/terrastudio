@@ -15,7 +15,7 @@
   } from '@xyflow/svelte';
   import { diagram, type DiagramNode } from '$lib/stores/diagram.svelte';
   import { ui } from '$lib/stores/ui.svelte';
-  import { registry, edgeValidator, edgeTypes } from '$lib/bootstrap';
+  import { registry, edgeTypes } from '$lib/bootstrap';
   import {
     createNodeData, generateNodeId, nextAvailableCidr,
     applyNamingTemplate, buildTokens, sanitizeTerraformName, generateUniqueTerraformName,
@@ -454,7 +454,7 @@
     let ruleMatch: TerraStudioEdgeData['ruleMatch'];
 
     if (sourceNode && targetNode && !isConnectionPointEdge) {
-      const result = edgeValidator.validate(
+      const result = registry.edgeValidator.validate(
         sourceNode.type as ResourceTypeId,
         connection.sourceHandle ?? '',
         targetNode.type as ResourceTypeId,
@@ -514,7 +514,7 @@
       return false;
     }
 
-    const result = edgeValidator.validate(
+    const result = registry.edgeValidator.validate(
       sourceNode.type as ResourceTypeId,
       connection.sourceHandle ?? '',
       targetNode.type as ResourceTypeId,

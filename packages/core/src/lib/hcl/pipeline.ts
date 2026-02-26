@@ -29,6 +29,8 @@ export interface ProjectConfig {
   };
   /** Project-level edge style defaults per category */
   edgeStyles?: ProjectEdgeStyles;
+  /** Which cloud providers this project targets. undefined = ['azurerm'] for backward compat. */
+  activeProviders?: ProviderId[];
 }
 
 export interface PipelineInput {

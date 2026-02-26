@@ -4,7 +4,7 @@ import { getCurrentWindow, ProgressBarStatus } from '@tauri-apps/api/window';
 import type { UnlistenFn } from '@tauri-apps/api/event';
 import type { DeploymentStatus, ResourceTypeId } from '@terrastudio/types';
 import { HclPipeline, validateDiagram, validateNetworkTopology } from '@terrastudio/core';
-import { registry, edgeValidator } from '$lib/bootstrap';
+import { registry } from '$lib/bootstrap';
 import { diagram } from '$lib/stores/diagram.svelte';
 import { project } from '$lib/stores/project.svelte';
 import {
@@ -156,7 +156,7 @@ export async function generateAndWrite(): Promise<void> {
     );
 
     // Validate diagram before generation
-    const validation = validateDiagram(resources, registry);
+    const validation = validateDiagram(resources, registry.inner);
     if (!validation.valid) {
       for (const diagramError of validation.errors) {
         terraform.appendError(
@@ -201,11 +201,11 @@ export async function generateAndWrite(): Promise<void> {
     const bindings = extractOutputBindings(
       diagram.edges,
       diagram.nodes,
-      edgeValidator,
+      registry.edgeValidator,
     );
 
     // Run HCL pipeline
-    const pipeline = new HclPipeline(registry);
+    const pipeline = new HclPipeline(registry.inner);
     const result = pipeline.generate({
       resources,
       projectConfig: project.projectConfig,

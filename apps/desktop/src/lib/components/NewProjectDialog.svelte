@@ -2,6 +2,7 @@
   import { invoke } from '@tauri-apps/api/core';
   import { createProject, pickFolder } from '$lib/services/project-service';
   import { registry } from '$lib/bootstrap';
+  import type { ProviderId } from '@terrastudio/types';
   import { getTemplateCategories } from '$lib/templates/service';
   import type { Template, TemplateCategory } from '$lib/templates/types';
   import type { NamingConvention } from '@terrastudio/types';
@@ -25,6 +26,15 @@
   let folderPath = $state('');
   let error = $state('');
   let creating = $state(false);
+
+  // Cloud Provider selection
+  const CLOUD_PROVIDERS: { id: string; label: string; available: boolean; icon: string }[] = [
+    { id: 'azurerm', label: 'Azure',       available: true,  icon: `<path d="M11.5 2L2 19.5h7.5L13 14l4 5.5H22L11.5 2zm0 4l5 7.5H13l-1.5-2L11.5 6z" fill="currentColor"/>` },
+    { id: 'aws',     label: 'AWS',         available: false, icon: `<path d="M6.5 14.5c-2 .5-3.5-.5-3.5-2.5S4.5 9 6.5 9.5m11 5c2 .5 3.5-.5 3.5-2.5S17.5 9 15.5 9.5M12 5v14M8 7l4-4 4 4M8 17l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>` },
+    { id: 'google',  label: 'GCP',         available: false, icon: `<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M15 12h4M5 12h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>` },
+    { id: 'all',     label: 'Multi-Cloud', available: true,  icon: `<circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M12 3a9 9 0 0 1 9 9M12 3a9 9 0 0 0-9 9m9-9v2m0 16v-2m9-7h-2M5 12H3m12.2-5.2-1.4 1.4M8.2 15.8 6.8 17.2M17.2 15.8l-1.4-1.4M8.2 8.2 6.8 6.8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>` },
+  ];
+  let selectedProvider = $state<string>('azurerm');
 
   let categories = $state<TemplateCategory[]>([]);
   let activeCategory = $state('');
@@ -99,7 +109,7 @@
   async function loadTemplates() {
     loadingTemplates = true;
     try {
-      categories = await getTemplateCategories(registry);
+      categories = await getTemplateCategories(registry.inner);
       const blank = categories.flatMap((c) => c.templates).find((t) => t.metadata.id === 'blank');
       selectedTemplate = blank ?? categories[0]?.templates[0] ?? null;
       activeCategory = '';
@@ -145,7 +155,10 @@
         : undefined;
 
       ui.setEdgeType(edgeStyle);
-      await createProject(projectName.trim(), folderPath, selectedTemplate!, namingConvention, layoutAlgorithm);
+      const activeProviders: ProviderId[] | undefined = selectedProvider === 'all'
+        ? undefined
+        : [selectedProvider as ProviderId];
+      await createProject(projectName.trim(), folderPath, selectedTemplate!, namingConvention, layoutAlgorithm, activeProviders);
       invoke('set_last_project_location', { location: folderPath }).catch(() => {});
       resetState();
       onclose();
@@ -172,6 +185,7 @@
     conventionOrg = '';
     layoutAlgorithm = 'dagre';
     edgeStyle = 'default';
+    selectedProvider = 'azurerm';
     step = 1;
   }
 
@@ -267,6 +281,31 @@
       <!-- ── STEP 1 ──────────────────────────────────────────────────────── -->
       {#if step === 1}
         <div class="step-content">
+          <!-- Cloud Provider -->
+          <div class="provider-section">
+            <div class="section-label">Cloud Provider</div>
+            <div class="provider-grid">
+              {#each CLOUD_PROVIDERS as provider}
+                <!-- svelte-ignore a11y_click_events_have_key_events -->
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <div
+                  class="provider-card"
+                  class:selected={selectedProvider === provider.id}
+                  class:unavailable={!provider.available}
+                  onclick={() => { if (provider.available) selectedProvider = provider.id; }}
+                >
+                  <div class="provider-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">{@html provider.icon}</svg>
+                  </div>
+                  <div class="provider-label">{provider.label}</div>
+                  {#if !provider.available}
+                    <div class="provider-soon">Soon</div>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          </div>
+
           <!-- Template Gallery -->
           <div class="template-section">
             <div class="section-label">Template</div>
@@ -580,6 +619,65 @@
 
   .step2-content {
     gap: 20px;
+  }
+
+  /* ── Provider Section ───────────────────────────────────────── */
+  .provider-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .provider-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .provider-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 8px;
+    border: 1.5px solid var(--color-border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 0.12s, background 0.12s;
+    text-align: center;
+    position: relative;
+  }
+  .provider-card:hover:not(.unavailable) {
+    border-color: var(--color-text-muted);
+    background: var(--color-surface-hover);
+  }
+  .provider-card.selected {
+    border-color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+  }
+  .provider-card.unavailable {
+    cursor: default;
+    opacity: 0.45;
+  }
+  .provider-icon {
+    color: var(--color-text-muted);
+  }
+  .provider-card.selected .provider-icon {
+    color: var(--color-accent);
+  }
+  .provider-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-text);
+  }
+  .provider-soon {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    background: var(--color-surface-hover);
+    border: 1px solid var(--color-border);
+    border-radius: 3px;
+    padding: 1px 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
   /* ── Template Section ───────────────────────────────────────── */

@@ -41,6 +41,8 @@ class CostStore {
   loading = $state(false);
   lastFetched = $state<Date | null>(null);
   region = $state(loadRegion());
+  isDirty = $state(false);
+  private _costSnapshot = $state<string>('');
 
   totalMonthly = $derived.by(() => {
     let total = 0;
@@ -69,9 +71,44 @@ class CostStore {
     localStorage.setItem('ts-cost-region', region);
   }
 
+  private static buildSnapshot(nodes: DiagramNode[]): string {
+    return JSON.stringify(
+      nodes
+        .map((n) => ({ id: n.id, typeId: n.data.typeId, properties: n.data.properties }))
+        .sort((a, b) => a.id.localeCompare(b.id))
+    );
+  }
+
+  markSnapshot(nodes: DiagramNode[]): void {
+    this._costSnapshot = CostStore.buildSnapshot(nodes);
+    this.isDirty = false;
+  }
+
+  checkDirty(nodes: DiagramNode[]): void {
+    if (!this.hasPrices) return;
+    this.isDirty = CostStore.buildSnapshot(nodes) !== this._costSnapshot;
+  }
+
+  toJSON(): object {
+    return {
+      estimates: Array.from(this.estimates.values()),
+      lastFetched: this.lastFetched?.toISOString() ?? null,
+      snapshot: this._costSnapshot,
+    };
+  }
+
+  loadSaved(data: { estimates: CostEstimate[]; lastFetched: string | null; snapshot: string }): void {
+    this.estimates = new Map(data.estimates.map((e) => [e.nodeId, e]));
+    this.lastFetched = data.lastFetched ? new Date(data.lastFetched) : null;
+    this._costSnapshot = data.snapshot ?? '';
+    this.isDirty = false;
+  }
+
   clear() {
     this.estimates = new Map();
     this.lastFetched = null;
+    this._costSnapshot = '';
+    this.isDirty = false;
   }
 
   async fetchAll(nodes: DiagramNode[]) {
@@ -145,6 +182,7 @@ class CostStore {
 
     this.loading = false;
     this.lastFetched = new Date();
+    this.markSnapshot(nodes);
   }
 
   exportCsv(nodes: DiagramNode[]): string {

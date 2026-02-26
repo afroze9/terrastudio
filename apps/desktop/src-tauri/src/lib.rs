@@ -28,6 +28,7 @@ pub fn run() {
             project::commands::remove_recent_project,
             project::commands::get_last_project_location,
             project::commands::set_last_project_location,
+            project::commands::save_cost,
             project::commands::write_export_file,
             terraform::commands::write_terraform_files,
             terraform::commands::check_terraform,

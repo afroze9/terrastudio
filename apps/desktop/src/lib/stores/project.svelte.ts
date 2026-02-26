@@ -22,6 +22,7 @@ class ProjectStore {
       managed_by: 'terrastudio',
     },
     variableValues: {},
+    activeProviders: ['azurerm'],
   });
 
   open(path: string, metadata: ProjectMetadata) {

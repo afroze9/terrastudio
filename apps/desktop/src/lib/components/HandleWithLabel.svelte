@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Handle, Position, useConnection } from '@xyflow/svelte';
-  import { edgeValidator } from '$lib/bootstrap';
+  import { registry } from '$lib/bootstrap';
   import type { HandleDefinition, ResourceTypeId } from '@terrastudio/types';
 
   let { handle, nodeTypeId, style }: { handle: HandleDefinition; nodeTypeId: ResourceTypeId; style?: string } = $props();
@@ -24,13 +24,13 @@
 
     // If dragging from a source handle, highlight valid targets
     if (fromHandleType === 'source' && handle.type === 'target') {
-      const result = edgeValidator.validate(fromTypeId, fromHandleId, nodeTypeId, handle.id);
+      const result = registry.edgeValidator.validate(fromTypeId, fromHandleId, nodeTypeId, handle.id);
       return result.valid ? 'compatible' : 'incompatible';
     }
 
     // If dragging from a target handle, highlight valid sources
     if (fromHandleType === 'target' && handle.type === 'source') {
-      const result = edgeValidator.validate(nodeTypeId, handle.id, fromTypeId, fromHandleId);
+      const result = registry.edgeValidator.validate(nodeTypeId, handle.id, fromTypeId, fromHandleId);
       return result.valid ? 'compatible' : 'incompatible';
     }
 

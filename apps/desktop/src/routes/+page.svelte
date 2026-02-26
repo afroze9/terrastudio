@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import { getCurrentWindow } from '@tauri-apps/api/window';
-	import { initializePlugins, initializeTerraformCheck } from '$lib/bootstrap';
+	import { declarePlugins, initializeTerraformCheck } from '$lib/bootstrap';
 	import Titlebar from '$lib/components/Titlebar.svelte';
 	import ActivityBar from '$lib/components/ActivityBar.svelte';
 	import SidePanel from '$lib/components/SidePanel.svelte';
@@ -20,7 +20,7 @@
 
 	let showNewProjectDialog = $state(false);
 
-	initializePlugins();
+	declarePlugins();
 
 	onMount(() => {
 		ui.applyTheme();

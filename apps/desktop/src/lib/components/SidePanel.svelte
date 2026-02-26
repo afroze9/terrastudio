@@ -7,12 +7,12 @@
   import AppSettingsPanel from './AppSettingsPanel.svelte';
   import CostPanel from './CostPanel.svelte';
 
-  const categoryIds = registry.getPaletteCategories().map((c) => c.id);
+  const categoryIds = registry.paletteCategories.map((c) => c.id);
 
   const SECTION_IDS: Record<string, string[]> = {
     explorer: categoryIds,
     terraform: ['tf-files', 'tf-variables', 'tf-commands'],
-    settings: ['project-naming', 'project-layout', 'project-edge-styles', 'project-tags'],
+    settings: ['project-provider', 'project-naming', 'project-layout', 'project-edge-styles', 'project-tags'],
     'app-settings': ['app-appearance', 'app-canvas', 'app-cost'],
     cost: ['cost-summary', 'cost-by-type', 'cost-notes'],
   };

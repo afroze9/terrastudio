@@ -16,6 +16,7 @@ pub struct ProjectMetadata {
 pub struct ProjectData {
     pub metadata: ProjectMetadata,
     pub diagram: Option<serde_json::Value>,
+    pub cost: Option<serde_json::Value>,
     pub path: String,
 }
 
@@ -82,6 +83,7 @@ pub async fn create_project(
     Ok(ProjectData {
         metadata,
         diagram: None,
+        cost: None,
         path: project_path_str,
     })
 }
@@ -133,12 +135,24 @@ pub async fn load_project(project_path: String) -> Result<ProjectData, String> {
         None
     };
 
+    // Read cost estimates if they exist
+    let cost_path = project_dir.join("diagrams").join("cost.json");
+    let cost = if cost_path.exists() {
+        tokio::fs::read_to_string(&cost_path)
+            .await
+            .ok()
+            .and_then(|s| serde_json::from_str(&s).ok())
+    } else {
+        None
+    };
+
     // Track in recent projects
     let _ = recent::add_recent(&metadata.name, &project_path);
 
     Ok(ProjectData {
         metadata,
         diagram,
+        cost,
         path: project_path,
     })
 }
@@ -167,6 +181,24 @@ pub async fn save_project_config(
         .map_err(|e| format!("Failed to write project file: {}", e))?;
 
     Ok(())
+}
+
+/// Save cost estimates to the project's diagrams/cost.json.
+#[command]
+pub async fn save_cost(
+    project_path: String,
+    cost: serde_json::Value,
+) -> Result<(), String> {
+    let cost_path = PathBuf::from(&project_path)
+        .join("diagrams")
+        .join("cost.json");
+
+    let json = serde_json::to_string_pretty(&cost)
+        .map_err(|e| format!("Failed to serialize cost: {}", e))?;
+
+    tokio::fs::write(&cost_path, &json)
+        .await
+        .map_err(|e| format!("Failed to write cost: {}", e))
 }
 
 /// Write binary data to a file (used for PNG/Markdown export).

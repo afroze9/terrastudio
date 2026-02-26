@@ -2,24 +2,35 @@
   import { slide } from 'svelte/transition';
   import { registry } from '$lib/bootstrap';
   import { ui } from '$lib/stores/ui.svelte';
-
-  const categories = registry.getPaletteCategories();
+  import { project } from '$lib/stores/project.svelte';
 
   let searchQuery = $state('');
 
+  // Reactive: re-evaluates whenever registry.paletteCategories changes (new plugins loaded)
+  // or project.projectConfig.activeProviders changes (user switches provider)
   let filteredCategories = $derived(
-    categories
+    registry.paletteCategories
       .map((category) => {
-        const resources = registry.getResourceTypesForCategory(category.id);
-        if (!searchQuery.trim()) return { category, resources };
-        const q = searchQuery.toLowerCase();
-        const matched = resources.filter(
-          (reg) =>
-            reg.schema.displayName.toLowerCase().includes(q) ||
-            reg.schema.typeId.toLowerCase().includes(q) ||
-            (reg.schema.description ?? '').toLowerCase().includes(q),
-        );
-        return { category, resources: matched };
+        let resources = registry.getResourceTypesForCategory(category.id);
+
+        // Filter by active providers
+        const active = project.projectConfig.activeProviders;
+        if (active?.length) {
+          resources = resources.filter((r) => active.includes(r.schema.provider as any));
+        }
+
+        // Search filter
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase();
+          resources = resources.filter(
+            (reg) =>
+              reg.schema.displayName.toLowerCase().includes(q) ||
+              reg.schema.typeId.toLowerCase().includes(q) ||
+              (reg.schema.description ?? '').toLowerCase().includes(q),
+          );
+        }
+
+        return { category, resources };
       })
       .filter((c) => c.resources.length > 0),
   );
@@ -47,47 +58,61 @@
       <button class="search-clear" onclick={() => (searchQuery = '')} aria-label="Clear search">&times;</button>
     {/if}
   </div>
-  {#each filteredCategories as { category, resources }}
-    {@const collapsed = !searchQuery && ui.isCategoryCollapsed(category.id)}
-    <div class="palette-category">
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <div
-        class="category-header"
-        onclick={() => { if (!searchQuery) ui.toggleCategory(category.id); }}
-      >
-        <svg
-          class="chevron"
-          class:collapsed
-          width="12" height="12" viewBox="0 0 12 12"
-        >
-          <path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-        <span class="category-label">{category.label}</span>
-        <span class="category-count">{resources.length}</span>
-      </div>
-      {#if !collapsed}
-        <div class="category-items" transition:slide={{ duration: 150 }}>
-          {#each resources as reg}
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <div
-              class="palette-item"
-              draggable="true"
-              ondragstart={(e) => onDragStart(e, reg.schema.typeId)}
-              title={reg.schema.description}
-            >
-              {#if reg.icon?.type === 'svg' && reg.icon.svg}
-                <span class="palette-icon">{@html reg.icon.svg}</span>
-              {:else}
-                <span class="palette-icon"></span>
-              {/if}
-              <span class="palette-label">{reg.schema.displayName}</span>
-            </div>
-          {/each}
-        </div>
+
+  {#if registry.isLoading}
+    <div class="palette-loading">Loading resources...</div>
+  {:else if filteredCategories.length === 0}
+    <div class="palette-empty">
+      {#if searchQuery}
+        No resources match your search.
+      {:else}
+        No resources for the selected provider.<br />
+        Change in Project Settings &rarr; Cloud Provider.
       {/if}
     </div>
-  {/each}
+  {:else}
+    {#each filteredCategories as { category, resources }}
+      {@const collapsed = !searchQuery && ui.isCategoryCollapsed(category.id)}
+      <div class="palette-category">
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <div
+          class="category-header"
+          onclick={() => { if (!searchQuery) ui.toggleCategory(category.id); }}
+        >
+          <svg
+            class="chevron"
+            class:collapsed
+            width="12" height="12" viewBox="0 0 12 12"
+          >
+            <path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span class="category-label">{category.label}</span>
+          <span class="category-count">{resources.length}</span>
+        </div>
+        {#if !collapsed}
+          <div class="category-items" transition:slide={{ duration: 150 }}>
+            {#each resources as reg}
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <div
+                class="palette-item"
+                draggable="true"
+                ondragstart={(e) => onDragStart(e, reg.schema.typeId)}
+                title={reg.schema.description}
+              >
+                {#if reg.icon?.type === 'svg' && reg.icon.svg}
+                  <span class="palette-icon">{@html reg.icon.svg}</span>
+                {:else}
+                  <span class="palette-icon"></span>
+                {/if}
+                <span class="palette-label">{reg.schema.displayName}</span>
+              </div>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    {/each}
+  {/if}
 </aside>
 
 <style>
@@ -144,6 +169,19 @@
   }
   .search-clear:hover {
     color: var(--color-text);
+  }
+  .palette-loading {
+    padding: 16px 12px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+    text-align: center;
+  }
+  .palette-empty {
+    padding: 16px 12px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+    text-align: center;
+    line-height: 1.5;
   }
   .palette-category {
     border-bottom: 1px solid var(--color-border);

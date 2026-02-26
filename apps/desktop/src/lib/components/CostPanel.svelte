@@ -8,6 +8,11 @@
 
   const nodes = $derived(diagram.nodes);
 
+  // Re-check dirty state whenever diagram nodes change
+  $effect(() => {
+    cost.checkDirty(nodes);
+  });
+
   async function handleFetch() {
     if (!nodes.length) return;
     showRegionPicker = false;
@@ -127,6 +132,17 @@
       {/if}
     </div>
   </div>
+
+  {#if cost.isDirty && cost.hasPrices}
+    <div class="dirty-banner">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      Diagram changed — prices may be outdated.
+    </div>
+  {/if}
 
   {#if !cost.hasPrices && !cost.loading}
     <div class="empty-state">
@@ -426,5 +442,23 @@
     color: var(--color-text-muted);
     line-height: 1.7;
     opacity: 0.8;
+  }
+
+  /* Dirty banner */
+  .dirty-banner {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    font-size: 11px;
+    color: #92400e;
+    background: #fef3c7;
+    border-bottom: 1px solid #fcd34d;
+    flex-shrink: 0;
+  }
+  :global(.dark) .dirty-banner {
+    color: #fcd34d;
+    background: rgba(252, 211, 77, 0.1);
+    border-bottom-color: rgba(252, 211, 77, 0.25);
   }
 </style>

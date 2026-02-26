@@ -2,12 +2,14 @@ import { invoke } from '@tauri-apps/api/core';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { project, type ProjectMetadata } from '$lib/stores/project.svelte';
 import { diagram, type DiagramEdge } from '$lib/stores/diagram.svelte';
+import { cost } from '$lib/stores/cost.svelte';
 import { ui } from '$lib/stores/ui.svelte';
-import { registry } from '$lib/bootstrap';
+import { registry, loadPluginsForProject } from '$lib/bootstrap';
 import { applyTemplate } from '$lib/templates/service';
 import type { Template } from '$lib/templates/types';
 import type { NamingConvention, EdgeCategoryId } from '@terrastudio/types';
-import type { LayoutAlgorithm } from '@terrastudio/core';
+import type { LayoutAlgorithm, ProjectConfig } from '@terrastudio/core';
+import type { ProviderId } from '@terrastudio/types';
 
 /**
  * Migrate edges from old format (no data.category) to new format.
@@ -47,7 +49,17 @@ interface ProjectData {
     nodes: unknown[];
     edges: unknown[];
   } | null;
+  cost: unknown | null;
   path: string;
+}
+
+/**
+ * Resolve which provider IDs to load for a given project config.
+ * Defaults to ['azurerm'] for backward compatibility with projects that
+ * don't have activeProviders set.
+ */
+function resolveActiveProviders(config: ProjectConfig): ProviderId[] {
+  return (config.activeProviders?.length ? config.activeProviders : ['azurerm']) as ProviderId[];
 }
 
 /**
@@ -70,28 +82,31 @@ export async function createProject(
   template?: Template,
   namingConvention?: NamingConvention,
   layoutAlgorithm?: LayoutAlgorithm,
+  activeProviders?: ProviderId[],
 ): Promise<void> {
   const data = await invoke<ProjectData>('create_project', {
     name,
     parentPath,
   });
 
+  // Load plugins before opening project in store
+  const providers = activeProviders?.length ? activeProviders : ['azurerm' as ProviderId];
+  await loadPluginsForProject(providers);
+
   diagram.clear();
   project.open(data.path, data.metadata);
 
-  // Apply any config overrides and persist them
-  const hasOverrides = namingConvention || layoutAlgorithm;
-  if (hasOverrides) {
-    if (namingConvention) project.projectConfig = { ...project.projectConfig, namingConvention };
-    if (layoutAlgorithm) project.projectConfig = { ...project.projectConfig, layoutAlgorithm };
-    await invoke('save_project_config', {
-      projectPath: data.path,
-      projectConfig: project.projectConfig,
-    });
-  }
+  // Apply config overrides and persist them (always save activeProviders)
+  if (namingConvention) project.projectConfig = { ...project.projectConfig, namingConvention };
+  if (layoutAlgorithm) project.projectConfig = { ...project.projectConfig, layoutAlgorithm };
+  project.projectConfig = { ...project.projectConfig, activeProviders: providers };
+  await invoke('save_project_config', {
+    projectPath: data.path,
+    projectConfig: project.projectConfig,
+  });
 
   if (template) {
-    const { nodes, edges } = applyTemplate(template, namingConvention, registry);
+    const { nodes, edges } = applyTemplate(template, namingConvention, registry.inner);
     diagram.loadDiagram(nodes, edges);
     await saveDiagram();
   }
@@ -114,7 +129,11 @@ export async function openProject(): Promise<void> {
     projectPath: selected,
   });
 
+  // Load plugins before opening project in store
+  await loadPluginsForProject(resolveActiveProviders(data.metadata.projectConfig));
+
   diagram.clear();
+  cost.clear();
   project.open(data.path, data.metadata);
 
   // Restore diagram if it exists, migrating old edges to new format
@@ -123,6 +142,12 @@ export async function openProject(): Promise<void> {
     const nodes = (d.nodes ?? []) as any[];
     const edges = migrateEdges(d.edges ?? []);
     diagram.loadDiagram(nodes, edges);
+  }
+
+  // Restore cost estimates if present, then check if diagram changed since last save
+  if (data.cost) {
+    cost.loadSaved(data.cost as any);
+    cost.checkDirty(diagram.nodes);
   }
 }
 
@@ -137,7 +162,11 @@ export async function loadProjectByPath(path: string): Promise<void> {
     projectPath: path,
   });
 
+  // Load plugins before opening project in store
+  await loadPluginsForProject(resolveActiveProviders(data.metadata.projectConfig));
+
   diagram.clear();
+  cost.clear();
   project.open(data.path, data.metadata);
 
   // Restore diagram if it exists, migrating old edges to new format
@@ -146,6 +175,12 @@ export async function loadProjectByPath(path: string): Promise<void> {
     const nodes = (d.nodes ?? []) as any[];
     const edges = migrateEdges(d.edges ?? []);
     diagram.loadDiagram(nodes, edges);
+  }
+
+  // Restore cost estimates if present, then check if diagram changed since last save
+  if (data.cost) {
+    cost.loadSaved(data.cost as any);
+    cost.checkDirty(diagram.nodes);
   }
 }
 
@@ -161,7 +196,7 @@ export async function saveDiagram(): Promise<void> {
     edges: diagram.edges,
   };
 
-  // Save diagram and project config in parallel
+  // Save diagram, project config, and cost estimates in parallel
   await Promise.all([
     invoke('save_diagram', {
       projectPath: project.path,
@@ -171,6 +206,12 @@ export async function saveDiagram(): Promise<void> {
       projectPath: project.path,
       projectConfig: project.projectConfig,
     }),
+    cost.hasPrices
+      ? invoke('save_cost', {
+          projectPath: project.path,
+          cost: cost.toJSON(),
+        })
+      : Promise.resolve(),
   ]);
 
   project.markSaved();
@@ -186,4 +227,3 @@ export async function pickFolder(): Promise<string | null> {
   });
   return selected ?? null;
 }
-

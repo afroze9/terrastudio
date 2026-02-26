@@ -1,45 +1,47 @@
-import { PluginRegistry, EdgeRuleValidator, type OutputAcceptingHandle } from '@terrastudio/core';
-import networkingPlugin from '@terrastudio/plugin-azure-networking';
-import computePlugin from '@terrastudio/plugin-azure-compute';
-import storagePlugin from '@terrastudio/plugin-azure-storage';
-import databasePlugin from '@terrastudio/plugin-azure-database';
-import monitoringPlugin from '@terrastudio/plugin-azure-monitoring';
-import securityPlugin from '@terrastudio/plugin-azure-security';
+import { pluginRegistry } from '@terrastudio/core';
 import DefaultResourceNode from '$lib/components/DefaultResourceNode.svelte';
 import ContainerResourceNode from '$lib/components/ContainerResourceNode.svelte';
 import { TerraStudioEdge } from '$lib/components/edges';
 import { checkTerraform } from '$lib/services/terraform-service';
 import type { Component } from 'svelte';
 import type { EdgeTypes } from '@xyflow/svelte';
+import type { ProviderId } from '@terrastudio/types';
 
-export let registry = new PluginRegistry();
-export let edgeValidator: EdgeRuleValidator;
-let initialized = false;
+/**
+ * The reactive plugin registry. Exported as `registry` for backward compatibility
+ * with all existing callers: registry.getResourceSchema(), registry.getIcon(), etc.
+ */
+export const registry = pluginRegistry;
 
-export function initializePlugins(): void {
-  if (initialized) return;
-  initialized = true;
+let declared = false;
 
-  registry.registerPlugin(networkingPlugin);
-  registry.registerPlugin(computePlugin);
-  registry.registerPlugin(storagePlugin);
-  registry.registerPlugin(databasePlugin);
-  registry.registerPlugin(monitoringPlugin);
-  registry.registerPlugin(securityPlugin);
-  registry.finalize();
+/**
+ * Register lazy plugin factories for each cloud provider.
+ * Call once at app startup — synchronous and instant.
+ * No plugin modules are imported or evaluated here.
+ */
+export function declarePlugins(): void {
+  if (declared) return;
+  declared = true;
 
-  // Collect handles that accept any dynamic output
-  const outputAcceptingHandles: OutputAcceptingHandle[] = [];
-  for (const typeId of registry.getResourceTypeIds()) {
-    const schema = registry.getResourceSchema(typeId);
-    for (const handle of schema?.handles ?? []) {
-      if (handle.acceptsOutputs) {
-        outputAcceptingHandles.push({ targetType: typeId, targetHandle: handle.id });
-      }
-    }
-  }
+  pluginRegistry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-networking'));
+  pluginRegistry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-compute'));
+  pluginRegistry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-storage'));
+  pluginRegistry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-database'));
+  pluginRegistry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-monitoring'));
+  pluginRegistry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-security'));
+  // Future providers:
+  // pluginRegistry.registerLazyPlugin('aws', () => import('@terrastudio/plugin-aws-compute'));
+  // pluginRegistry.registerLazyPlugin('google', () => import('@terrastudio/plugin-gcp-compute'));
+}
 
-  edgeValidator = new EdgeRuleValidator(registry.getConnectionRules(), outputAcceptingHandles);
+/**
+ * Load plugins for the given provider IDs.
+ * Called by project-service.ts before opening a project.
+ * Idempotent — already-loaded providers are skipped.
+ */
+export async function loadPluginsForProject(providerIds: ProviderId[]): Promise<void> {
+  await pluginRegistry.loadPluginsForProviders(providerIds);
 }
 
 export function initializeTerraformCheck(): void {
@@ -47,13 +49,15 @@ export function initializeTerraformCheck(): void {
 }
 
 /**
- * Builds the Svelte Flow nodeTypes map.
+ * Builds the Svelte Flow nodeTypes map from currently-loaded plugins.
  * Container resources get ContainerResourceNode, others get DefaultResourceNode.
+ * Canvas.svelte only mounts after project.open() which awaits plugin load,
+ * so all relevant plugins are guaranteed loaded before this is called.
  */
 export function buildNodeTypes(): Record<string, Component<any>> {
   const map: Record<string, Component<any>> = {};
-  for (const typeId of registry.getResourceTypeIds()) {
-    const schema = registry.getResourceSchema(typeId);
+  for (const typeId of pluginRegistry.inner.getResourceTypeIds()) {
+    const schema = pluginRegistry.inner.getResourceSchema(typeId);
     map[typeId] = schema?.isContainer ? ContainerResourceNode : DefaultResourceNode;
   }
   return map;
@@ -62,7 +66,6 @@ export function buildNodeTypes(): Record<string, Component<any>> {
 /**
  * Builds the Svelte Flow edgeTypes map.
  * All edge types use TerraStudioEdge which handles category-based styling.
- * Type assertion needed because TerraStudioEdge uses typed props.
  */
 export const edgeTypes = {
   default: TerraStudioEdge,

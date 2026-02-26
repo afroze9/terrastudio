@@ -14,6 +14,15 @@ import type {
   ProviderConfig,
   PluginRegistryReader,
 } from '@terrastudio/types';
+import { EdgeRuleValidator, type OutputAcceptingHandle } from '../diagram/edge-rules.js';
+
+/** A function that dynamically imports a plugin module. */
+export type PluginLoader = () => Promise<{ default: InfraPlugin }>;
+
+interface LazyPluginEntry {
+  loader: PluginLoader;
+  state: 'pending' | 'loading' | 'loaded' | 'error';
+}
 
 export class PluginRegistry implements PluginRegistryReader {
   private plugins: InfraPlugin[] = [];
@@ -22,15 +31,16 @@ export class PluginRegistry implements PluginRegistryReader {
   private connectionRulesList: ConnectionRule[] = [];
   private bindingGeneratorsList: BindingHclGenerator[] = [];
   private paletteCategoriesMap = new Map<string, PaletteCategory>();
-  private finalized = false;
+
+  // Lazy loading state
+  private lazyEntries = new Map<ProviderId, LazyPluginEntry[]>();
+  private loadedProviders = new Set<ProviderId>();
+  private inProgressLoads = new Map<ProviderId, Promise<void>>();
+
+  // Track which plugins have already had onAllPluginsRegistered fired
+  private notifiedPlugins = new Set<InfraPlugin>();
 
   registerPlugin(plugin: InfraPlugin): void {
-    if (this.finalized) {
-      throw new Error(
-        `Cannot register plugin "${plugin.id}" after registry is finalized.`,
-      );
-    }
-
     // Register provider config (first one wins)
     if (plugin.providerConfig && !this.providers.has(plugin.providerId)) {
       this.providers.set(plugin.providerId, plugin.providerConfig);
@@ -64,27 +74,70 @@ export class PluginRegistry implements PluginRegistryReader {
     this.plugins.push(plugin);
   }
 
+  /**
+   * Register a lazy plugin factory for a given provider.
+   * The loader function is NOT called until loadPluginsForProviders() is invoked.
+   */
+  registerLazyPlugin(providerId: ProviderId, loader: PluginLoader): void {
+    if (!this.lazyEntries.has(providerId)) {
+      this.lazyEntries.set(providerId, []);
+    }
+    this.lazyEntries.get(providerId)!.push({ loader, state: 'pending' });
+  }
+
+  /**
+   * Load all registered lazy plugins for the given provider IDs.
+   * Already-loaded providers are skipped (idempotent).
+   * Concurrent calls for the same provider share the same Promise.
+   */
+  async loadPluginsForProviders(providerIds: ProviderId[]): Promise<void> {
+    const toLoad = providerIds.filter((id) => !this.loadedProviders.has(id));
+    if (toLoad.length === 0) return;
+
+    // Start loads for each new provider (deduplicating concurrent calls)
+    const promises = toLoad.map((providerId) => {
+      const existing = this.inProgressLoads.get(providerId);
+      if (existing) return existing;
+
+      const promise = this._loadProvider(providerId);
+      this.inProgressLoads.set(providerId, promise);
+      promise.finally(() => this.inProgressLoads.delete(providerId));
+      return promise;
+    });
+
+    await Promise.all(promises);
+
+    // Re-finalize after all providers in this batch are loaded
+    this._finalizeIncremental();
+  }
+
+  isProviderLoaded(providerId: ProviderId): boolean {
+    return this.loadedProviders.has(providerId);
+  }
+
+  /**
+   * Re-entrant finalize: sorts palette categories and fires onAllPluginsRegistered
+   * on plugins that haven't been notified yet.
+   */
   finalize(): void {
-    if (this.finalized) {
-      throw new Error('Registry is already finalized.');
-    }
+    this._finalizeIncremental();
+  }
 
-    // Sort palette categories by order
-    const sorted = [...this.paletteCategoriesMap.values()].sort(
-      (a, b) => a.order - b.order,
-    );
-    this.paletteCategoriesMap.clear();
-    for (const cat of sorted) {
-      this.paletteCategoriesMap.set(cat.id, cat);
+  /**
+   * Build an EdgeRuleValidator from the currently registered connection rules
+   * and output-accepting handles.
+   */
+  buildEdgeValidator(): EdgeRuleValidator {
+    const handles: OutputAcceptingHandle[] = [];
+    for (const typeId of this.getResourceTypeIds()) {
+      const schema = this.getResourceSchema(typeId);
+      for (const handle of schema?.handles ?? []) {
+        if (handle.acceptsOutputs) {
+          handles.push({ targetType: typeId, targetHandle: handle.id });
+        }
+      }
     }
-
-    this.finalized = true;
-
-    // Call lifecycle hook on all plugins
-    const reader: PluginRegistryReader = this;
-    for (const plugin of this.plugins) {
-      plugin.onAllPluginsRegistered?.(reader);
-    }
+    return new EdgeRuleValidator(this.connectionRulesList, handles);
   }
 
   // --- Query methods ---
@@ -182,6 +235,57 @@ export class PluginRegistry implements PluginRegistryReader {
   }
 
   // --- Internal helpers ---
+
+  private async _loadProvider(providerId: ProviderId): Promise<void> {
+    const entries = this.lazyEntries.get(providerId) ?? [];
+    const pending = entries.filter((e) => e.state === 'pending');
+
+    if (pending.length === 0) {
+      this.loadedProviders.add(providerId);
+      return;
+    }
+
+    // Mark all as loading
+    for (const entry of pending) {
+      entry.state = 'loading';
+    }
+
+    // Load all plugins for this provider in parallel
+    await Promise.all(
+      pending.map(async (entry) => {
+        try {
+          const module = await entry.loader();
+          this.registerPlugin(module.default);
+          entry.state = 'loaded';
+        } catch (err) {
+          entry.state = 'error';
+          throw err;
+        }
+      }),
+    );
+
+    this.loadedProviders.add(providerId);
+  }
+
+  private _finalizeIncremental(): void {
+    // Re-sort palette categories (idempotent)
+    const sorted = [...this.paletteCategoriesMap.values()].sort(
+      (a, b) => a.order - b.order,
+    );
+    this.paletteCategoriesMap.clear();
+    for (const cat of sorted) {
+      this.paletteCategoriesMap.set(cat.id, cat);
+    }
+
+    // Fire onAllPluginsRegistered only on newly-added plugins
+    const reader: PluginRegistryReader = this;
+    for (const plugin of this.plugins) {
+      if (!this.notifiedPlugins.has(plugin)) {
+        this.notifiedPlugins.add(plugin);
+        plugin.onAllPluginsRegistered?.(reader);
+      }
+    }
+  }
 
   private getRegistration(typeId: ResourceTypeId): ResourceTypeRegistration {
     const reg = this.resourceTypes.get(typeId);
