@@ -79,8 +79,10 @@ jobs:
           BASE_VERSION=$(node -p "require('./apps/desktop/package.json').version")
           BUILD_NUM=${{ github.run_number }}
           NIGHTLY_VERSION="${BASE_VERSION}-nightly.${BUILD_NUM}"
+          NIGHTLY_TAG="nightly-${BUILD_NUM}"
           echo "NIGHTLY_VERSION=${NIGHTLY_VERSION}" >> $GITHUB_ENV
-          echo "Building nightly version: ${NIGHTLY_VERSION}"
+          echo "NIGHTLY_TAG=${NIGHTLY_TAG}" >> $GITHUB_ENV
+          echo "Building nightly version: ${NIGHTLY_VERSION} (tag: ${NIGHTLY_TAG})"
 
           # Patch package.json
           node -e "
@@ -113,8 +115,8 @@ jobs:
         with:
           projectPath: apps/desktop
           tauriScript: pnpm tauri
-          tagName: nightly
-          releaseName: 'TerraStudio Nightly'
+          tagName: ${{ env.NIGHTLY_TAG }}
+          releaseName: 'TerraStudio Nightly (${{ env.NIGHTLY_VERSION }})'
           releaseBody: |
             **Automated nightly build from master**
 
