@@ -23,7 +23,7 @@ jobs:
             args: '--bundles nsis'
             rust-targets: ''
             portable-ext: exe
-            portable-name: TerraStudio.exe
+            portable-name: app.exe
             archive-cmd: 7z a -tzip
           - platform: ubuntu-22.04
             args: ''

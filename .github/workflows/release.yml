@@ -93,7 +93,7 @@ jobs:
         shell: bash
         run: |
           cd apps/desktop/src-tauri/target/release
-          7z a -tzip "TerraStudio-${{ needs.release-please.outputs.version }}-portable-x64.zip" TerraStudio.exe
+          7z a -tzip "TerraStudio-${{ needs.release-please.outputs.version }}-portable-x64.zip" app.exe
       - name: Upload portable zip (Windows)
         if: matrix.platform == 'windows-latest'
         env:
