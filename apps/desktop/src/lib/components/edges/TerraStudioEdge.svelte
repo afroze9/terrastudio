@@ -11,7 +11,7 @@
   import { edgeCategoryRegistry } from '@terrastudio/core';
   import { ui } from '$lib/stores/ui.svelte';
   import { project } from '$lib/stores/project.svelte';
-  import { mergeEdgeStyles, computeEdgeStyle, getMarkerUrl, DEFAULT_EDGE_STYLE } from './edge-utils';
+  import { mergeEdgeStyles, computeEdgeStyle, getMarkerUrl, getMarkerStartUrl, DEFAULT_EDGE_STYLE } from './edge-utils';
 
   // Props from SvelteFlow EdgeTypes - using explicit types instead of EdgeProps generic
   // because svelte-check doesn't properly infer the generic parameter
@@ -74,7 +74,8 @@
   const style = $derived(computeEdgeStyle(mergedStyle, selected ?? false));
 
   // Determine markers from merged style
-  const markerStart = $derived(getMarkerUrl(mergedStyle.markerStart));
+  // markerStart uses reversed markers (-start suffix) so arrows point outward from source
+  const markerStart = $derived(getMarkerStartUrl(mergedStyle.markerStart));
   const markerEnd = $derived(getMarkerUrl(mergedStyle.markerEnd));
 
   // Check if edge should be animated
@@ -121,9 +122,13 @@
     color: var(--color-text);
   }
 
-  :global(.terrastudio-edge.animated path) {
-    stroke-dasharray: 5;
-    animation: edge-flow 0.5s linear infinite;
+  /* Animation for binding/data flow edges */
+  :global(.svelte-flow__edge.animated path),
+  :global(.svelte-flow__edge.animated .react-flow__edge-path),
+  :global(.terrastudio-edge.animated),
+  :global(g.animated path) {
+    stroke-dasharray: 5 !important;
+    animation: edge-flow 0.5s linear infinite !important;
   }
 
   @keyframes edge-flow {
@@ -135,7 +140,8 @@
     }
   }
 
-  :global(.terrastudio-edge.selected path) {
+  :global(.terrastudio-edge.selected path),
+  :global(.svelte-flow__edge.selected path) {
     stroke: var(--edge-selected, #3b82f6) !important;
   }
 </style>

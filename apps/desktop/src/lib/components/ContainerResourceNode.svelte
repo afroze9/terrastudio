@@ -179,6 +179,7 @@
 
   let hoverTimer: ReturnType<typeof setTimeout> | null = null;
   let showTooltip = $state(false);
+  let nodeEl: HTMLDivElement | undefined = $state();
 
   function onMouseEnter() {
     hoverTimer = setTimeout(() => { showTooltip = true; }, 300);
@@ -250,6 +251,7 @@
   style="border-color: {isInvalidDropTarget ? '#ef4444' : isValidDropTarget ? '#22c55e' : hasValidationErrors ? '#ef4444' : selected ? 'var(--color-accent, #3b82f6)' : borderColor}; border-style: {useSvgBorder && !isInvalidDropTarget && !isValidDropTarget && !hasValidationErrors ? 'none' : isInvalidDropTarget || isValidDropTarget || hasValidationErrors ? 'solid' : borderStyle}; background: {isInvalidDropTarget ? 'rgba(239, 68, 68, 0.06)' : isValidDropTarget ? 'rgba(34, 197, 94, 0.06)' : hasValidationErrors ? 'rgba(239, 68, 68, 0.04)' : bg}; border-radius: {radius}px; border-width: {useSvgBorder && !isInvalidDropTarget && !isValidDropTarget && !hasValidationErrors ? 0 : isInvalidDropTarget || isValidDropTarget ? 2.5 : hasValidationErrors ? 2 : borderWidth}px;"
   onmouseenter={onMouseEnter}
   onmouseleave={onMouseLeave}
+  bind:this={nodeEl}
 >
   {#if useSvgBorder && !isInvalidDropTarget && !isValidDropTarget && !hasValidationErrors}
     <svg class="svg-border" xmlns="http://www.w3.org/2000/svg" style="--bw: {borderWidth}px;">
@@ -311,6 +313,7 @@
       deploymentStatus={data.deploymentStatus}
       properties={data.properties}
       visible={showTooltip}
+      anchorEl={nodeEl}
     />
   {/if}
 </div>

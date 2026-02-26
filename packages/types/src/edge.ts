@@ -16,8 +16,9 @@ export type EdgeMarkerType = 'none' | 'arrow' | 'arrowClosed' | 'dot';
 
 /**
  * Line style types for user-friendly edge configuration.
+ * 'animated' is a special style that shows moving dashes (for data flow visualization).
  */
-export type EdgeLineStyle = 'solid' | 'dashed' | 'dotted';
+export type EdgeLineStyle = 'solid' | 'dashed' | 'dotted' | 'animated';
 
 /**
  * Style definition for an edge category or custom edge styling.
@@ -42,15 +43,15 @@ export interface EdgeStyleDefinition {
  * Used for project-level defaults and per-edge overrides.
  */
 export interface EdgeStyleSettings {
-  /** Line style: solid, dashed, or dotted */
+  /** Line style: solid, dashed, dotted, or animated */
   lineStyle?: EdgeLineStyle;
-  /** Whether the edge animates */
-  animated?: boolean;
   /** Stroke color (hex color like #ff0000) */
   color?: string;
   /** Stroke width in pixels (1-5) */
   thickness?: number;
-  /** Arrow marker at target end */
+  /** Marker at source/start end (line start) */
+  markerStart?: EdgeMarkerType;
+  /** Marker at target/end (line end) */
   markerEnd?: EdgeMarkerType;
 }
 

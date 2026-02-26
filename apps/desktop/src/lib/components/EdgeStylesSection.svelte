@@ -20,6 +20,7 @@
     { value: 'solid', label: 'Solid' },
     { value: 'dashed', label: 'Dashed' },
     { value: 'dotted', label: 'Dotted' },
+    { value: 'animated', label: 'Animated' },
   ];
 
   const MARKER_OPTIONS: { value: EdgeMarkerType; label: string }[] = [
@@ -29,10 +30,11 @@
     { value: 'dot', label: 'Dot' },
   ];
 
-  // Get default line style from category definition's dashArray
+  // Get default line style from category definition's dashArray/animated
   function getCategoryDefaultLineStyle(categoryId: EdgeCategoryId): EdgeLineStyle {
     const cat = edgeCategoryRegistry.get(categoryId);
     if (!cat) return 'solid';
+    if (cat.defaultStyle.animated) return 'animated';
     const dashArray = cat.defaultStyle.dashArray;
     if (!dashArray) return 'solid';
     if (dashArray.includes('5')) return 'dashed';
@@ -40,8 +42,14 @@
     return 'dashed';
   }
 
-  // Get default marker from category definition
-  function getCategoryDefaultMarker(categoryId: EdgeCategoryId): EdgeMarkerType {
+  // Get default marker start from category definition
+  function getCategoryDefaultMarkerStart(categoryId: EdgeCategoryId): EdgeMarkerType {
+    const cat = edgeCategoryRegistry.get(categoryId);
+    return cat?.defaultStyle.markerStart ?? 'none';
+  }
+
+  // Get default marker end from category definition
+  function getCategoryDefaultMarkerEnd(categoryId: EdgeCategoryId): EdgeMarkerType {
     const cat = edgeCategoryRegistry.get(categoryId);
     return cat?.defaultStyle.markerEnd ?? 'none';
   }
@@ -50,12 +58,6 @@
   function getCategoryDefaultThickness(categoryId: EdgeCategoryId): number {
     const cat = edgeCategoryRegistry.get(categoryId);
     return cat?.defaultStyle.strokeWidth ?? 2;
-  }
-
-  // Get default animated from category definition
-  function getCategoryDefaultAnimated(categoryId: EdgeCategoryId): boolean {
-    const cat = edgeCategoryRegistry.get(categoryId);
-    return cat?.defaultStyle.animated ?? false;
   }
 
   // Map CSS variable colors to hex values for color picker
@@ -113,9 +115,9 @@
     {@const settings = getSettings(category.id)}
     {@const hasCustom = hasOverrides(category.id)}
     {@const defaultLineStyle = getCategoryDefaultLineStyle(category.id)}
-    {@const defaultMarker = getCategoryDefaultMarker(category.id)}
+    {@const defaultMarkerStart = getCategoryDefaultMarkerStart(category.id)}
+    {@const defaultMarkerEnd = getCategoryDefaultMarkerEnd(category.id)}
     {@const defaultThickness = getCategoryDefaultThickness(category.id)}
-    {@const defaultAnimated = getCategoryDefaultAnimated(category.id)}
     {@const defaultColor = getCategoryDefaultColor(category.id)}
     <div class="edge-category">
       <div class="category-header">
@@ -138,7 +140,6 @@
             value={settings.lineStyle ?? defaultLineStyle}
             onchange={(e) => {
               const val = (e.target as HTMLSelectElement).value as EdgeLineStyle;
-              // Only store if different from default
               updateSettings(category.id, { lineStyle: val === defaultLineStyle ? undefined : val });
             }}
           >
@@ -147,16 +148,33 @@
             {/each}
           </select>
         </label>
+      </div>
 
+      <div class="style-row">
         <label class="style-field">
-          <span class="field-label">Arrow</span>
+          <span class="field-label">Source End</span>
           <select
             class="style-select"
-            value={settings.markerEnd ?? defaultMarker}
+            value={settings.markerStart ?? defaultMarkerStart}
             onchange={(e) => {
               const val = (e.target as HTMLSelectElement).value as EdgeMarkerType;
-              // Only store if different from default
-              updateSettings(category.id, { markerEnd: val === defaultMarker ? undefined : val });
+              updateSettings(category.id, { markerStart: val === defaultMarkerStart ? undefined : val });
+            }}
+          >
+            {#each MARKER_OPTIONS as opt (opt.value)}
+              <option value={opt.value}>{opt.label}</option>
+            {/each}
+          </select>
+        </label>
+
+        <label class="style-field">
+          <span class="field-label">Target End</span>
+          <select
+            class="style-select"
+            value={settings.markerEnd ?? defaultMarkerEnd}
+            onchange={(e) => {
+              const val = (e.target as HTMLSelectElement).value as EdgeMarkerType;
+              updateSettings(category.id, { markerEnd: val === defaultMarkerEnd ? undefined : val });
             }}
           >
             {#each MARKER_OPTIONS as opt (opt.value)}
@@ -208,18 +226,6 @@
         </label>
       </div>
 
-      <label class="style-checkbox">
-        <input
-          type="checkbox"
-          checked={settings.animated ?? defaultAnimated}
-          onchange={(e) => {
-            const checked = (e.target as HTMLInputElement).checked;
-            // Only store if different from default
-            updateSettings(category.id, { animated: checked === defaultAnimated ? undefined : checked });
-          }}
-        />
-        <span>Animated</span>
-      </label>
     </div>
   {/each}
 </CollapsibleSection>
@@ -340,17 +346,5 @@
   }
   .clear-color:hover {
     color: #ef4444;
-  }
-
-  .style-checkbox {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    color: var(--color-text);
-    cursor: pointer;
-  }
-  .style-checkbox input[type='checkbox'] {
-    accent-color: var(--color-accent);
   }
 </style>

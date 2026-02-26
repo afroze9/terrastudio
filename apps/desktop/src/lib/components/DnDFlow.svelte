@@ -50,7 +50,13 @@
   // Merge real (persisted) edges with auto-generated reference edges.
   // $derived re-computes reactively whenever diagram.edges or diagram.nodes changes.
   // Type assertion to Edge[] for SvelteFlow compatibility (our TerraStudioEdgeData extends Record<string, unknown>).
-  const displayEdges = $derived([...diagram.edges, ...diagram.referenceEdges] as Edge[]);
+  // Also filter out edges whose category is hidden via the visibility toggle.
+  const displayEdges = $derived(
+    ([...diagram.edges, ...diagram.referenceEdges] as Edge[]).filter((edge) => {
+      const category = (edge.data as TerraStudioEdgeData | undefined)?.category ?? 'structural';
+      return ui.isEdgeCategoryVisible(category);
+    })
+  );
 
   let defaultEdgeOptions = $derived({ type: ui.edgeType });
 

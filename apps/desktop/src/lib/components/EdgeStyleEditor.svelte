@@ -14,6 +14,7 @@
     { value: 'solid', label: 'Solid' },
     { value: 'dashed', label: 'Dashed' },
     { value: 'dotted', label: 'Dotted' },
+    { value: 'animated', label: 'Animated' },
   ];
 
   const MARKER_OPTIONS: { value: EdgeMarkerType; label: string }[] = [
@@ -23,10 +24,11 @@
     { value: 'dot', label: 'Dot' },
   ];
 
-  // Get default line style from category definition's dashArray
+  // Get default line style from category definition's dashArray/animated
   function getCategoryDefaultLineStyle(): EdgeLineStyle {
     const cat = edgeCategoryRegistry.get(categoryId);
     if (!cat) return 'solid';
+    if (cat.defaultStyle.animated) return 'animated';
     const dashArray = cat.defaultStyle.dashArray;
     if (!dashArray) return 'solid';
     if (dashArray.includes('5')) return 'dashed';
@@ -40,7 +42,14 @@
     return projectSetting ?? getCategoryDefaultLineStyle();
   });
 
-  let effectiveMarker = $derived.by(() => {
+  let effectiveMarkerStart = $derived.by(() => {
+    const cat = edgeCategoryRegistry.get(categoryId);
+    const categoryDefault = cat?.defaultStyle.markerStart ?? 'none';
+    const projectSetting = project.projectConfig.edgeStyles?.[categoryId]?.markerStart;
+    return projectSetting ?? categoryDefault;
+  });
+
+  let effectiveMarkerEnd = $derived.by(() => {
     const cat = edgeCategoryRegistry.get(categoryId);
     const categoryDefault = cat?.defaultStyle.markerEnd ?? 'none';
     const projectSetting = project.projectConfig.edgeStyles?.[categoryId]?.markerEnd;
@@ -51,13 +60,6 @@
     const cat = edgeCategoryRegistry.get(categoryId);
     const categoryDefault = cat?.defaultStyle.strokeWidth ?? 2;
     const projectSetting = project.projectConfig.edgeStyles?.[categoryId]?.thickness;
-    return projectSetting ?? categoryDefault;
-  });
-
-  let effectiveAnimated = $derived.by(() => {
-    const cat = edgeCategoryRegistry.get(categoryId);
-    const categoryDefault = cat?.defaultStyle.animated ?? false;
-    const projectSetting = project.projectConfig.edgeStyles?.[categoryId]?.animated;
     return projectSetting ?? categoryDefault;
   });
 
@@ -119,16 +121,33 @@
         {/each}
       </select>
     </label>
+  </div>
 
+  <div class="style-row">
     <label class="style-field">
-      <span class="field-label">Arrow</span>
+      <span class="field-label">Source End</span>
       <select
         class="style-select"
-        value={settings.markerEnd ?? effectiveMarker}
+        value={settings.markerStart ?? effectiveMarkerStart}
         onchange={(e) => {
           const val = (e.target as HTMLSelectElement).value as EdgeMarkerType;
-          // Only store if different from effective default
-          update({ markerEnd: val === effectiveMarker ? undefined : val });
+          update({ markerStart: val === effectiveMarkerStart ? undefined : val });
+        }}
+      >
+        {#each MARKER_OPTIONS as opt (opt.value)}
+          <option value={opt.value}>{opt.label}</option>
+        {/each}
+      </select>
+    </label>
+
+    <label class="style-field">
+      <span class="field-label">Target End</span>
+      <select
+        class="style-select"
+        value={settings.markerEnd ?? effectiveMarkerEnd}
+        onchange={(e) => {
+          const val = (e.target as HTMLSelectElement).value as EdgeMarkerType;
+          update({ markerEnd: val === effectiveMarkerEnd ? undefined : val });
         }}
       >
         {#each MARKER_OPTIONS as opt (opt.value)}
@@ -180,18 +199,6 @@
     </label>
   </div>
 
-  <label class="style-checkbox">
-    <input
-      type="checkbox"
-      checked={settings.animated ?? effectiveAnimated}
-      onchange={(e) => {
-        const checked = (e.target as HTMLInputElement).checked;
-        // Only store if different from effective default
-        update({ animated: checked === effectiveAnimated ? undefined : checked });
-      }}
-    />
-    <span>Animated</span>
-  </label>
 </div>
 
 <style>
@@ -298,17 +305,5 @@
   }
   .clear-color:hover {
     color: #ef4444;
-  }
-
-  .style-checkbox {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    color: var(--color-text);
-    cursor: pointer;
-  }
-  .style-checkbox input[type='checkbox'] {
-    accent-color: var(--color-accent);
   }
 </style>

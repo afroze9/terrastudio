@@ -11,7 +11,7 @@
   const SECTION_IDS: Record<string, string[]> = {
     explorer: categoryIds,
     terraform: ['tf-files', 'tf-variables', 'tf-commands'],
-    settings: ['project-naming', 'project-layout', 'project-tags'],
+    settings: ['project-naming', 'project-layout', 'project-edge-styles', 'project-tags'],
     'app-settings': ['app-appearance', 'app-canvas'],
   };
 

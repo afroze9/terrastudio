@@ -150,7 +150,8 @@ export async function loadProjectByPath(path: string): Promise<void> {
 }
 
 /**
- * Save the current diagram to the project's diagrams/main.json.
+ * Save the current diagram to the project's diagrams/main.json
+ * and project config to terrastudio.json.
  */
 export async function saveDiagram(): Promise<void> {
   if (!project.path) return;
@@ -160,10 +161,17 @@ export async function saveDiagram(): Promise<void> {
     edges: diagram.edges,
   };
 
-  await invoke('save_diagram', {
-    projectPath: project.path,
-    diagram: diagramData,
-  });
+  // Save diagram and project config in parallel
+  await Promise.all([
+    invoke('save_diagram', {
+      projectPath: project.path,
+      diagram: diagramData,
+    }),
+    invoke('save_project_config', {
+      projectPath: project.path,
+      projectConfig: project.projectConfig,
+    }),
+  ]);
 
   project.markSaved();
 }

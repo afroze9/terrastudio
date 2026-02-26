@@ -1,7 +1,17 @@
 import type { PaletteId } from '$lib/themes/types';
 import { applyPalette, getPalette } from '$lib/themes/theme-engine';
 import { DEFAULT_PALETTE_ID } from '$lib/themes/palettes';
-import type { ResourceTypeId } from '@terrastudio/types';
+import type { ResourceTypeId, EdgeCategoryId } from '@terrastudio/types';
+
+/** Which edge categories are currently visible on canvas */
+export type EdgeCategoryVisibility = Record<EdgeCategoryId, boolean>;
+
+const DEFAULT_EDGE_VISIBILITY: EdgeCategoryVisibility = {
+  structural: true,
+  binding: true,
+  reference: true,
+  annotation: true,
+};
 
 export type SidebarView = 'explorer' | 'terraform' | 'settings' | 'app-settings';
 export type EdgeStyle = 'default' | 'smoothstep' | 'step' | 'straight';
@@ -50,6 +60,9 @@ class UiStore {
 
   // --- Edge style ---
   edgeType = $state<EdgeStyle>((typeof localStorage !== 'undefined' && localStorage.getItem('terrastudio-edge-type') as EdgeStyle) || 'default');
+
+  // --- Edge category visibility ---
+  edgeVisibility = $state<EdgeCategoryVisibility>(this.loadEdgeVisibility());
 
   // --- Grid & Snap ---
   snapToGrid = $state(typeof localStorage !== 'undefined' && localStorage.getItem('terrastudio-snap') === 'true');
@@ -163,6 +176,52 @@ class UiStore {
   setEdgeType(type: EdgeStyle) {
     this.edgeType = type;
     localStorage.setItem('terrastudio-edge-type', type);
+  }
+
+  /** Load edge visibility from localStorage */
+  private loadEdgeVisibility(): EdgeCategoryVisibility {
+    if (typeof localStorage === 'undefined') return { ...DEFAULT_EDGE_VISIBILITY };
+    const stored = localStorage.getItem('terrastudio-edge-visibility');
+    if (!stored) return { ...DEFAULT_EDGE_VISIBILITY };
+    try {
+      return { ...DEFAULT_EDGE_VISIBILITY, ...JSON.parse(stored) };
+    } catch {
+      return { ...DEFAULT_EDGE_VISIBILITY };
+    }
+  }
+
+  /** Toggle visibility of an edge category */
+  toggleEdgeVisibility(category: EdgeCategoryId) {
+    this.edgeVisibility = {
+      ...this.edgeVisibility,
+      [category]: !this.edgeVisibility[category],
+    };
+    localStorage.setItem('terrastudio-edge-visibility', JSON.stringify(this.edgeVisibility));
+  }
+
+  /** Set visibility of an edge category */
+  setEdgeVisibility(category: EdgeCategoryId, visible: boolean) {
+    this.edgeVisibility = {
+      ...this.edgeVisibility,
+      [category]: visible,
+    };
+    localStorage.setItem('terrastudio-edge-visibility', JSON.stringify(this.edgeVisibility));
+  }
+
+  /** Check if an edge category is visible */
+  isEdgeCategoryVisible(category: EdgeCategoryId): boolean {
+    return this.edgeVisibility[category] ?? true;
+  }
+
+  /** Set visibility for all edge categories at once */
+  setAllEdgeVisibility(visible: boolean) {
+    this.edgeVisibility = {
+      structural: visible,
+      binding: visible,
+      reference: visible,
+      annotation: visible,
+    };
+    localStorage.setItem('terrastudio-edge-visibility', JSON.stringify(this.edgeVisibility));
   }
 
   /** Toggle dark/light theme */

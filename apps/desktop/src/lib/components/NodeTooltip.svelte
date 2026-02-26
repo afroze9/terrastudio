@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { ResourceSchema } from '@terrastudio/types';
+  import { onMount } from 'svelte';
+  import type { Action } from 'svelte/action';
 
   let {
     schema,
@@ -7,12 +9,14 @@
     deploymentStatus,
     properties,
     visible,
+    anchorEl,
   }: {
     schema: ResourceSchema;
     terraformName: string;
     deploymentStatus?: string;
     properties: Record<string, unknown>;
     visible: boolean;
+    anchorEl?: HTMLElement;
   } = $props();
 
   let keyProperties = $derived(
@@ -25,10 +29,55 @@
   );
 
   let statusLabel = $derived(deploymentStatus ?? 'pending');
+
+  // Portal container element
+  let portalEl = $state<HTMLDivElement | null>(null);
+  let posX = $state(0);
+  let posY = $state(0);
+
+  // Create portal container on mount
+  onMount(() => {
+    const el = document.createElement('div');
+    el.className = 'node-tooltip-portal-container';
+    document.body.appendChild(el);
+    portalEl = el;
+
+    return () => {
+      if (el.parentNode) {
+        document.body.removeChild(el);
+      }
+    };
+  });
+
+  // Update position whenever visible or anchorEl changes
+  $effect(() => {
+    if (visible && anchorEl) {
+      const rect = anchorEl.getBoundingClientRect();
+      posX = rect.left + rect.width / 2;
+      posY = rect.top - 8;
+    }
+  });
+
+  // Svelte action to portal an element to a target container
+  const portal: Action<HTMLElement, HTMLElement> = (node, target) => {
+    target.appendChild(node);
+    return {
+      destroy() {
+        if (node.parentNode === target) {
+          target.removeChild(node);
+        }
+      }
+    };
+  };
 </script>
 
-{#if visible}
-  <div class="node-tooltip" role="tooltip">
+{#if visible && anchorEl && portalEl}
+  <div
+    class="node-tooltip-portal"
+    style="left: {posX}px; top: {posY}px;"
+    role="tooltip"
+    use:portal={portalEl}
+  >
     <div class="tooltip-header">
       <span class="tooltip-type">{schema.displayName}</span>
       <span class="tooltip-status" class:deployed={statusLabel === 'created'}>
@@ -50,18 +99,16 @@
 {/if}
 
 <style>
-  .node-tooltip {
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
+  .node-tooltip-portal {
+    position: fixed;
+    transform: translate(-50%, -100%);
     background: var(--color-surface, #1a1d27);
     border: 1px solid var(--color-border, #2e3347);
     border-radius: 6px;
     padding: 8px 12px;
     min-width: 200px;
     max-width: 300px;
-    z-index: 1000;
+    z-index: 9999;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     pointer-events: none;
     font-size: 11px;

@@ -152,6 +152,7 @@
 
   let hoverTimer: ReturnType<typeof setTimeout> | null = null;
   let showTooltip = $state(false);
+  let nodeEl: HTMLDivElement | undefined = $state();
 
   function onMouseEnter() {
     hoverTimer = setTimeout(() => { showTooltip = true; }, 300);
@@ -170,6 +171,7 @@
   class:has-validation-errors={hasValidationErrors}
   onmouseenter={onMouseEnter}
   onmouseleave={onMouseLeave}
+  bind:this={nodeEl}
 >
   <div class="node-header">
     {#if icon?.type === 'svg' && icon.svg}
@@ -216,6 +218,7 @@
       deploymentStatus={data.deploymentStatus}
       properties={data.properties}
       visible={showTooltip}
+      anchorEl={nodeEl}
     />
   {/if}
 </div>

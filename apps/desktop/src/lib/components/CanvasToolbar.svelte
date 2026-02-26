@@ -5,10 +5,19 @@
   import { registry } from '$lib/bootstrap';
   import { saveDiagram } from '$lib/services/project-service';
   import { autoLayout, type LayoutDirection } from '$lib/services/layout-service';
+  import type { EdgeCategoryId } from '@terrastudio/types';
 
   let showLayoutMenu = $state(false);
   let showEdgeMenu = $state(false);
   let showGridMenu = $state(false);
+  let showEdgeVisibilityMenu = $state(false);
+
+  const edgeCategoryOptions: { id: EdgeCategoryId; label: string; desc: string }[] = [
+    { id: 'structural', label: 'Structural', desc: 'Dependencies' },
+    { id: 'binding', label: 'Binding', desc: 'Data flow' },
+    { id: 'reference', label: 'Reference', desc: 'Property refs' },
+    { id: 'annotation', label: 'Annotation', desc: 'Notes' },
+  ];
 
   const gridSizes = [10, 15, 20, 25, 30, 40, 50];
 
@@ -51,8 +60,14 @@
       showLayoutMenu = false;
       showEdgeMenu = false;
       showGridMenu = false;
+      showEdgeVisibilityMenu = false;
     }
   }
+
+  // Count how many edge categories are hidden
+  let hiddenEdgeCount = $derived(
+    edgeCategoryOptions.filter((cat) => !ui.edgeVisibility[cat.id]).length
+  );
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -207,7 +222,7 @@
       class="toolbar-btn"
       class:active={showGridMenu}
       title="Grid Size"
-      onclick={(e) => { e.stopPropagation(); showLayoutMenu = false; showEdgeMenu = false; showGridMenu = !showGridMenu; }}
+      onclick={(e) => { e.stopPropagation(); showLayoutMenu = false; showEdgeMenu = false; showGridMenu = !showGridMenu; showEdgeVisibilityMenu = false; }}
     >
       <span class="grid-size-label">{ui.gridSize}</span>
     </button>
@@ -224,6 +239,74 @@
               <span class="check">&#10003;</span>
             {/if}
           </button>
+        {/each}
+      </div>
+    {/if}
+  </div>
+
+  <div class="toolbar-separator"></div>
+
+  <!-- Edge Visibility -->
+  <div class="toolbar-dropdown-wrapper">
+    <button
+      class="toolbar-btn"
+      class:active={showEdgeVisibilityMenu}
+      class:has-hidden={hiddenEdgeCount > 0}
+      title="Edge Visibility"
+      onclick={(e) => { e.stopPropagation(); showLayoutMenu = false; showEdgeMenu = false; showGridMenu = false; showEdgeVisibilityMenu = !showEdgeVisibilityMenu; }}
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        {#if hiddenEdgeCount === 0}
+          <!-- Eye open -->
+          <path d="M1 8C1 8 3.5 3 8 3C12.5 3 15 8 15 8C15 8 12.5 13 8 13C3.5 13 1 8 1 8Z" />
+          <circle cx="8" cy="8" r="2.5" />
+        {:else}
+          <!-- Eye with slash -->
+          <path d="M1 8C1 8 3.5 3 8 3C12.5 3 15 8 15 8C15 8 12.5 13 8 13C3.5 13 1 8 1 8Z" />
+          <line x1="3" y1="13" x2="13" y2="3" />
+        {/if}
+      </svg>
+      {#if hiddenEdgeCount > 0}
+        <span class="hidden-badge">{hiddenEdgeCount}</span>
+      {/if}
+    </button>
+    {#if showEdgeVisibilityMenu}
+      <div class="toolbar-dropdown edge-visibility-dropdown">
+        <div class="dropdown-header">Show Edges</div>
+        <!-- All toggle -->
+        <label class="visibility-toggle-item all-toggle">
+          <span class="toggle-label">
+            <span class="toggle-name">All</span>
+          </span>
+          <button
+            class="toggle-switch"
+            class:on={hiddenEdgeCount === 0}
+            onclick={(e) => { e.preventDefault(); ui.setAllEdgeVisibility(hiddenEdgeCount > 0); }}
+            role="switch"
+            aria-checked={hiddenEdgeCount === 0}
+            aria-label="Toggle all edge categories"
+          >
+            <span class="toggle-knob"></span>
+          </button>
+        </label>
+        <div class="toggle-divider"></div>
+        {#each edgeCategoryOptions as cat (cat.id)}
+          <label class="visibility-toggle-item">
+            <span class="toggle-label">
+              <span class="toggle-name">{cat.label}</span>
+              <span class="toggle-desc">{cat.desc}</span>
+            </span>
+            <button
+              class="toggle-switch"
+              class:on={ui.edgeVisibility[cat.id]}
+              onclick={(e) => { e.preventDefault(); ui.toggleEdgeVisibility(cat.id); }}
+              role="switch"
+              aria-checked={ui.edgeVisibility[cat.id]}
+              aria-label={`Toggle ${cat.label} edges`}
+            >
+              <span class="toggle-knob"></span>
+            </button>
+          </label>
         {/each}
       </div>
     {/if}
@@ -356,5 +439,116 @@
     font-weight: 600;
     min-width: 16px;
     text-align: center;
+  }
+
+  .toolbar-btn.has-hidden {
+    color: var(--color-warning, #f59e0b);
+  }
+
+  .hidden-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 8px;
+    font-weight: 700;
+    background: var(--color-warning, #f59e0b);
+    color: white;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .toolbar-btn {
+    position: relative;
+  }
+
+  .edge-visibility-dropdown {
+    min-width: 160px;
+  }
+
+  .dropdown-header {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    padding: 4px 10px 6px;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 4px;
+  }
+
+  .visibility-toggle-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: background 0.1s;
+  }
+
+  .visibility-toggle-item:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .visibility-toggle-item.all-toggle {
+    padding-bottom: 8px;
+  }
+
+  .toggle-divider {
+    height: 1px;
+    background: var(--color-border);
+    margin: 0 10px 6px;
+  }
+
+  .toggle-label {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .toggle-name {
+    font-size: 12px;
+    color: var(--color-text);
+  }
+
+  .toggle-desc {
+    font-size: 10px;
+    color: var(--color-text-muted);
+  }
+
+  .toggle-switch {
+    position: relative;
+    width: 32px;
+    height: 18px;
+    background: var(--color-border);
+    border: none;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+
+  .toggle-switch.on {
+    background: var(--color-accent);
+  }
+
+  .toggle-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+
+  .toggle-switch.on .toggle-knob {
+    transform: translateX(14px);
   }
 </style>
