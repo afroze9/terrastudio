@@ -54,7 +54,14 @@ gantt
     Phase 17 CIDR + Validation UX     :done, p17, 2026-02-22, 2026-02-24
     Phase 18 Template Gallery         :done, p18, 2026-02-24, 2026-02-25
     Phase 20.5 More Azure Resources   :done, p205, 2026-02-25, 2026-02-26
+    Phase 21 Cost Estimation          :done, p21, 2026-02-26, 2026-02-26
+    Phase 21.5 Edge Visibility UI     :done, p215, 2026-02-26, 2026-02-26
+    Phase 21.6 TS Build Infra         :done, p216, 2026-02-26, 2026-02-27
+    Phase 21.7 External File Watch    :p217, 2026-02-27, 2026-03-02
+    Phase 21.8 Plugin Test Harness    :p218, 2026-02-27, 2026-03-02
+    Phase 21.9 Canvas Layout Tools    :p219, 2026-02-27, 2026-03-02
     Phase 19 Import Terraform         :p19, 2026-03-02, 2026-03-07
+    Phase 24 MCP Server               :p24, 2026-03-07, 2026-03-14
 ```
 
 ---
@@ -872,6 +879,304 @@ New palette category: Messaging (order 38)
 
 ---
 
+## Phase 21: Cost Estimation ✅
+
+**Goal**: Show estimated monthly costs for the designed infrastructure.
+
+### What Was Implemented
+
+1. **Azure Retail Prices API integration** ✅
+   - `CostEstimationService` queries `https://prices.azure.com/api/retail/prices` per resource
+   - Matches on `armRegionName`, `armSkuName`, `priceType: Consumption`
+   - Caches results in `cost.svelte.ts` store keyed by node ID
+   - Handles 10 resource types: VM, App Service Plan, App Service, Function App, Key Vault, Storage Account, Redis Cache, PostgreSQL Flexible Server, Cosmos DB Account, Service Bus Namespace
+
+2. **Per-node cost badges** ✅
+   - `CostBadge.svelte` rendered inside each `DefaultResourceNode` and `ContainerResourceNode`
+   - Shows `~$X/mo` when pricing is available; hidden while loading
+   - Visibility controlled by `ui.showCostBadges` toggle
+
+3. **Cost breakdown panel** ✅
+   - `CostPanel.svelte` floating panel showing per-resource line items
+   - Groups by resource type, shows subtotals, grand total
+   - Dirty banner (⚠️) when diagram has unsaved changes since last estimate
+   - "Refresh estimates" button to re-fetch pricing
+   - Export to CSV button
+
+4. **Project config** ✅
+   - `region` field on `ProjectConfig` (default `eastus`) used as `armRegionName` for pricing queries
+   - Region picker in `ProjectConfigPanel.svelte`
+
+5. **UI integration** ✅
+   - Cost Estimation toggle in `ProjectConfigPanel.svelte`
+   - Cost badges visibility toggle moved into the edge visibility dropdown in `CanvasToolbar.svelte`
+
+---
+
+## Phase 21.5: Edge Visibility UI & Toolbar Cleanup ✅
+
+**Goal**: Consolidate canvas visibility controls into a single cohesive dropdown; remove scattered toolbar chips.
+
+### What Was Implemented
+
+1. **Per-category edge visibility toggles** ✅ (already done in Phase 4.x edge styling work)
+   - "Show Edges" dropdown in `CanvasToolbar.svelte` with individual toggles for Structural, Reference, Binding, and Annotation edge categories
+   - Each toggle wired to `ui.showEdgeCategory(category, visible)` in `ui.svelte.ts`
+
+2. **Cost Badges toggle in edge visibility dropdown** ✅
+   - "Cost Badges / Node estimates" toggle added at the bottom of the "Show Edges" dropdown, separated by a divider
+   - Wired to `ui.showCostBadges` / `ui.setShowCostBadges()`
+   - Consolidates all canvas visibility controls in one place
+
+3. **Toolbar cleanup** ✅
+   - Removed standalone cost chip button from the main toolbar
+   - Toolbar remains clean with only essential action buttons
+
+---
+
+## Phase 21.6: TypeScript Build Infrastructure ✅
+
+**Goal**: Achieve zero typecheck errors with strict TypeScript settings across all packages and the desktop app.
+
+### What Was Implemented
+
+1. **`IReactivePluginRegistry` interface** ✅
+   - Created `packages/core/src/lib/registry/reactive-plugin-registry.interface.ts`
+   - Bridges the gap between `ReactivePluginRegistry` (uses Svelte 5 `$state` runes, compiled by Svelte compiler only) and plain `tsc` / `svelte-check`
+   - `packages/core/src/index.ts` exports `export declare const pluginRegistry: IReactivePluginRegistry` as a type-only stub
+   - `packages/core/src/index.svelte.ts` overrides with the actual reactive instance at runtime (via `svelte` export condition in `package.json`)
+   - All service files (`layout-service.ts`, `templates/service.ts`, `templates/validator.ts`, `terraform-service.ts`, `project-service.ts`) updated to accept `IReactivePluginRegistry`
+
+2. **Implicit-any compliance** ✅
+   - Added explicit type annotations to all arrow function parameters across `.svelte` and `.ts` files
+   - Files fixed: `diagram.svelte.ts`, `DefaultResourceNode.svelte`, `ContainerResourceNode.svelte`, `PropertiesPanel.svelte`, `ResourcePalette.svelte`, `TerraformSidebar.svelte`, `SidePanel.svelte`, `DnDFlow.svelte`, `export-service.ts`
+   - Imported `HandleDefinition`, `PropertySchema`, `OutputDefinition`, `PaletteCategory`, `ResourceTypeRegistration` from `@terrastudio/types` where needed
+
+3. **CI green** ✅
+   - 0 typecheck errors across all packages and the desktop app
+   - Local verification command: `pnpm --filter @terrastudio/core build && pnpm --filter @terrastudio/desktop typecheck`
+
+---
+
+## Phase 21.7: External File Change Detection
+
+**Goal**: Keep the app in sync when project files or generated Terraform files are modified outside of TerraStudio.
+
+### Part A — Project file hot-reload
+
+When the `.terrastudio` project file is modified on disk while the app is open, reload and reflect the changes in the UI rather than silently diverging.
+
+1. **File watcher (Rust)**
+   - Use `notify` crate to watch the open project file for changes
+   - Debounce rapid changes (e.g., a save from an external editor may fire multiple events)
+   - Emit a Tauri event `project://changed` to the frontend when a modification is detected
+
+2. **Conflict detection (frontend)**
+   - If the in-app diagram has unsaved changes when an external change is detected, show a dialog:
+     - "This project was modified outside TerraStudio. Reload from disk (losing unsaved changes) or keep your current version?"
+   - If there are no unsaved changes, silently hot-reload
+
+3. **Hot-reload path**
+   - Call the existing `load_project` path to re-parse the `.terrastudio` file
+   - Diagram state, project config, and all stores are updated in-place
+   - Undo history is cleared (external edits are not undoable)
+
+### Part B — Terraform file change protection
+
+When generated `.tf` files are modified outside the app, warn the user before overwriting them on the next HCL generation.
+
+1. **Hash tracking**
+   - After every HCL generation, compute SHA-256 hashes of each written `.tf` file and persist them in a `{project_dir}/terraform/.terrastudio-hashes.json` sidecar file
+   - Hashes are keyed by filename: `{ "main.tf": "abc123...", "variables.tf": "def456..." }`
+
+2. **Pre-generation check**
+   - Before writing new `.tf` files, read the existing files from disk and recompute their hashes
+   - Compare against the stored hashes — any file whose current hash differs from the stored hash has been externally modified
+   - If any modified files are detected, show a confirmation dialog listing the changed files:
+     - "The following Terraform files have been modified outside TerraStudio and will be overwritten: [list]. Proceed?"
+   - User can choose **Overwrite** (continue generation) or **Cancel** (abort, keep external edits)
+
+3. **Scope**
+   - Only tracks files that TerraStudio itself generated (files in the hash sidecar)
+   - Files not in the sidecar (e.g., user-created `.tf` files) are never touched by generation and not tracked
+   - Hash sidecar is excluded from git via `.gitignore` recommendation in docs
+
+---
+
+## Phase 21.8: Plugin Conformance Test Suite
+
+**Goal**: Provide a shared test harness in `@terrastudio/core` that any plugin can run to verify it correctly implements the plugin contract — catching missing fields, broken HCL generators, invalid schemas, and connection rule errors before they reach the app.
+
+### What to build
+
+1. **`plugin-test-harness.ts` in `@terrastudio/core`**
+   - Exported utility: `testPlugin(plugin: InfraPlugin): PluginTestResult`
+   - Runs a battery of conformance checks against a plugin object and returns structured pass/fail results
+   - Designed to be called directly from vitest/jest `describe` blocks — no special test runner needed
+
+2. **Schema conformance checks** (per `ResourceTypeRegistration`)
+   - `schema.typeId` matches `{provider}/{category}/{resource}` format regex
+   - `schema.terraformType` is a non-empty string
+   - All `PropertySchema` entries have `key`, `type`, and `label`
+   - `PropertySchema.options` is present when `type === 'select'` or `type === 'multiselect'`
+   - `PropertySchema.options[].value` are all strings (not numbers)
+   - `defaultValue` type matches the declared `type`
+   - `visibleWhen.field` references a property key that exists in the same schema
+   - `outputs[].key`, `outputs[].terraformAttribute` are non-empty strings when outputs are declared
+   - `handles[].id` are unique within the resource
+   - `parentReference.propertyKey` matches a key in `properties` when declared
+   - `canBeChildOf` entries are valid `ResourceTypeId` format strings
+
+3. **HCL generator smoke tests**
+   - For each resource type, call `hclGenerator.generate(mockInstance, mockContext)` with a minimal mock
+   - Assert the result is a non-empty `HclBlock[]`
+   - Assert each block has `blockType`, `resourceType`, `resourceName`, and non-empty `content`
+   - If `resolveTerraformType` is defined, call it with mock properties and assert it returns a non-empty string
+   - Catch and report generator exceptions as test failures
+
+4. **Connection rule checks**
+   - `rule.sourceType` and `rule.targetType` are valid `ResourceTypeId` format strings
+   - `rule.sourceHandle` and `rule.targetHandle` reference handle IDs that exist on the corresponding resource schemas
+   - `createsReference.propertyKey` matches a property or reference key on the target schema when set
+
+5. **Palette category checks**
+   - Each category has a non-empty `name` and `order`
+   - All resource types referenced in palette categories exist in the plugin's `resourceTypes` map
+   - No duplicate `order` values across categories
+
+6. **Plugin-level integration check**
+   - `PluginRegistry` can `registerPlugin(plugin)` without throwing
+   - `registry.buildNodeTypesMap()` returns an entry for every `ResourceTypeId` in the plugin
+   - `registry.getPaletteCategories()` returns all declared categories
+
+7. **Test fixture helpers**
+   - `createMockResourceInstance(schema, overrides?)` — builds a valid `ResourceInstance` from a schema's defaults
+   - `createMockHclContext(options?)` — returns an `HclGenerationContext` with stub implementations for all methods (`getResourceGroupExpression`, `getAttributeReference`, etc.)
+
+8. **Per-plugin test files**
+   - Add a `vitest` script to each plugin's `package.json`
+   - Add `src/plugin.test.ts` to each plugin that imports and runs the harness:
+     ```ts
+     import { testPlugin } from '@terrastudio/core/testing';
+     import plugin from './index.js';
+     testPlugin(plugin); // auto-registers describe/it blocks via vitest
+     ```
+   - Each plugin test file can add resource-specific assertions (e.g., assert specific HCL content) alongside the harness
+
+9. **CI integration**
+   - Add `pnpm test` to all plugin packages in `turbo.json`
+   - Tests run as part of the existing `pnpm build → typecheck → test` pipeline
+
+### Verification
+- `pnpm test` in any plugin package runs conformance checks and passes for all existing plugins
+- Adding a resource with a missing required field (e.g., no `label` on a property) fails the test with a clear message
+- Adding a connection rule that references a non-existent handle fails the test
+- `createMockHclContext` + generator smoke test catches a thrown exception and reports the resource type
+
+---
+
+## Phase 21.9: Canvas Layout Tools
+
+**Goal**: Give users precise control over node positioning — multi-select alignment, even distribution, minimum-spacing enforcement, and tidy edge-label placement.
+
+---
+
+### Part A — Multi-select alignment
+
+A toolbar or context-menu action set that aligns all selected nodes relative to a chosen axis. Available when ≥ 2 nodes are selected.
+
+**Alignment operations**
+
+| Action | Description |
+|---|---|
+| Align left | Move all selected nodes so their left edges match the leftmost node |
+| Align center (H) | Center all selected nodes on a shared vertical axis |
+| Align right | Right edges match the rightmost node |
+| Align top | Top edges match the topmost node |
+| Align middle (V) | Center all selected nodes on a shared horizontal axis |
+| Align bottom | Bottom edges match the bottommost node |
+
+**Implementation notes**
+- Read bounding boxes from `useNodes()` / `SvelteFlow`'s internal node map (each node has `positionAbsolute`, `width`, `height`)
+- For contained nodes (inside a container), translate the absolute offset back to parent-relative coordinates before writing to `diagram.updateNodePosition()`
+- All alignment moves are pushed as a single undo snapshot (group the batch in `diagram.svelte.ts`)
+- Alignment toolbar appears as a floating strip above the canvas when ≥ 2 nodes are selected; hidden otherwise (similar to how Figma/Miro surface these controls)
+
+---
+
+### Part B — Even distribution
+
+Distribute selected nodes so the gaps between them are equal. Available when ≥ 3 nodes are selected.
+
+**Distribution operations**
+
+| Action | Description |
+|---|---|
+| Distribute horizontally | Equal horizontal spacing between the leftmost and rightmost selected nodes |
+| Distribute vertically | Equal vertical spacing between the topmost and bottommost selected nodes |
+
+**Implementation notes**
+- Sort nodes by their left edge (horizontal) or top edge (vertical)
+- Total available space = span between outermost nodes' outer edges minus the sum of the inner nodes' widths/heights
+- Gap = total available space / (count − 1)
+- Outermost two nodes stay fixed; inner nodes are repositioned
+
+---
+
+### Part C — Minimum-spacing enforcement (snap-apart)
+
+An optional toggle ("Keep nodes spaced") that prevents nodes from being placed closer together than a configurable minimum gap. Complements the existing grid snap.
+
+**Behaviour**
+- When enabled, on every node drag-end (the `onNodeDragStop` Svelte Flow event), check all other nodes for overlap or proximity violation
+- If any node is within the minimum distance, nudge it outward (push, don't overlap) — apply a simple repulsion step, not continuous force simulation
+- Minimum gap is configurable: default 20px; exposed as a field in project config or a canvas-toolbar slider
+- Does **not** apply inside containers when a container is being resized (containers manage their own child layouts)
+- Toggle state stored in `ui.svelte.ts` as `snapApart: boolean` and `snapApartGap: number`
+
+**Implementation notes**
+- Check only the nodes currently on the same canvas level (siblings — same `parentId` or both top-level)
+- AABB overlap test: `rectA.right + gap > rectB.left && rectA.left < rectB.right + gap` (and the vertical equivalent)
+- Resolve conflicts axis-by-axis to avoid oscillation: move along whichever axis has the smaller penetration depth
+- Cap to a single pass (don't cascade — let the user nudge again if needed)
+
+---
+
+### Part D — Edge label routing
+
+Prevent edge labels from overlapping each other and from overlapping node bodies.
+
+**Goal**: When a canvas has many labeled edges, automatically offset labels so they sit in clear space rather than piling up or occluding nodes.
+
+**Approach**
+- After every layout change (node drag, zoom, new edge), run a lightweight label-nudge pass:
+  1. Collect all visible edge label positions (each label anchors at the edge midpoint by default)
+  2. Build a list of occupied rectangles: node bounding boxes + current label rects
+  3. For each label, test if its rect overlaps an occupied rect; if so, slide it along the edge path by ±offset until it clears (or hits a maximum slide distance)
+  4. Store the computed offset as `edgeLabelOffset` on the edge's display data (not persisted — recomputed on layout change)
+- Debounce the pass so it doesn't run on every frame during drag
+
+**Scope / limitations**
+- Labels only; does not reroute the edge path itself (SVG path routing is handled by Svelte Flow's built-in edge types)
+- Works best with ≤ ~40 labeled edges; beyond that, overlap resolution is best-effort
+- Users can still manually override a label position by dragging it (Svelte Flow supports `labelStyle` and offset props on edge data)
+
+**Implementation notes**
+- Label nudge runs in `DnDFlow.svelte` via a `$effect` watching `diagram.displayEdges`
+- Nudge results stored in a local `$state<Map<edgeId, {dx, dy}>>` — not persisted, not part of diagram state
+- Svelte Flow `<SvelteFlowEdge>` / custom edge component reads the offset and shifts the `<EdgeLabelRenderer>` accordingly
+
+---
+
+### UI surface
+
+All layout controls live in a **"Layout" toolbar section** that appears contextually:
+
+- **Selection toolbar strip** (floating, above selected nodes): shows Align (6 buttons) and Distribute (2 buttons) when ≥ 2 nodes selected; Distribute enabled only when ≥ 3 selected
+- **Canvas toolbar dropdown** ("Layout" button, next to "Show Edges"): houses the "Keep nodes spaced" toggle and gap slider, plus a "Reset label offsets" action
+
+---
+
 ## Phase 19: Import Existing Terraform State
 
 **Goal**: Parse existing Terraform state into a visual diagram for brownfield adoption.
@@ -930,24 +1235,6 @@ New palette category: Messaging (order 38)
 
 ---
 
-## Phase 21: Cost Estimation
-
-**Goal**: Show estimated monthly costs for the designed infrastructure.
-
-### Tasks
-
-1. **Azure pricing integration**
-   - Query Azure Retail Prices API based on resource types and SKUs
-   - Cache pricing data locally with TTL
-   - Map schema property values (e.g., VM size, storage tier) to pricing dimensions
-
-2. **Cost display UI**
-   - Per-node cost badge (optional, toggle in settings)
-   - Total estimated monthly cost in the toolbar
-   - Cost breakdown panel grouped by resource type
-
----
-
 ## Phase 22: Module Support
 
 **Goal**: Group resources into reusable Terraform modules.
@@ -979,6 +1266,53 @@ New palette category: Messaging (order 38)
 2. **Cross-provider diagrams**
    - Mixed Azure + AWS diagrams generate separate provider blocks
    - No cross-provider connection rules by default
+
+---
+
+## Phase 24: MCP Server
+
+**Goal**: Expose TerraStudio's diagram and Terraform functionality via a Model Context Protocol server so that AI assistants and other apps can programmatically control the app.
+
+### Tasks
+
+1. **Transport layer**
+   - Implement an MCP server as a Tauri sidecar process (Node.js or Rust) that communicates with the desktop app over a local IPC channel (e.g., Tauri events or a localhost WebSocket)
+   - Support stdio transport for direct AI assistant integration (Claude Desktop, VS Code Copilot, etc.)
+   - Support SSE/HTTP transport for web-based clients
+
+2. **Resource tools**
+   - `list_resources` — return all nodes on the current diagram with type, name, and properties
+   - `add_resource` — add a resource to the canvas by typeId, with optional position and initial properties
+   - `update_resource` — update properties of an existing resource by node ID
+   - `remove_resource` — delete a resource (and its children) from the diagram
+   - `connect_resources` — create an edge between two nodes (source handle → target handle)
+   - `disconnect_resources` — remove an edge by ID
+
+3. **Project tools**
+   - `open_project` — open a `.terrastudio` project file by path
+   - `save_project` — save the current project
+   - `new_project` — create a new project with a given name and directory
+   - `get_project_config` — return the current project config (region, naming conventions, tags)
+   - `set_project_config` — update project config fields
+
+4. **Terraform tools**
+   - `generate_hcl` — run the HCL pipeline and return generated file contents
+   - `run_terraform` — execute a Terraform command (`init`, `validate`, `plan`, `apply`, `destroy`) and stream output
+   - `get_deployment_status` — return deployment status for all nodes
+
+5. **Query / read tools**
+   - `get_diagram` — return the full diagram as a JSON snapshot (nodes + edges)
+   - `get_available_resource_types` — list all registered resource types by provider and category
+   - `estimate_costs` — trigger cost estimation and return per-resource estimates
+
+6. **MCP resources (read-only context)**
+   - Expose the current diagram as an MCP `resource` so AI assistants can read it as context without a tool call
+   - Expose the generated HCL files as MCP resources
+
+7. **Packaging**
+   - Ship the MCP server as part of the TerraStudio app bundle (Tauri sidecar)
+   - Provide an `mcp.json` manifest so Claude Desktop / VS Code can auto-discover the server
+   - Document setup in README: how to point an AI assistant at the running server
 
 ---
 
