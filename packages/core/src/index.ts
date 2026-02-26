@@ -1,6 +1,14 @@
 // Registry
-export { PluginRegistry, pluginRegistry } from './lib/registry/plugin-registry.js';
+export { PluginRegistry } from './lib/registry/plugin-registry.js';
+export type { IReactivePluginRegistry } from './lib/registry/reactive-plugin-registry.interface.js';
 export { NodeTypeResolver } from './lib/registry/node-type-resolver.js';
+
+/**
+ * Type-stub for pluginRegistry. At runtime this is overridden by the reactive
+ * version from plugin-registry.svelte.ts (via the "svelte" export condition).
+ * This declaration exists only so tsc / svelte-check can resolve the type.
+ */
+export declare const pluginRegistry: IReactivePluginRegistry;
 
 // HCL Pipeline
 export { HclPipeline } from './lib/hcl/pipeline.js';

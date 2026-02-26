@@ -295,10 +295,3 @@ export class PluginRegistry implements PluginRegistryReader {
     return reg;
   }
 }
-
-/**
- * Non-reactive singleton exported for type-checking purposes.
- * At runtime in the Svelte app this is overridden by the reactive version
- * from plugin-registry.svelte.ts (resolved via the "svelte" export condition).
- */
-export const pluginRegistry: PluginRegistry = new PluginRegistry();
