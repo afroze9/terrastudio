@@ -147,7 +147,7 @@ export async function generateAndWrite(): Promise<void> {
     diagram.clearAllValidationErrors();
 
     // Convert diagram to ResourceInstances
-    const connectionRules = registry.getConnectionRules();
+    const connectionRules = registry.connectionRules;
     const resources = convertToResourceInstances(
       diagram.nodes,
       diagram.edges,
@@ -271,7 +271,7 @@ function buildAddressToNodeIdMap(): Map<string, string> {
 
     // Use generator's resolveTerraformType if available (handles OS variants)
     const generator = registry.getHclGenerator(typeId);
-    const tfType = generator.resolveTerraformType
+    const tfType = generator?.resolveTerraformType
       ? generator.resolveTerraformType(node.data.properties)
       : schema.terraformType;
     const address = `${tfType}.${node.data.terraformName}`;
@@ -490,7 +490,7 @@ export async function refreshDeploymentStatus(): Promise<void> {
 
     // Use generator's resolveTerraformType if available (handles OS variants)
     const generator = registry.getHclGenerator(typeId);
-    const tfType = generator.resolveTerraformType
+    const tfType = generator?.resolveTerraformType
       ? generator.resolveTerraformType(node.data.properties)
       : schema.terraformType;
     const address = `${tfType}.${node.data.terraformName}`;

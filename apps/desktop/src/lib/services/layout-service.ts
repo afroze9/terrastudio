@@ -1,6 +1,6 @@
 import dagre from '@dagrejs/dagre';
 import type { ResourceTypeId, EdgeCategoryId } from '@terrastudio/types';
-import type { PluginRegistry } from '@terrastudio/core';
+import type { IReactivePluginRegistry } from '@terrastudio/core';
 import { diagram } from '$lib/stores/diagram.svelte';
 import { project } from '$lib/stores/project.svelte';
 
@@ -60,7 +60,7 @@ function getLayoutEdges(): LayoutEdgeWithHandles[] {
 function resolveHandlePositions(
   edges: LayoutEdgeWithHandles[],
   nodeMap: Map<string, DiagramNode>,
-  registry: PluginRegistry,
+  registry: IReactivePluginRegistry,
 ): LayoutEdgeWithHandles[] {
   // Build a cache of handle positions per node type
   const handleCache = new Map<ResourceTypeId, Map<string, HandlePosition>>();
@@ -166,7 +166,7 @@ type DiagramNode = (typeof diagram.nodes)[number];
  * Auto-layout all diagram nodes.
  * Reads `project.projectConfig.layoutAlgorithm` to pick the algorithm.
  */
-export function autoLayout(registry: PluginRegistry, direction: LayoutDirection = 'TB'): void {
+export function autoLayout(registry: IReactivePluginRegistry, direction: LayoutDirection = 'TB'): void {
   const algo = project.projectConfig.layoutAlgorithm ?? 'dagre';
   if (algo === 'hybrid') {
     hybridLayout(registry, direction);
@@ -179,7 +179,7 @@ export function autoLayout(registry: PluginRegistry, direction: LayoutDirection 
 // Algorithm 1: Dagre (original hierarchical layout)
 // ===========================================================================
 
-function dagreLayout(registry: PluginRegistry, direction: LayoutDirection): void {
+function dagreLayout(registry: IReactivePluginRegistry, direction: LayoutDirection): void {
   const nodes = diagram.nodes;
   const rawEdges = getLayoutEdges();
   if (nodes.length === 0) return;
@@ -322,7 +322,7 @@ class UnionFind {
   }
 }
 
-function hybridLayout(registry: PluginRegistry, direction: LayoutDirection): void {
+function hybridLayout(registry: IReactivePluginRegistry, direction: LayoutDirection): void {
   const nodes = diagram.nodes;
   const rawEdges = getLayoutEdges();
   if (nodes.length === 0) return;
@@ -414,7 +414,7 @@ function synthesizeVirtualEdges(
   childIds: string[],
   childSet: Set<string>,
   nodeMap: Map<string, DiagramNode>,
-  registry: PluginRegistry,
+  registry: IReactivePluginRegistry,
 ): LayoutEdge[] {
   const edges: LayoutEdge[] = [];
 
@@ -525,7 +525,7 @@ function layoutCluster(
   edges: LayoutEdge[],
   nodeMap: Map<string, DiagramNode>,
   computedSizes: Map<string, { width: number; height: number }>,
-  registry: PluginRegistry,
+  registry: IReactivePluginRegistry,
   direction: LayoutDirection,
 ): LayoutBlock {
   const g = new dagre.graphlib.Graph();
@@ -595,7 +595,7 @@ function makeSingleBlock(
   id: string,
   nodeMap: Map<string, DiagramNode>,
   computedSizes: Map<string, { width: number; height: number }>,
-  registry: PluginRegistry,
+  registry: IReactivePluginRegistry,
 ): LayoutBlock {
   const { width, height } = getNodeSize(id, nodeMap, computedSizes, registry);
   const schema = registry.getResourceSchema(nodeMap.get(id)!.type as ResourceTypeId);
@@ -704,7 +704,7 @@ function getNodeSize(
   id: string,
   nodeMap: Map<string, DiagramNode>,
   computedSizes: Map<string, { width: number; height: number }>,
-  registry: PluginRegistry,
+  registry: IReactivePluginRegistry,
 ): { width: number; height: number } {
   const computed = computedSizes.get(id);
   if (computed) return computed;
@@ -724,7 +724,7 @@ function getNodeSize(
 }
 
 function applyLayout(
-  registry: PluginRegistry,
+  registry: IReactivePluginRegistry,
   positions: Map<string, { x: number; y: number }>,
   computedSizes: Map<string, { width: number; height: number }>,
 ): void {

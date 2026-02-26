@@ -1,10 +1,10 @@
-import type { PluginRegistry } from '@terrastudio/core';
+import type { IReactivePluginRegistry } from '@terrastudio/core';
 import type { ResourceTypeId } from '@terrastudio/types';
 import type { TemplateValidationResult } from './types';
 
 export function validateTemplate(
   data: unknown,
-  registry: PluginRegistry,
+  registry: IReactivePluginRegistry,
 ): TemplateValidationResult {
   const errors: string[] = [];
 

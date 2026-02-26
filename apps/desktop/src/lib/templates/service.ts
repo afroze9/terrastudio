@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { PluginRegistry } from '@terrastudio/core';
+import type { IReactivePluginRegistry } from '@terrastudio/core';
 import { generateNodeId, applyNamingTemplate, buildTokens, sanitizeTerraformName } from '@terrastudio/core';
 import type { ResourceTypeId, NamingConvention } from '@terrastudio/types';
 import type { DiagramNode, DiagramEdge } from '$lib/stores/diagram.svelte';
@@ -14,7 +14,7 @@ interface UserTemplateEntry {
 }
 
 export async function getTemplateCategories(
-  registry: PluginRegistry,
+  registry: IReactivePluginRegistry,
 ): Promise<TemplateCategory[]> {
   const allTemplates: Template[] = [...builtinTemplates];
 
@@ -66,7 +66,7 @@ export async function getTemplateCategories(
 export function applyTemplate(
   template: Template,
   convention?: NamingConvention,
-  registry?: PluginRegistry,
+  registry?: IReactivePluginRegistry,
 ): {
   nodes: DiagramNode[];
   edges: DiagramEdge[];

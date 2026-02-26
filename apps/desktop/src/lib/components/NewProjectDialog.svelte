@@ -109,7 +109,7 @@
   async function loadTemplates() {
     loadingTemplates = true;
     try {
-      categories = await getTemplateCategories(registry.inner);
+      categories = await getTemplateCategories(registry);
       const blank = categories.flatMap((c) => c.templates).find((t) => t.metadata.id === 'blank');
       selectedTemplate = blank ?? categories[0]?.templates[0] ?? null;
       activeCategory = '';

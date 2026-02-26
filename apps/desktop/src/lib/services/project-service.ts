@@ -106,7 +106,7 @@ export async function createProject(
   });
 
   if (template) {
-    const { nodes, edges } = applyTemplate(template, namingConvention, registry.inner);
+    const { nodes, edges } = applyTemplate(template, namingConvention, registry);
     diagram.loadDiagram(nodes, edges);
     await saveDiagram();
   }

@@ -37,5 +37,6 @@ export interface IReactivePluginRegistry {
   getResourceSchema(typeId: ResourceTypeId): ResourceSchema | undefined;
   getHclGenerator(typeId: ResourceTypeId): HclGenerator | undefined;
   getIcon(typeId: ResourceTypeId): IconDefinition | undefined;
+  hasResourceType(typeId: ResourceTypeId): boolean;
   getResourceTypesForCategory(category: string): ResourceTypeRegistration[];
 }
