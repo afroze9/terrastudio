@@ -88,7 +88,7 @@
 
     const schema = registry.getResourceSchema(node.type as TypeId);
     const enabledOutputKeys = (node.data.enabledOutputs as string[]) ?? [];
-    const enabledOutputs = (schema?.outputs ?? []).filter(o => enabledOutputKeys.includes(o.key));
+    const enabledOutputs = (schema?.outputs ?? []).filter((o: OutputDefinition) => enabledOutputKeys.includes(o.key));
 
     handleManagerModal = {
       nodeId: node.id,
@@ -474,7 +474,7 @@
           // Enhance label with source output definition
           const sourceSchema = registry.getResourceSchema(sourceNode.type as ResourceTypeId);
           const outputDef = sourceSchema?.outputs?.find(
-            (o) => o.key === result.rule!.outputBinding!.sourceAttribute,
+            (o: OutputDefinition) => o.key === result.rule!.outputBinding!.sourceAttribute,
           );
           if (outputDef) {
             label = `Store ${outputDef.label} as secret`;

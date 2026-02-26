@@ -1,5 +1,5 @@
 // Registry
-export { PluginRegistry } from './lib/registry/plugin-registry.js';
+export { PluginRegistry, pluginRegistry } from './lib/registry/plugin-registry.js';
 export { NodeTypeResolver } from './lib/registry/node-type-resolver.js';
 
 // HCL Pipeline

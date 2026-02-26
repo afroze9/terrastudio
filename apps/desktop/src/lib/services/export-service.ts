@@ -10,7 +10,7 @@ import { project } from '$lib/stores/project.svelte';
 import { cost } from '$lib/stores/cost.svelte';
 import { registry } from '$lib/bootstrap';
 import { getCSSVariable } from '$lib/themes/theme-engine';
-import type { ResourceTypeId } from '@terrastudio/types';
+import type { ResourceTypeId, PropertySchema } from '@terrastudio/types';
 
 /**
  * Get the .svelte-flow__viewport element — the inner layer that holds
@@ -375,7 +375,7 @@ function generateDocumentation(): string {
     // Show non-default properties
     if (schema?.properties) {
       const props = node.data.properties;
-      const nonDefaultProps = schema.properties.filter((p) => {
+      const nonDefaultProps = schema.properties.filter((p: PropertySchema) => {
         const val = props[p.key];
         return val !== undefined && val !== '' && val !== p.defaultValue;
       });

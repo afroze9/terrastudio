@@ -22,7 +22,7 @@
   /** True when a naming convention is active and this resource has a cafAbbreviation */
   let conventionActive = $derived.by(() => {
     const conv = project.projectConfig.namingConvention;
-    return !!(conv?.enabled && schema?.cafAbbreviation && schema.properties.some(p => p.key === 'name'));
+    return !!(conv?.enabled && schema?.cafAbbreviation && schema.properties.some((p: PropertySchema) => p.key === 'name'));
   });
 
   // Local state for the slug input — prevents feedback loop from derived values

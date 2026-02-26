@@ -8,7 +8,7 @@
   import DeploymentBadge from './DeploymentBadge.svelte';
   import NodeTooltip from './NodeTooltip.svelte';
   import HandleWithLabel from './HandleWithLabel.svelte';
-  import type { ContainerStyle } from '@terrastudio/types';
+  import type { ContainerStyle, HandleDefinition } from '@terrastudio/types';
 
   const updateNodeInternals = useUpdateNodeInternals();
 
@@ -34,7 +34,7 @@
   // Apply position overrides to schema handles
   let staticHandles = $derived.by(() => {
     const schemaHandles = schema?.handles ?? [];
-    return schemaHandles.map(h => ({
+    return schemaHandles.map((h: HandleDefinition) => ({
       ...h,
       position: (handlePositions[h.id] ?? h.position) as 'top' | 'bottom' | 'left' | 'right',
     }));
