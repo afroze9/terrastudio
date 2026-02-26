@@ -8,6 +8,7 @@ import { isValidCidr } from '../networking/cidr-utils.js';
 /**
  * Validates a single resource instance's properties against its schema.
  * Properties set to 'variable' mode are skipped — they'll be supplied at runtime.
+ * Reference properties (type: 'reference') are skipped here and validated separately.
  */
 export function validateResourceProperties(
   schema: ResourceSchema,
@@ -17,11 +18,41 @@ export function validateResourceProperties(
   const errors: ValidationError[] = [];
 
   for (const propSchema of schema.properties) {
+    // Skip reference properties — they're validated in validateRequiredReferences
+    if (propSchema.type === 'reference') continue;
     // If this property is delegated to a Terraform variable, skip all validation.
     if (variableOverrides?.[propSchema.key] === 'variable') continue;
     const value = properties[propSchema.key];
     const propErrors = validateProperty(propSchema, value);
     errors.push(...propErrors);
+  }
+
+  return errors;
+}
+
+/**
+ * Validates that required reference properties have values.
+ * This is separate from validateResourceProperties because references are stored
+ * in the 'references' object, not 'properties'.
+ */
+export function validateRequiredReferences(
+  schema: ResourceSchema,
+  references: Record<string, string>,
+): ValidationError[] {
+  const errors: ValidationError[] = [];
+
+  for (const propSchema of schema.properties) {
+    if (propSchema.type !== 'reference') continue;
+    if (!propSchema.required) continue;
+
+    const refValue = references[propSchema.key];
+    if (!refValue) {
+      errors.push({
+        propertyKey: propSchema.key,
+        message: `${propSchema.label} is required`,
+        severity: 'error',
+      });
+    }
   }
 
   return errors;

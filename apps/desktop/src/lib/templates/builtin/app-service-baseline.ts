@@ -346,6 +346,7 @@ export const appServiceBaselineTemplate: Template = {
             sku_name: 'standard',
             soft_delete_retention_days: 90,
             purge_protection_enabled: true,
+            access_model: 'rbac',
           },
           references: {},
           terraformName: 'kv_webapp',

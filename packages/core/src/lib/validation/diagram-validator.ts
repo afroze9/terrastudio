@@ -4,7 +4,7 @@ import type {
   ResourceTypeId,
 } from '@terrastudio/types';
 import type { PluginRegistry } from '../registry/plugin-registry.js';
-import { validateResourceProperties } from './resource-validator.js';
+import { validateResourceProperties, validateRequiredReferences } from './resource-validator.js';
 
 export interface DiagramValidationResult {
   valid: boolean;
@@ -52,9 +52,13 @@ export function validateDiagram(
       resource.variableOverrides,
     );
 
+    // Validate required reference properties have values
+    const requiredRefErrors = validateRequiredReferences(schema, resource.references);
+
+    // Validate that existing references point to valid resources
     const referenceErrors = validateReferences(resource, resources);
 
-    const allErrors = [...propertyErrors, ...referenceErrors];
+    const allErrors = [...propertyErrors, ...requiredRefErrors, ...referenceErrors];
     if (allErrors.length > 0) {
       diagramErrors.push({
         instanceId: resource.instanceId,
