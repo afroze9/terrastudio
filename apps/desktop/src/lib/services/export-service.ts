@@ -7,6 +7,7 @@ import {
 } from '@xyflow/svelte';
 import { diagram } from '$lib/stores/diagram.svelte';
 import { project } from '$lib/stores/project.svelte';
+import { cost } from '$lib/stores/cost.svelte';
 import { registry } from '$lib/bootstrap';
 import { getCSSVariable } from '$lib/themes/theme-engine';
 import type { ResourceTypeId } from '@terrastudio/types';
@@ -250,6 +251,58 @@ function generateDocumentation(): string {
 
       lines.push(`| ${node.data.label} | ${displayType} | \`${tfName}\` | \`${tfType}\` | ${statusIcon} |`);
     }
+    lines.push('');
+  }
+
+  // Cost Estimates
+  if (cost.hasPrices) {
+    lines.push('## Cost Estimates');
+    lines.push('');
+    lines.push(`> Prices are pay-as-you-go estimates for the **${cost.region}** region.`);
+    lines.push('> Actual costs may vary based on usage, reservations, and discounts.');
+    lines.push('');
+
+    // Summary line
+    if (cost.totalMonthly !== null) {
+      lines.push(`**Estimated Total: ~$${cost.totalMonthly.toFixed(2)}/month**`);
+      lines.push('');
+    }
+
+    // Per-resource table
+    lines.push('| Resource | Type | Est. Monthly Cost | Notes |');
+    lines.push('|----------|------|-------------------|-------|');
+
+    for (const node of diagram.nodes) {
+      const est = cost.estimates.get(node.id);
+      if (!est) continue;
+
+      const typeId = node.data.typeId as ResourceTypeId;
+      const schema = registry.getResourceSchema(typeId);
+      const displayType = schema?.displayName ?? typeId;
+
+      let costCell: string;
+      let notesCell = '';
+
+      if (est.monthlyCost === 0) {
+        costCell = '$0.00';
+        notesCell = 'Free / included in parent';
+      } else if (est.monthlyCost === null) {
+        costCell = '—';
+        notesCell = 'Usage-based or unknown';
+      } else {
+        costCell = `~$${est.monthlyCost.toFixed(2)}`;
+        if (est.breakdown.length > 1) {
+          notesCell = est.breakdown.map((b) => b.label).join('; ');
+        }
+      }
+
+      lines.push(`| ${node.data.label} | ${displayType} | ${costCell} | ${notesCell} |`);
+    }
+
+    lines.push('');
+
+    // Disclaimer
+    lines.push('> Excludes egress, support plans, reservations, and usage-based resources.');
     lines.push('');
   }
 

@@ -112,4 +112,9 @@ export const redisCacheSchema: ResourceSchema = {
     { key: 'primary_access_key', label: 'Primary Access Key', terraformAttribute: 'primary_access_key', sensitive: true },
     { key: 'primary_connection_string', label: 'Primary Connection String', terraformAttribute: 'primary_connection_string', sensitive: true },
   ],
+
+  costEstimation: {
+    serviceName: 'Azure Cache for Redis',
+    skuProperty: 'family',
+  },
 };

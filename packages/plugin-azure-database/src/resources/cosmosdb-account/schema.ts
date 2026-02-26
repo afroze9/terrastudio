@@ -122,4 +122,28 @@ export const cosmosdbAccountSchema: ResourceSchema = {
     { key: 'primary_key', label: 'Primary Key', terraformAttribute: 'primary_key', sensitive: true },
     { key: 'primary_connection_string', label: 'Primary Connection String', terraformAttribute: 'primary_connection_string', sensitive: true },
   ],
+
+  costEstimation: {
+    serviceName: 'Azure Cosmos DB',
+    usageInputs: [
+      {
+        key: '_cost_rus',
+        label: 'Provisioned Throughput',
+        unit: 'RU/s',
+        defaultValue: 400,
+        min: 100,
+        max: 1000000,
+        description: 'Provisioned request units per second (~$0.008/RU/hr for manual throughput)',
+      },
+      {
+        key: '_cost_storage_gb',
+        label: 'Data Storage',
+        unit: 'GB',
+        defaultValue: 10,
+        min: 0,
+        max: 1000000,
+        description: 'Total data stored (~$0.25/GB/month)',
+      },
+    ],
+  },
 };

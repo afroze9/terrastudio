@@ -13,7 +13,7 @@ const DEFAULT_EDGE_VISIBILITY: EdgeCategoryVisibility = {
   annotation: true,
 };
 
-export type SidebarView = 'explorer' | 'terraform' | 'settings' | 'app-settings';
+export type SidebarView = 'explorer' | 'terraform' | 'settings' | 'cost' | 'app-settings';
 export type EdgeStyle = 'default' | 'smoothstep' | 'step' | 'straight';
 export type Theme = 'dark' | 'light';
 
@@ -70,6 +70,9 @@ class UiStore {
 
   // --- Minimap ---
   showMinimap = $state(typeof localStorage !== 'undefined' ? localStorage.getItem('terrastudio-minimap') !== 'false' : true);
+
+  // --- Cost badges ---
+  showCostBadges = $state(typeof localStorage !== 'undefined' ? localStorage.getItem('terrastudio-cost-badges') === 'true' : false);
 
   // --- Theme ---
   theme = $state<Theme>((typeof localStorage !== 'undefined' && localStorage.getItem('terrastudio-theme') as Theme) || 'dark');
@@ -170,6 +173,12 @@ class UiStore {
   setShowMinimap(show: boolean) {
     this.showMinimap = show;
     localStorage.setItem('terrastudio-minimap', String(show));
+  }
+
+  /** Toggle cost badges on nodes and persist */
+  setShowCostBadges(show: boolean) {
+    this.showCostBadges = show;
+    localStorage.setItem('terrastudio-cost-badges', String(show));
   }
 
   /** Set edge type and persist */

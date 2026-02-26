@@ -97,4 +97,9 @@ export const mssqlDatabaseSchema: ResourceSchema = {
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
   ],
+
+  costEstimation: {
+    serviceName: 'SQL Database',
+    skuProperty: 'sku_name',
+  },
 };

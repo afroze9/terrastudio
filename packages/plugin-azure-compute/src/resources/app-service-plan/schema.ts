@@ -107,4 +107,9 @@ export const appServicePlanSchema: ResourceSchema = {
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
   ],
+
+  costEstimation: {
+    serviceName: 'Azure App Service',
+    skuProperty: 'sku_name',
+  },
 };

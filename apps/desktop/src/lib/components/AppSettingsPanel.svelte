@@ -174,6 +174,25 @@
     </div>
   </CollapsibleSection>
   {/if}
+
+  <!-- Cost -->
+  {#if sectionVisible('Cost')}
+  <CollapsibleSection id="app-cost" label="Cost Estimates" forceExpand={!!searchQuery}>
+    <div class="setting-row">
+      <span class="setting-label">Show cost badges on nodes</span>
+      <button
+        class="switch"
+        class:on={ui.showCostBadges}
+        onclick={() => ui.setShowCostBadges(!ui.showCostBadges)}
+        role="switch"
+        aria-label="Toggle cost badges on nodes"
+        aria-checked={ui.showCostBadges}
+      >
+        <span class="switch-thumb"></span>
+      </button>
+    </div>
+  </CollapsibleSection>
+  {/if}
 </div>
 
 <style>

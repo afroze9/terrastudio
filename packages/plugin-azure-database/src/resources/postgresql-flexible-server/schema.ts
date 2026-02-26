@@ -157,4 +157,20 @@ export const postgresqlFlexibleServerSchema: ResourceSchema = {
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
     { key: 'fqdn', label: 'Fully Qualified Domain Name', terraformAttribute: 'fqdn' },
   ],
+
+  costEstimation: {
+    serviceName: 'Azure Database for PostgreSQL',
+    skuProperty: 'sku_name',
+    usageInputs: [
+      {
+        key: '_cost_backup_storage_gb',
+        label: 'Backup Storage Beyond Retention',
+        unit: 'GB',
+        defaultValue: 0,
+        min: 0,
+        max: 100000,
+        description: 'Backup storage consumed beyond the provisioned data storage is charged at ~$0.095/GB/month',
+      },
+    ],
+  },
 };

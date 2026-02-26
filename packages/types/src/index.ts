@@ -11,6 +11,8 @@ export type {
   ContainerStyle,
   OutputDefinition,
   NamingConstraints,
+  CostEstimationMeta,
+  CostUsageInput,
 } from './resource-schema.js';
 
 // HCL types

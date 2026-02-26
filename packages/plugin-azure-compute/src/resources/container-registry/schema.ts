@@ -82,4 +82,20 @@ export const containerRegistrySchema: ResourceSchema = {
     { key: 'admin_username', label: 'Admin Username', terraformAttribute: 'admin_username' },
     { key: 'admin_password', label: 'Admin Password', terraformAttribute: 'admin_password', sensitive: true },
   ],
+
+  costEstimation: {
+    serviceName: 'Container Registry',
+    skuProperty: 'sku',
+    usageInputs: [
+      {
+        key: '_cost_storage_gb',
+        label: 'Image Storage',
+        unit: 'GB',
+        defaultValue: 10,
+        min: 0,
+        max: 500000,
+        description: 'Basic: 10 GB included, Standard: 100 GB, Premium: 500 GB. Extra ~$0.10/GB/day beyond included.',
+      },
+    ],
+  },
 };

@@ -86,4 +86,20 @@ export const logAnalyticsWorkspaceSchema: ResourceSchema = {
     { key: 'workspace_id', label: 'Workspace ID', terraformAttribute: 'workspace_id' },
     { key: 'primary_shared_key', label: 'Primary Shared Key', terraformAttribute: 'primary_shared_key', sensitive: true },
   ],
+
+  costEstimation: {
+    serviceName: 'Log Analytics',
+    skuProperty: 'sku',
+    usageInputs: [
+      {
+        key: '_cost_ingestion_gb_day',
+        label: 'Daily Data Ingestion',
+        unit: 'GB/day',
+        defaultValue: 5,
+        min: 0,
+        max: 10000,
+        description: 'Average daily log data ingested (PerGB2018 tier billed per GB)',
+      },
+    ],
+  },
 };

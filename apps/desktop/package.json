@@ -4,7 +4,7 @@
   "author": "afroze9 <afrozeamjad@gmail.com>",
   "license": "AGPL-3.0-only",
   "private": true,
-  "version": "0.4.4",
+  "version": "0.4.5",
   "type": "module",
   "scripts": {
     "dev": "vite dev",

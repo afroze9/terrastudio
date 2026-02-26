@@ -182,10 +182,18 @@ export class HclPipeline {
     };
 
     // 5. Call plugin generators for each real resource
+    // Strip _cost_* keys before passing to generators — they're cost estimation hints,
+    // not Terraform attributes, and must never appear in generated HCL.
     const allBlocks: HclBlock[] = [];
     for (const resource of realResources) {
-      const generator = this.registry.getHclGenerator(resource.typeId);
-      const blocks = generator.generate(resource, context);
+      const cleanResource: ResourceInstance = {
+        ...resource,
+        properties: Object.fromEntries(
+          Object.entries(resource.properties).filter(([k]) => !k.startsWith('_cost_'))
+        ),
+      };
+      const generator = this.registry.getHclGenerator(cleanResource.typeId);
+      const blocks = generator.generate(cleanResource, context);
       allBlocks.push(...blocks);
     }
 

@@ -117,4 +117,20 @@ export const bastionSchema: ResourceSchema = {
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
     { key: 'dns_name', label: 'DNS Name', terraformAttribute: 'dns_name' },
   ],
+
+  costEstimation: {
+    serviceName: 'Azure Bastion',
+    skuProperty: 'sku',
+    usageInputs: [
+      {
+        key: '_cost_outbound_gb',
+        label: 'Outbound Data Transfer',
+        unit: 'GB/mo',
+        defaultValue: 10,
+        min: 0,
+        max: 100000,
+        description: 'First 5 GB/month free, then ~$0.087/GB. Standard SKU additional scale units also add to cost.',
+      },
+    ],
+  },
 };

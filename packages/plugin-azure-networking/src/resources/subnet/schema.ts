@@ -170,4 +170,6 @@ export const subnetSchema: ResourceSchema = {
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
   ],
+
+  costEstimation: { serviceName: 'Subnet', staticMonthlyCost: 0 },
 };

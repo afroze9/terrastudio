@@ -196,4 +196,20 @@ export const vmSchema: ResourceSchema = {
     { key: 'private_ip_address', label: 'Private IP', terraformAttribute: 'private_ip_address' },
     { key: 'public_ip_address', label: 'Public IP', terraformAttribute: 'public_ip_address' },
   ],
+
+  costEstimation: {
+    serviceName: 'Virtual Machines',
+    skuProperty: 'size',
+    usageInputs: [
+      {
+        key: '_cost_data_disk_count',
+        label: 'Additional Data Disks',
+        unit: 'disks',
+        defaultValue: 0,
+        min: 0,
+        max: 64,
+        description: 'Number of managed data disks (same type as OS disk, same size as OS disk setting)',
+      },
+    ],
+  },
 };

@@ -2,6 +2,66 @@ use serde::{Deserialize, Serialize};
 use tauri::command;
 use tokio::process::Command;
 
+// ---------------------------------------------------------------------------
+// Azure Retail Prices API proxy — bypasses browser CORS restrictions
+// ---------------------------------------------------------------------------
+
+#[derive(Deserialize)]
+struct RetailPriceItem {
+    #[serde(rename = "retailPrice")]
+    retail_price: f64,
+    #[serde(rename = "skuName")]
+    sku_name: String,
+    #[serde(rename = "type")]
+    price_type: String,
+}
+
+#[derive(Deserialize)]
+struct RetailPricesResponse {
+    #[serde(rename = "Items")]
+    items: Vec<RetailPriceItem>,
+}
+
+/// Fetch the retail price from the Azure Retail Prices API.
+/// Returns the retailPrice of the first matching Consumption item, or null.
+/// This runs server-side to avoid browser CORS restrictions.
+#[command]
+pub async fn fetch_azure_price(
+    service_name: String,
+    arm_sku_name: String,
+    region: String,
+) -> Option<f64> {
+    let filter = format!(
+        "serviceName eq '{}' and armSkuName eq '{}' and armRegionName eq '{}' and priceType eq 'Consumption'",
+        service_name, arm_sku_name, region
+    );
+    let url = format!(
+        "https://prices.azure.com/api/retail/prices?$filter={}",
+        urlencoding::encode(&filter)
+    );
+
+    let client = reqwest::Client::new();
+    let resp = match client.get(&url).send().await {
+        Ok(r) => r,
+        Err(_) => return None,
+    };
+
+    let data: RetailPricesResponse = match resp.json().await {
+        Ok(d) => d,
+        Err(_) => return None,
+    };
+
+    // Pick first non-Spot, non-Low Priority Consumption item
+    let item = data.items.iter().find(|i| {
+        let sku_lower = i.sku_name.to_lowercase();
+        !sku_lower.contains("spot")
+            && !sku_lower.contains("low priority")
+            && i.price_type == "Consumption"
+    }).or_else(|| data.items.first())?;
+
+    Some(item.retail_price)
+}
+
 #[derive(Clone, Serialize, Deserialize)]
 pub struct AzSubscription {
     pub id: String,

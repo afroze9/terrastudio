@@ -2,6 +2,8 @@
   import { Handle, Position, useUpdateNodeInternals } from '@xyflow/svelte';
   import { registry } from '$lib/bootstrap';
   import { terraform } from '$lib/stores/terraform.svelte';
+  import { cost } from '$lib/stores/cost.svelte';
+  import { ui } from '$lib/stores/ui.svelte';
   import DeploymentBadge from './DeploymentBadge.svelte';
   import NodeTooltip from './NodeTooltip.svelte';
   import HandleWithLabel from './HandleWithLabel.svelte';
@@ -146,6 +148,14 @@
   let hasNsg = $derived(!!data.references?.['nsg_id']);
   let nsgIcon = $derived(hasNsg ? registry.getIcon('azurerm/networking/network_security_group' as any) : null);
 
+  let costEstimate = $derived(ui.showCostBadges ? cost.estimates.get(id) : undefined);
+  let costLabel = $derived.by(() => {
+    if (!costEstimate || costEstimate.loading) return null;
+    if (costEstimate.monthlyCost === null) return null;
+    if (costEstimate.monthlyCost === 0) return 'Free';
+    return `~$${costEstimate.monthlyCost < 10 ? costEstimate.monthlyCost.toFixed(2) : Math.round(costEstimate.monthlyCost)}/mo`;
+  });
+
   let validationErrors = $derived((data.validationErrors as { message: string; severity: string }[]) ?? []);
   let hasValidationErrors = $derived(validationErrors.length > 0);
   let validationTooltip = $derived(validationErrors.map((e) => e.message).join('\n'));
@@ -189,6 +199,10 @@
     {/if}
     <DeploymentBadge status={data.deploymentStatus} {errorMessage} />
   </div>
+
+  {#if costLabel}
+    <div class="cost-badge">{costLabel}</div>
+  {/if}
 
   {#each handles as handle, i (handle.id)}
     <HandleWithLabel {handle} nodeTypeId={data.typeId} style={handleStyles[i]} />
@@ -306,6 +320,15 @@
     justify-content: center;
     flex-shrink: 0;
     cursor: help;
+  }
+
+  .cost-badge {
+    font-size: 9px;
+    color: var(--color-text-muted);
+    text-align: center;
+    margin-top: 3px;
+    opacity: 0.75;
+    letter-spacing: 0.02em;
   }
 
   /* Connection point handles for annotation edges */

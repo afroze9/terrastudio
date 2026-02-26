@@ -70,4 +70,19 @@ export const natGatewaySchema: ResourceSchema = {
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
   ],
+
+  costEstimation: {
+    serviceName: 'NAT Gateway',
+    usageInputs: [
+      {
+        key: '_cost_data_gb',
+        label: 'Processed Data',
+        unit: 'GB/mo',
+        defaultValue: 100,
+        min: 0,
+        max: 1000000,
+        description: 'All outbound and return traffic processed by NAT Gateway (~$0.045/GB)',
+      },
+    ],
+  },
 };

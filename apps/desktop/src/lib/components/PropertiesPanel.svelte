@@ -186,6 +186,8 @@
     return 'Properties';
   });
 
+  let hasCostInputs = $derived(!!(schema?.costEstimation?.usageInputs?.length));
+
   // Collect all collapsible section IDs for this panel
   let propsSectionIds = $derived.by(() => {
     const ids: string[] = [];
@@ -201,6 +203,10 @@
     // Key Vault access control
     if (isKeyVault) {
       ids.push('props-kv-access-control');
+    }
+    // Cost estimation usage inputs
+    if (hasCostInputs) {
+      ids.push('props-cost-estimation');
     }
     // Outputs
     if (schema.outputs && schema.outputs.length > 0) {
@@ -311,6 +317,36 @@
           onAccessModelChange={(model) => onPropertyChange('access_model', model)}
           onGrantsChange={(grants) => onPropertyChange('access_grants', grants)}
         />
+      {/if}
+
+      {#if hasCostInputs}
+        <CollapsiblePanelSection id="props-cost-estimation" label="Cost Estimation" count={schema.costEstimation!.usageInputs!.length}>
+          <p class="cost-inputs-hint">Usage inputs for cost estimates. These are not deployed to Azure.</p>
+          {#each schema.costEstimation!.usageInputs! as input}
+            <label class="cost-input-row">
+              <span class="cost-input-label">
+                {input.label}
+                {#if input.description}
+                  <span class="cost-input-hint" title={input.description}>?</span>
+                {/if}
+              </span>
+              <div class="cost-input-field">
+                <input
+                  type="number"
+                  min={input.min}
+                  max={input.max}
+                  step="any"
+                  value={(diagram.selectedNode!.data.properties[input.key] as number | undefined) ?? input.defaultValue}
+                  oninput={(e) => {
+                    const v = parseFloat((e.target as HTMLInputElement).value);
+                    onPropertyChange(input.key, isNaN(v) ? input.defaultValue : v);
+                  }}
+                />
+                <span class="cost-input-unit">{input.unit}</span>
+              </div>
+            </label>
+          {/each}
+        </CollapsiblePanelSection>
       {/if}
 
       {#if schema.outputs && schema.outputs.length > 0}
@@ -695,5 +731,70 @@
     border: 1px solid var(--color-border);
     border-radius: 6px;
     line-height: 1.4;
+  }
+  .cost-inputs-hint {
+    font-size: 10px;
+    color: var(--color-text-muted);
+    opacity: 0.7;
+    margin: 0 0 8px;
+    line-height: 1.4;
+  }
+  .cost-input-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+  .cost-input-row:last-child {
+    margin-bottom: 0;
+  }
+  .cost-input-label {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .cost-input-hint {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: var(--color-border);
+    color: var(--color-text-muted);
+    font-size: 9px;
+    font-weight: 700;
+    cursor: help;
+    flex-shrink: 0;
+  }
+  .cost-input-field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .cost-input-field input[type='number'] {
+    flex: 1;
+    padding: 5px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  .cost-input-field input[type='number']:focus {
+    border-color: var(--color-accent);
+  }
+  .cost-input-unit {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 </style>

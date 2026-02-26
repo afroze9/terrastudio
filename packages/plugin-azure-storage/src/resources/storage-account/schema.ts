@@ -151,4 +151,20 @@ export const storageAccountSchema: ResourceSchema = {
     },
     { key: 'primary_blob_endpoint', label: 'Blob Endpoint', terraformAttribute: 'primary_blob_endpoint' },
   ],
+
+  costEstimation: {
+    serviceName: 'Storage',
+    skuProperty: 'account_tier',
+    usageInputs: [
+      {
+        key: '_cost_storage_gb',
+        label: 'Estimated Storage',
+        unit: 'GB',
+        defaultValue: 100,
+        min: 1,
+        max: 1000000,
+        description: 'Total data stored across all containers/shares',
+      },
+    ],
+  },
 };

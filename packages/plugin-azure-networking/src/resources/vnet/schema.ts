@@ -85,4 +85,6 @@ export const vnetSchema: ResourceSchema = {
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
     { key: 'guid', label: 'GUID', terraformAttribute: 'guid' },
   ],
+
+  costEstimation: { serviceName: 'Virtual Network', staticMonthlyCost: 0 },
 };

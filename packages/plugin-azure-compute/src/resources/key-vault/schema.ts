@@ -136,4 +136,29 @@ export const keyVaultSchema: ResourceSchema = {
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
     { key: 'vault_uri', label: 'Vault URI', terraformAttribute: 'vault_uri' },
   ],
+
+  costEstimation: {
+    serviceName: 'Key Vault',
+    skuProperty: 'sku_name',
+    usageInputs: [
+      {
+        key: '_cost_operations_10k',
+        label: 'Secret/Key Operations',
+        unit: '× 10,000/mo',
+        defaultValue: 100,
+        min: 0,
+        max: 100000,
+        description: 'Each 10,000 API calls costs ~$0.03 (Standard). Typical app: 10-500 × 10k/month.',
+      },
+      {
+        key: '_cost_certificates',
+        label: 'Certificate Renewals',
+        unit: '/mo',
+        defaultValue: 0,
+        min: 0,
+        max: 1000,
+        description: '$3 per certificate renewal request',
+      },
+    ],
+  },
 };

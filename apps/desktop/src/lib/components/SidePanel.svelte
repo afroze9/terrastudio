@@ -5,6 +5,7 @@
   import TerraformSidebar from './TerraformSidebar.svelte';
   import ProjectConfigPanel from './ProjectConfigPanel.svelte';
   import AppSettingsPanel from './AppSettingsPanel.svelte';
+  import CostPanel from './CostPanel.svelte';
 
   const categoryIds = registry.getPaletteCategories().map((c) => c.id);
 
@@ -12,7 +13,8 @@
     explorer: categoryIds,
     terraform: ['tf-files', 'tf-variables', 'tf-commands'],
     settings: ['project-naming', 'project-layout', 'project-edge-styles', 'project-tags'],
-    'app-settings': ['app-appearance', 'app-canvas'],
+    'app-settings': ['app-appearance', 'app-canvas', 'app-cost'],
+    cost: ['cost-summary', 'cost-by-type', 'cost-notes'],
   };
 
   const activeCategoryIds = $derived(SECTION_IDS[ui.activeView] ?? []);
@@ -24,6 +26,7 @@
       case 'terraform': return 'TERRAFORM';
       case 'settings': return 'PROJECT';
       case 'app-settings': return 'SETTINGS';
+      case 'cost': return 'COST ESTIMATES';
       default: return '';
     }
   });
@@ -89,6 +92,8 @@
       <ProjectConfigPanel />
     {:else if ui.activeView === 'app-settings'}
       <AppSettingsPanel />
+    {:else if ui.activeView === 'cost'}
+      <CostPanel />
     {/if}
   </div>
   <!-- svelte-ignore a11y_no_static_element_interactions -->

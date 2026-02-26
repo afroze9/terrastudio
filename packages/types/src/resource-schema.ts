@@ -112,6 +112,34 @@ export interface NamingConstraints {
   readonly maxLength?: number;
 }
 
+export interface CostUsageInput {
+  /** Property key used to store the value on the node (prefixed with `_cost_`) */
+  readonly key: string;
+  /** Human-readable label shown in the Properties panel */
+  readonly label: string;
+  /** Unit displayed after the input (e.g. 'GB', 'GB/day', 'million ops/mo') */
+  readonly unit: string;
+  /** Default assumption if the user hasn't set a value */
+  readonly defaultValue: number;
+  /** Minimum allowed value */
+  readonly min?: number;
+  /** Maximum allowed value */
+  readonly max?: number;
+  /** Optional tooltip / description */
+  readonly description?: string;
+}
+
+export interface CostEstimationMeta {
+  /** Azure Retail Prices API serviceName filter (e.g. 'Virtual Machines') */
+  readonly serviceName: string;
+  /** Which property key holds the pricing SKU (e.g. 'size' for VMs, 'sku_name' for ASP) */
+  readonly skuProperty?: string;
+  /** Set to 0 for always-free resources (NSG, VNet, RG, Subnet) */
+  readonly staticMonthlyCost?: number;
+  /** Usage-based inputs shown in the Properties panel "Cost Estimation" section */
+  readonly usageInputs?: ReadonlyArray<CostUsageInput>;
+}
+
 export interface ResourceSchema {
   readonly typeId: ResourceTypeId;
   readonly provider: string;
@@ -139,4 +167,6 @@ export interface ResourceSchema {
   };
   /** Computed outputs this resource exposes for output binding connections */
   readonly outputs?: ReadonlyArray<OutputDefinition>;
+  /** Metadata for Azure cost estimation */
+  readonly costEstimation?: CostEstimationMeta;
 }

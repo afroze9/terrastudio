@@ -2,6 +2,7 @@
   import { diagram } from '$lib/stores/diagram.svelte';
   import { ui, type EdgeStyle } from '$lib/stores/ui.svelte';
   import { project } from '$lib/stores/project.svelte';
+  import { cost } from '$lib/stores/cost.svelte';
   import { registry } from '$lib/bootstrap';
   import { saveDiagram } from '$lib/services/project-service';
   import { autoLayout, type LayoutDirection } from '$lib/services/layout-service';
@@ -68,6 +69,13 @@
   let hiddenEdgeCount = $derived(
     edgeCategoryOptions.filter((cat) => !ui.edgeVisibility[cat.id]).length
   );
+
+  const costChipLabel = $derived.by(() => {
+    if (!cost.hasPrices) return null;
+    const total = cost.totalMonthly;
+    if (total === null) return 'Cost: see panel';
+    return `~$${total < 100 ? total.toFixed(0) : Math.round(total)}/mo`;
+  });
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -312,6 +320,20 @@
     {/if}
   </div>
 
+  {#if costChipLabel}
+    <div class="toolbar-separator"></div>
+    <button
+      class="toolbar-btn cost-chip-btn"
+      title="Cost estimates — click to open Cost panel"
+      onclick={() => ui.setActiveView('cost')}
+    >
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+      </svg>
+      <span class="cost-chip-label">{costChipLabel}</span>
+    </button>
+  {/if}
+
 </div>
 
 <style>
@@ -550,5 +572,22 @@
 
   .toggle-switch.on .toggle-knob {
     transform: translateX(14px);
+  }
+
+  .cost-chip-btn {
+    width: auto;
+    padding: 0 8px;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-accent);
+    white-space: nowrap;
+  }
+  .cost-chip-btn:hover:not(:disabled) {
+    color: var(--color-accent);
+  }
+  .cost-chip-label {
+    font-size: 11px;
+    font-weight: 600;
   }
 </style>

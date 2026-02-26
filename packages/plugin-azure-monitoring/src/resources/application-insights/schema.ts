@@ -97,4 +97,19 @@ export const applicationInsightsSchema: ResourceSchema = {
     { key: 'instrumentation_key', label: 'Instrumentation Key', terraformAttribute: 'instrumentation_key', sensitive: true },
     { key: 'connection_string', label: 'Connection String', terraformAttribute: 'connection_string', sensitive: true },
   ],
+
+  costEstimation: {
+    serviceName: 'Azure Monitor',
+    usageInputs: [
+      {
+        key: '_cost_ingestion_gb_mo',
+        label: 'Monthly Data Ingestion',
+        unit: 'GB/mo',
+        defaultValue: 5,
+        min: 0,
+        max: 100000,
+        description: 'Application telemetry data ingested per month (~$2.76/GB after 5 GB free)',
+      },
+    ],
+  },
 };

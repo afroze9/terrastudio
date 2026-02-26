@@ -45,6 +45,7 @@ pub fn run() {
             project::templates::save_user_template,
             project::templates::open_templates_folder,
             azure::commands::az_list_subscriptions,
+            azure::commands::fetch_azure_price,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

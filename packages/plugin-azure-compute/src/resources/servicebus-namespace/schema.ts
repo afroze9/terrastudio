@@ -97,4 +97,20 @@ export const serviceBusNamespaceSchema: ResourceSchema = {
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
     { key: 'default_primary_connection_string', label: 'Primary Connection String', terraformAttribute: 'default_primary_connection_string', sensitive: true },
   ],
+
+  costEstimation: {
+    serviceName: 'Azure Service Bus',
+    skuProperty: 'sku',
+    usageInputs: [
+      {
+        key: '_cost_operations_millions',
+        label: 'Messaging Operations',
+        unit: 'million ops/mo',
+        defaultValue: 10,
+        min: 0,
+        max: 100000,
+        description: 'Standard tier: first 10M ops included; extra ~$0.80/million (Basic: $0.05/million)',
+      },
+    ],
+  },
 };

@@ -4,6 +4,7 @@
   import { diagram } from '$lib/stores/diagram.svelte';
   import { terraform } from '$lib/stores/terraform.svelte';
   import { ui } from '$lib/stores/ui.svelte';
+  import { cost } from '$lib/stores/cost.svelte';
   import DeploymentBadge from './DeploymentBadge.svelte';
   import NodeTooltip from './NodeTooltip.svelte';
   import HandleWithLabel from './HandleWithLabel.svelte';
@@ -160,6 +161,14 @@
   let isValidDropTarget = $derived(ui.dragFeedback?.validContainerIds.has(id) ?? false);
   let isInvalidDropTarget = $derived(ui.dragFeedback?.invalidContainerIds.has(id) ?? false);
 
+  let costEstimate = $derived(ui.showCostBadges ? cost.estimates.get(id) : undefined);
+  let costLabel = $derived.by(() => {
+    if (!costEstimate || costEstimate.loading) return null;
+    if (costEstimate.monthlyCost === null) return null;
+    if (costEstimate.monthlyCost === 0) return null; // containers (RG, VNet) are free — no badge
+    return `~$${costEstimate.monthlyCost < 10 ? costEstimate.monthlyCost.toFixed(2) : Math.round(costEstimate.monthlyCost)}/mo`;
+  });
+
   let hasNsg = $derived(!!data.references?.['nsg_id']);
   let nsgIcon = $derived(hasNsg ? registry.getIcon('azurerm/networking/network_security_group' as any) : null);
 
@@ -268,6 +277,9 @@
     </svg>
   {/if}
   <div class="deployment-badge-corner">
+    {#if costLabel}
+      <span class="cost-chip">{costLabel}</span>
+    {/if}
     {#if hasNsg && nsgIcon?.type === 'svg' && nsgIcon.svg}
       <span class="nsg-badge" title="NSG attached">{@html nsgIcon.svg}</span>
     {/if}
@@ -401,6 +413,13 @@
     flex: 1;
     min-height: 80px;
     padding: 8px;
+  }
+  .cost-chip {
+    font-size: 9px;
+    color: var(--color-text-muted);
+    opacity: 0.8;
+    white-space: nowrap;
+    letter-spacing: 0.02em;
   }
   .nsg-badge {
     display: flex;

@@ -130,4 +130,6 @@ export const nsgSchema: ResourceSchema = {
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
   ],
+
+  costEstimation: { serviceName: 'Network Security Group', staticMonthlyCost: 0 },
 };
