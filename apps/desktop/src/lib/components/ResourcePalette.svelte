@@ -3,6 +3,7 @@
   import { registry } from '$lib/bootstrap';
   import { ui } from '$lib/stores/ui.svelte';
   import { project } from '$lib/stores/project.svelte';
+  import type { PaletteCategory, ResourceTypeRegistration } from '@terrastudio/types';
 
   let searchQuery = $state('');
 
@@ -10,20 +11,20 @@
   // or project.projectConfig.activeProviders changes (user switches provider)
   let filteredCategories = $derived(
     registry.paletteCategories
-      .map((category) => {
+      .map((category: PaletteCategory) => {
         let resources = registry.getResourceTypesForCategory(category.id);
 
         // Filter by active providers
         const active = project.projectConfig.activeProviders;
         if (active?.length) {
-          resources = resources.filter((r) => active.includes(r.schema.provider as any));
+          resources = resources.filter((r: ResourceTypeRegistration) => active.includes(r.schema.provider as any));
         }
 
         // Search filter
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
           resources = resources.filter(
-            (reg) =>
+            (reg: ResourceTypeRegistration) =>
               reg.schema.displayName.toLowerCase().includes(q) ||
               reg.schema.typeId.toLowerCase().includes(q) ||
               (reg.schema.description ?? '').toLowerCase().includes(q),
@@ -32,7 +33,7 @@
 
         return { category, resources };
       })
-      .filter((c) => c.resources.length > 0),
+      .filter((c: { category: PaletteCategory; resources: ResourceTypeRegistration[] }) => c.resources.length > 0),
   );
 
   function onDragStart(event: DragEvent, typeId: string) {

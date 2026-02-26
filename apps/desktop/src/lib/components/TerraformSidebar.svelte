@@ -8,7 +8,7 @@
   import { generateAndWrite, runTerraformCommand, refreshDeploymentStatus } from '$lib/services/terraform-service';
   import type { TerraformCommand } from '$lib/stores/terraform.svelte';
   import { registry } from '$lib/bootstrap';
-  import type { ResourceTypeId, TerraformVariable } from '@terrastudio/types';
+  import type { ResourceTypeId, TerraformVariable, PropertySchema } from '@terrastudio/types';
   import CollapsibleSection from './CollapsibleSection.svelte';
   import SearchBox from './SearchBox.svelte';
 
@@ -26,7 +26,7 @@
       if (!schema) continue;
       for (const [propKey, mode] of Object.entries(overrides)) {
         if (mode !== 'variable') continue;
-        const propSchema = schema.properties.find(p => p.key === propKey);
+        const propSchema = schema.properties.find((p: PropertySchema) => p.key === propKey);
         if (!propSchema) continue;
         const varName = `${node.data.terraformName}_${propKey}`;
         let varType = 'string';

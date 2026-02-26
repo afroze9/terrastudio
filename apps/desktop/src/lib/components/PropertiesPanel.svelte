@@ -9,7 +9,7 @@
   import KeyVaultAccessControlSection from './KeyVaultAccessControlSection.svelte';
   import CollapsiblePanelSection from './CollapsiblePanelSection.svelte';
   import EdgeStyleEditor from './EdgeStyleEditor.svelte';
-  import type { ResourceTypeId, PropertyVariableMode, AccessModel, AccessGrant, EdgeStyleSettings, EdgeCategoryId } from '@terrastudio/types';
+  import type { ResourceTypeId, PropertyVariableMode, AccessModel, AccessGrant, EdgeStyleSettings, EdgeCategoryId, HandleDefinition, PropertySchema, OutputDefinition } from '@terrastudio/types';
 
   let schema = $derived(
     diagram.selectedNode
@@ -62,13 +62,13 @@
   let renderedProperties = $derived.by(() => {
     let props = schema?.properties ?? [];
     if (conventionActive) {
-      props = props.filter(p => p.key !== 'name');
+      props = props.filter((p: PropertySchema) => p.key !== 'name');
     }
     if (isSubscription) {
-      props = props.filter(p => p.key !== 'display_name' && p.key !== 'subscription_id');
+      props = props.filter((p: PropertySchema) => p.key !== 'display_name' && p.key !== 'subscription_id');
     }
     if (isKeyVault) {
-      props = props.filter(p => p.key !== 'access_model' && p.key !== 'access_grants');
+      props = props.filter((p: PropertySchema) => p.key !== 'access_model' && p.key !== 'access_grants');
     }
     return props;
   });
@@ -92,9 +92,9 @@
   /** Edges connected to handles with acceptsOutputs (e.g. Key Vault secret-in) */
   let connectedBindings = $derived.by(() => {
     if (!diagram.selectedNode || !schema) return [];
-    const acceptHandles = schema.handles.filter((h) => h.acceptsOutputs);
+    const acceptHandles = schema.handles.filter((h: HandleDefinition) => h.acceptsOutputs);
     if (acceptHandles.length === 0) return [];
-    const handleIds = new Set(acceptHandles.map((h) => h.id));
+    const handleIds = new Set(acceptHandles.map((h: HandleDefinition) => h.id));
     return diagram.edges
       .filter(
         (e) =>
@@ -109,7 +109,7 @@
         const attribute = (edge.sourceHandle ?? '').startsWith('out-')
           ? (edge.sourceHandle as string).slice(4)
           : edge.sourceHandle ?? '';
-        const outputDef = sourceSchema?.outputs?.find((o) => o.key === attribute);
+        const outputDef = sourceSchema?.outputs?.find((o: OutputDefinition) => o.key === attribute);
         return {
           edgeId: edge.id,
           sourceLabel: sourceNode?.data.label ?? 'Unknown',

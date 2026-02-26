@@ -1,5 +1,5 @@
 import type { Node, Edge } from '@xyflow/svelte';
-import type { ResourceNodeData, ResourceTypeId, ValidationError, TerraStudioEdgeData, EdgeCategoryId, ReferenceEdgeOverrides } from '@terrastudio/types';
+import type { ResourceNodeData, ResourceTypeId, ValidationError, TerraStudioEdgeData, EdgeCategoryId, ReferenceEdgeOverrides, HandleDefinition } from '@terrastudio/types';
 import { generateNodeId, generateUniqueTerraformName } from '@terrastudio/core';
 import { project } from './project.svelte';
 import { terraform } from './terraform.svelte';
@@ -53,11 +53,11 @@ class DiagramStore {
         if (!targetNode) continue;
 
         // Find a matching source handle (e.g., pep-source for Private Endpoint)
-        const sourceHandle = schema.handles?.find(h => h.id === 'pep-source' && h.type === 'source');
+        const sourceHandle = schema.handles?.find((h: HandleDefinition) => h.id === 'pep-source' && h.type === 'source');
 
         // Find a matching target handle (e.g., pep-target for Private Endpoint references)
         const targetSchema = registry.getResourceSchema(targetNode.type as ResourceTypeId);
-        const targetHandle = targetSchema?.handles?.find(h => h.id === 'pep-target' && h.type === 'target');
+        const targetHandle = targetSchema?.handles?.find((h: HandleDefinition) => h.id === 'pep-target' && h.type === 'target');
 
         const edgeOverride = overrides[prop.key];
         result.push({

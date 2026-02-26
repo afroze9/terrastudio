@@ -1,13 +1,14 @@
 <script lang="ts">
   import { ui } from '$lib/stores/ui.svelte';
   import { registry } from '$lib/bootstrap';
+  import type { PaletteCategory } from '@terrastudio/types';
   import ResourcePalette from './ResourcePalette.svelte';
   import TerraformSidebar from './TerraformSidebar.svelte';
   import ProjectConfigPanel from './ProjectConfigPanel.svelte';
   import AppSettingsPanel from './AppSettingsPanel.svelte';
   import CostPanel from './CostPanel.svelte';
 
-  const categoryIds = registry.paletteCategories.map((c) => c.id);
+  const categoryIds = registry.paletteCategories.map((c: PaletteCategory) => c.id);
 
   const SECTION_IDS: Record<string, string[]> = {
     explorer: categoryIds,
