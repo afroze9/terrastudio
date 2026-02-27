@@ -1,5 +1,8 @@
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Mutex;
 use tauri::{Emitter, Manager};
+use tauri::webview::WebviewWindowBuilder;
 use tauri_plugin_log::{Target, TargetKind, RotationStrategy, TimezoneStrategy};
 
 mod azure;
@@ -9,6 +12,12 @@ mod terraform;
 
 /// Holds a pending project path received via file association before the frontend was ready.
 pub struct PendingOpenPath(pub Mutex<Option<String>>);
+
+/// Holds pending project paths for newly created windows (window_label → project_path).
+pub struct PendingWindowPaths(pub Mutex<HashMap<String, String>>);
+
+/// Counter for generating unique window labels.
+static WINDOW_COUNTER: AtomicU32 = AtomicU32::new(1);
 
 /// Compute a date-stamped log file name: "terrastudio-YYYY-MM-DD"
 /// (the plugin appends ".log" automatically).
@@ -46,11 +55,21 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             // When a second instance is launched (e.g., double-clicking a .tstudio file),
-            // the args are forwarded here. Extract the .tstudio file path and emit to frontend.
+            // the args are forwarded here. Open the project in a new window.
             if let Some(path) = extract_tstudio_path(&args) {
                 log::info!("Single-instance: received project path {}", path);
-                let _ = app.emit("project://open-request", serde_json::json!({ "path": path }));
-                // Focus the existing window
+                match create_project_window_inner(app, Some(path.clone())) {
+                    Ok(label) => {
+                        log::info!("Created window '{}' for project: {}", label, path);
+                    }
+                    Err(e) => {
+                        log::error!("Failed to create window for {}: {}", path, e);
+                        // Fallback: emit to all windows so the welcome screen picks it up
+                        let _ = app.emit("project://open-request", serde_json::json!({ "path": path }));
+                    }
+                }
+            } else {
+                // No project path — just focus the most recent window
                 if let Some(window) = app.get_webview_window("main") {
                     let _ = window.set_focus();
                 }
@@ -66,6 +85,7 @@ pub fn run() {
             // Check CLI args for a .tstudio file (first launch via file association).
             let pending_path = extract_tstudio_path(&std::env::args().collect::<Vec<_>>());
             app.manage(PendingOpenPath(Mutex::new(pending_path)));
+            app.manage(PendingWindowPaths(Mutex::new(HashMap::new())));
 
             Ok(())
         })
@@ -104,6 +124,8 @@ pub fn run() {
             set_log_level,
             open_log_folder,
             get_pending_open_path,
+            create_project_window,
+            get_window_pending_path,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -183,6 +205,53 @@ fn extract_tstudio_path(args: &[String]) -> Option<String> {
 fn get_pending_open_path(app_handle: tauri::AppHandle) -> Option<String> {
     let state = app_handle.state::<PendingOpenPath>();
     let result = state.0.lock().ok()?.take();
+    result
+}
+
+/// Create a new project window. If a project path is provided, the new window will
+/// auto-load that project on startup.
+fn create_project_window_inner(
+    app: &tauri::AppHandle,
+    project_path: Option<String>,
+) -> Result<String, String> {
+    let index = WINDOW_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let label = format!("project-{}", index);
+
+    if let Some(ref path) = project_path {
+        let state = app.state::<PendingWindowPaths>();
+        if let Ok(mut map) = state.0.lock() {
+            map.insert(label.clone(), path.clone());
+        }
+        drop(state);
+    }
+
+    WebviewWindowBuilder::new(app, &label, tauri::WebviewUrl::App("index.html".into()))
+        .title("TerraStudio")
+        .inner_size(1400.0, 900.0)
+        .min_inner_size(1024.0, 700.0)
+        .decorations(false)
+        .build()
+        .map_err(|e| format!("Failed to create window: {}", e))?;
+
+    Ok(label)
+}
+
+/// Tauri command to create a new project window from the frontend.
+#[tauri::command]
+fn create_project_window(
+    app_handle: tauri::AppHandle,
+    project_path: Option<String>,
+) -> Result<String, String> {
+    create_project_window_inner(&app_handle, project_path)
+}
+
+/// Called by each new window on startup to check if it should auto-load a project.
+/// Returns the project directory path if one was pending for this window, and clears it.
+#[tauri::command]
+fn get_window_pending_path(window: tauri::WebviewWindow, app_handle: tauri::AppHandle) -> Option<String> {
+    let label = window.label().to_string();
+    let state = app_handle.state::<PendingWindowPaths>();
+    let result = state.0.lock().ok()?.remove(&label);
     result
 }
 

@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { project, type ProjectMetadata } from '$lib/stores/project.svelte';
 import { diagram, type DiagramEdge } from '$lib/stores/diagram.svelte';
@@ -97,6 +98,9 @@ export async function createProject(
   diagram.clear();
   project.open(data.path, data.metadata);
 
+  // Set window title to project name
+  getCurrentWindow().setTitle(`${name} — TerraStudio`).catch(() => {});
+
   // Apply config overrides and persist them (always save activeProviders)
   if (namingConvention) project.projectConfig = { ...project.projectConfig, namingConvention };
   if (layoutAlgorithm) project.projectConfig = { ...project.projectConfig, layoutAlgorithm };
@@ -151,6 +155,9 @@ export async function loadProjectByPath(path: string): Promise<void> {
   diagram.clear();
   cost.clear();
   project.open(data.path, data.metadata);
+
+  // Set window title to project name
+  getCurrentWindow().setTitle(`${data.metadata.name} — TerraStudio`).catch(() => {});
 
   // Restore diagram if it exists, migrating old edges to new format
   if (data.diagram) {
@@ -212,24 +219,44 @@ export async function pickFolder(): Promise<string | null> {
 }
 
 /**
- * Initialize file association handling.
- * - Checks if the app was launched by double-clicking a .tstudio file (pending path)
- * - Listens for `project://open-request` events from the single-instance plugin
- *   (when a second instance is launched via file association while the app is running)
+ * Initialize this window's project on startup.
+ * Checks for a pending project path assigned to this specific window (for dynamically
+ * created windows), or from the initial launch args (for the "main" window).
  *
  * Call this once from the root layout or app initialization.
  */
-export async function initFileAssociationHandler(): Promise<void> {
-  // Check for a pending open path from launch args
+export async function initWindowProject(): Promise<void> {
+  // 1. Check if this window was created with a specific project path
+  const windowPath = await invoke<string | null>('get_window_pending_path');
+  if (windowPath) {
+    await loadProjectByPath(windowPath);
+    return;
+  }
+
+  // 2. Check for first-launch file association (only relevant for the "main" window)
   const pendingPath = await invoke<string | null>('get_pending_open_path');
   if (pendingPath) {
     await loadProjectByPath(pendingPath);
   }
+}
 
-  // Listen for open requests from subsequent file association launches
+/**
+ * Initialize file association handling.
+ * Listens for `project://open-request` fallback events. If a project is already open,
+ * creates a new window for the incoming project instead of replacing the current one.
+ *
+ * Call this once from the root layout or app initialization.
+ */
+export async function initFileAssociationHandler(): Promise<void> {
   await listen<{ path: string }>('project://open-request', async (event) => {
     const path = event.payload.path;
-    if (path) {
+    if (!path) return;
+
+    if (project.isOpen) {
+      // Project already open in this window — open a new window
+      await invoke('create_project_window', { projectPath: path });
+    } else {
+      // On welcome screen — load into this window
       await loadProjectByPath(path);
     }
   });

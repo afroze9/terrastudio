@@ -139,14 +139,17 @@ pub async fn run_terraform_capture(
 
 /// Run a terraform command with -json flag, parsing each line and emitting structured events.
 /// Returns aggregated result with diagnostics and resource change info.
+/// Events are targeted to the specified window label so other windows are not affected.
 pub async fn run_terraform_json(
     app: &AppHandle,
+    window_label: &str,
     working_dir: &Path,
     subcommand: &str,
     args: &[&str],
 ) -> Result<TerraformJsonResult, String> {
     // Emit running status
-    let _ = app.emit(
+    let _ = app.emit_to(
+        window_label,
         "terraform:status",
         TerraformStatus {
             status: "running".into(),
@@ -177,6 +180,8 @@ pub async fn run_terraform_json(
 
     let app_stdout = app.clone();
     let app_stderr = app.clone();
+    let label_stdout = window_label.to_string();
+    let label_stderr = window_label.to_string();
 
     // Collect diagnostics and resource changes
     let diagnostics = std::sync::Arc::new(std::sync::Mutex::new(Vec::<TerraformDiagnostic>::new()));
@@ -193,10 +198,11 @@ pub async fn run_terraform_json(
             // Try to parse as JSON
             if let Ok(msg) = serde_json::from_str::<TerraformJsonMessage>(&line) {
                 // Emit structured message for frontend
-                let _ = app_stdout.emit("terraform:json", msg.clone());
+                let _ = app_stdout.emit_to(&label_stdout, "terraform:json", msg.clone());
 
                 // Also emit human-readable line for the log
-                let _ = app_stdout.emit(
+                let _ = app_stdout.emit_to(
+                    &label_stdout,
                     "terraform:stdout",
                     TerraformOutput {
                         stream: "stdout".into(),
@@ -258,7 +264,8 @@ pub async fn run_terraform_json(
                 }
             } else {
                 // Not valid JSON, emit as raw line
-                let _ = app_stdout.emit(
+                let _ = app_stdout.emit_to(
+                    &label_stdout,
                     "terraform:stdout",
                     TerraformOutput {
                         stream: "stdout".into(),
@@ -274,7 +281,8 @@ pub async fn run_terraform_json(
         let reader = BufReader::new(stderr);
         let mut lines = reader.lines();
         while let Ok(Some(line)) = lines.next_line().await {
-            let _ = app_stderr.emit(
+            let _ = app_stderr.emit_to(
+                &label_stderr,
                 "terraform:stderr",
                 TerraformOutput {
                     stream: "stderr".into(),
@@ -298,7 +306,8 @@ pub async fn run_terraform_json(
     let success = status.success();
 
     // Emit completion status
-    let _ = app.emit(
+    let _ = app.emit_to(
+        window_label,
         "terraform:status",
         TerraformStatus {
             status: if success {
@@ -311,7 +320,7 @@ pub async fn run_terraform_json(
     );
 
     let exit = TerraformExit { code, success };
-    let _ = app.emit("terraform:exit", exit);
+    let _ = app.emit_to(window_label, "terraform:exit", exit);
 
     // Extract collected data
     let final_diagnostics = diagnostics.lock().map(|d| d.clone()).unwrap_or_default();
@@ -348,15 +357,17 @@ pub async fn check_terraform_installed() -> Result<String, String> {
 }
 
 /// Run a terraform subcommand in the given working directory,
-/// streaming output via Tauri events.
+/// streaming output via Tauri events targeted to a specific window.
 pub async fn run_terraform(
     app: &AppHandle,
+    window_label: &str,
     working_dir: &Path,
     subcommand: &str,
     args: &[&str],
 ) -> Result<TerraformExit, String> {
     // Emit running status
-    let _ = app.emit(
+    let _ = app.emit_to(
+        window_label,
         "terraform:status",
         TerraformStatus {
             status: "running".into(),
@@ -387,13 +398,16 @@ pub async fn run_terraform(
 
     let app_stdout = app.clone();
     let app_stderr = app.clone();
+    let label_stdout = window_label.to_string();
+    let label_stderr = window_label.to_string();
 
     // Spawn tasks to read stdout and stderr concurrently
     let stdout_task = tokio::spawn(async move {
         let reader = BufReader::new(stdout);
         let mut lines = reader.lines();
         while let Ok(Some(line)) = lines.next_line().await {
-            let _ = app_stdout.emit(
+            let _ = app_stdout.emit_to(
+                &label_stdout,
                 "terraform:stdout",
                 TerraformOutput {
                     stream: "stdout".into(),
@@ -407,7 +421,8 @@ pub async fn run_terraform(
         let reader = BufReader::new(stderr);
         let mut lines = reader.lines();
         while let Ok(Some(line)) = lines.next_line().await {
-            let _ = app_stderr.emit(
+            let _ = app_stderr.emit_to(
+                &label_stderr,
                 "terraform:stderr",
                 TerraformOutput {
                     stream: "stderr".into(),
@@ -431,7 +446,8 @@ pub async fn run_terraform(
     let success = status.success();
 
     // Emit completion status
-    let _ = app.emit(
+    let _ = app.emit_to(
+        window_label,
         "terraform:status",
         TerraformStatus {
             status: if success {
@@ -444,7 +460,7 @@ pub async fn run_terraform(
     );
 
     let exit = TerraformExit { code, success };
-    let _ = app.emit("terraform:exit", exit.clone());
+    let _ = app.emit_to(window_label, "terraform:exit", exit.clone());
 
     Ok(exit)
 }

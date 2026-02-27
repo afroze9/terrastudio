@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use tauri::{command, AppHandle};
+use tauri::{command, AppHandle, WebviewWindow};
 
 use super::runner::{self, TerraformJsonResult};
 
@@ -34,40 +34,40 @@ pub async fn check_terraform() -> Result<String, String> {
 
 /// Run terraform init in the project's terraform/ directory.
 #[command]
-pub async fn terraform_init(app: AppHandle, project_path: String) -> Result<bool, String> {
+pub async fn terraform_init(app: AppHandle, window: WebviewWindow, project_path: String) -> Result<bool, String> {
     let terraform_dir = PathBuf::from(&project_path).join("terraform");
-    let result = runner::run_terraform(&app, &terraform_dir, "init", &["-no-color"]).await?;
+    let result = runner::run_terraform(&app, window.label(), &terraform_dir, "init", &["-no-color"]).await?;
     Ok(result.success)
 }
 
 /// Run terraform validate.
 #[command]
-pub async fn terraform_validate(app: AppHandle, project_path: String) -> Result<bool, String> {
+pub async fn terraform_validate(app: AppHandle, window: WebviewWindow, project_path: String) -> Result<bool, String> {
     let terraform_dir = PathBuf::from(&project_path).join("terraform");
     let result =
-        runner::run_terraform(&app, &terraform_dir, "validate", &["-no-color"]).await?;
+        runner::run_terraform(&app, window.label(), &terraform_dir, "validate", &["-no-color"]).await?;
     Ok(result.success)
 }
 
 /// Run terraform plan with JSON output for structured error parsing.
 #[command]
-pub async fn terraform_plan(app: AppHandle, project_path: String) -> Result<TerraformJsonResult, String> {
+pub async fn terraform_plan(app: AppHandle, window: WebviewWindow, project_path: String) -> Result<TerraformJsonResult, String> {
     let terraform_dir = PathBuf::from(&project_path).join("terraform");
-    runner::run_terraform_json(&app, &terraform_dir, "plan", &[]).await
+    runner::run_terraform_json(&app, window.label(), &terraform_dir, "plan", &[]).await
 }
 
 /// Run terraform apply with auto-approve and JSON output.
 #[command]
-pub async fn terraform_apply(app: AppHandle, project_path: String) -> Result<TerraformJsonResult, String> {
+pub async fn terraform_apply(app: AppHandle, window: WebviewWindow, project_path: String) -> Result<TerraformJsonResult, String> {
     let terraform_dir = PathBuf::from(&project_path).join("terraform");
-    runner::run_terraform_json(&app, &terraform_dir, "apply", &["-auto-approve"]).await
+    runner::run_terraform_json(&app, window.label(), &terraform_dir, "apply", &["-auto-approve"]).await
 }
 
 /// Run terraform destroy with auto-approve and JSON output.
 #[command]
-pub async fn terraform_destroy(app: AppHandle, project_path: String) -> Result<TerraformJsonResult, String> {
+pub async fn terraform_destroy(app: AppHandle, window: WebviewWindow, project_path: String) -> Result<TerraformJsonResult, String> {
     let terraform_dir = PathBuf::from(&project_path).join("terraform");
-    runner::run_terraform_json(&app, &terraform_dir, "destroy", &["-auto-approve"]).await
+    runner::run_terraform_json(&app, window.label(), &terraform_dir, "destroy", &["-auto-approve"]).await
 }
 
 /// Run terraform show -json to get the current state as JSON.

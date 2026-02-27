@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
+	import { invoke } from '@tauri-apps/api/core';
 	import { getCurrentWindow } from '@tauri-apps/api/window';
 	import { declarePlugins, initializeTerraformCheck, initLogging } from '$lib/bootstrap';
 	import Titlebar from '$lib/components/Titlebar.svelte';
@@ -16,7 +17,7 @@
 	import { project } from '$lib/stores/project.svelte';
 	import { diagram } from '$lib/stores/diagram.svelte';
 	import { terraform } from '$lib/stores/terraform.svelte';
-	import { saveDiagram, openProject, guardUnsavedChanges, initFileAssociationHandler } from '$lib/services/project-service';
+	import { saveDiagram, openProject, guardUnsavedChanges, initWindowProject, initFileAssociationHandler } from '$lib/services/project-service';
 
 	let showNewProjectDialog = $state(false);
 
@@ -26,6 +27,7 @@
 		ui.applyTheme();
 		initLogging(ui.logLevel);
 		initializeTerraformCheck();
+		initWindowProject();
 		initFileAssociationHandler();
 
 		const appWindow = getCurrentWindow();
@@ -72,7 +74,12 @@
 				ui.toggleTerminal();
 				return;
 			}
-			if (e.ctrlKey && e.key === 'n' && !inInput) {
+			if (e.ctrlKey && e.shiftKey && e.key === 'N' && !inInput) {
+				e.preventDefault();
+				invoke('create_project_window', {}).catch(() => {});
+				return;
+			}
+			if (e.ctrlKey && !e.shiftKey && e.key === 'n' && !inInput) {
 				e.preventDefault();
 				showNewProjectDialog = true;
 				return;
@@ -95,6 +102,7 @@
 					if (!(await guardUnsavedChanges())) return;
 					diagram.clear();
 					project.close();
+					getCurrentWindow().setTitle('TerraStudio').catch(() => {});
 				}
 				return;
 			}

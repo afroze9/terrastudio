@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { invoke } from '@tauri-apps/api/core';
   import { ui } from '$lib/stores/ui.svelte';
   import { diagram } from '$lib/stores/diagram.svelte';
   import { project } from '$lib/stores/project.svelte';
@@ -59,6 +60,9 @@
     if (!(await guardUnsavedChanges())) return;
     diagram.clear();
     project.close();
+    import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
+      getCurrentWindow().setTitle('TerraStudio').catch(() => {});
+    });
   }
 
   function handleWindowClick(e: MouseEvent) {
@@ -88,6 +92,10 @@
         <button class="dropdown-item" onclick={() => { close(); onNewProject(); }}>
           <span>New Project</span>
           <span class="shortcut">Ctrl+N</span>
+        </button>
+        <button class="dropdown-item" onclick={() => { close(); invoke('create_project_window', {}); }}>
+          <span>New Window</span>
+          <span class="shortcut">Ctrl+⇧N</span>
         </button>
         <button class="dropdown-item" onclick={handleOpen}>
           <span>Open Project</span>

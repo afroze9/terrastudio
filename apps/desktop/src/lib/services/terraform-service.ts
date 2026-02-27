@@ -1,5 +1,4 @@
 import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow, ProgressBarStatus } from '@tauri-apps/api/window';
 import type { UnlistenFn } from '@tauri-apps/api/event';
 import type { DeploymentStatus, ResourceTypeId } from '@terrastudio/types';
@@ -366,8 +365,11 @@ export async function runTerraformCommand(
 
   const unlisteners: UnlistenFn[] = [];
 
+  // Use window-scoped listeners so events from other windows are not received
+  const appWindow = getCurrentWindow();
+
   unlisteners.push(
-    await listen<{ stream: string; line: string }>(
+    await appWindow.listen<{ stream: string; line: string }>(
       'terraform:stdout',
       (event) => {
         terraform.appendOutput({
@@ -379,7 +381,7 @@ export async function runTerraformCommand(
   );
 
   unlisteners.push(
-    await listen<{ stream: string; line: string }>(
+    await appWindow.listen<{ stream: string; line: string }>(
       'terraform:stderr',
       (event) => {
         terraform.appendOutput({
