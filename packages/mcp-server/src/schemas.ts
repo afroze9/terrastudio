@@ -38,7 +38,7 @@ export const DisconnectResourcesSchema = z.object({
 
 // Project tools
 export const OpenProjectSchema = z.object({
-  projectPath: z.string().describe('Absolute path to directory containing terrastudio.json'),
+  projectPath: z.string().describe('Absolute path to project directory (containing *.tstudio file)'),
 });
 
 export const NewProjectSchema = z.object({

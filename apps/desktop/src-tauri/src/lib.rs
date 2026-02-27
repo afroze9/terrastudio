@@ -1,3 +1,4 @@
+use std::sync::Mutex;
 use tauri::{Emitter, Manager};
 use tauri_plugin_log::{Target, TargetKind, RotationStrategy, TimezoneStrategy};
 
@@ -5,6 +6,9 @@ mod azure;
 mod mcp;
 mod project;
 mod terraform;
+
+/// Holds a pending project path received via file association before the frontend was ready.
+pub struct PendingOpenPath(pub Mutex<Option<String>>);
 
 /// Compute a date-stamped log file name: "terrastudio-YYYY-MM-DD"
 /// (the plugin appends ".log" automatically).
@@ -40,11 +44,28 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            // When a second instance is launched (e.g., double-clicking a .tstudio file),
+            // the args are forwarded here. Extract the .tstudio file path and emit to frontend.
+            if let Some(path) = extract_tstudio_path(&args) {
+                log::info!("Single-instance: received project path {}", path);
+                let _ = app.emit("project://open-request", serde_json::json!({ "path": path }));
+                // Focus the existing window
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.set_focus();
+                }
+            }
+        }))
         .setup(|app| {
             // Initialize MCP state for diagram cache.
             // MCP bridge + sidecar are started lazily from the frontend via
             // the `mcp_start` command — not here — so the UI is never blocked.
             app.manage(mcp::commands::McpState::new());
+
+            // Store pending open path for file association launches.
+            // Check CLI args for a .tstudio file (first launch via file association).
+            let pending_path = extract_tstudio_path(&std::env::args().collect::<Vec<_>>());
+            app.manage(PendingOpenPath(Mutex::new(pending_path)));
 
             Ok(())
         })
@@ -82,6 +103,7 @@ pub fn run() {
             mcp_start,
             set_log_level,
             open_log_folder,
+            get_pending_open_path,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -135,6 +157,33 @@ fn open_log_folder(app_handle: tauri::AppHandle) -> Result<(), String> {
             .map_err(|e| e.to_string())?;
     }
     Ok(())
+}
+
+/// Extract the project directory path from CLI args containing a .tstudio file.
+/// Returns the parent directory of the .tstudio file (the project root).
+fn extract_tstudio_path(args: &[String]) -> Option<String> {
+    for arg in args.iter().skip(1) {
+        // Skip flags
+        if arg.starts_with('-') {
+            continue;
+        }
+        if arg.ends_with(".tstudio") {
+            let path = std::path::Path::new(arg);
+            if let Some(parent) = path.parent() {
+                return Some(parent.to_string_lossy().to_string());
+            }
+        }
+    }
+    None
+}
+
+/// Called by the frontend on startup to check if the app was launched via file association.
+/// Returns the project directory path if one was pending, and clears it.
+#[tauri::command]
+fn get_pending_open_path(app_handle: tauri::AppHandle) -> Option<String> {
+    let state = app_handle.state::<PendingOpenPath>();
+    let result = state.0.lock().ok()?.take();
+    result
 }
 
 /// Frontend calls this once the UI is interactive. Starts the IPC bridge + Node sidecar

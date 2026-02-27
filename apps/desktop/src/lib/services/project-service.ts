@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { project, type ProjectMetadata } from '$lib/stores/project.svelte';
 import { diagram, type DiagramEdge } from '$lib/stores/diagram.svelte';
@@ -113,42 +114,24 @@ export async function createProject(
 }
 
 /**
- * Open an existing project: show folder picker, load terrastudio.json + diagram.
+ * Open an existing project: show file picker for .tstudio files, load project + diagram.
  */
 export async function openProject(): Promise<void> {
   if (!(await guardUnsavedChanges())) return;
 
   const selected = await openDialog({
-    directory: true,
     title: 'Open TerraStudio Project',
+    filters: [
+      { name: 'TerraStudio Project', extensions: ['tstudio'] },
+    ],
+    directory: false,
   });
 
   if (!selected) return;
 
-  const data = await invoke<ProjectData>('load_project', {
-    projectPath: selected,
-  });
-
-  // Load plugins before opening project in store
-  await loadPluginsForProject(resolveActiveProviders(data.metadata.projectConfig));
-
-  diagram.clear();
-  cost.clear();
-  project.open(data.path, data.metadata);
-
-  // Restore diagram if it exists, migrating old edges to new format
-  if (data.diagram) {
-    const d = data.diagram as { nodes?: unknown[]; edges?: unknown[] };
-    const nodes = (d.nodes ?? []) as any[];
-    const edges = migrateEdges(d.edges ?? []);
-    diagram.loadDiagram(nodes, edges);
-  }
-
-  // Restore cost estimates if present, then check if diagram changed since last save
-  if (data.cost) {
-    cost.loadSaved(data.cost as any);
-    cost.checkDirty(diagram.nodes);
-  }
+  // Derive project directory from the .tstudio file path
+  const projectDir = selected.replace(/[\\/][^\\/]+$/, '');
+  await loadProjectByPath(projectDir);
 }
 
 /**
@@ -186,7 +169,7 @@ export async function loadProjectByPath(path: string): Promise<void> {
 
 /**
  * Save the current diagram to the project's diagrams/main.json
- * and project config to terrastudio.json.
+ * and project config to {name}.tstudio.
  */
 export async function saveDiagram(): Promise<void> {
   if (!project.path) return;
@@ -226,4 +209,28 @@ export async function pickFolder(): Promise<string | null> {
     title: 'Select Project Location',
   });
   return selected ?? null;
+}
+
+/**
+ * Initialize file association handling.
+ * - Checks if the app was launched by double-clicking a .tstudio file (pending path)
+ * - Listens for `project://open-request` events from the single-instance plugin
+ *   (when a second instance is launched via file association while the app is running)
+ *
+ * Call this once from the root layout or app initialization.
+ */
+export async function initFileAssociationHandler(): Promise<void> {
+  // Check for a pending open path from launch args
+  const pendingPath = await invoke<string | null>('get_pending_open_path');
+  if (pendingPath) {
+    await loadProjectByPath(pendingPath);
+  }
+
+  // Listen for open requests from subsequent file association launches
+  await listen<{ path: string }>('project://open-request', async (event) => {
+    const path = event.payload.path;
+    if (path) {
+      await loadProjectByPath(path);
+    }
+  });
 }

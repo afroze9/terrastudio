@@ -16,7 +16,7 @@
 	import { project } from '$lib/stores/project.svelte';
 	import { diagram } from '$lib/stores/diagram.svelte';
 	import { terraform } from '$lib/stores/terraform.svelte';
-	import { saveDiagram, openProject, guardUnsavedChanges } from '$lib/services/project-service';
+	import { saveDiagram, openProject, guardUnsavedChanges, initFileAssociationHandler } from '$lib/services/project-service';
 
 	let showNewProjectDialog = $state(false);
 
@@ -26,6 +26,7 @@
 		ui.applyTheme();
 		initLogging(ui.logLevel);
 		initializeTerraformCheck();
+		initFileAssociationHandler();
 
 		const appWindow = getCurrentWindow();
 		const unlistenClose = appWindow.onCloseRequested(async (event) => {

@@ -1,8 +1,11 @@
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tauri::command;
 
 use super::recent;
+
+const LEGACY_PROJECT_FILE: &str = "terrastudio.json";
+const PROJECT_EXTENSION: &str = "tstudio";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ProjectMetadata {
@@ -18,6 +21,45 @@ pub struct ProjectData {
     pub diagram: Option<serde_json::Value>,
     pub cost: Option<serde_json::Value>,
     pub path: String,
+}
+
+/// Find the project file in a directory.
+///
+/// Looks for `*.tstudio` first (new format), falls back to `terrastudio.json` (legacy).
+/// Returns the path to the project file found.
+fn find_project_file(project_dir: &Path) -> Result<PathBuf, String> {
+    // 1. Look for any *.tstudio file
+    if let Ok(entries) = std::fs::read_dir(project_dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_file() {
+                if let Some(ext) = path.extension() {
+                    if ext == PROJECT_EXTENSION {
+                        return Ok(path);
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Fall back to legacy terrastudio.json
+    let legacy_path = project_dir.join(LEGACY_PROJECT_FILE);
+    if legacy_path.exists() {
+        return Ok(legacy_path);
+    }
+
+    // 3. Neither found
+    Err(format!(
+        "No .{} or {} file found in {}",
+        PROJECT_EXTENSION,
+        LEGACY_PROJECT_FILE,
+        project_dir.display()
+    ))
+}
+
+/// Build the canonical project file path: `{project_dir}/{name}.tstudio`
+fn project_file_path(project_dir: &Path, name: &str) -> PathBuf {
+    project_dir.join(format!("{}.{}", name, PROJECT_EXTENSION))
 }
 
 /// Create a new project directory with the standard structure.
@@ -67,8 +109,8 @@ pub async fn create_project(
         }),
     };
 
-    // Write terrastudio.json
-    let metadata_path = project_dir.join("terrastudio.json");
+    // Write {name}.tstudio
+    let metadata_path = project_file_path(&project_dir, &name);
     let metadata_json = serde_json::to_string_pretty(&metadata)
         .map_err(|e| format!("Failed to serialize metadata: {}", e))?;
     tokio::fs::write(&metadata_path, &metadata_json)
@@ -108,13 +150,13 @@ pub async fn save_diagram(
     Ok(())
 }
 
-/// Load a project from a directory containing terrastudio.json.
+/// Load a project from a directory containing a .tstudio file (or legacy terrastudio.json).
 #[command]
 pub async fn load_project(project_path: String) -> Result<ProjectData, String> {
     let project_dir = PathBuf::from(&project_path);
 
-    // Read terrastudio.json
-    let metadata_path = project_dir.join("terrastudio.json");
+    // Find the project file (*.tstudio or legacy terrastudio.json)
+    let metadata_path = find_project_file(&project_dir)?;
     let metadata_json = tokio::fs::read_to_string(&metadata_path)
         .await
         .map_err(|e| format!("Failed to read project file: {}", e))?;
@@ -157,16 +199,17 @@ pub async fn load_project(project_path: String) -> Result<ProjectData, String> {
     })
 }
 
-/// Save project config (updates terrastudio.json).
+/// Save project config — writes to `{name}.tstudio` and cleans up legacy file if present.
 #[command]
 pub async fn save_project_config(
     project_path: String,
     project_config: serde_json::Value,
 ) -> Result<(), String> {
-    let metadata_path = PathBuf::from(&project_path).join("terrastudio.json");
+    let project_dir = PathBuf::from(&project_path);
 
-    // Read existing metadata
-    let metadata_json = tokio::fs::read_to_string(&metadata_path)
+    // Find and read the current project file
+    let current_path = find_project_file(&project_dir)?;
+    let metadata_json = tokio::fs::read_to_string(&current_path)
         .await
         .map_err(|e| format!("Failed to read project file: {}", e))?;
     let mut metadata: ProjectMetadata = serde_json::from_str(&metadata_json)
@@ -174,11 +217,23 @@ pub async fn save_project_config(
 
     metadata.project_config = project_config;
 
+    // Always write to the canonical {name}.tstudio path
+    let canonical_path = project_file_path(&project_dir, &metadata.name);
     let json = serde_json::to_string_pretty(&metadata)
         .map_err(|e| format!("Failed to serialize metadata: {}", e))?;
-    tokio::fs::write(&metadata_path, &json)
+    tokio::fs::write(&canonical_path, &json)
         .await
         .map_err(|e| format!("Failed to write project file: {}", e))?;
+
+    // If we loaded from a legacy file and it's different from the canonical path, clean it up
+    if current_path != canonical_path && current_path.exists() {
+        let _ = tokio::fs::remove_file(&current_path).await;
+        log::info!(
+            "Migrated project file: {} -> {}",
+            current_path.display(),
+            canonical_path.display()
+        );
+    }
 
     Ok(())
 }
