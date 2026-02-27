@@ -2,6 +2,9 @@
   import { ui, type EdgeStyle } from '$lib/stores/ui.svelte';
   import { getAllPalettes, validateCustomTheme, importCustomTheme } from '$lib/themes/theme-engine';
   import type { PaletteId, CustomThemeFile } from '$lib/themes/types';
+  import { initLogging } from '$lib/bootstrap';
+  import type { LogLevel } from '$lib/logger';
+  import { invoke } from '@tauri-apps/api/core';
   import { open as openDialog } from '@tauri-apps/plugin-dialog';
   import { readTextFile } from '@tauri-apps/plugin-fs';
   import { onMount } from 'svelte';
@@ -32,6 +35,23 @@
   ];
 
   const gridSizes = [10, 15, 20, 25, 30, 40, 50];
+
+  const logLevels: { value: LogLevel; label: string }[] = [
+    { value: 'error', label: 'Error' },
+    { value: 'warn', label: 'Warn' },
+    { value: 'info', label: 'Info' },
+    { value: 'debug', label: 'Debug' },
+    { value: 'trace', label: 'Trace' },
+  ];
+
+  function handleLogLevel(level: LogLevel) {
+    ui.setLogLevel(level);
+    initLogging(level);
+  }
+
+  function handleOpenLogFolder() {
+    invoke('open_log_folder').catch(console.warn);
+  }
 
   async function handleImport() {
     importError = '';
@@ -198,6 +218,38 @@
       >
         <span class="switch-thumb"></span>
       </button>
+    </div>
+  </CollapsibleSection>
+  {/if}
+
+  <!-- Logging -->
+  {#if sectionVisible('Logging')}
+  <CollapsibleSection id="app-logging" label="Logging" forceExpand={!!searchQuery}>
+    <div class="setting-row">
+      <span class="setting-label">Log Level</span>
+      <div class="select-group">
+        {#each logLevels as opt (opt.value)}
+          <button
+            class="select-btn"
+            class:active={ui.logLevel === opt.value}
+            onclick={() => handleLogLevel(opt.value)}
+          >
+            {opt.label}
+          </button>
+        {/each}
+      </div>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Log files</span>
+      <button class="open-folder-btn" onclick={handleOpenLogFolder}>
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 4h4l2 2h6v7H2V4z" />
+        </svg>
+        Open folder
+      </button>
+    </div>
+    <div class="mcp-hint">
+      Logs are written to date-stamped files. Higher levels include less detail.
     </div>
   </CollapsibleSection>
   {/if}
@@ -421,6 +473,25 @@
     background: var(--color-accent);
     color: white;
     border-color: var(--color-accent);
+  }
+
+  /* Open folder button */
+  .open-folder-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: 3px;
+    background: transparent;
+    color: var(--color-text-muted);
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s;
+  }
+  .open-folder-btn:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
   }
 
   /* MCP section */

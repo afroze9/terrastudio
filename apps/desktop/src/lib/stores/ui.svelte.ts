@@ -2,6 +2,7 @@ import type { PaletteId } from '$lib/themes/types';
 import { applyPalette, getPalette } from '$lib/themes/theme-engine';
 import { DEFAULT_PALETTE_ID } from '$lib/themes/palettes';
 import type { ResourceTypeId, EdgeCategoryId } from '@terrastudio/types';
+import type { LogLevel } from '$lib/logger';
 
 /** Which edge categories are currently visible on canvas */
 export type EdgeCategoryVisibility = Record<EdgeCategoryId, boolean>;
@@ -73,6 +74,9 @@ class UiStore {
 
   // --- Cost badges ---
   showCostBadges = $state(typeof localStorage !== 'undefined' ? localStorage.getItem('terrastudio-cost-badges') === 'true' : false);
+
+  // --- Log level ---
+  logLevel = $state<LogLevel>((typeof localStorage !== 'undefined' && localStorage.getItem('terrastudio-log-level') as LogLevel) || 'info');
 
   // --- Theme ---
   theme = $state<Theme>((typeof localStorage !== 'undefined' && localStorage.getItem('terrastudio-theme') as Theme) || 'dark');
@@ -179,6 +183,12 @@ class UiStore {
   setShowCostBadges(show: boolean) {
     this.showCostBadges = show;
     localStorage.setItem('terrastudio-cost-badges', String(show));
+  }
+
+  /** Set log level and persist */
+  setLogLevel(level: LogLevel) {
+    this.logLevel = level;
+    localStorage.setItem('terrastudio-log-level', level);
   }
 
   /** Set edge type and persist */

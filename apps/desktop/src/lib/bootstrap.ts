@@ -3,6 +3,7 @@ import DefaultResourceNode from '$lib/components/DefaultResourceNode.svelte';
 import ContainerResourceNode from '$lib/components/ContainerResourceNode.svelte';
 import { TerraStudioEdge } from '$lib/components/edges';
 import { checkTerraform } from '$lib/services/terraform-service';
+import { setLoggerLevel, type LogLevel } from '$lib/logger';
 import type { Component } from 'svelte';
 import type { EdgeTypes } from '@xyflow/svelte';
 import type { ProviderId } from '@terrastudio/types';
@@ -61,6 +62,14 @@ function initMcpLazy(): void {
   // Wire up frontend sync modules (fire-and-forget)
   import('$lib/mcp/diagram-sync.svelte').then((m) => m.initDiagramSync()).catch(console.warn);
   import('$lib/mcp/bridge-listener').then((m) => m.initBridgeListener()).catch(console.warn);
+}
+
+/** Apply the persisted log level to both the JS logger and Rust backend. */
+export function initLogging(level: LogLevel): void {
+  setLoggerLevel(level);
+  import('@tauri-apps/api/core').then(({ invoke }) => {
+    invoke('set_log_level', { level }).catch(console.warn);
+  }).catch(console.warn);
 }
 
 export function initializeTerraformCheck(): void {

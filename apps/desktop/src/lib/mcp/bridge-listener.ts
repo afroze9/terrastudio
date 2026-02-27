@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import type { UnlistenFn } from '@tauri-apps/api/event';
 import { diagram } from '$lib/stores/diagram.svelte';
+import { logger } from '$lib/logger';
 import type { DiagramNode, DiagramEdge } from '$lib/stores/diagram.svelte';
 import type { ResourceNodeData } from '@terrastudio/types';
 
@@ -75,7 +76,7 @@ export async function initBridgeListener(): Promise<void> {
       const { saveDiagram } = await import('$lib/services/project-service');
       await saveDiagram();
     } catch (e) {
-      console.error('[mcp] save_project failed:', e);
+      logger.error(`[mcp] save_project failed: ${e}`);
     }
   });
   unlisteners.push(unlistenSave);
@@ -88,7 +89,7 @@ export async function initBridgeListener(): Promise<void> {
       // Sync generated HCL files back to Rust cache so MCP bridge can return them
       await invoke('mcp_sync_hcl_files', { files });
     } catch (e) {
-      console.error('[mcp] generate_hcl failed:', e);
+      logger.error(`[mcp] generate_hcl failed: ${e}`);
       // Sync error result so the bridge doesn't hang waiting
       await invoke('mcp_sync_hcl_files', { files: { error: String(e) } }).catch(() => {});
     }
@@ -101,7 +102,7 @@ export async function initBridgeListener(): Promise<void> {
       const { runTerraformCommand } = await import('$lib/services/terraform-service');
       await runTerraformCommand(event.payload.command as 'init' | 'validate' | 'plan' | 'apply' | 'destroy');
     } catch (e) {
-      console.error('[mcp] run_terraform failed:', e);
+      logger.error(`[mcp] run_terraform failed: ${e}`);
     }
   });
   unlisteners.push(unlistenTerraform);

@@ -16,6 +16,7 @@
     "core:window:allow-is-maximized",
     "core:window:allow-start-dragging",
     "core:window:allow-is-focused",
-    "core:window:allow-set-progress-bar"
+    "core:window:allow-set-progress-bar",
+    "log:default"
   ]
 }

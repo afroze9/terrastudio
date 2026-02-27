@@ -1,26 +1,46 @@
 use tauri::{Emitter, Manager};
+use tauri_plugin_log::{Target, TargetKind, RotationStrategy, TimezoneStrategy};
 
 mod azure;
 mod mcp;
 mod project;
 mod terraform;
 
+/// Compute a date-stamped log file name: "terrastudio-YYYY-MM-DD"
+/// (the plugin appends ".log" automatically).
+fn log_file_name() -> String {
+    use time::OffsetDateTime;
+    let now = OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc());
+    format!("terrastudio-{:04}-{:02}-{:02}", now.year(), now.month() as u8, now.day())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Build log targets: file always, stdout only in dev
+    let mut log_targets = vec![
+        Target::new(TargetKind::LogDir {
+            file_name: Some(log_file_name()),
+        }),
+    ];
+    if cfg!(debug_assertions) {
+        log_targets.push(Target::new(TargetKind::Stdout));
+    }
+
     tauri::Builder::default()
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .targets(log_targets)
+                .level(log::LevelFilter::Info)
+                .rotation_strategy(RotationStrategy::KeepAll)
+                .timezone_strategy(TimezoneStrategy::UseLocal)
+                .max_file_size(5_000_000) // ~5 MB
+                .build(),
+        )
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_notification::init())
         .setup(|app| {
-            if cfg!(debug_assertions) {
-                app.handle().plugin(
-                    tauri_plugin_log::Builder::default()
-                        .level(log::LevelFilter::Info)
-                        .build(),
-                )?;
-            }
-
             // Initialize MCP state for diagram cache.
             // MCP bridge + sidecar are started lazily from the frontend via
             // the `mcp_start` command — not here — so the UI is never blocked.
@@ -60,9 +80,61 @@ pub fn run() {
             mcp::commands::mcp_sync_resource_types,
             mcp::commands::mcp_sync_hcl_files,
             mcp_start,
+            set_log_level,
+            open_log_folder,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+/// Change the global log level at runtime. The `log` crate uses an atomic for
+/// `max_level`, so this is safe to call from any thread at any time.
+#[tauri::command]
+fn set_log_level(level: String) -> Result<(), String> {
+    let filter = match level.as_str() {
+        "trace" => log::LevelFilter::Trace,
+        "debug" => log::LevelFilter::Debug,
+        "info"  => log::LevelFilter::Info,
+        "warn"  => log::LevelFilter::Warn,
+        "error" => log::LevelFilter::Error,
+        "off"   => log::LevelFilter::Off,
+        _ => return Err(format!("Invalid log level: {}", level)),
+    };
+    log::set_max_level(filter);
+    log::info!("Log level changed to {}", level);
+    Ok(())
+}
+
+/// Open the log directory in the platform file manager.
+#[tauri::command]
+fn open_log_folder(app_handle: tauri::AppHandle) -> Result<(), String> {
+    let log_dir = app_handle
+        .path()
+        .app_log_dir()
+        .map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(&log_dir).ok();
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .arg(log_dir.to_string_lossy().as_ref())
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg(&log_dir)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(target_os = "linux")]
+    {
+        std::process::Command::new("xdg-open")
+            .arg(&log_dir)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }
 
 /// Frontend calls this once the UI is interactive. Starts the IPC bridge + Node sidecar

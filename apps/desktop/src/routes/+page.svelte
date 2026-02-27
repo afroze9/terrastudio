@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import { getCurrentWindow } from '@tauri-apps/api/window';
-	import { declarePlugins, initializeTerraformCheck } from '$lib/bootstrap';
+	import { declarePlugins, initializeTerraformCheck, initLogging } from '$lib/bootstrap';
 	import Titlebar from '$lib/components/Titlebar.svelte';
 	import ActivityBar from '$lib/components/ActivityBar.svelte';
 	import SidePanel from '$lib/components/SidePanel.svelte';
@@ -24,6 +24,7 @@
 
 	onMount(() => {
 		ui.applyTheme();
+		initLogging(ui.logLevel);
 		initializeTerraformCheck();
 
 		const appWindow = getCurrentWindow();

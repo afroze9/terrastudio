@@ -46,12 +46,10 @@ export class PluginRegistry implements PluginRegistryReader {
       this.providers.set(plugin.providerId, plugin.providerConfig);
     }
 
-    // Register resource types with collision detection
+    // Register resource types (skip duplicates — can happen during HMR)
     for (const [typeId, registration] of plugin.resourceTypes) {
       if (this.resourceTypes.has(typeId)) {
-        throw new Error(
-          `Resource type "${typeId}" is already registered. Collision between plugins.`,
-        );
+        continue;
       }
       this.resourceTypes.set(typeId, registration);
     }

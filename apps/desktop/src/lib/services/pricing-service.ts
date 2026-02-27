@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import { logger } from '$lib/logger';
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -52,7 +53,7 @@ export async function fetchMonthlyPrice(
   if (cached !== null) return cached;
 
   try {
-    console.debug(`[pricing] invoke fetch_azure_price: ${serviceName} / ${armSkuName} / ${region}`);
+    logger.debug(`[pricing] invoke fetch_azure_price: ${serviceName} / ${armSkuName} / ${region}`);
 
     // Tauri backend makes the HTTP call — no CORS issues
     const retailPrice = await invoke<number | null>('fetch_azure_price', {
@@ -62,7 +63,7 @@ export async function fetchMonthlyPrice(
     });
 
     if (retailPrice === null || retailPrice === undefined) {
-      console.warn(`[pricing] No price returned for ${serviceName} / ${armSkuName} / ${region}`);
+      logger.warn(`[pricing] No price returned for ${serviceName} / ${armSkuName} / ${region}`);
       return null;
     }
 
@@ -71,11 +72,11 @@ export async function fetchMonthlyPrice(
     const isHourly = serviceName === 'Virtual Machines' || serviceName === 'Azure App Service';
     const monthly = isHourly ? retailPrice * 730 : retailPrice;
 
-    console.debug(`[pricing] → $${monthly.toFixed(2)}/mo (retailPrice=${retailPrice})`);
+    logger.debug(`[pricing] → $${monthly.toFixed(2)}/mo (retailPrice=${retailPrice})`);
     setInCache(key, monthly);
     return monthly;
   } catch (err) {
-    console.error(`[pricing] Error fetching ${serviceName} / ${armSkuName} / ${region}:`, err);
+    logger.error(`[pricing] Error fetching ${serviceName} / ${armSkuName} / ${region}: ${err}`);
     return null;
   }
 }

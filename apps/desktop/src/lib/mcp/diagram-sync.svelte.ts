@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { diagram } from '$lib/stores/diagram.svelte';
 import { registry } from '$lib/bootstrap';
+import { logger } from '$lib/logger';
 import type { ResourceTypeId } from '@terrastudio/types';
 
 let syncInitialized = false;
@@ -45,7 +46,7 @@ async function syncDiagram(nodes: unknown[], edges: unknown[]): Promise<void> {
     });
   } catch (e) {
     // Silently ignore — MCP sync is best-effort
-    console.warn('[mcp] diagram sync failed:', e);
+    logger.warn(`[mcp] diagram sync failed: ${e}`);
   }
 }
 
@@ -85,6 +86,6 @@ async function syncResourceTypes(): Promise<void> {
 
     await invoke('mcp_sync_resource_types', { types: JSON.parse(JSON.stringify(types)) });
   } catch (e) {
-    console.warn('[mcp] resource types sync failed:', e);
+    logger.warn(`[mcp] resource types sync failed: ${e}`);
   }
 }
