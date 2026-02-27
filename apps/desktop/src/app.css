@@ -55,6 +55,16 @@ html, body {
   background: transparent;
 }
 
+/* Selection box — improve contrast in both themes */
+.svelte-flow.dark {
+  --xy-selection-background-color: rgba(99, 102, 241, 0.1);
+  --xy-selection-border: 1px dashed rgba(129, 140, 248, 0.6);
+}
+.svelte-flow.light {
+  --xy-selection-background-color: rgba(59, 130, 246, 0.08);
+  --xy-selection-border: 1px dashed rgba(59, 130, 246, 0.5);
+}
+
 /* Edge label styling */
 .svelte-flow__edge-text {
   font-size: 10px;

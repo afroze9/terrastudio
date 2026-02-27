@@ -4,6 +4,7 @@
   import { buildNodeTypes } from '$lib/bootstrap';
   import DnDFlow from './DnDFlow.svelte';
   import CanvasToolbar from './CanvasToolbar.svelte';
+  import SelectionToolbar from './SelectionToolbar.svelte';
 
   const nodeTypes = buildNodeTypes();
 </script>
@@ -58,6 +59,7 @@
   <SvelteFlowProvider>
     <DnDFlow {nodeTypes} />
     <CanvasToolbar />
+    <SelectionToolbar />
   </SvelteFlowProvider>
 </div>
 

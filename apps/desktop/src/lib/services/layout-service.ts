@@ -3,6 +3,7 @@ import type { ResourceTypeId, EdgeCategoryId } from '@terrastudio/types';
 import type { IReactivePluginRegistry } from '@terrastudio/core';
 import { diagram } from '$lib/stores/diagram.svelte';
 import { project } from '$lib/stores/project.svelte';
+import { registry } from '$lib/bootstrap';
 
 type HandlePosition = 'top' | 'bottom' | 'left' | 'right';
 
@@ -777,4 +778,121 @@ function getBottomUpOrder(
     const db = b === undefined ? -1 : (depths.get(b) ?? 0);
     return db - da;
   });
+}
+
+// ===========================================================================
+// Auto-fit container to contents
+// ===========================================================================
+
+/**
+ * Shrink or expand a container node to tightly fit its child nodes.
+ * Children are repositioned so the top-left child sits at `(padding, headerHeight + padding)`,
+ * then the container is resized to wrap all children with the given padding.
+ * Ancestors are expanded if needed (same pattern as handleResizeEnd).
+ */
+export function autofitContainer(containerId: string, padding = 20): void {
+  const children = diagram.nodes.filter((n) => n.parentId === containerId);
+  if (children.length === 0) return;
+
+  // Compute bounding box of children
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  for (const child of children) {
+    const x = child.position.x;
+    const y = child.position.y;
+    const w = child.measured?.width ?? (child.width as number | undefined) ?? DEFAULT_LEAF_WIDTH;
+    const h = child.measured?.height ?? (child.height as number | undefined) ?? DEFAULT_LEAF_HEIGHT;
+    minX = Math.min(minX, x);
+    minY = Math.min(minY, y);
+    maxX = Math.max(maxX, x + w);
+    maxY = Math.max(maxY, y + h);
+  }
+
+  const headerHeight = HEADER_HEIGHT;
+  const offsetX = padding - minX;
+  const offsetY = headerHeight + padding - minY;
+
+  // Shift children so top-left starts at (padding, headerHeight + padding)
+  diagram.nodes = diagram.nodes.map((n) => {
+    if (n.parentId !== containerId) return n;
+    return {
+      ...n,
+      position: {
+        x: n.position.x + offsetX,
+        y: n.position.y + offsetY,
+      },
+    };
+  });
+
+  const contentW = (maxX - minX) + 2 * padding;
+  const contentH = (maxY - minY) + headerHeight + 2 * padding;
+
+  // Enforce schema minSize as a floor
+  const containerNode = diagram.nodes.find((n) => n.id === containerId);
+  const schema = containerNode ? registry.getResourceSchema(containerNode.type as ResourceTypeId) : null;
+  const containerW = Math.max(contentW, schema?.minSize?.width ?? 200);
+  const containerH = Math.max(contentH, schema?.minSize?.height ?? 120);
+
+  // Resize the container
+  diagram.nodes = diagram.nodes.map((n) =>
+    n.id === containerId
+      ? { ...n, width: containerW, height: containerH, style: `width: ${containerW}px; height: ${containerH}px;` }
+      : n
+  );
+
+  // Walk up parent chain to expand ancestors if needed
+  expandAncestors(containerId, containerW, containerH);
+
+  diagram.saveSnapshot();
+}
+
+/**
+ * Walk up the parent chain to expand any ancestor that is too small
+ * after a child resize / autofit.
+ */
+function expandAncestors(nodeId: string, nodeW: number, nodeH: number): void {
+  const EXPAND_PAD = 20;
+  let currentId: string | undefined = nodeId;
+
+  while (currentId) {
+    const node = diagram.nodes.find((n) => n.id === currentId);
+    if (!node?.parentId) break;
+
+    const parent = diagram.nodes.find((n) => n.id === node.parentId);
+    if (!parent) break;
+
+    const childX = node.id === nodeId ? (node.position?.x ?? 0) : (node.position?.x ?? 0);
+    const childY = node.id === nodeId ? (node.position?.y ?? 0) : (node.position?.y ?? 0);
+    const childW = node.id === nodeId ? nodeW : (node.measured?.width ?? (node.width as number | undefined) ?? 250);
+    const childH = node.id === nodeId ? nodeH : (node.measured?.height ?? (node.height as number | undefined) ?? 150);
+
+    const parentW = parent.measured?.width ?? (parent.width as number | undefined) ?? 250;
+    const parentH = parent.measured?.height ?? (parent.height as number | undefined) ?? 150;
+
+    const neededW = childX + childW + EXPAND_PAD;
+    const neededH = childY + childH + EXPAND_PAD;
+
+    let changed = false;
+    let newW = parentW;
+    let newH = parentH;
+
+    if (neededW > parentW) { newW = neededW; changed = true; }
+    if (neededH > parentH) { newH = neededH; changed = true; }
+
+    if (changed) {
+      diagram.nodes = diagram.nodes.map((n) =>
+        n.id === parent.id
+          ? { ...n, width: newW, height: newH, style: `width: ${newW}px; height: ${newH}px;` }
+          : n
+      );
+      currentId = parent.id;
+      nodeW = newW;
+      nodeH = newH;
+    } else {
+      break;
+    }
+  }
 }

@@ -27,6 +27,7 @@ export const vnetSchema: ResourceSchema = {
     labelSize: 16,
     dashArray: '4,8',
   },
+  minSize: { width: 250, height: 180 },
 
   properties: [
     {

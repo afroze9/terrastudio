@@ -24,6 +24,7 @@ export const resourceGroupSchema: ResourceSchema = {
     labelSize: 16,
     dashArray: '20,12',
   },
+  minSize: { width: 300, height: 200 },
 
   properties: [
     {

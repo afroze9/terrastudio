@@ -160,6 +160,32 @@
     updateNodeInternals();
   });
 
+  // Dynamic minimum size: max of schema minSize and the space children actually need
+  let minW = $derived.by(() => {
+    const schemaMin = schema?.minSize?.width ?? 200;
+    const PADDING = 20;
+    const children = diagram.nodes.filter((n) => n.parentId === id);
+    if (children.length === 0) return schemaMin;
+    let maxRight = 0;
+    for (const c of children) {
+      const cw = c.measured?.width ?? (c.width as number | undefined) ?? 250;
+      maxRight = Math.max(maxRight, c.position.x + cw);
+    }
+    return Math.max(schemaMin, maxRight + PADDING);
+  });
+  let minH = $derived.by(() => {
+    const schemaMin = schema?.minSize?.height ?? 120;
+    const PADDING = 20;
+    const children = diagram.nodes.filter((n) => n.parentId === id);
+    if (children.length === 0) return schemaMin;
+    let maxBottom = 0;
+    for (const c of children) {
+      const ch = c.measured?.height ?? (c.height as number | undefined) ?? 80;
+      maxBottom = Math.max(maxBottom, c.position.y + ch);
+    }
+    return Math.max(schemaMin, maxBottom + PADDING);
+  });
+
   let cs = $derived<ContainerStyle>(schema?.containerStyle ?? {});
 
   let borderColor = $derived(cs.borderColor ?? 'var(--color-border, #2e3347)');
@@ -265,7 +291,7 @@
   }
 </script>
 
-<NodeResizer minWidth={200} minHeight={120} isVisible={selected ?? false} onResizeEnd={handleResizeEnd} />
+<NodeResizer minWidth={minW} minHeight={minH} isVisible={selected ?? false} onResizeEnd={handleResizeEnd} />
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div

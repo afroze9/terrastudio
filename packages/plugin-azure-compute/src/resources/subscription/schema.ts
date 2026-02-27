@@ -22,6 +22,7 @@ export const subscriptionSchema: ResourceSchema = {
     iconSize: 28,
     labelSize: 16,
   },
+  minSize: { width: 400, height: 300 },
 
   properties: [
     {

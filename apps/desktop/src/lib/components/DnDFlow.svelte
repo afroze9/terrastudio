@@ -25,6 +25,7 @@
   import type { Action } from 'svelte/action';
   import { untrack } from 'svelte';
   import { EdgeMarkers } from './edges';
+  import { autofitContainer } from '$lib/services/layout-service';
   import ConnectionPointsModal from './ConnectionPointsModal.svelte';
   import type { ConnectionPointConfig, HandlePositionOverrides, HandleDefinition, OutputDefinition, ResourceTypeId as TypeId } from '@terrastudio/types';
 
@@ -165,6 +166,23 @@
     ui.fitView?.();
     closeContextMenu();
   }
+
+  function handleContextFitToContents() {
+    const nodeId = contextMenu?.nodeId;
+    if (nodeId) autofitContainer(nodeId);
+    closeContextMenu();
+  }
+
+  /** Check if the context-menu node is a container with children */
+  let contextNodeIsContainerWithChildren = $derived.by(() => {
+    const nodeId = contextMenu?.nodeId;
+    if (!nodeId) return false;
+    const node = diagram.nodes.find((n) => n.id === nodeId);
+    if (!node) return false;
+    const schema = registry.getResourceSchema(node.type as ResourceTypeId);
+    if (!schema?.isContainer) return false;
+    return diagram.nodes.some((n) => n.parentId === nodeId);
+  });
 
   /**
    * Compute absolute position for a node by walking up the parent chain.
@@ -410,16 +428,11 @@
       };
 
       if (isContainer) {
-        // Larger defaults for higher-level containers
-        const sizeMap: Record<string, { w: number; h: number }> = {
-          'azurerm/core/subscription': { w: 900, h: 700 },
-          'azurerm/core/resource_group': { w: 800, h: 600 },
-          'azurerm/networking/virtual_network': { w: 600, h: 400 },
-          'azurerm/networking/subnet': { w: 350, h: 250 },
-          'azurerm/compute/app_service_plan': { w: 400, h: 300 },
-          'azurerm/storage/storage_account': { w: 400, h: 300 },
-        };
-        const { w, h } = sizeMap[schema.typeId] ?? { w: 350, h: 200 };
+        // Use schema minSize scaled up for comfortable initial size, fallback to defaults
+        const minW = schema.minSize?.width ?? 200;
+        const minH = schema.minSize?.height ?? 120;
+        const w = Math.max(minW * 2, 350);
+        const h = Math.max(minH * 2, 200);
         newNode.width = w;
         newNode.height = h;
         newNode.style = `width: ${w}px; height: ${h}px;`;
@@ -719,37 +732,42 @@
   <div class="context-menu" style="left: {contextMenu.x}px; top: {contextMenu.y}px;">
     {#if contextMenu.nodeId}
       <button class="context-menu-item" onclick={handleContextCopy}>
-        <span>Copy</span><span class="ctx-shortcut">Ctrl+C</span>
+        <span class="ctx-label"><svg class="ctx-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5" /><path d="M5.5 10.5H4a1.5 1.5 0 0 1-1.5-1.5V4A1.5 1.5 0 0 1 4 2.5h5A1.5 1.5 0 0 1 10.5 4v1.5" /></svg>Copy</span><span class="ctx-shortcut">Ctrl+C</span>
       </button>
       <button class="context-menu-item" onclick={handleContextDuplicate}>
-        <span>Duplicate</span><span class="ctx-shortcut">Ctrl+D</span>
+        <span class="ctx-label"><svg class="ctx-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5" /><path d="M5.5 10.5H4a1.5 1.5 0 0 1-1.5-1.5V4A1.5 1.5 0 0 1 4 2.5h5A1.5 1.5 0 0 1 10.5 4v1.5" /><line x1="9.5" y1="8" x2="9.5" y2="12" /><line x1="7.5" y1="10" x2="11.5" y2="10" /></svg>Duplicate</span><span class="ctx-shortcut">Ctrl+D</span>
       </button>
       <div class="context-menu-separator"></div>
       <button class="context-menu-item" onclick={handleManageConnectionPoints}>
-        <span>Manage Connection Points</span>
+        <span class="ctx-label"><svg class="ctx-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="3" cy="8" r="1.5" /><circle cx="13" cy="4" r="1.5" /><circle cx="13" cy="12" r="1.5" /><path d="M4.5 8h3l2-4H11.5" /><path d="M4.5 8h3l2 4H11.5" /></svg>Manage Connection Points</span>
       </button>
+      {#if contextNodeIsContainerWithChildren}
+        <button class="context-menu-item" onclick={handleContextFitToContents}>
+          <span class="ctx-label"><svg class="ctx-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5V3a1 1 0 0 1 1-1h2.5" /><path d="M10.5 2H13a1 1 0 0 1 1 1v2.5" /><path d="M14 10.5V13a1 1 0 0 1-1 1h-2.5" /><path d="M5.5 14H3a1 1 0 0 1-1-1v-2.5" /><rect x="5" y="5" width="6" height="6" rx="1" /></svg>Fit to Contents</span>
+        </button>
+      {/if}
       <div class="context-menu-separator"></div>
       <button class="context-menu-item" onclick={handleContextSelectAll}>
-        <span>Select All</span><span class="ctx-shortcut">Ctrl+A</span>
+        <span class="ctx-label"><svg class="ctx-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="6" height="6" rx="1" /><rect x="9" y="1" width="6" height="6" rx="1" /><rect x="1" y="9" width="6" height="6" rx="1" /><rect x="9" y="9" width="6" height="6" rx="1" /></svg>Select All</span><span class="ctx-shortcut">Ctrl+A</span>
       </button>
       <div class="context-menu-separator"></div>
       <button class="context-menu-item context-menu-danger" onclick={handleContextDelete}>
-        <span>Delete</span><span class="ctx-shortcut">Del</span>
+        <span class="ctx-label"><svg class="ctx-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h12" /><path d="M5.5 4V2.5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1V4" /><path d="M12.5 4v9a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 13V4" /><line x1="6.5" y1="7" x2="6.5" y2="11.5" /><line x1="9.5" y1="7" x2="9.5" y2="11.5" /></svg>Delete</span><span class="ctx-shortcut">Del</span>
       </button>
     {:else if contextMenu.edgeId}
       <button class="context-menu-item context-menu-danger" onclick={handleContextDelete}>
-        <span>Delete Edge</span><span class="ctx-shortcut">Del</span>
+        <span class="ctx-label"><svg class="ctx-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h12" /><path d="M5.5 4V2.5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1V4" /><path d="M12.5 4v9a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 13V4" /><line x1="6.5" y1="7" x2="6.5" y2="11.5" /><line x1="9.5" y1="7" x2="9.5" y2="11.5" /></svg>Delete Edge</span><span class="ctx-shortcut">Del</span>
       </button>
     {:else}
       <button class="context-menu-item" onclick={handleContextPaste} disabled={!diagram.hasClipboard}>
-        <span>Paste</span><span class="ctx-shortcut">Ctrl+V</span>
+        <span class="ctx-label"><svg class="ctx-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 2.5h1A1.5 1.5 0 0 1 13 4v9.5a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 3 13.5V4a1.5 1.5 0 0 1 1.5-1.5h1" /><rect x="5.5" y="1" width="5" height="3" rx="1" /></svg>Paste</span><span class="ctx-shortcut">Ctrl+V</span>
       </button>
       <div class="context-menu-separator"></div>
       <button class="context-menu-item" onclick={handleContextSelectAll}>
-        <span>Select All</span><span class="ctx-shortcut">Ctrl+A</span>
+        <span class="ctx-label"><svg class="ctx-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="6" height="6" rx="1" /><rect x="9" y="1" width="6" height="6" rx="1" /><rect x="1" y="9" width="6" height="6" rx="1" /><rect x="9" y="9" width="6" height="6" rx="1" /></svg>Select All</span><span class="ctx-shortcut">Ctrl+A</span>
       </button>
       <button class="context-menu-item" onclick={handleContextFitView}>
-        <span>Fit View</span>
+        <span class="ctx-label"><svg class="ctx-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5V3a1 1 0 0 1 1-1h2.5" /><path d="M10.5 2H13a1 1 0 0 1 1 1v2.5" /><path d="M14 10.5V13a1 1 0 0 1-1 1h-2.5" /><path d="M5.5 14H3a1 1 0 0 1-1-1v-2.5" /></svg>Fit View</span>
       </button>
     {/if}
   </div>
@@ -814,6 +832,20 @@
   }
   .context-menu-danger:hover:not(:disabled) {
     color: #ef4444;
+  }
+  .ctx-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ctx-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: var(--color-text-muted);
+  }
+  .context-menu-danger .ctx-icon {
+    color: inherit;
   }
   .ctx-shortcut {
     font-size: 11px;

@@ -161,6 +161,8 @@ export interface ResourceSchema {
   readonly canBeChildOf?: ReadonlyArray<ResourceTypeId>;
   /** Visual style for container nodes; read by ContainerResourceNode */
   readonly containerStyle?: ContainerStyle;
+  /** Minimum allowed size when resizing a container node on the canvas */
+  readonly minSize?: { readonly width: number; readonly height: number };
   /** When nested inside a parent container, auto-set this reference for HCL generation */
   readonly parentReference?: {
     readonly propertyKey: string;

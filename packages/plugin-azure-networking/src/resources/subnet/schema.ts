@@ -26,6 +26,7 @@ export const subnetSchema: ResourceSchema = {
     iconSize: 0,
     labelSize: 16,
   },
+  minSize: { width: 200, height: 150 },
 
   properties: [
     {
