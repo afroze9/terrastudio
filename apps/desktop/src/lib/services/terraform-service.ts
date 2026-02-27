@@ -136,7 +136,7 @@ export async function checkTerraform(): Promise<void> {
 /**
  * Generate HCL from the current diagram and write to the project's terraform/ folder.
  */
-export async function generateAndWrite(): Promise<void> {
+export async function generateAndWrite(): Promise<Record<string, string>> {
   if (!project.path) throw new Error('No project open');
 
   terraform.setStatus('generating');
@@ -241,6 +241,7 @@ export async function generateAndWrite(): Promise<void> {
       `Generated ${Object.keys(fileMap).length} files to ${outputPath}`,
     );
     terraform.setStatus('success');
+    return fileMap;
   } catch (err) {
     terraform.appendError(`Generation failed: ${err}`);
     terraform.setStatus('error');

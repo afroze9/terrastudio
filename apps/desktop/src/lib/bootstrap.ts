@@ -42,6 +42,25 @@ export function declarePlugins(): void {
  */
 export async function loadPluginsForProject(providerIds: ProviderId[]): Promise<void> {
   await pluginRegistry.loadPluginsForProviders(providerIds);
+  // Initialize MCP sync after plugins are loaded (lazy + non-blocking)
+  initMcpLazy();
+}
+
+let mcpStarted = false;
+
+/** Lazy-init MCP: tell Rust to start the bridge + sidecar, then wire up frontend sync. */
+function initMcpLazy(): void {
+  if (mcpStarted) return;
+  mcpStarted = true;
+
+  // Tell Rust to start the IPC bridge + Node sidecar (non-blocking command)
+  import('@tauri-apps/api/core').then(({ invoke }) => {
+    invoke('mcp_start').catch(console.warn);
+  }).catch(console.warn);
+
+  // Wire up frontend sync modules (fire-and-forget)
+  import('$lib/mcp/diagram-sync.svelte').then((m) => m.initDiagramSync()).catch(console.warn);
+  import('$lib/mcp/bridge-listener').then((m) => m.initBridgeListener()).catch(console.warn);
 }
 
 export function initializeTerraformCheck(): void {

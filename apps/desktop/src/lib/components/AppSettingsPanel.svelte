@@ -4,10 +4,18 @@
   import type { PaletteId, CustomThemeFile } from '$lib/themes/types';
   import { open as openDialog } from '@tauri-apps/plugin-dialog';
   import { readTextFile } from '@tauri-apps/plugin-fs';
+  import { onMount } from 'svelte';
   import CollapsibleSection from './CollapsibleSection.svelte';
   import SearchBox from './SearchBox.svelte';
 
   let searchQuery = $state('');
+  let mcpStatus: any = $state({ statusColor: '#6b7280', statusLabel: 'MCP', ipcPort: null, ssePort: null, error: null });
+
+  onMount(async () => {
+    const mod = await import('$lib/mcp/mcp-status.svelte');
+    mcpStatus = mod.mcpStatus;
+    mod.mcpStatus.init();
+  });
 
   function sectionVisible(label: string) {
     return !searchQuery || label.toLowerCase().includes(searchQuery.toLowerCase());
@@ -190,6 +198,34 @@
       >
         <span class="switch-thumb"></span>
       </button>
+    </div>
+  </CollapsibleSection>
+  {/if}
+
+  <!-- MCP Server -->
+  {#if sectionVisible('MCP Server')}
+  <CollapsibleSection id="app-mcp" label="MCP Server" forceExpand={!!searchQuery}>
+    <div class="setting-row">
+      <span class="setting-label">Status</span>
+      <span class="mcp-status" style="color: {mcpStatus.statusColor}">{mcpStatus.statusLabel}</span>
+    </div>
+    {#if mcpStatus.ipcPort}
+    <div class="setting-row">
+      <span class="setting-label">IPC Port</span>
+      <span class="mcp-value">{mcpStatus.ipcPort}</span>
+    </div>
+    {/if}
+    {#if mcpStatus.ssePort}
+    <div class="setting-row">
+      <span class="setting-label">HTTP Port</span>
+      <span class="mcp-value">{mcpStatus.ssePort}</span>
+    </div>
+    {/if}
+    {#if mcpStatus.error}
+    <div class="mcp-error">{mcpStatus.error}</div>
+    {/if}
+    <div class="mcp-hint">
+      The MCP server allows AI assistants (Claude Desktop, VS Code Cline, Cursor) to interact with TerraStudio programmatically.
     </div>
   </CollapsibleSection>
   {/if}
@@ -385,5 +421,28 @@
     background: var(--color-accent);
     color: white;
     border-color: var(--color-accent);
+  }
+
+  /* MCP section */
+  .mcp-status {
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .mcp-value {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    font-family: monospace;
+  }
+  .mcp-error {
+    font-size: 10px;
+    color: #ef4444;
+    padding: 4px 0;
+    margin-bottom: 6px;
+  }
+  .mcp-hint {
+    font-size: 10px;
+    color: var(--color-text-muted);
+    line-height: 1.4;
+    opacity: 0.7;
   }
 </style>

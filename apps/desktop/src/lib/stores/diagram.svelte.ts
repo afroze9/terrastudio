@@ -680,6 +680,62 @@ class DiagramStore {
     this.historyIndex = 0;
   }
 
+  // ── MCP bypass methods ────────────────────────────────────────────
+  // These mutate state WITHOUT pushing undo history.
+  // Used by the MCP bridge listener so AI-driven mutations are not undoable.
+
+  addNodeSkipHistory(node: DiagramNode) {
+    this.nodes = [...this.nodes, node];
+    project.markDirty();
+    terraform.markFilesStale();
+  }
+
+  removeNodeSkipHistory(id: string) {
+    // Collect node + all descendants (same cascade logic as removeNode)
+    const toRemove = new Set<string>([id]);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const n of this.nodes) {
+        if (!toRemove.has(n.id) && n.parentId && toRemove.has(n.parentId as string)) {
+          toRemove.add(n.id);
+          changed = true;
+        }
+      }
+    }
+
+    this.nodes = this.nodes.filter((n) => !toRemove.has(n.id));
+    this.edges = this.edges.filter((e) => !toRemove.has(e.source) && !toRemove.has(e.target));
+    for (const removedId of toRemove) {
+      this.cleanStaleReferences(removedId);
+    }
+    if (this.selectedNodeId && toRemove.has(this.selectedNodeId)) {
+      this.selectedNodeId = null;
+    }
+    project.markDirty();
+    terraform.markFilesStale();
+  }
+
+  updateNodeDataSkipHistory(id: string, data: Partial<ResourceNodeData>) {
+    this.nodes = this.nodes.map((n) =>
+      n.id === id ? { ...n, data: { ...n.data, ...data } } : n
+    );
+    project.markDirty();
+    terraform.markFilesStale();
+  }
+
+  addEdgeSkipHistory(edge: DiagramEdge) {
+    this.edges = [...this.edges, edge];
+    project.markDirty();
+    terraform.markFilesStale();
+  }
+
+  removeEdgeSkipHistory(id: string) {
+    this.edges = this.edges.filter((e) => e.id !== id);
+    project.markDirty();
+    terraform.markFilesStale();
+  }
+
   clear() {
     if (this.debounceTimer !== null) {
       clearTimeout(this.debounceTimer);

@@ -1,9 +1,15 @@
 <script lang="ts">
+  import { onMount, type Component } from 'svelte';
   import { terraform } from '$lib/stores/terraform.svelte';
   import { ui } from '$lib/stores/ui.svelte';
   import PaletteSelector from './PaletteSelector.svelte';
 
   let showPaletteSelector = $state(false);
+  let McpStatusPill = $state<Component | null>(null);
+
+  onMount(() => {
+    import('./McpStatusPill.svelte').then((m) => { McpStatusPill = m.default; });
+  });
   let currentAccent = $derived(ui.palette?.previewAccent ?? '#818cf8');
 
   const statusLabel = $derived.by(() => {
@@ -57,6 +63,10 @@
     {/if}
     {#if terraform.terraformInstalled === false}
       <span class="warning-badge">Terraform not found</span>
+    {/if}
+    <span class="separator"></span>
+    {#if McpStatusPill}
+      <McpStatusPill />
     {/if}
   </div>
   <div class="status-right">
@@ -156,6 +166,12 @@
     padding: 0 4px;
     font-size: 10px;
     color: #ef4444;
+  }
+  .separator {
+    width: 1px;
+    height: 12px;
+    background: var(--color-border);
+    opacity: 0.5;
   }
   .status-btn {
     background: none;

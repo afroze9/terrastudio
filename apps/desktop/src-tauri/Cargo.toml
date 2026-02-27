@@ -25,9 +25,12 @@ tauri = { version = "2.10.0", features = [] }
 tauri-plugin-log = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
-tokio = { version = "1", features = ["process", "io-util", "fs"] }
+tokio = { version = "1", features = ["process", "io-util", "fs", "macros"] }
 reqwest = { version = "0.12", features = ["json"] }
 urlencoding = "2"
 dirs = "6"
 tauri-plugin-window-state = "2.4.1"
 tauri-plugin-notification = "2"
+tokio-tungstenite = "0.24"
+futures-util = "0.3"
+uuid = { version = "1", features = ["v4"] }
