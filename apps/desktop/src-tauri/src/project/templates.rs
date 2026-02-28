@@ -1,6 +1,8 @@
 use serde::Serialize;
 use std::path::PathBuf;
 
+use crate::security;
+
 const APP_DIR_NAME: &str = "com.terrastudio.app";
 const TEMPLATES_DIR: &str = "templates";
 
@@ -113,6 +115,11 @@ pub async fn open_templates_folder() -> Result<(), String> {
 
 #[tauri::command]
 pub async fn load_user_template(path: String) -> Result<serde_json::Value, String> {
+    let templates_dir = get_templates_dir()?;
+    let target = PathBuf::from(&path);
+    security::ensure_within(&templates_dir, &target)
+        .map_err(|e| format!("Template path rejected: {}", e))?;
+
     let content =
         std::fs::read_to_string(&path).map_err(|e| format!("Failed to read template: {}", e))?;
 

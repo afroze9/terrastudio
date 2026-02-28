@@ -8,6 +8,7 @@ use tauri_plugin_log::{Target, TargetKind, RotationStrategy, TimezoneStrategy};
 mod azure;
 mod mcp;
 mod project;
+mod security;
 mod terraform;
 
 /// Holds a pending project path received via file association before the frontend was ready.
@@ -44,7 +45,7 @@ pub fn run() {
             tauri_plugin_log::Builder::new()
                 .targets(log_targets)
                 .level(log::LevelFilter::Info)
-                .rotation_strategy(RotationStrategy::KeepAll)
+                .rotation_strategy(RotationStrategy::KeepOne)
                 .timezone_strategy(TimezoneStrategy::UseLocal)
                 .max_file_size(5_000_000) // ~5 MB
                 .build(),
@@ -57,6 +58,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             // When a second instance is launched (e.g., double-clicking a .tstudio file),
             // the args are forwarded here. Open the project in a new window.
@@ -119,6 +121,10 @@ pub fn run() {
             project::templates::load_user_template,
             project::templates::save_user_template,
             project::templates::open_templates_folder,
+            project::secrets::load_user_secrets,
+            project::secrets::save_user_secrets,
+            project::secrets::delete_user_secrets,
+            project::secrets::generate_secrets_id,
             azure::commands::az_list_subscriptions,
             azure::commands::fetch_azure_price,
             mcp::commands::mcp_register_window,

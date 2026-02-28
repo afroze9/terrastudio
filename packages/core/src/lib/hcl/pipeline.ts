@@ -32,6 +32,8 @@ export interface ProjectConfig {
   edgeStyles?: ProjectEdgeStyles;
   /** Which cloud providers this project targets. undefined = ['azurerm'] for backward compat. */
   activeProviders?: ProviderId[];
+  /** Stable ID linking this project to its user secrets store (sensitive variable values). */
+  secretsId?: string;
 }
 
 export interface PipelineInput {
@@ -253,14 +255,23 @@ export class HclPipeline {
     );
 
     // 10. Generate terraform.tfvars from variable values
-    const tfvars = this.generateTfvars(variableCollector.getAll(), projectConfig);
+    const allVars = variableCollector.getAll();
+    const tfvars = this.generateTfvars(allVars, projectConfig);
     if (tfvars.trim()) {
       files['terraform.tfvars'] = tfvars;
     }
 
+    // 11. Generate terraform.tfvars.example with placeholders for sensitive values
+    if (allVars.length > 0) {
+      files['terraform.tfvars.example'] = this.generateTfvarsExample(allVars, projectConfig);
+    }
+
+    // 12. Generate .gitignore for the terraform directory
+    files['.gitignore'] = this.generateGitignore();
+
     return {
       files,
-      collectedVariables: variableCollector.getAll(),
+      collectedVariables: allVars,
     };
   }
 
@@ -290,6 +301,61 @@ export class HclPipeline {
     }
 
     return lines.join('\n');
+  }
+
+  /**
+   * Generate terraform.tfvars.example with real values for non-sensitive variables
+   * and placeholder comments for sensitive ones.
+   */
+  private generateTfvarsExample(
+    variables: TerraformVariable[],
+    config: ProjectConfig,
+  ): string {
+    const values: Record<string, string> = { ...(config.variableValues ?? {}) };
+    const lines: string[] = [
+      '# Terraform variable values',
+      '# Copy this file to terraform.tfvars and fill in sensitive values.',
+      '# Do NOT commit terraform.tfvars to version control.',
+      '',
+    ];
+
+    for (const v of variables) {
+      const value = values[v.name];
+      if (v.sensitive) {
+        lines.push(`# ${v.name} = "" # sensitive — set in terraform.tfvars`);
+      } else if (value !== undefined && value !== '') {
+        lines.push(`${v.name} = "${escapeHclString(value)}"`);
+      } else if (v.defaultValue !== undefined) {
+        lines.push(`# ${v.name} = "${escapeHclString(String(v.defaultValue))}" # has default`);
+      } else {
+        lines.push(`${v.name} = "" # required`);
+      }
+    }
+
+    return lines.join('\n');
+  }
+
+  /** Generate a .gitignore for the terraform working directory. */
+  private generateGitignore(): string {
+    return [
+      '# Terraform',
+      '.terraform/',
+      '.terraform.lock.hcl',
+      '*.tfstate',
+      '*.tfstate.*',
+      'crash.log',
+      'crash.*.log',
+      '',
+      '# Variable values may contain secrets',
+      'terraform.tfvars',
+      '*.auto.tfvars',
+      '',
+      '# Override files',
+      'override.tf',
+      'override.tf.json',
+      '*_override.tf',
+      '*_override.tf.json',
+    ].join('\n');
   }
 
   private generateLocals(config: ProjectConfig): string {

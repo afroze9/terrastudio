@@ -279,6 +279,10 @@
           <span>Project</span>
           <span class="shortcut">Alt+3</span>
         </button>
+        <button class="dropdown-item" onclick={() => { close(); ui.setActiveView('cost'); }}>
+          <span>Cost</span>
+          <span class="shortcut">Alt+4</span>
+        </button>
         <div class="dropdown-separator"></div>
         <button class="dropdown-item" onclick={() => { close(); ui.setActiveView('app-settings'); }}>
           <span>Settings</span>

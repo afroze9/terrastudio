@@ -149,7 +149,17 @@ Then register it in the plugin's `src/index.ts` resourceTypes Map and add its ca
 - Do NOT push automatically; wait for explicit user request
 
 ### Version Bumping (Semantic Versioning)
-Version is tracked in `apps/desktop/package.json` and `apps/desktop/src-tauri/tauri.conf.json`.
+The app version must be updated in these locations:
+
+| File | Field | Notes |
+|------|-------|-------|
+| `apps/desktop/package.json` | `"version"` | Primary source of truth. About dialog reads this at build time via `__APP_VERSION__`. |
+| `apps/desktop/src-tauri/tauri.conf.json` | `"version"` | Tauri uses this for the OS-level app version (installer metadata, window title). |
+| `apps/desktop/src-tauri/Cargo.toml` | `version` | Rust crate version. Keep in sync for consistency. |
+
+**Not manually updated** (derived automatically):
+- About dialog (`AboutModal.svelte`) — reads `__APP_VERSION__` injected by Vite from `package.json`
+- Package sub-versions (`packages/*/package.json`) — stay at `0.1.0` until individually published
 
 **PATCH (0.0.x)** — Bug fixes, minor tweaks:
 - Fixing a bug that doesn't change behavior
@@ -172,9 +182,10 @@ Version is tracked in `apps/desktop/package.json` and `apps/desktop/src-tauri/ta
 ### When to Bump Version
 - Bump version when creating a release-worthy commit (not every commit)
 - Group related changes into a single version bump
-- Update version in BOTH locations:
+- Update version in ALL THREE locations:
   - `apps/desktop/package.json` → `"version": "x.y.z"`
   - `apps/desktop/src-tauri/tauri.conf.json` → `"version": "x.y.z"`
+  - `apps/desktop/src-tauri/Cargo.toml` → `version = "x.y.z"`
 - Include version bump in the same commit as the feature (e.g., `feat: add dark mode (v0.4.0)`)
 
 ### Commit Message Format

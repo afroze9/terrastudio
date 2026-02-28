@@ -6,6 +6,7 @@ import { project, type ProjectMetadata } from '$lib/stores/project.svelte';
 import { diagram, type DiagramEdge } from '$lib/stores/diagram.svelte';
 import { cost } from '$lib/stores/cost.svelte';
 import { ui } from '$lib/stores/ui.svelte';
+import { terraform } from '$lib/stores/terraform.svelte';
 import { registry, loadPluginsForProject } from '$lib/bootstrap';
 import { applyTemplate } from '$lib/templates/service';
 import type { Template } from '$lib/templates/types';
@@ -162,6 +163,26 @@ export async function loadProjectByPath(path: string): Promise<void> {
   cost.clear();
   project.open(data.path, data.metadata);
 
+  // Merge user secrets into variableValues if this project has a secretsId
+  if (project.projectConfig.secretsId) {
+    try {
+      const secrets = await invoke<Record<string, string>>('load_user_secrets', {
+        secretsId: project.projectConfig.secretsId,
+      });
+      if (Object.keys(secrets).length > 0) {
+        project.projectConfig = {
+          ...project.projectConfig,
+          variableValues: {
+            ...project.projectConfig.variableValues,
+            ...secrets,
+          },
+        };
+      }
+    } catch {
+      console.warn('Failed to load user secrets, continuing without them');
+    }
+  }
+
   // Set window title and sync project info to MCP state
   const appWindow = getCurrentWindow();
   appWindow.setTitle(`${data.metadata.name} — TerraStudio`).catch(() => {});
@@ -189,6 +210,9 @@ export async function loadProjectByPath(path: string): Promise<void> {
 /**
  * Save the current diagram to the project's diagrams/main.json
  * and project config to {name}.tstudio.
+ *
+ * Sensitive variable values (determined by collectedVariables) are stored
+ * separately in the user secrets store (app data dir), not in the project file.
  */
 export async function saveDiagram(): Promise<void> {
   if (!project.path) return;
@@ -198,15 +222,47 @@ export async function saveDiagram(): Promise<void> {
     edges: diagram.edges,
   };
 
-  // Save diagram, project config, and cost estimates in parallel
-  await Promise.all([
+  // Determine which variable names are sensitive from the last HCL generation
+  const sensitiveNames = new Set(
+    terraform.collectedVariables
+      .filter((v) => v.sensitive)
+      .map((v) => v.name),
+  );
+
+  // Split variableValues into public (saved in .tstudio) and secret (saved in app data)
+  const allValues = { ...project.projectConfig.variableValues };
+  const publicValues: Record<string, string> = {};
+  const secretValues: Record<string, string> = {};
+
+  for (const [key, value] of Object.entries(allValues)) {
+    if (sensitiveNames.has(key) && value) {
+      secretValues[key] = value;
+    } else {
+      publicValues[key] = value;
+    }
+  }
+
+  // Generate a secretsId if this project doesn't have one yet and has secrets
+  if (!project.projectConfig.secretsId && Object.keys(secretValues).length > 0) {
+    const secretsId = await invoke<string>('generate_secrets_id');
+    project.projectConfig = { ...project.projectConfig, secretsId };
+  }
+
+  // Build config for saving — with sensitive values stripped out
+  const configForSave = {
+    ...project.projectConfig,
+    variableValues: publicValues,
+  };
+
+  // Save diagram, project config (without secrets), and cost in parallel
+  const savePromises: Promise<unknown>[] = [
     invoke('save_diagram', {
       projectPath: project.path,
       diagram: diagramData,
     }),
     invoke('save_project_config', {
       projectPath: project.path,
-      projectConfig: project.projectConfig,
+      projectConfig: configForSave,
     }),
     cost.hasPrices
       ? invoke('save_cost', {
@@ -214,8 +270,19 @@ export async function saveDiagram(): Promise<void> {
           cost: cost.toJSON(),
         })
       : Promise.resolve(),
-  ]);
+  ];
 
+  // Save secrets to app data dir if we have a secretsId
+  if (project.projectConfig.secretsId) {
+    savePromises.push(
+      invoke('save_user_secrets', {
+        secretsId: project.projectConfig.secretsId,
+        secrets: secretValues,
+      }),
+    );
+  }
+
+  await Promise.all(savePromises);
   project.markSaved();
 }
 

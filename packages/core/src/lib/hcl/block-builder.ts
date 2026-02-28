@@ -8,6 +8,8 @@ export interface GeneratedFiles {
   'outputs.tf': string;
   'locals.tf': string;
   'terraform.tfvars'?: string;
+  'terraform.tfvars.example'?: string;
+  '.gitignore'?: string;
 }
 
 /**

@@ -5,6 +5,7 @@
   import { terraform } from '$lib/stores/terraform.svelte';
   import { diagram } from '$lib/stores/diagram.svelte';
   import { ui } from '$lib/stores/ui.svelte';
+  import { revealItemInDir } from '@tauri-apps/plugin-opener';
   import { generateAndWrite, runTerraformCommand, refreshDeploymentStatus } from '$lib/services/terraform-service';
   import type { TerraformCommand } from '$lib/stores/terraform.svelte';
   import { registry } from '$lib/bootstrap';
@@ -191,6 +192,24 @@
   function openFile(filename: string) {
     ui.openFileTab(filename);
   }
+
+  // ─── Context menu ───────────────────────────────────────────────────────
+  let contextMenu = $state<{ x: number; y: number; filename: string } | null>(null);
+
+  function onFileContextMenu(e: MouseEvent, filename: string) {
+    e.preventDefault();
+    contextMenu = { x: e.clientX, y: e.clientY, filename };
+  }
+
+  function closeContextMenu() {
+    contextMenu = null;
+  }
+
+  function revealFile(filename: string) {
+    if (!project.path) return;
+    const filePath = `${project.path}/terraform/${filename}`;
+    revealItemInDir(filePath);
+  }
 </script>
 
 <div class="tf-sidebar">
@@ -207,7 +226,7 @@
         {:else}
           <div class="file-list">
             {#each filteredFiles as filename (filename)}
-              <button class="file-item" onclick={() => openFile(filename)}>
+              <button class="file-item" onclick={() => openFile(filename)} oncontextmenu={(e) => onFileContextMenu(e, filename)}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 <span>{filename}</span>
               </button>
@@ -228,7 +247,7 @@
           {@const isMissing = !hasDefault && !currentValue}
           <div class="var-row" class:var-missing={isMissing}>
             <div class="var-header">
-              <span class="var-name">{v.name}</span>
+              <span class="var-name" title={v.name}>{v.name}</span>
               <span class="var-type-badge">{v.type}</span>
             </div>
             {#if hasDefault}
@@ -320,6 +339,23 @@
   </div>
 </div>
 
+{#if contextMenu}
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <div class="ctx-backdrop" onclick={closeContextMenu} oncontextmenu={(e) => { e.preventDefault(); closeContextMenu(); }}>
+    <div class="ctx-menu" style="left: {contextMenu.x}px; top: {contextMenu.y}px;">
+      <button class="ctx-item" onclick={() => { openFile(contextMenu!.filename); closeContextMenu(); }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Open
+      </button>
+      <button class="ctx-item" onclick={() => { revealFile(contextMenu!.filename); closeContextMenu(); }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+        Reveal in File Explorer
+      </button>
+    </div>
+  </div>
+{/if}
+
 <style>
   .tf-sidebar {
     display: flex;
@@ -335,6 +371,7 @@
   .variables-wrapper {
     max-height: 200px;
     overflow-y: auto;
+    overflow-x: hidden;
     flex-shrink: 0;
     margin-bottom: 8px;
   }
@@ -512,6 +549,43 @@
     flex-shrink: 0;
     opacity: 0.6;
   }
+  .ctx-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+  }
+  .ctx-menu {
+    position: fixed;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 4px;
+    min-width: 180px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    z-index: 10000;
+  }
+  .ctx-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--color-text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    text-align: left;
+  }
+  .ctx-item:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+  }
+  .ctx-item svg {
+    flex-shrink: 0;
+    opacity: 0.6;
+  }
   .stale-warning {
     display: flex;
     align-items: center;
@@ -557,12 +631,17 @@
     align-items: center;
     gap: 4px;
     margin-bottom: 2px;
+    min-width: 0;
   }
   .var-name {
     font-size: 11px;
     font-weight: 500;
     font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
     color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
   }
   .var-type-badge {
     font-size: 8px;

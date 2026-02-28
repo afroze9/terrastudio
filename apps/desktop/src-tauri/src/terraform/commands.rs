@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use tauri::{command, AppHandle, WebviewWindow};
 
 use super::runner::{self, TerraformJsonResult};
+use crate::security;
 
 /// Write generated .tf files to the project's terraform/ directory.
 #[command]
@@ -11,6 +12,12 @@ pub async fn write_terraform_files(
     files: HashMap<String, String>,
 ) -> Result<String, String> {
     let terraform_dir = PathBuf::from(&project_path).join("terraform");
+
+    // Validate all filenames before writing any files
+    for filename in files.keys() {
+        security::sanitize_filename(filename)
+            .map_err(|e| format!("Invalid terraform filename: {}", e))?;
+    }
 
     tokio::fs::create_dir_all(&terraform_dir)
         .await
@@ -83,7 +90,9 @@ pub async fn read_terraform_file(
     project_path: String,
     filename: String,
 ) -> Result<String, String> {
-    let file_path = PathBuf::from(&project_path).join("terraform").join(&filename);
+    let safe_name = security::sanitize_filename(&filename)
+        .map_err(|e| format!("Invalid filename: {}", e))?;
+    let file_path = PathBuf::from(&project_path).join("terraform").join(safe_name);
     tokio::fs::read_to_string(&file_path)
         .await
         .map_err(|e| format!("Failed to read {}: {}", filename, e))
@@ -106,7 +115,7 @@ pub async fn list_terraform_files(project_path: String) -> Result<Vec<String>, S
         .map_err(|e| format!("Failed to read entry: {}", e))?
     {
         let name = entry.file_name().to_string_lossy().to_string();
-        if name.ends_with(".tf") || name.ends_with(".tfvars") {
+        if name.ends_with(".tf") || name.ends_with(".tfvars") || name.ends_with(".tfvars.example") {
             files.push(name);
         }
     }

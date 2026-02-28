@@ -155,6 +155,11 @@
 				ui.setActiveView('settings');
 				return;
 			}
+			if (e.altKey && e.key === '4' && !inInput) {
+				e.preventDefault();
+				ui.setActiveView('cost');
+				return;
+			}
 			if (e.ctrlKey && e.key === ',' && !inInput) {
 				e.preventDefault();
 				ui.setActiveView('app-settings');
