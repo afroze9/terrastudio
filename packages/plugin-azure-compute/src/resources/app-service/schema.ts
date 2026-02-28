@@ -89,6 +89,7 @@ export const appServiceSchema: ResourceSchema = {
       order: 6,
       description: 'Subnet for outbound VNet integration (must have delegation for Microsoft.Web/serverFarms)',
       referenceTargetTypes: ['azurerm/networking/subnet'],
+      showAsEdge: true,
     },
   ],
 
