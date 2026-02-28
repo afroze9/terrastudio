@@ -11,7 +11,6 @@ import { routeTableRegistration } from './resources/route-table/index.js';
 import { routeRegistration } from './resources/route/index.js';
 import { natGatewayRegistration } from './resources/nat-gateway/index.js';
 import { bastionRegistration } from './resources/bastion/index.js';
-import { vnetIntegrationRegistration } from './resources/vnet-integration/index.js';
 import { networkingConnectionRules } from './connections/rules.js';
 
 const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
@@ -26,7 +25,6 @@ const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
   ['azurerm/networking/route', routeRegistration],
   ['azurerm/networking/nat_gateway', natGatewayRegistration],
   ['azurerm/networking/bastion_host', bastionRegistration],
-  ['azurerm/networking/vnet_integration', vnetIntegrationRegistration],
 ]);
 
 const plugin: InfraPlugin = {

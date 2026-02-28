@@ -84,9 +84,7 @@ export const keyVaultHclGenerator: HclGenerator = {
       lines.push('  enable_rbac_authorization = true');
     }
 
-    if (softDeleteDays != null && softDeleteDays !== 90) {
-      lines.push(`  soft_delete_retention_days = ${softDeleteDays}`);
-    }
+    lines.push(`  soft_delete_retention_days = ${softDeleteDays ?? 90}`);
 
     if (purgeProtection) {
       lines.push('  purge_protection_enabled  = true');

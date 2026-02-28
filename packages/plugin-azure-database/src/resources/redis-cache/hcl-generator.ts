@@ -31,13 +31,8 @@ export const redisCacheHclGenerator: HclGenerator = {
       lines.push(`  redis_version       = "${e(redisVersion)}"`);
     }
 
-    if (minTls && minTls !== '1.2') {
-      lines.push(`  minimum_tls_version = "${e(minTls)}"`);
-    }
-
-    if (enableNonSsl === true) {
-      lines.push('  non_ssl_port_enabled = true');
-    }
+    lines.push(`  minimum_tls_version  = "${e(minTls ?? '1.2')}"`);
+    lines.push(`  non_ssl_port_enabled = ${enableNonSsl === true}`);
 
     lines.push('');
     lines.push('  tags = local.common_tags');

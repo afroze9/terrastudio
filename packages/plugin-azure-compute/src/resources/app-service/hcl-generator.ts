@@ -5,7 +5,7 @@ export const appServiceHclGenerator: HclGenerator = {
   typeId: 'azurerm/compute/app_service',
 
   resolveTerraformType(properties: Record<string, unknown>): string {
-    return (properties['os_type'] as string) === 'windows'
+    return (properties['os_type'] as string ?? '').toLowerCase() === 'windows'
       ? 'azurerm_windows_web_app'
       : 'azurerm_linux_web_app';
   },
@@ -13,7 +13,7 @@ export const appServiceHclGenerator: HclGenerator = {
   generate(resource: ResourceInstance, context: HclGenerationContext): HclBlock[] {
     const props = resource.properties;
     const name = props['name'] as string;
-    const osType = (props['os_type'] as string) ?? 'linux';
+    const osType = ((props['os_type'] as string) ?? 'linux').toLowerCase();
     const runtimeStack = props['runtime_stack'] as string | undefined;
     const alwaysOn = props['always_on'] as boolean | undefined;
     const httpsOnly = props['https_only'] as boolean | undefined;

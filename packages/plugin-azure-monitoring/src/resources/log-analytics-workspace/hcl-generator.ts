@@ -22,9 +22,7 @@ export const logAnalyticsWorkspaceHclGenerator: HclGenerator = {
       `  sku                 = "${e(sku)}"`,
     ];
 
-    if (retention && retention !== 30) {
-      lines.push(`  retention_in_days   = ${retention}`);
-    }
+    lines.push(`  retention_in_days   = ${retention ?? 30}`);
 
     if (dailyQuota !== undefined && dailyQuota !== -1) {
       lines.push(`  daily_quota_gb      = ${dailyQuota}`);

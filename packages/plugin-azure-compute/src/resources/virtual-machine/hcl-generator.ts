@@ -5,7 +5,7 @@ export const vmHclGenerator: HclGenerator = {
   typeId: 'azurerm/compute/virtual_machine',
 
   resolveTerraformType(properties: Record<string, unknown>): string {
-    return (properties['os_type'] as string) === 'windows'
+    return (properties['os_type'] as string ?? '').toLowerCase() === 'windows'
       ? 'azurerm_windows_virtual_machine'
       : 'azurerm_linux_virtual_machine';
   },
@@ -13,7 +13,7 @@ export const vmHclGenerator: HclGenerator = {
   generate(resource: ResourceInstance, context: HclGenerationContext): HclBlock[] {
     const props = resource.properties;
     const name = props['name'] as string;
-    const osType = (props['os_type'] as string) ?? 'linux';
+    const osType = ((props['os_type'] as string) ?? 'linux').toLowerCase();
     const size = (props['size'] as string) ?? 'Standard_B2s';
     const adminUsername = (props['admin_username'] as string) ?? 'azureuser';
     const imagePublisher = (props['image_publisher'] as string) ?? 'Canonical';
