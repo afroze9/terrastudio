@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { diagram } from '$lib/stores/diagram.svelte';
 import { registry } from '$lib/bootstrap';
 import { logger } from '$lib/logger';
@@ -6,15 +7,23 @@ import type { ResourceTypeId } from '@terrastudio/types';
 
 let syncInitialized = false;
 
+let windowLabel: string;
+
 /**
  * Initialize diagram → Rust sync for MCP reads.
- * Watches diagram.nodes and diagram.edges, debounced to 100ms,
- * and pushes serialized snapshots to the Rust MCP state cache.
- * Also syncs available resource types from the plugin registry on init.
+ * Registers this window with MCP state, watches diagram changes (debounced),
+ * and pushes serialized snapshots to the per-window Rust cache.
  */
 export function initDiagramSync(): void {
   if (syncInitialized) return;
   syncInitialized = true;
+
+  windowLabel = getCurrentWindow().label;
+
+  // Register this window with MCP state
+  invoke('mcp_register_window', { windowLabel }).catch((e) =>
+    logger.warn(`[mcp] register window failed: ${e}`)
+  );
 
   // Sync resource types from registry (one-time after plugins loaded)
   syncResourceTypes();
@@ -41,6 +50,7 @@ export function initDiagramSync(): void {
 async function syncDiagram(nodes: unknown[], edges: unknown[]): Promise<void> {
   try {
     await invoke('mcp_sync_diagram', {
+      windowLabel,
       nodes: JSON.parse(JSON.stringify(nodes)),
       edges: JSON.parse(JSON.stringify(edges)),
     });

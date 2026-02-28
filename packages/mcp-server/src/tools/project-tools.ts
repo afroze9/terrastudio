@@ -51,9 +51,9 @@ export function registerProjectTools(server: McpServer, bridge: BridgeClient): v
     'save_project',
     'Save the current project (diagram + config) to disk',
     SaveProjectSchema.shape,
-    async () => {
+    async (params) => {
       try {
-        await bridge.request('mcp_save_project');
+        await bridge.request('mcp_save_project', params);
         return {
           content: [{ type: 'text' as const, text: 'Project saved successfully' }],
         };
@@ -70,9 +70,9 @@ export function registerProjectTools(server: McpServer, bridge: BridgeClient): v
     'get_project_config',
     'Get the current project configuration (sensitive fields are redacted)',
     GetProjectConfigSchema.shape,
-    async () => {
+    async (params) => {
       try {
-        const result = await bridge.request('mcp_get_project_config');
+        const result = await bridge.request('mcp_get_project_config', params);
         return {
           content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
         };

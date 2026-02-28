@@ -18,6 +18,7 @@
 	import { diagram } from '$lib/stores/diagram.svelte';
 	import { terraform } from '$lib/stores/terraform.svelte';
 	import { saveDiagram, openProject, guardUnsavedChanges, initWindowProject, initFileAssociationHandler } from '$lib/services/project-service';
+	import { destroyBridgeListener } from '$lib/mcp/bridge-listener';
 
 	let showNewProjectDialog = $state(false);
 
@@ -25,12 +26,17 @@
 
 	onMount(() => {
 		ui.applyTheme();
+		const appWindow = getCurrentWindow();
 		initLogging(ui.logLevel);
 		initializeTerraformCheck();
 		initWindowProject();
 		initFileAssociationHandler();
 
-		const appWindow = getCurrentWindow();
+		// Track active window for MCP targeting
+		const unlistenFocus = appWindow.onFocusChanged(({ payload: focused }) => {
+			if (focused) invoke('mcp_set_active_window', { windowLabel: appWindow.label }).catch(() => {});
+		});
+
 		const unlistenClose = appWindow.onCloseRequested(async (event) => {
 			event.preventDefault();
 
@@ -52,6 +58,9 @@
 				if (result === 'cancel') return;
 				if (result === 'save') await saveDiagram();
 			}
+
+			// Unregister from MCP state and clean up listeners before destroying
+			destroyBridgeListener();
 			await appWindow.destroy();
 		});
 
@@ -102,7 +111,14 @@
 					if (!(await guardUnsavedChanges())) return;
 					diagram.clear();
 					project.close();
-					getCurrentWindow().setTitle('TerraStudio').catch(() => {});
+					const win = getCurrentWindow();
+					win.setTitle('TerraStudio').catch(() => {});
+					// Clear MCP project metadata (window stays registered, just no project)
+					invoke('mcp_set_window_project', {
+						windowLabel: win.label,
+						projectName: '',
+						projectPath: '',
+					}).catch(() => {});
 				}
 				return;
 			}
@@ -146,6 +162,7 @@
 		window.addEventListener('keydown', handleKeydown);
 		return () => {
 			unlistenClose.then((fn) => fn());
+			unlistenFocus.then((fn) => fn());
 			window.removeEventListener('keydown', handleKeydown);
 		};
 	});

@@ -98,8 +98,14 @@ export async function createProject(
   diagram.clear();
   project.open(data.path, data.metadata);
 
-  // Set window title to project name
-  getCurrentWindow().setTitle(`${name} — TerraStudio`).catch(() => {});
+  // Set window title and sync project info to MCP state
+  const appWindow = getCurrentWindow();
+  appWindow.setTitle(`${name} — TerraStudio`).catch(() => {});
+  invoke('mcp_set_window_project', {
+    windowLabel: appWindow.label,
+    projectName: name,
+    projectPath: data.path,
+  }).catch(() => {});
 
   // Apply config overrides and persist them (always save activeProviders)
   if (namingConvention) project.projectConfig = { ...project.projectConfig, namingConvention };
@@ -156,8 +162,14 @@ export async function loadProjectByPath(path: string): Promise<void> {
   cost.clear();
   project.open(data.path, data.metadata);
 
-  // Set window title to project name
-  getCurrentWindow().setTitle(`${data.metadata.name} — TerraStudio`).catch(() => {});
+  // Set window title and sync project info to MCP state
+  const appWindow = getCurrentWindow();
+  appWindow.setTitle(`${data.metadata.name} — TerraStudio`).catch(() => {});
+  invoke('mcp_set_window_project', {
+    windowLabel: appWindow.label,
+    projectName: data.metadata.name,
+    projectPath: data.path,
+  }).catch(() => {});
 
   // Restore diagram if it exists, migrating old edges to new format
   if (data.diagram) {

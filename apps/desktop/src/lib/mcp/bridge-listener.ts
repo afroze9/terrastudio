@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import type { UnlistenFn } from '@tauri-apps/api/event';
 import { diagram } from '$lib/stores/diagram.svelte';
 import { logger } from '$lib/logger';
@@ -44,10 +44,14 @@ const unlisteners: UnlistenFn[] = [];
 /**
  * Initialize the bridge listener that receives MCP mutation events from Rust
  * and dispatches them to the diagram store's skip-history methods.
+ * Uses window-scoped listeners so each window only receives its own events.
  */
 export async function initBridgeListener(): Promise<void> {
-  // Listen for diagram mutations from the MCP bridge
-  const unlistenMutation = await listen<McpMutation>('diagram:mcp_mutated', (event) => {
+  const appWindow = getCurrentWindow();
+  const windowLabel = appWindow.label;
+
+  // Listen for diagram mutations targeted to THIS window
+  const unlistenMutation = await appWindow.listen<McpMutation>('diagram:mcp_mutated', (event) => {
     const mutation = event.payload;
 
     switch (mutation.op) {
@@ -71,7 +75,7 @@ export async function initBridgeListener(): Promise<void> {
   unlisteners.push(unlistenMutation);
 
   // Listen for project save requests from MCP
-  const unlistenSave = await listen('mcp:save_project', async () => {
+  const unlistenSave = await appWindow.listen('mcp:save_project', async () => {
     try {
       const { saveDiagram } = await import('$lib/services/project-service');
       await saveDiagram();
@@ -82,22 +86,22 @@ export async function initBridgeListener(): Promise<void> {
   unlisteners.push(unlistenSave);
 
   // Listen for HCL generation requests from MCP
-  const unlistenGenerate = await listen('mcp:generate_hcl', async () => {
+  const unlistenGenerate = await appWindow.listen('mcp:generate_hcl', async () => {
     try {
       const { generateAndWrite } = await import('$lib/services/terraform-service');
       const files = await generateAndWrite();
-      // Sync generated HCL files back to Rust cache so MCP bridge can return them
-      await invoke('mcp_sync_hcl_files', { files });
+      // Sync generated HCL files back to Rust per-window cache
+      await invoke('mcp_sync_hcl_files', { windowLabel, files });
     } catch (e) {
       logger.error(`[mcp] generate_hcl failed: ${e}`);
       // Sync error result so the bridge doesn't hang waiting
-      await invoke('mcp_sync_hcl_files', { files: { error: String(e) } }).catch(() => {});
+      await invoke('mcp_sync_hcl_files', { windowLabel, files: { error: String(e) } }).catch(() => {});
     }
   });
   unlisteners.push(unlistenGenerate);
 
   // Listen for terraform run requests from MCP
-  const unlistenTerraform = await listen<{ command: string }>('mcp:run_terraform', async (event) => {
+  const unlistenTerraform = await appWindow.listen<{ command: string }>('mcp:run_terraform', async (event) => {
     try {
       const { runTerraformCommand } = await import('$lib/services/terraform-service');
       await runTerraformCommand(event.payload.command as 'init' | 'validate' | 'plan' | 'apply' | 'destroy');
@@ -109,11 +113,15 @@ export async function initBridgeListener(): Promise<void> {
 }
 
 /**
- * Clean up all bridge listeners.
+ * Clean up all bridge listeners and unregister window from MCP state.
  */
 export function destroyBridgeListener(): void {
   for (const unlisten of unlisteners) {
     unlisten();
   }
   unlisteners.length = 0;
+
+  // Unregister window from MCP state
+  const windowLabel = getCurrentWindow().label;
+  invoke('mcp_unregister_window', { windowLabel }).catch(() => {});
 }

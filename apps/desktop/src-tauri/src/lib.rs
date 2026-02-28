@@ -49,7 +49,11 @@ pub fn run() {
                 .max_file_size(5_000_000) // ~5 MB
                 .build(),
         )
-        .plugin(tauri_plugin_window_state::Builder::new().build())
+        .plugin(
+            tauri_plugin_window_state::Builder::new()
+                .with_filter(|label| label == "main")
+                .build(),
+        )
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_notification::init())
@@ -117,6 +121,10 @@ pub fn run() {
             project::templates::open_templates_folder,
             azure::commands::az_list_subscriptions,
             azure::commands::fetch_azure_price,
+            mcp::commands::mcp_register_window,
+            mcp::commands::mcp_unregister_window,
+            mcp::commands::mcp_set_window_project,
+            mcp::commands::mcp_set_active_window,
             mcp::commands::mcp_sync_diagram,
             mcp::commands::mcp_sync_resource_types,
             mcp::commands::mcp_sync_hcl_files,
@@ -225,20 +233,27 @@ fn create_project_window_inner(
         drop(state);
     }
 
-    WebviewWindowBuilder::new(app, &label, tauri::WebviewUrl::App("index.html".into()))
-        .title("TerraStudio")
-        .inner_size(1400.0, 900.0)
-        .min_inner_size(1024.0, 700.0)
-        .decorations(false)
-        .build()
-        .map_err(|e| format!("Failed to create window: {}", e))?;
+    let label_clone = label.clone();
+    let app_clone = app.clone();
+    app.run_on_main_thread(move || {
+        match WebviewWindowBuilder::new(&app_clone, &label_clone, tauri::WebviewUrl::App("index.html".into()))
+            .title("TerraStudio")
+            .inner_size(1400.0, 900.0)
+            .min_inner_size(1024.0, 700.0)
+            .decorations(false)
+            .build()
+        {
+            Ok(w) => log::info!("New window '{}' created", w.label()),
+            Err(e) => log::error!("Failed to create window '{}': {}", label_clone, e),
+        }
+    }).map_err(|e| format!("Failed to schedule window creation: {}", e))?;
 
     Ok(label)
 }
 
 /// Tauri command to create a new project window from the frontend.
 #[tauri::command]
-fn create_project_window(
+async fn create_project_window(
     app_handle: tauri::AppHandle,
     project_path: Option<String>,
 ) -> Result<String, String> {
