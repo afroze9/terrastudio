@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.5.3](https://github.com/afroze9/terrastudio/compare/v0.5.2...v0.5.3) (2026-02-28)
+
+
+### Features
+
+* add .tstudio file extension with OS file association and single-instance handling (v0.9.0) ([fb8f136](https://github.com/afroze9/terrastudio/commit/fb8f13646905c2326b70a8c40ca36d13bae2588c))
+* add canvas layout tools — alignment, auto-fit, schema min sizes (v0.8.0) ([660c182](https://github.com/afroze9/terrastudio/commit/660c182ea2771b867061b369537ab8065635cca6))
+* add MCP multi-window support — per-window state, project targeting, property merge fix (v0.11.0) ([571ffb4](https://github.com/afroze9/terrastudio/commit/571ffb46b87d1ffba12fd07f3808f820694504c3))
+* add MCP server for AI assistant integration (v0.6.0) ([f737a35](https://github.com/afroze9/terrastudio/commit/f737a35333a51db6ea3361bf4d43b577c4f184ba))
+* add multi-window support — single process, multiple project windows (v0.10.0) ([9819acb](https://github.com/afroze9/terrastudio/commit/9819acb80672f4ff6d8dff5d075853a51aa0217b))
+* add structured logging with configurable log level (v0.7.0) ([4be6d91](https://github.com/afroze9/terrastudio/commit/4be6d910b6c42ef6c2c42dbdc537310992a0a2d4))
+* MCP query filtering, move/resize commands, containment validation & output control (v0.13.0) ([489e35c](https://github.com/afroze9/terrastudio/commit/489e35c645e7b75b9a666ffacd49cf8224a113ec))
+* security hardening, user secrets, about dialog & UX improvements (v0.12.0) ([104f21d](https://github.com/afroze9/terrastudio/commit/104f21d000907a38427ac46667aa191c7f8de5f1))
+* sync app settings across multiple windows ([ce93d74](https://github.com/afroze9/terrastudio/commit/ce93d7414c55567d51ef0b78974feb666651fc7d))
+
+
+### Bug Fixes
+
+* add target handle to Subnet for VNet integration edge visibility ([b443623](https://github.com/afroze9/terrastudio/commit/b44362342c7986a4800ec87d2268b41a95936e90))
+* make showAsEdge reference handles positionable via Manage Handles dialog ([b7445ea](https://github.com/afroze9/terrastudio/commit/b7445ea49acb02aebbf4063da92a5a5b893c735c))
+
 ## [0.5.2](https://github.com/afroze9/terrastudio/compare/v0.5.1...v0.5.2) (2026-02-26)
 
 
