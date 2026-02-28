@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const serviceBusTopicHclGenerator: HclGenerator = {
   typeId: 'azurerm/messaging/servicebus_topic',
@@ -24,7 +25,7 @@ export const serviceBusTopicHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_servicebus_topic" "${resource.terraformName}" {`,
-      `  name         = "${name}"`,
+      `  name         = "${e(name)}"`,
       `  namespace_id = ${namespaceIdExpr}`,
     ];
 

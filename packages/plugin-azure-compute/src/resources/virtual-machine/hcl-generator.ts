@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const vmHclGenerator: HclGenerator = {
   typeId: 'azurerm/compute/virtual_machine',
@@ -57,7 +58,7 @@ export const vmHclGenerator: HclGenerator = {
     // Generate NIC
     const nicLines: string[] = [
       `resource "azurerm_network_interface" "${nicName}" {`,
-      `  name                = "${name}-nic"`,
+      `  name                = "${e(name)}-nic"`,
       `  resource_group_name = ${rgExpr}`,
       `  location            = ${locExpr}`,
       '',
@@ -81,11 +82,11 @@ export const vmHclGenerator: HclGenerator = {
     // Generate VM
     const vmLines: string[] = [
       `resource "${terraformType}" "${resource.terraformName}" {`,
-      `  name                = "${name}"`,
+      `  name                = "${e(name)}"`,
       `  resource_group_name = ${rgExpr}`,
       `  location            = ${locExpr}`,
-      `  size                = "${size}"`,
-      `  admin_username      = "${adminUsername}"`,
+      `  size                = "${e(size)}"`,
+      `  admin_username      = "${e(adminUsername)}"`,
       '',
       `  network_interface_ids = [azurerm_network_interface.${nicName}.id]`,
     ];
@@ -109,7 +110,7 @@ export const vmHclGenerator: HclGenerator = {
       });
       vmLines.push('');
       vmLines.push('  admin_ssh_key {');
-      vmLines.push(`    username   = "${adminUsername}"`);
+      vmLines.push(`    username   = "${e(adminUsername)}"`);
       vmLines.push(`    public_key = var.${sshKeyVarName}`);
       vmLines.push('  }');
 
@@ -120,7 +121,7 @@ export const vmHclGenerator: HclGenerator = {
     vmLines.push('');
     vmLines.push('  os_disk {');
     vmLines.push('    caching              = "ReadWrite"');
-    vmLines.push(`    storage_account_type = "${osDiskType}"`);
+    vmLines.push(`    storage_account_type = "${e(osDiskType)}"`);
     if (osDiskSizeGb) {
       vmLines.push(`    disk_size_gb         = ${osDiskSizeGb}`);
     }
@@ -128,9 +129,9 @@ export const vmHclGenerator: HclGenerator = {
 
     vmLines.push('');
     vmLines.push('  source_image_reference {');
-    vmLines.push(`    publisher = "${imagePublisher}"`);
-    vmLines.push(`    offer     = "${imageOffer}"`);
-    vmLines.push(`    sku       = "${imageSku}"`);
+    vmLines.push(`    publisher = "${e(imagePublisher)}"`);
+    vmLines.push(`    offer     = "${e(imageOffer)}"`);
+    vmLines.push(`    sku       = "${e(imageSku)}"`);
     vmLines.push('    version   = "latest"');
     vmLines.push('  }');
 

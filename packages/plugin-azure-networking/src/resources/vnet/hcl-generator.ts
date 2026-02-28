@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const vnetHclGenerator: HclGenerator = {
   typeId: 'azurerm/networking/virtual_network',
@@ -11,18 +12,18 @@ export const vnetHclGenerator: HclGenerator = {
 
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
-    const addrList = addressSpace.map((a) => `"${a}"`).join(', ');
+    const addrList = addressSpace.map((a) => `"${e(a)}"`).join(', ');
 
     const lines: string[] = [
       `resource "azurerm_virtual_network" "${resource.terraformName}" {`,
-      `  name                = "${name}"`,
+      `  name                = "${e(name)}"`,
       `  resource_group_name = ${rgExpr}`,
       `  location            = ${locExpr}`,
       `  address_space       = [${addrList}]`,
     ];
 
     if (dnsServers && dnsServers.length > 0) {
-      const dnsList = dnsServers.map((d) => `"${d}"`).join(', ');
+      const dnsList = dnsServers.map((d) => `"${e(d)}"`).join(', ');
       lines.push(`  dns_servers         = [${dnsList}]`);
     }
 

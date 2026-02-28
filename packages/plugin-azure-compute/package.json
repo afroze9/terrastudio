@@ -19,6 +19,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@terrastudio/core": "workspace:*",
     "@terrastudio/types": "workspace:*"
   },
   "devDependencies": {

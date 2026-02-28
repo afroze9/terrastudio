@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const roleAssignmentHclGenerator: HclGenerator = {
   typeId: 'azurerm/identity/role_assignment',
@@ -32,7 +33,7 @@ export const roleAssignmentHclGenerator: HclGenerator = {
     const lines: string[] = [
       `resource "azurerm_role_assignment" "${resource.terraformName}" {`,
       `  scope                = ${scopeExpr}`,
-      `  role_definition_name = "${roleName}"`,
+      `  role_definition_name = "${e(roleName)}"`,
       `  principal_id         = ${principalIdExpr}`,
       '}',
     ];

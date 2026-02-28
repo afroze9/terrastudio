@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const applicationInsightsHclGenerator: HclGenerator = {
   typeId: 'azurerm/monitoring/application_insights',
@@ -17,10 +18,10 @@ export const applicationInsightsHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_application_insights" "${resource.terraformName}" {`,
-      `  name                = "${name}"`,
+      `  name                = "${e(name)}"`,
       `  resource_group_name = ${rgExpr}`,
       `  location            = ${locExpr}`,
-      `  application_type    = "${appType}"`,
+      `  application_type    = "${e(appType)}"`,
     ];
 
     // Resolve Log Analytics Workspace reference

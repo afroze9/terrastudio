@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const appServiceHclGenerator: HclGenerator = {
   typeId: 'azurerm/compute/app_service',
@@ -47,7 +48,7 @@ export const appServiceHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "${terraformType}" "${resource.terraformName}" {`,
-      `  name                = "${name}"`,
+      `  name                = "${e(name)}"`,
       `  resource_group_name = ${rgExpr}`,
       `  location            = ${locExpr}`,
       `  service_plan_id     = ${planIdExpr}`,
@@ -69,26 +70,26 @@ export const appServiceHclGenerator: HclGenerator = {
     }
 
     if (runtimeStack && osType === 'linux') {
-      const [stack, version] = runtimeStack.split('|');
+      const [stack, version = ''] = runtimeStack.split('|');
       if (stack === 'NODE') {
         lines.push(`    application_stack {`);
-        lines.push(`      node_version = "${version}"`);
+        lines.push(`      node_version = "${e(version)}"`);
         lines.push('    }');
       } else if (stack === 'PYTHON') {
         lines.push('    application_stack {');
-        lines.push(`      python_version = "${version}"`);
+        lines.push(`      python_version = "${e(version)}"`);
         lines.push('    }');
       } else if (stack === 'DOTNETCORE') {
         lines.push('    application_stack {');
-        lines.push(`      dotnet_version = "${version}"`);
+        lines.push(`      dotnet_version = "${e(version)}"`);
         lines.push('    }');
       } else if (stack === 'JAVA') {
         lines.push('    application_stack {');
-        lines.push(`      java_version = "${version}"`);
+        lines.push(`      java_version = "${e(version)}"`);
         lines.push('    }');
       } else if (stack === 'PHP') {
         lines.push('    application_stack {');
-        lines.push(`      php_version = "${version}"`);
+        lines.push(`      php_version = "${e(version)}"`);
         lines.push('    }');
       }
     }

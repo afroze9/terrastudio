@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const logAnalyticsWorkspaceHclGenerator: HclGenerator = {
   typeId: 'azurerm/monitoring/log_analytics_workspace',
@@ -15,10 +16,10 @@ export const logAnalyticsWorkspaceHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_log_analytics_workspace" "${resource.terraformName}" {`,
-      `  name                = "${name}"`,
+      `  name                = "${e(name)}"`,
       `  resource_group_name = ${rgExpr}`,
       `  location            = ${locExpr}`,
-      `  sku                 = "${sku}"`,
+      `  sku                 = "${e(sku)}"`,
     ];
 
     if (retention && retention !== 30) {

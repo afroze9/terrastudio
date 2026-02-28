@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const containerRegistryHclGenerator: HclGenerator = {
   typeId: 'azurerm/containers/container_registry',
@@ -15,10 +16,10 @@ export const containerRegistryHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_container_registry" "${resource.terraformName}" {`,
-      `  name                = "${name}"`,
+      `  name                = "${e(name)}"`,
       `  resource_group_name = ${rgExpr}`,
       `  location            = ${locExpr}`,
-      `  sku                 = "${sku}"`,
+      `  sku                 = "${e(sku)}"`,
     ];
 
     if (adminEnabled === true) {

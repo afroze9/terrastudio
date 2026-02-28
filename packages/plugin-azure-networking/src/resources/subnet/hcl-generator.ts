@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const subnetHclGenerator: HclGenerator = {
   typeId: 'azurerm/networking/subnet',
@@ -19,7 +20,7 @@ export const subnetHclGenerator: HclGenerator = {
       ? context.getAttributeReference(vnetRef, 'name')
       : '"<vnet-name>"';
 
-    const addrList = addressPrefixes.map((a) => `"${a}"`).join(', ');
+    const addrList = addressPrefixes.map((a) => `"${e(a)}"`).join(', ');
     const dependsOn: string[] = [];
 
     if (vnetRef) {
@@ -29,14 +30,14 @@ export const subnetHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_subnet" "${resource.terraformName}" {`,
-      `  name                 = "${name}"`,
+      `  name                 = "${e(name)}"`,
       `  resource_group_name  = ${rgExpr}`,
       `  virtual_network_name = ${vnetNameExpr}`,
       `  address_prefixes     = [${addrList}]`,
     ];
 
     if (serviceEndpoints && serviceEndpoints.length > 0) {
-      const epList = serviceEndpoints.map((e) => `"${e}"`).join(', ');
+      const epList = serviceEndpoints.map((ep) => `"${e(ep)}"`).join(', ');
       lines.push(`  service_endpoints    = [${epList}]`);
     }
 
@@ -56,9 +57,9 @@ export const subnetHclGenerator: HclGenerator = {
       lines.push('  delegation {');
       lines.push('    name = "delegation"');
       lines.push('    service_delegation {');
-      lines.push(`      name    = "${delegationService}"`);
+      lines.push(`      name    = "${e(delegationService)}"`);
       if (actions.length > 0) {
-        lines.push(`      actions = [${actions.map((a) => `"${a}"`).join(', ')}]`);
+        lines.push(`      actions = [${actions.map((a) => `"${e(a)}"`).join(', ')}]`);
       }
       lines.push('    }');
       lines.push('  }');

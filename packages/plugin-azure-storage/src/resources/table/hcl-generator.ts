@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const tableHclGenerator: HclGenerator = {
   typeId: 'azurerm/storage/table',
@@ -20,7 +21,7 @@ export const tableHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_storage_table" "${resource.terraformName}" {`,
-      `  name                 = "${name}"`,
+      `  name                 = "${e(name)}"`,
       `  storage_account_name = ${saNameExpr}`,
       '}',
     ];

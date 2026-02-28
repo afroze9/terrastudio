@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 interface SecurityRule {
   name: string;
@@ -25,7 +26,7 @@ export const nsgHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_network_security_group" "${resource.terraformName}" {`,
-      `  name                = "${name}"`,
+      `  name                = "${e(name)}"`,
       `  resource_group_name = ${rgExpr}`,
       `  location            = ${locExpr}`,
     ];
@@ -33,15 +34,15 @@ export const nsgHclGenerator: HclGenerator = {
     for (const rule of rules) {
       lines.push('');
       lines.push('  security_rule {');
-      lines.push(`    name                       = "${rule.name}"`);
+      lines.push(`    name                       = "${e(rule.name)}"`);
       lines.push(`    priority                   = ${rule.priority}`);
-      lines.push(`    direction                  = "${rule.direction}"`);
-      lines.push(`    access                     = "${rule.access}"`);
-      lines.push(`    protocol                   = "${rule.protocol}"`);
-      lines.push(`    source_port_range          = "${rule.source_port_range}"`);
-      lines.push(`    destination_port_range     = "${rule.destination_port_range}"`);
-      lines.push(`    source_address_prefix      = "${rule.source_address_prefix}"`);
-      lines.push(`    destination_address_prefix = "${rule.destination_address_prefix}"`);
+      lines.push(`    direction                  = "${e(rule.direction)}"`);
+      lines.push(`    access                     = "${e(rule.access)}"`);
+      lines.push(`    protocol                   = "${e(rule.protocol)}"`);
+      lines.push(`    source_port_range          = "${e(rule.source_port_range)}"`);
+      lines.push(`    destination_port_range     = "${e(rule.destination_port_range)}"`);
+      lines.push(`    source_address_prefix      = "${e(rule.source_address_prefix)}"`);
+      lines.push(`    destination_address_prefix = "${e(rule.destination_address_prefix)}"`);
       lines.push('  }');
     }
 

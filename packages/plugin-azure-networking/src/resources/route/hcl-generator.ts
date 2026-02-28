@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const routeHclGenerator: HclGenerator = {
   typeId: 'azurerm/networking/route',
@@ -25,15 +26,15 @@ export const routeHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_route" "${resource.terraformName}" {`,
-      `  name                = "${name}"`,
+      `  name                = "${e(name)}"`,
       `  resource_group_name = ${rgExpr}`,
       `  route_table_name    = ${rtNameExpr}`,
-      `  address_prefix      = "${addressPrefix}"`,
-      `  next_hop_type       = "${nextHopType}"`,
+      `  address_prefix      = "${e(addressPrefix)}"`,
+      `  next_hop_type       = "${e(nextHopType)}"`,
     ];
 
     if (nextHopType === 'VirtualAppliance' && nextHopIp) {
-      lines.push(`  next_hop_in_ip_address = "${nextHopIp}"`);
+      lines.push(`  next_hop_in_ip_address = "${e(nextHopIp)}"`);
     }
 
     lines.push('}');

@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const publicIpHclGenerator: HclGenerator = {
   typeId: 'azurerm/networking/public_ip',
@@ -17,15 +18,15 @@ export const publicIpHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_public_ip" "${resource.terraformName}" {`,
-      `  name                = "${name}"`,
+      `  name                = "${e(name)}"`,
       `  resource_group_name = ${rgExpr}`,
       `  location            = ${locExpr}`,
-      `  allocation_method   = "${allocationMethod}"`,
-      `  sku                 = "${sku}"`,
+      `  allocation_method   = "${e(allocationMethod)}"`,
+      `  sku                 = "${e(sku)}"`,
     ];
 
     if (ipVersion && ipVersion !== 'IPv4') {
-      lines.push(`  ip_version          = "${ipVersion}"`);
+      lines.push(`  ip_version          = "${e(ipVersion)}"`);
     }
 
     if (idleTimeout && idleTimeout !== 4) {
@@ -33,7 +34,7 @@ export const publicIpHclGenerator: HclGenerator = {
     }
 
     if (domainLabel) {
-      lines.push(`  domain_name_label   = "${domainLabel}"`);
+      lines.push(`  domain_name_label   = "${e(domainLabel)}"`);
     }
 
     lines.push('');

@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const routeTableHclGenerator: HclGenerator = {
   typeId: 'azurerm/networking/route_table',
@@ -13,7 +14,7 @@ export const routeTableHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_route_table" "${resource.terraformName}" {`,
-      `  name                = "${name}"`,
+      `  name                = "${e(name)}"`,
       `  location            = ${locExpr}`,
       `  resource_group_name = ${rgExpr}`,
     ];

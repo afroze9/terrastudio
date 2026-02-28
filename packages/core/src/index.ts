@@ -19,6 +19,7 @@ export type { GeneratedFiles } from './lib/hcl/block-builder.js';
 export { DependencyGraph } from './lib/hcl/dependency-graph.js';
 export { VariableCollector, OutputCollector } from './lib/hcl/variable-collector.js';
 export { ProviderConfigBuilder } from './lib/hcl/provider-config-builder.js';
+export { escapeHclString } from './lib/hcl/escape.js';
 
 // Diagram
 export { EdgeRuleValidator } from './lib/diagram/edge-rules.js';

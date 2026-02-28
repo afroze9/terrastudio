@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const cosmosdbAccountHclGenerator: HclGenerator = {
   typeId: 'azurerm/database/cosmosdb_account',
@@ -18,11 +19,11 @@ export const cosmosdbAccountHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_cosmosdb_account" "${resource.terraformName}" {`,
-      `  name                = "${name}"`,
+      `  name                = "${e(name)}"`,
       `  location            = ${locExpr}`,
       `  resource_group_name = ${rgExpr}`,
       `  offer_type          = "Standard"`,
-      `  kind                = "${kind}"`,
+      `  kind                = "${e(kind)}"`,
     ];
 
     if (autoFailover !== false) {
@@ -43,7 +44,7 @@ export const cosmosdbAccountHclGenerator: HclGenerator = {
 
     lines.push('');
     lines.push('  consistency_policy {');
-    lines.push(`    consistency_level = "${consistencyLevel}"`);
+    lines.push(`    consistency_level = "${e(consistencyLevel)}"`);
     lines.push('  }');
     lines.push('');
     lines.push('  geo_location {');

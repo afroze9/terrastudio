@@ -1,4 +1,5 @@
 import type { TerraformVariable } from '@terrastudio/types';
+import { escapeHclString } from './escape.js';
 
 /**
  * Collects Terraform variables registered by HCL generators.
@@ -25,7 +26,7 @@ export class VariableCollector {
       .map((v) => {
         const lines: string[] = [`variable "${v.name}" {`];
         lines.push(`  type        = ${v.type}`);
-        lines.push(`  description = "${escapeHcl(v.description)}"`);
+        lines.push(`  description = "${escapeHclString(v.description)}"`);
 
         if (v.defaultValue !== undefined) {
           lines.push(`  default     = ${formatHclValue(v.defaultValue)}`);
@@ -39,7 +40,7 @@ export class VariableCollector {
           lines.push(`  validation {`);
           lines.push(`    condition     = ${v.validation.condition}`);
           lines.push(
-            `    error_message = "${escapeHcl(v.validation.errorMessage)}"`,
+            `    error_message = "${escapeHclString(v.validation.errorMessage)}"`,
           );
           lines.push(`  }`);
         }
@@ -80,7 +81,7 @@ export class OutputCollector {
       .map((o) => {
         const lines: string[] = [`output "${o.name}" {`];
         lines.push(`  value       = ${o.value}`);
-        lines.push(`  description = "${escapeHcl(o.description)}"`);
+        lines.push(`  description = "${escapeHclString(o.description)}"`);
         if (o.sensitive) {
           lines.push(`  sensitive   = true`);
         }
@@ -91,12 +92,8 @@ export class OutputCollector {
   }
 }
 
-function escapeHcl(str: string): string {
-  return str.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-}
-
 function formatHclValue(value: unknown): string {
-  if (typeof value === 'string') return `"${escapeHcl(value)}"`;
+  if (typeof value === 'string') return `"${escapeHclString(value)}"`;
   if (typeof value === 'number' || typeof value === 'boolean')
     return String(value);
   if (Array.isArray(value))

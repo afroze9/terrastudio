@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const privateDnsZoneHclGenerator: HclGenerator = {
   typeId: 'azurerm/networking/private_dns_zone',
@@ -11,7 +12,7 @@ export const privateDnsZoneHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_private_dns_zone" "${resource.terraformName}" {`,
-      `  name                = "${name}"`,
+      `  name                = "${e(name)}"`,
       `  resource_group_name = ${rgExpr}`,
       '',
       '  tags = local.common_tags',

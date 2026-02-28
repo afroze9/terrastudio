@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const mssqlDatabaseHclGenerator: HclGenerator = {
   typeId: 'azurerm/database/mssql_database',
@@ -27,16 +28,16 @@ export const mssqlDatabaseHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_mssql_database" "${resource.terraformName}" {`,
-      `  name      = "${name}"`,
+      `  name      = "${e(name)}"`,
       `  server_id = ${serverIdExpr}`,
     ];
 
     if (skuName) {
-      lines.push(`  sku_name  = "${skuName}"`);
+      lines.push(`  sku_name  = "${e(skuName)}"`);
     }
 
     if (collation && collation !== 'SQL_Latin1_General_CP1_CI_AS') {
-      lines.push(`  collation = "${collation}"`);
+      lines.push(`  collation = "${e(collation)}"`);
     }
 
     if (maxSizeGb !== undefined && maxSizeGb !== 2) {
@@ -48,7 +49,7 @@ export const mssqlDatabaseHclGenerator: HclGenerator = {
     }
 
     if (licenseType) {
-      lines.push(`  license_type = "${licenseType}"`);
+      lines.push(`  license_type = "${e(licenseType)}"`);
     }
 
     lines.push('');

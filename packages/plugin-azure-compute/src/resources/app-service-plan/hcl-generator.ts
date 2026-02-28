@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const appServicePlanHclGenerator: HclGenerator = {
   typeId: 'azurerm/compute/app_service_plan',
@@ -16,11 +17,11 @@ export const appServicePlanHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_service_plan" "${resource.terraformName}" {`,
-      `  name                = "${name}"`,
+      `  name                = "${e(name)}"`,
       `  resource_group_name = ${rgExpr}`,
       `  location            = ${locExpr}`,
-      `  os_type             = "${osType}"`,
-      `  sku_name            = "${skuName}"`,
+      `  os_type             = "${e(osType)}"`,
+      `  sku_name            = "${e(skuName)}"`,
     ];
 
     if (workerCount !== undefined && workerCount !== 1) {

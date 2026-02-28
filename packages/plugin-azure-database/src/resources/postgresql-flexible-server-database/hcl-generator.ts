@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const postgresqlFlexibleServerDatabaseHclGenerator: HclGenerator = {
   typeId: 'azurerm/database/postgresql_flexible_server_database',
@@ -23,16 +24,16 @@ export const postgresqlFlexibleServerDatabaseHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_postgresql_flexible_server_database" "${resource.terraformName}" {`,
-      `  name      = "${name}"`,
+      `  name      = "${e(name)}"`,
       `  server_id = ${serverIdExpr}`,
     ];
 
     if (charset && charset !== 'UTF8') {
-      lines.push(`  charset   = "${charset}"`);
+      lines.push(`  charset   = "${e(charset)}"`);
     }
 
     if (collation && collation !== 'en_US.utf8') {
-      lines.push(`  collation = "${collation}"`);
+      lines.push(`  collation = "${e(collation)}"`);
     }
 
     lines.push('}');

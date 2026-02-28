@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const storageAccountHclGenerator: HclGenerator = {
   typeId: 'azurerm/storage/storage_account',
@@ -18,23 +19,23 @@ export const storageAccountHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_storage_account" "${resource.terraformName}" {`,
-      `  name                     = "${name}"`,
+      `  name                     = "${e(name)}"`,
       `  resource_group_name      = ${rgExpr}`,
       `  location                 = ${locExpr}`,
-      `  account_tier             = "${accountTier}"`,
-      `  account_replication_type = "${replicationType}"`,
+      `  account_tier             = "${e(accountTier)}"`,
+      `  account_replication_type = "${e(replicationType)}"`,
     ];
 
     if (accountKind && accountKind !== 'StorageV2') {
-      lines.push(`  account_kind             = "${accountKind}"`);
+      lines.push(`  account_kind             = "${e(accountKind)}"`);
     }
 
     if (accessTier) {
-      lines.push(`  access_tier              = "${accessTier}"`);
+      lines.push(`  access_tier              = "${e(accessTier)}"`);
     }
 
     if (minTlsVersion && minTlsVersion !== 'TLS1_2') {
-      lines.push(`  min_tls_version          = "${minTlsVersion}"`);
+      lines.push(`  min_tls_version          = "${e(minTlsVersion)}"`);
     }
 
     if (httpsOnly === false) {

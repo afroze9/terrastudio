@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const serviceBusQueueHclGenerator: HclGenerator = {
   typeId: 'azurerm/messaging/servicebus_queue',
@@ -26,12 +27,12 @@ export const serviceBusQueueHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_servicebus_queue" "${resource.terraformName}" {`,
-      `  name         = "${name}"`,
+      `  name         = "${e(name)}"`,
       `  namespace_id = ${namespaceIdExpr}`,
     ];
 
     if (lockDuration && lockDuration !== 'PT1M') {
-      lines.push(`  lock_duration = "${lockDuration}"`);
+      lines.push(`  lock_duration = "${e(lockDuration)}"`);
     }
 
     if (maxDeliveryCount !== undefined && maxDeliveryCount !== 10) {

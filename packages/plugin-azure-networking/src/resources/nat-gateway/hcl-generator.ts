@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const natGatewayHclGenerator: HclGenerator = {
   typeId: 'azurerm/networking/nat_gateway',
@@ -13,7 +14,7 @@ export const natGatewayHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_nat_gateway" "${resource.terraformName}" {`,
-      `  name                = "${name}"`,
+      `  name                = "${e(name)}"`,
       `  location            = ${locExpr}`,
       `  resource_group_name = ${rgExpr}`,
       '  sku_name            = "Standard"',

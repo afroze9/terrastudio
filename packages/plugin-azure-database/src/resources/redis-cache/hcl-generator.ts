@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const redisCacheHclGenerator: HclGenerator = {
   typeId: 'azurerm/database/redis_cache',
@@ -18,20 +19,20 @@ export const redisCacheHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_redis_cache" "${resource.terraformName}" {`,
-      `  name                = "${name}"`,
+      `  name                = "${e(name)}"`,
       `  location            = ${locExpr}`,
       `  resource_group_name = ${rgExpr}`,
-      `  sku_name            = "${skuName}"`,
-      `  family              = "${family}"`,
+      `  sku_name            = "${e(skuName)}"`,
+      `  family              = "${e(family)}"`,
       `  capacity            = ${capacity}`,
     ];
 
     if (redisVersion) {
-      lines.push(`  redis_version       = "${redisVersion}"`);
+      lines.push(`  redis_version       = "${e(redisVersion)}"`);
     }
 
     if (minTls && minTls !== '1.2') {
-      lines.push(`  minimum_tls_version = "${minTls}"`);
+      lines.push(`  minimum_tls_version = "${e(minTls)}"`);
     }
 
     if (enableNonSsl === true) {

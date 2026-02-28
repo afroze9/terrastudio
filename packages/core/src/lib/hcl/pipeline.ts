@@ -14,6 +14,7 @@ import { DependencyGraph } from './dependency-graph.js';
 import { VariableCollector, OutputCollector } from './variable-collector.js';
 import { ProviderConfigBuilder } from './provider-config-builder.js';
 import { HclBlockBuilder, type GeneratedFiles } from './block-builder.js';
+import { escapeHclString } from './escape.js';
 
 export type LayoutAlgorithm = 'dagre' | 'hybrid';
 
@@ -169,7 +170,7 @@ export class HclPipeline {
 
         // Return literal value as HCL expression
         if (typeof value === 'string') {
-          return `"${value}"`;
+          return `"${escapeHclString(value)}"`;
         } else if (typeof value === 'number') {
           return String(value);
         } else if (typeof value === 'boolean') {
@@ -284,7 +285,7 @@ export class HclPipeline {
     for (const v of variables) {
       const value = values[v.name];
       if (value !== undefined && value !== '') {
-        lines.push(`${v.name} = "${value}"`);
+        lines.push(`${v.name} = "${escapeHclString(value)}"`);
       }
     }
 
@@ -296,7 +297,7 @@ export class HclPipeline {
     if (Object.keys(tags).length === 0) return '';
 
     const tagEntries = Object.entries(tags)
-      .map(([k, v]) => `    ${k} = "${v}"`)
+      .map(([k, v]) => `    ${k} = "${escapeHclString(v)}"`)
       .join('\n');
 
     return `locals {\n  common_tags = {\n${tagEntries}\n  }\n}`;

@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const functionAppHclGenerator: HclGenerator = {
   typeId: 'azurerm/compute/function_app',
@@ -53,7 +54,7 @@ export const functionAppHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "${terraformType}" "${resource.terraformName}" {`,
-      `  name                       = "${name}"`,
+      `  name                       = "${e(name)}"`,
       `  resource_group_name        = ${rgExpr}`,
       `  location                   = ${locExpr}`,
       `  service_plan_id            = ${planIdExpr}`,
@@ -79,35 +80,35 @@ export const functionAppHclGenerator: HclGenerator = {
       if (osType === 'linux') {
         switch (runtimeStack) {
           case 'node':
-            lines.push(`      node_version    = "${runtimeVersion}"`);
+            lines.push(`      node_version    = "${e(runtimeVersion)}"`);
             break;
           case 'python':
-            lines.push(`      python_version  = "${runtimeVersion}"`);
+            lines.push(`      python_version  = "${e(runtimeVersion)}"`);
             break;
           case 'dotnet':
-            lines.push(`      dotnet_version  = "${runtimeVersion}"`);
+            lines.push(`      dotnet_version  = "${e(runtimeVersion)}"`);
             break;
           case 'java':
-            lines.push(`      java_version    = "${runtimeVersion}"`);
+            lines.push(`      java_version    = "${e(runtimeVersion)}"`);
             break;
           case 'powershell':
-            lines.push(`      powershell_core_version = "${runtimeVersion}"`);
+            lines.push(`      powershell_core_version = "${e(runtimeVersion)}"`);
             break;
         }
       } else {
         // Windows function app
         switch (runtimeStack) {
           case 'node':
-            lines.push(`      node_version    = "~${runtimeVersion}"`);
+            lines.push(`      node_version    = "~${e(runtimeVersion)}"`);
             break;
           case 'dotnet':
-            lines.push(`      dotnet_version  = "v${runtimeVersion}"`);
+            lines.push(`      dotnet_version  = "v${e(runtimeVersion)}"`);
             break;
           case 'java':
-            lines.push(`      java_version    = "${runtimeVersion}"`);
+            lines.push(`      java_version    = "${e(runtimeVersion)}"`);
             break;
           case 'powershell':
-            lines.push(`      powershell_core_version = "${runtimeVersion}"`);
+            lines.push(`      powershell_core_version = "${e(runtimeVersion)}"`);
             break;
         }
       }

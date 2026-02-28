@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const queueHclGenerator: HclGenerator = {
   typeId: 'azurerm/storage/queue',
@@ -20,7 +21,7 @@ export const queueHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_storage_queue" "${resource.terraformName}" {`,
-      `  name                 = "${name}"`,
+      `  name                 = "${e(name)}"`,
       `  storage_account_id   = ${saIdExpr}`,
       '}',
     ];

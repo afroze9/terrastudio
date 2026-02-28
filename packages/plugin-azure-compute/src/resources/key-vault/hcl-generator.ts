@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext, AccessModel, AccessGrant } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 function getPrincipalExpression(grant: AccessGrant, context: HclGenerationContext): string {
   switch (grant.identity_type) {
@@ -10,7 +11,7 @@ function getPrincipalExpression(grant: AccessGrant, context: HclGenerationContex
       }
       return '"<principal-id>"';
     case 'custom':
-      return `"${grant.custom_principal_id ?? ''}"`;
+      return `"${e(grant.custom_principal_id ?? '')}"`;
     default:
       return '"<principal-id>"';
   }
@@ -30,7 +31,7 @@ function generateRoleAssignment(
   const lines = [
     `resource "azurerm_role_assignment" "${tfName}" {`,
     `  scope                = azurerm_key_vault.${kvResource.terraformName}.id`,
-    `  role_definition_name = "${grant.role}"`,
+    `  role_definition_name = "${e(grant.role)}"`,
     `  principal_id         = ${principalExpr}`,
     '}',
   ];
@@ -71,10 +72,10 @@ export const keyVaultHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_key_vault" "${resource.terraformName}" {`,
-      `  name                = "${name}"`,
+      `  name                = "${e(name)}"`,
       `  resource_group_name = ${rgExpr}`,
       `  location            = ${locExpr}`,
-      `  sku_name            = "${skuName}"`,
+      `  sku_name            = "${e(skuName)}"`,
       '  tenant_id           = data.azurerm_client_config.current.tenant_id',
     ];
 
@@ -112,15 +113,15 @@ export const keyVaultHclGenerator: HclGenerator = {
         lines.push('    tenant_id = data.azurerm_client_config.current.tenant_id');
         lines.push(`    object_id = ${principalExpr}`);
         if (grant.key_permissions && grant.key_permissions.length > 0) {
-          const perms = grant.key_permissions.map(p => `"${p}"`).join(', ');
+          const perms = grant.key_permissions.map(p => `"${e(p)}"`).join(', ');
           lines.push(`    key_permissions = [${perms}]`);
         }
         if (grant.secret_permissions && grant.secret_permissions.length > 0) {
-          const perms = grant.secret_permissions.map(p => `"${p}"`).join(', ');
+          const perms = grant.secret_permissions.map(p => `"${e(p)}"`).join(', ');
           lines.push(`    secret_permissions = [${perms}]`);
         }
         if (grant.certificate_permissions && grant.certificate_permissions.length > 0) {
-          const perms = grant.certificate_permissions.map(p => `"${p}"`).join(', ');
+          const perms = grant.certificate_permissions.map(p => `"${e(p)}"`).join(', ');
           lines.push(`    certificate_permissions = [${perms}]`);
         }
         lines.push('  }');

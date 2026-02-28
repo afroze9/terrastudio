@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const bastionHclGenerator: HclGenerator = {
   typeId: 'azurerm/networking/bastion_host',
@@ -37,10 +38,10 @@ export const bastionHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_bastion_host" "${resource.terraformName}" {`,
-      `  name                = "${name}"`,
+      `  name                = "${e(name)}"`,
       `  location            = ${locExpr}`,
       `  resource_group_name = ${rgExpr}`,
-      `  sku                 = "${sku}"`,
+      `  sku                 = "${e(sku)}"`,
     ];
 
     if (copyPaste === false) {
