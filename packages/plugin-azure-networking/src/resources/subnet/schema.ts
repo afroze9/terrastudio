@@ -166,7 +166,14 @@ export const subnetSchema: ResourceSchema = {
 
   parentReference: { propertyKey: 'virtual_network_name' },
 
-  handles: [],
+  handles: [
+    {
+      id: 'vnet-int-target',
+      type: 'target',
+      position: 'right',
+      label: 'VNet Integration',
+    },
+  ],
 
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },

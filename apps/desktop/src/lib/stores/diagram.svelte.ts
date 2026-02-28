@@ -57,9 +57,11 @@ class DiagramStore {
         // if the target schema has a matching pep-target handle, a target handle.
         const sourceHandleId = `ref-${prop.key}`;
 
-        // Find a matching target handle (e.g., pep-target for Private Endpoint references)
+        // Find a matching target handle on the target node.
+        // Priority: first non-output target handle (e.g., pep-target, vnet-int-target).
         const targetSchema = registry.getResourceSchema(targetNode.type as ResourceTypeId);
-        const targetHandle = targetSchema?.handles?.find((h: HandleDefinition) => h.id === 'pep-target' && h.type === 'target');
+        const targetHandles = targetSchema?.handles?.filter((h: HandleDefinition) => h.type === 'target') ?? [];
+        const targetHandle = targetHandles.length > 0 ? targetHandles[0] : undefined;
 
         const edgeOverride = overrides[prop.key];
         result.push({
