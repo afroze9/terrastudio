@@ -80,9 +80,10 @@ async function syncResourceTypes(): Promise<void> {
           type: h.type,
           label: h.label ?? h.id,
           position: h.position,
+          ...(h.acceptsOutputs ? { acceptsOutputs: true } : {}),
+          ...(h.acceptsTypes ? { acceptsTypes: h.acceptsTypes } : {}),
         })),
         properties: schema.properties
-          .filter((p) => p.type !== 'reference')
           .map((p) => ({
             key: p.key,
             label: p.label,
@@ -90,7 +91,17 @@ async function syncResourceTypes(): Promise<void> {
             required: p.required ?? false,
             description: p.description,
             defaultValue: p.defaultValue,
+            ...(p.type === 'reference' ? {
+              referenceTargetTypes: p.referenceTargetTypes,
+              showAsEdge: p.showAsEdge,
+            } : {}),
           })),
+        outputs: (schema.outputs ?? []).map((o) => ({
+          key: o.key,
+          label: o.label,
+          terraformAttribute: o.terraformAttribute,
+          sensitive: o.sensitive ?? false,
+        })),
       };
     }).filter(Boolean);
 

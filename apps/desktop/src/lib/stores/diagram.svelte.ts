@@ -736,6 +736,33 @@ class DiagramStore {
     terraform.markFilesStale();
   }
 
+  moveNodeSkipHistory(id: string, position: { x: number; y: number }) {
+    this.nodes = this.nodes.map((n) =>
+      n.id === id ? { ...n, position } : n
+    );
+    project.markDirty();
+  }
+
+  resizeNodeSkipHistory(id: string, width: number, height: number) {
+    this.nodes = this.nodes.map((n) =>
+      n.id === id ? { ...n, width, height } : n
+    );
+    project.markDirty();
+  }
+
+  reparentNodeSkipHistory(id: string, position: { x: number; y: number }, parentId: string | null) {
+    this.nodes = this.nodes.map((n) => {
+      if (n.id !== id) return n;
+      if (parentId) {
+        return { ...n, position, parentId, extent: 'parent' as const };
+      }
+      // Unparent: remove parentId and extent
+      const { parentId: _pid, extent: _ext, ...rest } = n;
+      return { ...rest, position };
+    });
+    project.markDirty();
+  }
+
   clear() {
     if (this.debounceTimer !== null) {
       clearTimeout(this.debounceTimer);

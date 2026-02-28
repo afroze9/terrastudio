@@ -4,8 +4,11 @@ import {
   AddResourceSchema,
   UpdateResourceSchema,
   RemoveResourceSchema,
+  SetEnabledOutputsSchema,
   ConnectResourcesSchema,
   DisconnectResourcesSchema,
+  MoveResourceSchema,
+  ResizeResourceSchema,
 } from '../schemas.js';
 
 export function registerResourceTools(server: McpServer, bridge: BridgeClient): void {
@@ -67,6 +70,25 @@ export function registerResourceTools(server: McpServer, bridge: BridgeClient): 
   );
 
   server.tool(
+    'set_enabled_outputs',
+    'Enable or disable resource outputs. Enabled outputs create dynamic source handles (out-{key}) that can be connected to acceptsOutputs handles (e.g., Key Vault secret-in). Use get_available_resource_types to see available outputs per type.',
+    SetEnabledOutputsSchema.shape,
+    async (params) => {
+      try {
+        await bridge.request('mcp_set_enabled_outputs', params);
+        return {
+          content: [{ type: 'text' as const, text: `Outputs updated: [${params.enabledOutputs.join(', ')}]` }],
+        };
+      } catch (err: any) {
+        return {
+          content: [{ type: 'text' as const, text: `Error: ${err.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
     'connect_resources',
     'Create a connection (edge) between two resources using their handles',
     ConnectResourcesSchema.shape,
@@ -94,6 +116,44 @@ export function registerResourceTools(server: McpServer, bridge: BridgeClient): 
         await bridge.request('mcp_disconnect_resources', params);
         return {
           content: [{ type: 'text' as const, text: 'Connection removed successfully' }],
+        };
+      } catch (err: any) {
+        return {
+          content: [{ type: 'text' as const, text: `Error: ${err.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    'move_resource',
+    'Move a resource to a new position on the canvas. Optionally set parentId to reparent into a container (enforces canBeChildOf rules). Set parentId to null to unparent.',
+    MoveResourceSchema.shape,
+    async (params) => {
+      try {
+        await bridge.request('mcp_move_resource', params);
+        return {
+          content: [{ type: 'text' as const, text: 'Resource moved successfully' }],
+        };
+      } catch (err: any) {
+        return {
+          content: [{ type: 'text' as const, text: `Error: ${err.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    'resize_resource',
+    'Resize a resource node on the canvas (width and height in pixels)',
+    ResizeResourceSchema.shape,
+    async (params) => {
+      try {
+        await bridge.request('mcp_resize_resource', params);
+        return {
+          content: [{ type: 'text' as const, text: 'Resource resized successfully' }],
         };
       } catch (err: any) {
         return {

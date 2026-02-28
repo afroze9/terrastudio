@@ -32,12 +32,35 @@ interface McpMutationRemoveEdge {
   edgeId: string;
 }
 
+interface McpMutationMoveNode {
+  op: 'move_node';
+  instanceId: string;
+  position: { x: number; y: number };
+}
+
+interface McpMutationResizeNode {
+  op: 'resize_node';
+  instanceId: string;
+  width: number;
+  height: number;
+}
+
+interface McpMutationReparentNode {
+  op: 'reparent_node';
+  instanceId: string;
+  position: { x: number; y: number };
+  parentId: string | null;
+}
+
 type McpMutation =
   | McpMutationAddNode
   | McpMutationUpdateNodeData
   | McpMutationRemoveNode
   | McpMutationAddEdge
-  | McpMutationRemoveEdge;
+  | McpMutationRemoveEdge
+  | McpMutationMoveNode
+  | McpMutationResizeNode
+  | McpMutationReparentNode;
 
 const unlisteners: UnlistenFn[] = [];
 
@@ -69,6 +92,15 @@ export async function initBridgeListener(): Promise<void> {
         break;
       case 'remove_edge':
         diagram.removeEdgeSkipHistory(mutation.edgeId);
+        break;
+      case 'move_node':
+        diagram.moveNodeSkipHistory(mutation.instanceId, mutation.position);
+        break;
+      case 'resize_node':
+        diagram.resizeNodeSkipHistory(mutation.instanceId, mutation.width, mutation.height);
+        break;
+      case 'reparent_node':
+        diagram.reparentNodeSkipHistory(mutation.instanceId, mutation.position, mutation.parentId);
         break;
     }
   });

@@ -2,10 +2,25 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { BridgeClient } from '../bridge.js';
 import { GenerateHclSchema, GetHclFilesSchema, RunTerraformSchema, GetDeploymentStatusSchema } from '../schemas.js';
 
+function filterHclFiles(
+  result: Record<string, string>,
+  fileFilter?: string
+): { files: [string, string][]; error?: string } {
+  let files = Object.entries(result);
+  if (fileFilter) {
+    files = files.filter(([name]) => name === fileFilter);
+    if (files.length === 0) {
+      const available = Object.keys(result).join(', ');
+      return { files: [], error: `File "${fileFilter}" not found. Available files: ${available}` };
+    }
+  }
+  return { files };
+}
+
 export function registerTerraformTools(server: McpServer, bridge: BridgeClient): void {
   server.tool(
     'generate_hcl',
-    'Generate Terraform HCL files from the current diagram. Returns a map of filename → HCL content.',
+    'Generate Terraform HCL files from the current diagram. Use file param to return a specific file (e.g. "main.tf").',
     GenerateHclSchema.shape,
     async (params) => {
       try {
@@ -19,8 +34,13 @@ export function registerTerraformTools(server: McpServer, bridge: BridgeClient):
           };
         }
 
-        // Format as readable output: filename headers + HCL content
-        const files = Object.entries(result);
+        const { files, error } = filterHclFiles(result, params.file);
+        if (error) {
+          return {
+            content: [{ type: 'text' as const, text: error }],
+            isError: true,
+          };
+        }
         if (files.length === 0) {
           return {
             content: [{ type: 'text' as const, text: 'No HCL files were generated (empty diagram?).' }],
@@ -45,12 +65,18 @@ export function registerTerraformTools(server: McpServer, bridge: BridgeClient):
 
   server.tool(
     'get_hcl_files',
-    'Get the last generated HCL files without re-generating. Returns cached files from the most recent generate_hcl call.',
+    'Get the last generated HCL files without re-generating. Use file param to return a specific file (e.g. "main.tf").',
     GetHclFilesSchema.shape,
     async (params) => {
       try {
         const result = await bridge.request('mcp_get_hcl_files', params) as Record<string, string>;
-        const files = Object.entries(result);
+        const { files, error } = filterHclFiles(result, params.file);
+        if (error) {
+          return {
+            content: [{ type: 'text' as const, text: error }],
+            isError: true,
+          };
+        }
         if (files.length === 0) {
           return {
             content: [{ type: 'text' as const, text: 'No cached HCL files. Call generate_hcl first.' }],
