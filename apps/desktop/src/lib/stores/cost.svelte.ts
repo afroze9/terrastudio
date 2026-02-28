@@ -1,5 +1,6 @@
 import { calculateNodeCost } from '$lib/cost';
 import type { DiagramNode } from './diagram.svelte';
+import { broadcastSetting } from './settings-sync';
 
 export interface CostEstimate {
   nodeId: string;
@@ -69,6 +70,7 @@ class CostStore {
   setRegion(region: string) {
     this.region = region;
     localStorage.setItem('ts-cost-region', region);
+    broadcastSetting('costRegion', region);
   }
 
   private static buildSnapshot(nodes: DiagramNode[]): string {

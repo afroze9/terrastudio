@@ -1,4 +1,5 @@
 import type { TerraformVariable } from '@terrastudio/types';
+import { broadcastSetting } from './settings-sync';
 
 export type TerraformCommand = 'init' | 'validate' | 'plan' | 'apply' | 'destroy';
 export type TerraformStatusType = 'idle' | 'generating' | 'writing' | 'running' | 'success' | 'error';
@@ -116,6 +117,7 @@ class TerraformStore {
   setAutoRegenerate(enabled: boolean) {
     this.autoRegenerate = enabled;
     localStorage.setItem('terrastudio-auto-regen', String(enabled));
+    broadcastSetting('autoRegenerate', enabled);
   }
 
   /** Begin suppressing stale marking (for status refresh) */

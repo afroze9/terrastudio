@@ -19,6 +19,7 @@
 	import { terraform } from '$lib/stores/terraform.svelte';
 	import { saveDiagram, openProject, guardUnsavedChanges, initWindowProject, initFileAssociationHandler } from '$lib/services/project-service';
 	import { destroyBridgeListener } from '$lib/mcp/bridge-listener';
+	import { initSettingsSync, destroySettingsSync } from '$lib/stores/settings-sync';
 
 	let showNewProjectDialog = $state(false);
 
@@ -31,6 +32,7 @@
 		initializeTerraformCheck();
 		initWindowProject();
 		initFileAssociationHandler();
+		initSettingsSync();
 
 		// Track active window for MCP targeting
 		const unlistenFocus = appWindow.onFocusChanged(({ payload: focused }) => {
@@ -60,6 +62,7 @@
 			}
 
 			// Unregister from MCP state and clean up listeners before destroying
+			destroySettingsSync();
 			destroyBridgeListener();
 			await appWindow.destroy();
 		});

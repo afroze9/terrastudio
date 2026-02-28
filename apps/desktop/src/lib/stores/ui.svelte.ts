@@ -3,6 +3,7 @@ import { applyPalette, getPalette } from '$lib/themes/theme-engine';
 import { DEFAULT_PALETTE_ID } from '$lib/themes/palettes';
 import type { ResourceTypeId, EdgeCategoryId } from '@terrastudio/types';
 import type { LogLevel } from '$lib/logger';
+import { broadcastSetting } from './settings-sync';
 
 /** Which edge categories are currently visible on canvas */
 export type EdgeCategoryVisibility = Record<EdgeCategoryId, boolean>;
@@ -165,36 +166,42 @@ class UiStore {
   setSnapToGrid(enabled: boolean) {
     this.snapToGrid = enabled;
     localStorage.setItem('terrastudio-snap', String(enabled));
+    broadcastSetting('snapToGrid', enabled);
   }
 
   /** Set grid size and persist */
   setGridSize(size: number) {
     this.gridSize = size;
     localStorage.setItem('terrastudio-grid-size', String(size));
+    broadcastSetting('gridSize', size);
   }
 
   /** Toggle minimap and persist */
   setShowMinimap(show: boolean) {
     this.showMinimap = show;
     localStorage.setItem('terrastudio-minimap', String(show));
+    broadcastSetting('showMinimap', show);
   }
 
   /** Toggle cost badges on nodes and persist */
   setShowCostBadges(show: boolean) {
     this.showCostBadges = show;
     localStorage.setItem('terrastudio-cost-badges', String(show));
+    broadcastSetting('showCostBadges', show);
   }
 
   /** Set log level and persist */
   setLogLevel(level: LogLevel) {
     this.logLevel = level;
     localStorage.setItem('terrastudio-log-level', level);
+    broadcastSetting('logLevel', level);
   }
 
   /** Set edge type and persist */
   setEdgeType(type: EdgeStyle) {
     this.edgeType = type;
     localStorage.setItem('terrastudio-edge-type', type);
+    broadcastSetting('edgeType', type);
   }
 
   /** Load edge visibility from localStorage */
@@ -216,6 +223,7 @@ class UiStore {
       [category]: !this.edgeVisibility[category],
     };
     localStorage.setItem('terrastudio-edge-visibility', JSON.stringify(this.edgeVisibility));
+    broadcastSetting('edgeVisibility', this.edgeVisibility);
   }
 
   /** Set visibility of an edge category */
@@ -225,6 +233,7 @@ class UiStore {
       [category]: visible,
     };
     localStorage.setItem('terrastudio-edge-visibility', JSON.stringify(this.edgeVisibility));
+    broadcastSetting('edgeVisibility', this.edgeVisibility);
   }
 
   /** Check if an edge category is visible */
@@ -241,6 +250,7 @@ class UiStore {
       annotation: visible,
     };
     localStorage.setItem('terrastudio-edge-visibility', JSON.stringify(this.edgeVisibility));
+    broadcastSetting('edgeVisibility', this.edgeVisibility);
   }
 
   /** Toggle dark/light theme */
@@ -248,6 +258,7 @@ class UiStore {
     this.theme = this.theme === 'dark' ? 'light' : 'dark';
     localStorage.setItem('terrastudio-theme', this.theme);
     applyPalette(this.paletteId, this.theme);
+    broadcastSetting('theme', this.theme);
   }
 
   /** Switch to a different palette */
@@ -255,6 +266,7 @@ class UiStore {
     this.paletteId = id;
     localStorage.setItem('terrastudio-palette', id);
     applyPalette(this.paletteId, this.theme);
+    broadcastSetting('paletteId', id);
   }
 
   /** Apply saved theme + palette to DOM (call once on startup) */
