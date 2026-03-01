@@ -6,13 +6,18 @@
     module,
     onselect,
     ontogglecollapse,
+    screenToFlowPosition,
   }: {
     module: ModuleDefinition;
     onselect: (moduleId: string) => void;
     ontogglecollapse: (moduleId: string) => void;
+    screenToFlowPosition: (pos: { x: number; y: number }) => { x: number; y: number };
   } = $props();
 
   const PADDING = 24;
+  /** Width of the interactive drag border — matches PADDING so the entire
+   *  background area between the dashed border and the nodes is draggable. */
+  const BORDER_HIT = PADDING;
 
   /**
    * Compute absolute position for a node by walking up the parent chain.
@@ -65,22 +70,145 @@
   const borderColor = $derived(module.color ?? '#6366f1');
   const isSelected = $derived(diagram.selectedModuleId === module.id);
   const memberCount = $derived(diagram.nodes.filter((n) => n.data.moduleId === module.id).length);
+
+  // ── Module drag ────────────────────────────────────────────────
+  let dragging = $state(false);
+  let dragStartFlow = $state<{ x: number; y: number } | null>(null);
+  let dragNodeSnapshots = $state<Map<string, { x: number; y: number }> | null>(null);
+  /** The element that captured the pointer (header or a border strip) */
+  let captureEl = $state<HTMLElement | null>(null);
+
+  /**
+   * Get the "root movers" — module member nodes that should be directly moved.
+   * A node is a root mover if its parent is NOT also a module member.
+   * Child nodes move automatically when their parent moves.
+   */
+  function getRootMovers(): DiagramNode[] {
+    const memberIds = new Set(
+      diagram.nodes.filter((n) => n.data.moduleId === module.id).map((n) => n.id),
+    );
+    return diagram.nodes.filter(
+      (n) => memberIds.has(n.id) && !memberIds.has(n.parentId as string),
+    );
+  }
+
+  function startDrag(e: PointerEvent) {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    e.preventDefault();
+
+    dragging = true;
+    dragStartFlow = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+
+    const snapshots = new Map<string, { x: number; y: number }>();
+    for (const node of getRootMovers()) {
+      snapshots.set(node.id, { x: node.position.x, y: node.position.y });
+    }
+    dragNodeSnapshots = snapshots;
+
+    diagram.saveSnapshot();
+
+    captureEl = e.currentTarget as HTMLElement;
+    captureEl.setPointerCapture(e.pointerId);
+  }
+
+  function onPointerMove(e: PointerEvent) {
+    if (!dragging || !dragStartFlow || !dragNodeSnapshots) return;
+    e.preventDefault();
+
+    const currentFlow = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+    const dx = currentFlow.x - dragStartFlow.x;
+    const dy = currentFlow.y - dragStartFlow.y;
+
+    diagram.nodes = diagram.nodes.map((n) => {
+      const snap = dragNodeSnapshots!.get(n.id);
+      if (!snap) return n;
+      return { ...n, position: { x: snap.x + dx, y: snap.y + dy } };
+    });
+  }
+
+  function onPointerUp(e: PointerEvent) {
+    if (!dragging) return;
+    dragging = false;
+    dragStartFlow = null;
+    dragNodeSnapshots = null;
+    if (captureEl) {
+      captureEl.releasePointerCapture(e.pointerId);
+      captureEl = null;
+    }
+  }
+
+  function onHeaderPointerDown(e: PointerEvent) {
+    // Don't start drag if clicking the collapse button
+    const target = e.target as HTMLElement;
+    if (target.closest('.collapse-btn')) return;
+    startDrag(e);
+  }
 </script>
 
 {#if bounds}
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <!-- Boundary wrapper: pointer-events: none so interior clicks pass through to nodes -->
   <div
     class="module-boundary"
     class:selected={isSelected}
+    class:dragging
     style:left="{bounds.x}px"
     style:top="{bounds.y}px"
     style:width="{bounds.width}px"
     style:height="{bounds.height}px"
     style:--module-color={borderColor}
-    onclick={(e) => { e.stopPropagation(); onselect(module.id); }}
   >
-    <div class="module-header">
+    <!-- Four interactive border strips for drag from edges -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div
+      class="border-strip border-top"
+      style:height="{BORDER_HIT}px"
+      onpointerdown={startDrag}
+      onpointermove={onPointerMove}
+      onpointerup={onPointerUp}
+      onclick={(e) => { e.stopPropagation(); onselect(module.id); }}
+    ></div>
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div
+      class="border-strip border-bottom"
+      style:height="{BORDER_HIT}px"
+      onpointerdown={startDrag}
+      onpointermove={onPointerMove}
+      onpointerup={onPointerUp}
+      onclick={(e) => { e.stopPropagation(); onselect(module.id); }}
+    ></div>
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div
+      class="border-strip border-left"
+      style:width="{BORDER_HIT}px"
+      style:top="{BORDER_HIT}px"
+      style:bottom="{BORDER_HIT}px"
+      onpointerdown={startDrag}
+      onpointermove={onPointerMove}
+      onpointerup={onPointerUp}
+      onclick={(e) => { e.stopPropagation(); onselect(module.id); }}
+    ></div>
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div
+      class="border-strip border-right"
+      style:width="{BORDER_HIT}px"
+      style:top="{BORDER_HIT}px"
+      style:bottom="{BORDER_HIT}px"
+      onpointerdown={startDrag}
+      onpointermove={onPointerMove}
+      onpointerup={onPointerUp}
+      onclick={(e) => { e.stopPropagation(); onselect(module.id); }}
+    ></div>
+
+    <!-- Header tab -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div
+      class="module-header"
+      class:dragging
+      onpointerdown={onHeaderPointerDown}
+      onpointermove={onPointerMove}
+      onpointerup={onPointerUp}
+    >
       <button
         class="collapse-btn"
         title="Collapse module"
@@ -113,6 +241,38 @@
     background: color-mix(in srgb, var(--module-color) 10%, transparent);
   }
 
+  /* Interactive border strips — only the edges of the boundary respond to pointer */
+  .border-strip {
+    position: absolute;
+    pointer-events: auto;
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .dragging .border-strip {
+    cursor: grabbing;
+  }
+
+  .border-top {
+    top: 0;
+    left: 0;
+    right: 0;
+  }
+
+  .border-bottom {
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+
+  .border-left {
+    left: 0;
+  }
+
+  .border-right {
+    right: 0;
+  }
+
   .module-header {
     position: absolute;
     top: -32px;
@@ -123,11 +283,16 @@
     gap: 6px;
     padding: 0 10px;
     pointer-events: auto;
-    cursor: pointer;
+    cursor: grab;
     border-radius: 6px 6px 0 0;
     background: var(--module-color);
     opacity: 0.9;
     z-index: 1001;
+    touch-action: none;
+  }
+
+  .module-header.dragging {
+    cursor: grabbing;
   }
 
   .module-name {

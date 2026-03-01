@@ -445,6 +445,12 @@ export async function runTerraformCommand(
       unlisten();
     }
 
+    // Safety net: if status is still 'running' after the command completes,
+    // force it to 'error' so buttons aren't permanently disabled
+    if (terraform.isRunning) {
+      terraform.setStatus('error');
+    }
+
     // Update taskbar progress and send notification for long-running commands
     if (isLongRunning) {
       await setTaskbarProgress(success ? 'success' : 'error');

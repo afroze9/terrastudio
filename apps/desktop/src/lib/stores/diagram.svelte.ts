@@ -832,11 +832,102 @@ class DiagramStore {
       ];
     } else {
       // Show member nodes and remove synthetic node
-      this.nodes = this.nodes
+      let updatedNodes = this.nodes
         .filter((n) => n.id !== syntheticId)
         .map((n) =>
           n.data.moduleId === moduleId ? { ...n, hidden: false } : n,
         );
+
+      // Push non-member nodes out of the way if they overlap the expanding module area
+      const memberNodes = updatedNodes.filter((n) => n.data.moduleId === moduleId);
+      if (memberNodes.length > 0) {
+        const PUSH_GAP = 40;
+
+        // Compute absolute position by walking up the parent chain
+        const getAbsPos = (node: DiagramNode): { x: number; y: number } => {
+          let x = node.position.x;
+          let y = node.position.y;
+          let pid = node.parentId as string | undefined;
+          while (pid) {
+            const parent = updatedNodes.find((n) => n.id === pid);
+            if (!parent) break;
+            x += parent.position.x;
+            y += parent.position.y;
+            pid = parent.parentId as string | undefined;
+          }
+          return { x, y };
+        };
+
+        // Compute absolute bounding box of all member nodes
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (const n of memberNodes) {
+          const abs = getAbsPos(n);
+          const w = n.measured?.width ?? (n.width as number | undefined) ?? 250;
+          const h = n.measured?.height ?? (n.height as number | undefined) ?? 100;
+          if (abs.x < minX) minX = abs.x;
+          if (abs.y < minY) minY = abs.y;
+          if (abs.x + w > maxX) maxX = abs.x + w;
+          if (abs.y + h > maxY) maxY = abs.y + h;
+        }
+
+        // Build set of member IDs and their ancestor container IDs (those shouldn't move)
+        const memberIds = new Set(memberNodes.map((n) => n.id));
+        const memberAncestorIds = new Set<string>();
+        for (const n of memberNodes) {
+          let pid = n.parentId as string | undefined;
+          while (pid) {
+            memberAncestorIds.add(pid);
+            pid = updatedNodes.find((p) => p.id === pid)?.parentId as string | undefined;
+          }
+        }
+
+        // Collect IDs of nodes that need pushing (and their descendants)
+        const pushNodeIds = new Set<string>();
+        for (const n of updatedNodes) {
+          if (memberIds.has(n.id)) continue;
+          if (memberAncestorIds.has(n.id)) continue;
+          if (n.hidden) continue;
+
+          const abs = getAbsPos(n);
+          const w = n.measured?.width ?? (n.width as number | undefined) ?? 250;
+          const h = n.measured?.height ?? (n.height as number | undefined) ?? 100;
+
+          const overlapsX = abs.x < maxX + PUSH_GAP && abs.x + w > minX;
+          const overlapsY = abs.y < maxY + PUSH_GAP && abs.y + h > minY;
+
+          if (overlapsX && overlapsY) {
+            pushNodeIds.add(n.id);
+          }
+        }
+
+        if (pushNodeIds.size > 0) {
+          // Find the highest-level ancestors among pushNodeIds so we move
+          // whole subtrees rather than individual children
+          const rootPushIds = new Set<string>();
+          for (const id of pushNodeIds) {
+            const node = updatedNodes.find((n) => n.id === id)!;
+            // Walk up: if any ancestor is also in pushNodeIds, skip this one
+            let pid = node.parentId as string | undefined;
+            let ancestorPushed = false;
+            while (pid) {
+              if (pushNodeIds.has(pid)) { ancestorPushed = true; break; }
+              pid = updatedNodes.find((n) => n.id === pid)?.parentId as string | undefined;
+            }
+            if (!ancestorPushed) rootPushIds.add(id);
+          }
+
+          // Compute how far right to push: from their current x to past the module box
+          updatedNodes = updatedNodes.map((n) => {
+            if (!rootPushIds.has(n.id)) return n;
+            const abs = getAbsPos(n);
+            const delta = (maxX + PUSH_GAP) - abs.x;
+            if (delta <= 0) return n;
+            return { ...n, position: { ...n.position, x: n.position.x + delta } };
+          });
+        }
+      }
+
+      this.nodes = updatedNodes;
     }
 
     this.pushSnapshot();

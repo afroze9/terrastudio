@@ -120,15 +120,10 @@ export class HclPipeline {
     const variableCollector = new VariableCollector();
     const outputCollector = new OutputCollector();
 
-    // 4. Create root generation context (for root-level resources only)
-    const context = this.createRootContext(resourceMap, addressMap, variableCollector, outputCollector, projectConfig, modules);
-
-    // 5. Generate HCL for root resources
-    const rootBlocks = this.generateResourceBlocks(rootResources, resourceMap, context, input.bindings);
-
-    // 6. Generate per-module files + collect wiring
+    // 4. Create module contexts FIRST (before root context, so root can auto-register outputs)
     const files: GeneratedFiles = {} as GeneratedFiles;
     const moduleBlockLines: string[] = [];
+    const moduleContexts = new Map<string, { ctx: ModuleHclContext; memberIds: Set<string>; moduleAddrMap: Map<string, string> }>();
 
     for (const mod of modules) {
       const modResources = moduleResourceMap.get(mod.id);
@@ -156,8 +151,25 @@ export class HclPipeline {
         moduleAddrMap,
         projectConfig.providerConfigs,
       );
+      moduleContexts.set(mod.id, { ctx: moduleCtx, memberIds, moduleAddrMap });
+    }
 
-      // Generate blocks for module resources
+    // 5. Create root generation context (with access to module contexts for auto-registering outputs)
+    const context = this.createRootContext(resourceMap, addressMap, variableCollector, outputCollector, projectConfig, modules, moduleContexts);
+
+    // 6. Generate HCL for root resources (this may auto-register module outputs via getAttributeReference)
+    const rootBlocks = this.generateResourceBlocks(rootResources, resourceMap, context, input.bindings);
+
+    // 7a. Generate per-module HCL blocks (resource generators + intra-module bindings)
+    const moduleBlocks = new Map<string, HclBlock[]>();
+    for (const mod of modules) {
+      const modResources = moduleResourceMap.get(mod.id);
+      if (!modResources || modResources.length === 0) continue;
+
+      const entry = moduleContexts.get(mod.id);
+      if (!entry) continue;
+      const { ctx: moduleCtx, memberIds } = entry;
+
       const modBlocks: HclBlock[] = [];
       for (const resource of modResources) {
         const cleanResource = this.stripCostKeys(resource);
@@ -166,9 +178,8 @@ export class HclPipeline {
         modBlocks.push(...blocks);
       }
 
-      // Generate bindings within the module
+      // Generate bindings within the module (both endpoints in the same module)
       for (const binding of input.bindings ?? []) {
-        if (!memberIds.has(binding.sourceInstanceId) && !memberIds.has(binding.targetInstanceId)) continue;
         if (!memberIds.has(binding.sourceInstanceId) || !memberIds.has(binding.targetInstanceId)) continue;
         const source = resourceMap.get(binding.sourceInstanceId);
         const target = resourceMap.get(binding.targetInstanceId);
@@ -178,29 +189,74 @@ export class HclPipeline {
         modBlocks.push(...generator.generate(source, target, moduleCtx, binding.sourceAttribute));
       }
 
-      // Check if any root resources reference resources in this module
-      // If so, add module outputs
-      for (const rootRes of rootResources) {
-        for (const [, refId] of Object.entries(rootRes.references)) {
-          if (memberIds.has(refId)) {
-            const refResource = resourceMap.get(refId);
-            const refAddr = moduleAddrMap.get(refId);
-            if (refResource && refAddr) {
-              const outputName = `${refResource.terraformName}_id`;
-              moduleCtx.addModuleOutput(outputName, `${refAddr}.id`, `ID of ${refResource.terraformName}`);
-            }
+      moduleBlocks.set(mod.id, modBlocks);
+    }
+
+    // 7b. Handle cross-module bindings (source and target in DIFFERENT modules, or one in module + one in root).
+    // Process each binding exactly once to avoid duplication.
+    for (const binding of input.bindings ?? []) {
+      const src = resourceMap.get(binding.sourceInstanceId);
+      const tgt = resourceMap.get(binding.targetInstanceId);
+      if (!src || !tgt) continue;
+
+      const srcModuleId = src.moduleId && modules.some((m) => m.id === src.moduleId) ? src.moduleId : undefined;
+      const tgtModuleId = tgt.moduleId && modules.some((m) => m.id === tgt.moduleId) ? tgt.moduleId : undefined;
+
+      // Skip if both are in the same module (already handled above) or both are in root
+      if (srcModuleId === tgtModuleId) continue;
+
+      // Source is in a module — register output for the source attribute
+      if (srcModuleId) {
+        const srcEntry = moduleContexts.get(srcModuleId);
+        if (srcEntry) {
+          const srcAddr = srcEntry.moduleAddrMap.get(binding.sourceInstanceId);
+          if (srcAddr) {
+            const outputName = `${src.terraformName}_${binding.sourceAttribute}`;
+            srcEntry.ctx.addModuleOutput(
+              outputName,
+              `${srcAddr}.${binding.sourceAttribute}`,
+              `${binding.sourceAttribute} of ${src.terraformName}`,
+            );
           }
         }
       }
 
-      // Topological sort for module blocks
-      const depGraph = new DependencyGraph(modBlocks);
-      const sortedModBlocks = depGraph.topologicalSort();
+      // Target is in a module — register output for its id
+      if (tgtModuleId) {
+        const tgtEntry = moduleContexts.get(tgtModuleId);
+        if (tgtEntry) {
+          const tgtAddr = tgtEntry.moduleAddrMap.get(binding.targetInstanceId);
+          if (tgtAddr) {
+            const outputName = `${tgt.terraformName}_id`;
+            tgtEntry.ctx.addModuleOutput(outputName, `${tgtAddr}.id`, `ID of ${tgt.terraformName}`);
+          }
+        }
+      }
 
-      // Get wiring
+      // Generate the binding resource at root level (once)
+      const generator = this.registry.getBindingGenerator(src.typeId, tgt.typeId);
+      if (generator) {
+        rootBlocks.push(...generator.generate(src, tgt, context, binding.sourceAttribute));
+      }
+    }
+
+    // 7c. Assemble per-module files (after all cross-module outputs have been registered)
+    for (const mod of modules) {
+      const modBlocks = moduleBlocks.get(mod.id);
+      if (!modBlocks) continue;
+
+      const entry = moduleContexts.get(mod.id);
+      if (!entry) continue;
+      const { ctx: moduleCtx } = entry;
+
+      // Topological sort for module blocks
+      const modDepGraph = new DependencyGraph(modBlocks);
+      const sortedModBlocks = modDepGraph.topologicalSort();
+
+      // Get wiring (now includes cross-module outputs registered in step 7b)
       const wiring = moduleCtx.getWiring();
 
-      // Build module variables collector (cross-boundary + user variables)
+      // Build module variables collector
       const modVarCollector = new VariableCollector();
       for (const v of wiring.inputVariables) {
         modVarCollector.add(v);
@@ -228,6 +284,9 @@ export class HclPipeline {
       if (modVarsHcl) files[`${prefix}/variables.tf`] = modVarsHcl;
       const modOutputsHcl = modOutputCollector.generateOutputsHcl();
       if (modOutputsHcl) files[`${prefix}/outputs.tf`] = modOutputsHcl;
+      // Modules have their own scope — replicate locals (common_tags) so generators work
+      const modLocalsHcl = this.generateLocals(projectConfig);
+      if (modLocalsHcl) files[`${prefix}/locals.tf`] = modLocalsHcl;
 
       // Generate root module block
       const modBlockLines: string[] = [`module "${mod.name}" {`];
@@ -244,7 +303,7 @@ export class HclPipeline {
       }
     }
 
-    // 7. Topological sort root blocks
+    // 8. Topological sort root blocks
     const depGraph = new DependencyGraph(rootBlocks);
     const sortedBlocks = depGraph.topologicalSort();
 
@@ -376,27 +435,61 @@ export class HclPipeline {
     outputCollector: OutputCollector,
     projectConfig: ProjectConfig,
     modules?: ModuleDefinition[],
+    moduleContexts?: Map<string, { ctx: ModuleHclContext; memberIds: Set<string>; moduleAddrMap: Map<string, string> }>,
   ): HclGenerationContext {
+    /**
+     * If a resource belongs to a module, auto-register an output on the module context
+     * and return the module.X.output_name reference for use at root level.
+     */
+    function resolveModuleRef(instanceId: string, attribute: string): string | undefined {
+      if (!modules || modules.length === 0) return undefined;
+      const resource = resourceMap.get(instanceId);
+      if (!resource?.moduleId) return undefined;
+      const mod = modules.find((m) => m.id === resource.moduleId);
+      if (!mod) return undefined;
+
+      const outputName = `${resource.terraformName}_${attribute}`;
+
+      // Auto-register the output on the module context if available
+      if (moduleContexts) {
+        const entry = moduleContexts.get(mod.id);
+        if (entry) {
+          const internalAddr = entry.moduleAddrMap.get(instanceId);
+          if (internalAddr) {
+            entry.ctx.addModuleOutput(
+              outputName,
+              `${internalAddr}.${attribute}`,
+              `${attribute} of ${resource.terraformName}`,
+            );
+          }
+        }
+      }
+
+      return `module.${mod.name}.${outputName}`;
+    }
+
     return {
       getResource(instanceId: string) {
         return resourceMap.get(instanceId);
       },
       getTerraformAddress(instanceId: string) {
+        // If the resource is in a module, return module.X as the dependency address
+        if (modules && modules.length > 0) {
+          const resource = resourceMap.get(instanceId);
+          if (resource?.moduleId) {
+            const mod = modules.find((m) => m.id === resource.moduleId);
+            if (mod) return `module.${mod.name}`;
+          }
+        }
         return addressMap.get(instanceId);
       },
       getAttributeReference(instanceId: string, attribute: string) {
+        // If the resource belongs to a module, reference via module.X.output_name
+        const moduleRef = resolveModuleRef(instanceId, attribute);
+        if (moduleRef) return moduleRef;
+
         const addr = addressMap.get(instanceId);
         if (!addr) {
-          // Check if it's in a module — return module.X.output_name
-          if (modules && modules.length > 0) {
-            const resource = resourceMap.get(instanceId);
-            if (resource?.moduleId) {
-              const mod = modules.find((m) => m.id === resource.moduleId);
-              if (mod) {
-                return `module.${mod.name}.${resource.terraformName}_${attribute}`;
-              }
-            }
-          }
           throw new Error(
             `Cannot resolve reference to instance "${instanceId}": not found`,
           );
@@ -415,6 +508,9 @@ export class HclPipeline {
       getResourceGroupExpression(resource: ResourceInstance) {
         const rgInstanceId = resource.references['_resource_group'];
         if (rgInstanceId) {
+          // If the RG is in a module, reference via module output
+          const moduleRef = resolveModuleRef(rgInstanceId, 'name');
+          if (moduleRef) return moduleRef;
           const rgAddr = addressMap.get(rgInstanceId);
           if (rgAddr) return `${rgAddr}.name`;
         }
@@ -426,6 +522,9 @@ export class HclPipeline {
       getLocationExpression(resource: ResourceInstance) {
         const rgInstanceId = resource.references['_resource_group'];
         if (rgInstanceId) {
+          // If the RG is in a module, reference via module output
+          const moduleRef = resolveModuleRef(rgInstanceId, 'location');
+          if (moduleRef) return moduleRef;
           const rgAddr = addressMap.get(rgInstanceId);
           if (rgAddr) return `${rgAddr}.location`;
         }

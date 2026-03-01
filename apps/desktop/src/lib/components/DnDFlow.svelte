@@ -117,6 +117,7 @@
           target: newTarget,
           sourceHandle: newSourceHandle,
           targetHandle: newTargetHandle,
+          zIndex: 1001,
         });
       } else {
         result.push(edge);
@@ -337,6 +338,7 @@
 
     for (const node of diagram.nodes) {
       if (node.id === excludeNodeId) continue;
+      if (node.hidden) continue;
       const nodeTypeId = node.type as ResourceTypeId;
       if (!allowedParents.includes(nodeTypeId)) continue;
 
@@ -394,6 +396,7 @@
 
     for (const node of diagram.nodes) {
       if (node.id === excludeNodeId) continue;
+      if (node.hidden) continue;
       const nodeSchema = registry.getResourceSchema(node.type as ResourceTypeId);
       if (!nodeSchema?.isContainer) continue;
 
@@ -432,6 +435,7 @@
 
     for (const node of diagram.nodes) {
       if (node.id === excludeNodeId) continue;
+      if (node.hidden) continue;
       const nodeSchema = registry.getResourceSchema(node.type as ResourceTypeId);
       if (!nodeSchema?.isContainer) continue;
 
@@ -840,6 +844,7 @@
         {#each diagram.modules.filter((m) => !m.collapsed) as mod (mod.id)}
           <ModuleBoundary
             module={mod}
+            {screenToFlowPosition}
             onselect={(id) => { diagram.selectedNodeId = null; diagram.selectedEdgeId = null; diagram.selectedModuleId = id; }}
             ontogglecollapse={(id) => diagram.toggleModuleCollapsed(id)}
           />

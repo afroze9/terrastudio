@@ -17,6 +17,33 @@ pub fn sanitize_filename(name: &str) -> Result<&str, String> {
     Ok(name)
 }
 
+/// Validate a relative file path that may include subdirectories (e.g., "modules/net/main.tf").
+/// Rejects absolute paths, path traversal (..), backslashes, null bytes, and empty segments.
+pub fn sanitize_filepath(path: &str) -> Result<&str, String> {
+    if path.is_empty() {
+        return Err("File path cannot be empty".to_string());
+    }
+    if path.contains('\0') {
+        return Err(format!("File path contains null byte: {}", path));
+    }
+    if path.contains('\\') {
+        return Err(format!("File path contains backslash: {}", path));
+    }
+    if path.starts_with('/') {
+        return Err(format!("File path is absolute: {}", path));
+    }
+    // Check each segment for traversal or empty segments
+    for segment in path.split('/') {
+        if segment.is_empty() {
+            return Err(format!("File path contains empty segment: {}", path));
+        }
+        if segment == ".." || segment == "." {
+            return Err(format!("File path contains traversal: {}", path));
+        }
+    }
+    Ok(path)
+}
+
 /// Ensure a target path is within (or equal to) a base directory.
 /// Both paths are canonicalized before comparison.
 pub fn ensure_within(base: &Path, target: &Path) -> Result<PathBuf, String> {
