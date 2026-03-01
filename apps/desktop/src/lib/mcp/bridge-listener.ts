@@ -52,6 +52,39 @@ interface McpMutationReparentNode {
   parentId: string | null;
 }
 
+interface McpMutationCreateModule {
+  op: 'create_module';
+  name: string;
+  nodeIds: string[];
+}
+
+interface McpMutationDeleteModule {
+  op: 'delete_module';
+  moduleId: string;
+}
+
+interface McpMutationRenameModule {
+  op: 'rename_module';
+  moduleId: string;
+  name: string;
+}
+
+interface McpMutationToggleModuleCollapsed {
+  op: 'toggle_module_collapsed';
+  moduleId: string;
+}
+
+interface McpMutationAddToModule {
+  op: 'add_to_module';
+  moduleId: string;
+  nodeIds: string[];
+}
+
+interface McpMutationRemoveFromModule {
+  op: 'remove_from_module';
+  nodeIds: string[];
+}
+
 type McpMutation =
   | McpMutationAddNode
   | McpMutationUpdateNodeData
@@ -60,7 +93,13 @@ type McpMutation =
   | McpMutationRemoveEdge
   | McpMutationMoveNode
   | McpMutationResizeNode
-  | McpMutationReparentNode;
+  | McpMutationReparentNode
+  | McpMutationCreateModule
+  | McpMutationDeleteModule
+  | McpMutationRenameModule
+  | McpMutationToggleModuleCollapsed
+  | McpMutationAddToModule
+  | McpMutationRemoveFromModule;
 
 const unlisteners: UnlistenFn[] = [];
 
@@ -101,6 +140,24 @@ export async function initBridgeListener(): Promise<void> {
         break;
       case 'reparent_node':
         diagram.reparentNodeSkipHistory(mutation.instanceId, mutation.position, mutation.parentId);
+        break;
+      case 'create_module':
+        diagram.createModuleSkipHistory(mutation.name, mutation.nodeIds);
+        break;
+      case 'delete_module':
+        diagram.deleteModuleSkipHistory(mutation.moduleId);
+        break;
+      case 'rename_module':
+        diagram.renameModuleSkipHistory(mutation.moduleId, mutation.name);
+        break;
+      case 'toggle_module_collapsed':
+        diagram.toggleModuleCollapsedSkipHistory(mutation.moduleId);
+        break;
+      case 'add_to_module':
+        diagram.addNodesToModuleSkipHistory(mutation.moduleId, mutation.nodeIds);
+        break;
+      case 'remove_from_module':
+        diagram.removeNodesFromModuleSkipHistory(mutation.nodeIds);
         break;
     }
   });

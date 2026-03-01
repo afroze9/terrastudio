@@ -10,6 +10,8 @@ export interface GeneratedFiles {
   'terraform.tfvars'?: string;
   'terraform.tfvars.example'?: string;
   '.gitignore'?: string;
+  /** Module sub-files: e.g. 'modules/networking/main.tf' */
+  [key: string]: string | undefined;
 }
 
 /**

@@ -54,6 +54,8 @@ export interface ResourceNodeData {
   enabledOutputs?: string[];
   /** User customizations (label, style) for reference edges originating from this node */
   referenceEdgeOverrides?: ReferenceEdgeOverrides;
+  /** Module this resource belongs to (logical grouping, independent of parentId) */
+  moduleId?: string;
 }
 
 /**

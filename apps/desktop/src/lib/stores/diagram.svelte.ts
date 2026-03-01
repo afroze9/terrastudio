@@ -1,5 +1,5 @@
 import type { Node, Edge } from '@xyflow/svelte';
-import type { ResourceNodeData, ResourceTypeId, ValidationError, TerraStudioEdgeData, EdgeCategoryId, ReferenceEdgeOverrides, HandleDefinition } from '@terrastudio/types';
+import type { ResourceNodeData, ResourceTypeId, ValidationError, TerraStudioEdgeData, EdgeCategoryId, ReferenceEdgeOverrides, HandleDefinition, ModuleDefinition } from '@terrastudio/types';
 import { generateNodeId, generateUniqueTerraformName } from '@terrastudio/core';
 import { project } from './project.svelte';
 import { terraform } from './terraform.svelte';
@@ -12,6 +12,7 @@ export type DiagramEdge = Edge<TerraStudioEdgeData>;
 interface DiagramSnapshot {
   nodes: DiagramNode[];
   edges: DiagramEdge[];
+  modules: ModuleDefinition[];
 }
 
 const MAX_HISTORY = 50;
@@ -30,9 +31,11 @@ function generateCopyLabel(label: string): string {
 class DiagramStore {
   nodes = $state<DiagramNode[]>([]);
   edges = $state<DiagramEdge[]>([]);
+  modules = $state<ModuleDefinition[]>([]);
 
   selectedNodeId = $state<string | null>(null);
   selectedEdgeId = $state<string | null>(null);
+  selectedModuleId = $state<string | null>(null);
 
   /**
    * Auto-generated visual-only edges for reference properties marked showAsEdge: true.
@@ -112,12 +115,20 @@ class DiagramStore {
       : null
   );
 
+  selectedModule = $derived(
+    this.selectedModuleId
+      ? this.modules.find((m) => m.id === this.selectedModuleId) ?? null
+      : null
+  );
+
   private takeSnapshot(): DiagramSnapshot {
     const nodesSnap = $state.snapshot(this.nodes) as unknown;
     const edgesSnap = $state.snapshot(this.edges) as unknown;
+    const modulesSnap = $state.snapshot(this.modules) as unknown;
     return {
       nodes: structuredClone(nodesSnap) as DiagramNode[],
       edges: structuredClone(edgesSnap) as DiagramEdge[],
+      modules: structuredClone(modulesSnap) as ModuleDefinition[],
     };
   }
 
@@ -185,10 +196,13 @@ class DiagramStore {
     // snapshot is a reactive proxy (from $state history array), unwrap before cloning
     const nodesSnap = $state.snapshot(snapshot.nodes) as unknown;
     const edgesSnap = $state.snapshot(snapshot.edges) as unknown;
+    const modulesSnap = $state.snapshot(snapshot.modules ?? []) as unknown;
     this.nodes = structuredClone(nodesSnap) as DiagramNode[];
     this.edges = structuredClone(edgesSnap) as DiagramEdge[];
+    this.modules = structuredClone(modulesSnap) as ModuleDefinition[];
     this.selectedNodeId = null;
     this.selectedEdgeId = null;
+    this.selectedModuleId = null;
     this.skipHistory = false;
   }
 
@@ -656,7 +670,7 @@ class DiagramStore {
   }
 
   /** Load a saved diagram without marking dirty or pushing per-node history. */
-  loadDiagram(nodes: DiagramNode[], edges: DiagramEdge[]) {
+  loadDiagram(nodes: DiagramNode[], edges: DiagramEdge[], modules?: ModuleDefinition[]) {
     this.skipHistory = true;
     const cloned = structuredClone(nodes);
     // Validate parentId constraints — strip invalid containment relationships
@@ -675,11 +689,320 @@ class DiagramStore {
     }
     this.nodes = cloned;
     this.edges = structuredClone(edges);
+    this.modules = structuredClone(modules ?? []);
     this.selectedNodeId = null;
+    this.selectedModuleId = null;
     this.skipHistory = false;
     // Set initial history snapshot
     this.history = [this.takeSnapshot()];
     this.historyIndex = 0;
+  }
+
+  // ── Module CRUD methods ──────────────────────────────────────────
+
+  /**
+   * Create a module from selected node IDs.
+   * Assigns moduleId to the given nodes and creates a ModuleDefinition.
+   * Returns the new module's ID.
+   */
+  createModule(name: string, nodeIds: string[]): string {
+    this.flushPendingSnapshot();
+    this.ensureInitialSnapshot();
+
+    const id = `mod-${crypto.randomUUID().slice(0, 8)}`;
+
+    // Compute initial position from the bounding box of member nodes
+    const memberNodes = this.nodes.filter((n) => nodeIds.includes(n.id));
+    const minX = Math.min(...memberNodes.map((n) => n.position.x));
+    const minY = Math.min(...memberNodes.map((n) => n.position.y));
+
+    const mod: ModuleDefinition = {
+      id,
+      name,
+      collapsed: false,
+      position: { x: minX - 20, y: minY - 40 },
+    };
+
+    this.modules = [...this.modules, mod];
+    this.nodes = this.nodes.map((n) =>
+      nodeIds.includes(n.id) ? { ...n, data: { ...n.data, moduleId: id } } : n,
+    );
+
+    this.pushSnapshot();
+    return id;
+  }
+
+  /**
+   * Delete a module. Clears moduleId from all member nodes but does NOT delete the resources.
+   * Also removes any synthetic collapsed node and unhides members.
+   */
+  deleteModule(moduleId: string) {
+    this.flushPendingSnapshot();
+    this.ensureInitialSnapshot();
+
+    const syntheticId = `_mod_${moduleId}`;
+    this.modules = this.modules.filter((m) => m.id !== moduleId);
+    this.nodes = this.nodes
+      .filter((n) => n.id !== syntheticId)
+      .map((n) =>
+        n.data.moduleId === moduleId
+          ? { ...n, hidden: false, data: { ...n.data, moduleId: undefined } }
+          : n,
+      );
+
+    if (this.selectedModuleId === moduleId) {
+      this.selectedModuleId = null;
+    }
+
+    this.pushSnapshot();
+  }
+
+  /** Rename a module. */
+  renameModule(moduleId: string, name: string) {
+    this.flushPendingSnapshot();
+    this.ensureInitialSnapshot();
+
+    this.modules = this.modules.map((m) =>
+      m.id === moduleId ? { ...m, name } : m,
+    );
+
+    this.pushSnapshot();
+  }
+
+  /** Toggle a module's collapsed state, hiding/showing member nodes and managing synthetic node. */
+  toggleModuleCollapsed(moduleId: string) {
+    this.flushPendingSnapshot();
+    this.ensureInitialSnapshot();
+
+    const mod = this.modules.find((m) => m.id === moduleId);
+    if (!mod) return;
+
+    const collapsing = !mod.collapsed;
+    const syntheticId = `_mod_${moduleId}`;
+
+    this.modules = this.modules.map((m) =>
+      m.id === moduleId ? { ...m, collapsed: collapsing } : m,
+    );
+
+    if (collapsing) {
+      // Hide member nodes
+      const memberNodes = this.nodes.filter((n) => n.data.moduleId === moduleId);
+      const memberCount = memberNodes.length;
+
+      // Compute bounding box center for synthetic node position
+      let cx = mod.position.x;
+      let cy = mod.position.y;
+      if (memberNodes.length > 0) {
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (const n of memberNodes) {
+          if (n.position.x < minX) minX = n.position.x;
+          if (n.position.y < minY) minY = n.position.y;
+          const w = (n.width as number | undefined) ?? 250;
+          const h = (n.height as number | undefined) ?? 100;
+          if (n.position.x + w > maxX) maxX = n.position.x + w;
+          if (n.position.y + h > maxY) maxY = n.position.y + h;
+        }
+        cx = (minX + maxX) / 2 - 80;
+        cy = (minY + maxY) / 2 - 30;
+      }
+
+      // Hide members and add synthetic node
+      const syntheticNode = {
+        id: syntheticId,
+        type: '_terrastudio/module',
+        position: { x: cx, y: cy },
+        data: {
+          moduleId,
+          memberCount,
+          label: mod.name,
+          typeId: '_terrastudio/module' as ResourceTypeId,
+          properties: {},
+          references: {},
+          terraformName: '',
+          validationErrors: [],
+        },
+      } as unknown as DiagramNode;
+
+      this.nodes = [
+        ...this.nodes.map((n) =>
+          n.data.moduleId === moduleId ? { ...n, hidden: true } : n,
+        ),
+        syntheticNode,
+      ];
+    } else {
+      // Show member nodes and remove synthetic node
+      this.nodes = this.nodes
+        .filter((n) => n.id !== syntheticId)
+        .map((n) =>
+          n.data.moduleId === moduleId ? { ...n, hidden: false } : n,
+        );
+    }
+
+    this.pushSnapshot();
+  }
+
+  /** Update a module's properties (description, color, position). */
+  updateModule(moduleId: string, updates: Partial<Pick<ModuleDefinition, 'description' | 'color' | 'position'>>) {
+    this.flushPendingSnapshot();
+    this.ensureInitialSnapshot();
+
+    this.modules = this.modules.map((m) =>
+      m.id === moduleId ? { ...m, ...updates } : m,
+    );
+
+    this.pushSnapshot();
+  }
+
+  /** Assign nodes to a module. */
+  addNodesToModule(moduleId: string, nodeIds: string[]) {
+    this.flushPendingSnapshot();
+    this.ensureInitialSnapshot();
+
+    this.nodes = this.nodes.map((n) =>
+      nodeIds.includes(n.id) ? { ...n, data: { ...n.data, moduleId } } : n,
+    );
+
+    this.pushSnapshot();
+  }
+
+  /** Remove nodes from their module (clears moduleId). */
+  removeNodesFromModule(nodeIds: string[]) {
+    this.flushPendingSnapshot();
+    this.ensureInitialSnapshot();
+
+    this.nodes = this.nodes.map((n) =>
+      nodeIds.includes(n.id)
+        ? { ...n, data: { ...n.data, moduleId: undefined } }
+        : n,
+    );
+
+    this.pushSnapshot();
+  }
+
+  /**
+   * Duplicate a module: deep-copies all member nodes + internal edges with new IDs.
+   * Returns the new module ID and a mapping from old node IDs to new ones.
+   */
+  duplicateModule(moduleId: string): { newModuleId: string; nodeIdMap: Map<string, string> } {
+    this.flushPendingSnapshot();
+    this.ensureInitialSnapshot();
+
+    const sourceMod = this.modules.find((m) => m.id === moduleId);
+    if (!sourceMod) throw new Error(`Module "${moduleId}" not found`);
+
+    const newModuleId = `mod-${crypto.randomUUID().slice(0, 8)}`;
+    const memberNodes = this.nodes.filter((n) => n.data.moduleId === moduleId);
+    const memberNodeIds = new Set(memberNodes.map((n) => n.id));
+
+    // Build old→new ID map
+    const nodeIdMap = new Map<string, string>();
+    for (const node of memberNodes) {
+      nodeIdMap.set(node.id, generateNodeId(node.type as ResourceTypeId));
+    }
+
+    // Clone nodes
+    const OFFSET = 50;
+    const existingNames = new Set(this.nodes.map((n) => n.data.terraformName));
+    const newNodes: DiagramNode[] = [];
+
+    for (const node of memberNodes) {
+      const newId = nodeIdMap.get(node.id)!;
+      const newName = generateUniqueTerraformName(
+        node.data.label + ' copy',
+        existingNames,
+      );
+      existingNames.add(newName);
+
+      const newNode: DiagramNode = {
+        ...structuredClone($state.snapshot(node) as unknown) as DiagramNode,
+        id: newId,
+        position: {
+          x: node.position.x + OFFSET,
+          y: node.position.y + OFFSET,
+        },
+        selected: false,
+        data: {
+          ...node.data,
+          moduleId: newModuleId,
+          terraformName: newName,
+          label: generateCopyLabel(node.data.label),
+          validationErrors: [],
+          deploymentStatus: undefined,
+        },
+      };
+
+      // Remap parentId if parent is also in the module
+      if (newNode.parentId && nodeIdMap.has(newNode.parentId as string)) {
+        newNode.parentId = nodeIdMap.get(newNode.parentId as string);
+      } else if (newNode.parentId && !memberNodeIds.has(newNode.parentId as string)) {
+        // Parent is outside module — keep the same parentId
+      }
+
+      // Remap references that point to module-internal nodes
+      const refs = { ...(newNode.data.references ?? {}) };
+      for (const [key, targetId] of Object.entries(refs)) {
+        if (nodeIdMap.has(targetId)) {
+          refs[key] = nodeIdMap.get(targetId)!;
+        }
+      }
+      newNode.data = { ...newNode.data, references: refs };
+
+      newNodes.push(newNode);
+    }
+
+    // Clone internal edges (both endpoints in the module)
+    const internalEdges = this.edges.filter(
+      (e) => memberNodeIds.has(e.source) && memberNodeIds.has(e.target),
+    );
+    const newEdges: DiagramEdge[] = internalEdges.map((e) => {
+      const newSource = nodeIdMap.get(e.source)!;
+      const newTarget = nodeIdMap.get(e.target)!;
+      return {
+        ...structuredClone($state.snapshot(e) as unknown) as DiagramEdge,
+        id: `e-${newSource}-${e.sourceHandle ?? 'default'}-${newTarget}`,
+        source: newSource,
+        target: newTarget,
+      };
+    });
+
+    // Create new module definition
+    const newMod: ModuleDefinition = {
+      ...structuredClone($state.snapshot(sourceMod) as unknown) as ModuleDefinition,
+      id: newModuleId,
+      name: `${sourceMod.name}-copy`,
+      position: {
+        x: sourceMod.position.x + OFFSET,
+        y: sourceMod.position.y + OFFSET,
+      },
+    };
+
+    this.modules = [...this.modules, newMod];
+    this.nodes = [...this.nodes, ...newNodes];
+    this.edges = [...this.edges, ...newEdges];
+
+    this.pushSnapshot();
+    return { newModuleId, nodeIdMap };
+  }
+
+  // ── Module derived helpers ──────────────────────────────────────
+
+  /** Get all nodes belonging to a module. */
+  getModuleNodes(moduleId: string): DiagramNode[] {
+    return this.nodes.filter((n) => n.data.moduleId === moduleId);
+  }
+
+  /** Get edges where both endpoints are in the same module. */
+  getModuleEdges(moduleId: string): DiagramEdge[] {
+    const memberIds = new Set(this.getModuleNodes(moduleId).map((n) => n.id));
+    return this.edges.filter((e) => memberIds.has(e.source) && memberIds.has(e.target));
+  }
+
+  /** Get edges where one endpoint is inside the module and the other is outside. */
+  getCrossModuleEdges(moduleId: string): DiagramEdge[] {
+    const memberIds = new Set(this.getModuleNodes(moduleId).map((n) => n.id));
+    return this.edges.filter(
+      (e) => (memberIds.has(e.source)) !== (memberIds.has(e.target)),
+    );
   }
 
   // ── MCP bypass methods ────────────────────────────────────────────
@@ -765,6 +1088,76 @@ class DiagramStore {
     project.markDirty();
   }
 
+  // ── MCP bypass: module operations ──────────────────────────────────
+
+  createModuleSkipHistory(name: string, nodeIds: string[]): string {
+    const id = `mod-${crypto.randomUUID().slice(0, 8)}`;
+    const memberNodes = this.nodes.filter((n) => nodeIds.includes(n.id));
+    const minX = memberNodes.length ? Math.min(...memberNodes.map((n) => n.position.x)) : 0;
+    const minY = memberNodes.length ? Math.min(...memberNodes.map((n) => n.position.y)) : 0;
+
+    this.modules = [...this.modules, {
+      id,
+      name,
+      collapsed: false,
+      position: { x: minX - 20, y: minY - 40 },
+    }];
+    this.nodes = this.nodes.map((n) =>
+      nodeIds.includes(n.id) ? { ...n, data: { ...n.data, moduleId: id } } : n,
+    );
+    project.markDirty();
+    terraform.markFilesStale();
+    return id;
+  }
+
+  deleteModuleSkipHistory(moduleId: string) {
+    this.modules = this.modules.filter((m) => m.id !== moduleId);
+    this.nodes = this.nodes.map((n) =>
+      n.data.moduleId === moduleId
+        ? { ...n, data: { ...n.data, moduleId: undefined } }
+        : n,
+    );
+    if (this.selectedModuleId === moduleId) this.selectedModuleId = null;
+    project.markDirty();
+    terraform.markFilesStale();
+  }
+
+  renameModuleSkipHistory(moduleId: string, name: string) {
+    this.modules = this.modules.map((m) =>
+      m.id === moduleId ? { ...m, name } : m,
+    );
+    project.markDirty();
+  }
+
+  toggleModuleCollapsedSkipHistory(moduleId: string): boolean {
+    let newCollapsed = false;
+    this.modules = this.modules.map((m) => {
+      if (m.id !== moduleId) return m;
+      newCollapsed = !m.collapsed;
+      return { ...m, collapsed: newCollapsed };
+    });
+    project.markDirty();
+    return newCollapsed;
+  }
+
+  addNodesToModuleSkipHistory(moduleId: string, nodeIds: string[]) {
+    this.nodes = this.nodes.map((n) =>
+      nodeIds.includes(n.id) ? { ...n, data: { ...n.data, moduleId } } : n,
+    );
+    project.markDirty();
+    terraform.markFilesStale();
+  }
+
+  removeNodesFromModuleSkipHistory(nodeIds: string[]) {
+    this.nodes = this.nodes.map((n) =>
+      nodeIds.includes(n.id)
+        ? { ...n, data: { ...n.data, moduleId: undefined } }
+        : n,
+    );
+    project.markDirty();
+    terraform.markFilesStale();
+  }
+
   clear() {
     if (this.debounceTimer !== null) {
       clearTimeout(this.debounceTimer);
@@ -772,7 +1165,10 @@ class DiagramStore {
     }
     this.nodes = [];
     this.edges = [];
+    this.modules = [];
     this.selectedNodeId = null;
+    this.selectedEdgeId = null;
+    this.selectedModuleId = null;
     this.history = [];
     this.historyIndex = -1;
   }

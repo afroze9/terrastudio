@@ -209,6 +209,7 @@ export async function generateAndWrite(): Promise<Record<string, string>> {
       resources,
       projectConfig: project.projectConfig,
       bindings,
+      modules: diagram.modules,
     });
 
     // Store collected variables for UI display
@@ -219,7 +220,7 @@ export async function generateAndWrite(): Promise<Record<string, string>> {
     // Filter out empty files and send to Rust backend
     const fileMap: Record<string, string> = {};
     for (const [name, content] of Object.entries(result.files)) {
-      if (content.trim()) {
+      if (content && content.trim()) {
         fileMap[name] = content;
       }
     }

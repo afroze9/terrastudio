@@ -46,6 +46,7 @@ export function convertToResourceInstances(
       references,
       terraformName: data.terraformName,
       variableOverrides: data.variableOverrides,
+      moduleId: data.moduleId as string | undefined,
     });
   }
 
