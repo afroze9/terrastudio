@@ -289,6 +289,58 @@
     closeContextMenu();
   }
 
+  // ── Template / Instance context menu ──────────────────────────
+
+  /** Whether context-menu node belongs to a module that can be converted to template */
+  let canConvertToTemplate = $derived.by(() => {
+    if (!contextNodeModuleId) return false;
+    const mod = diagram.modules.find((m) => m.id === contextNodeModuleId);
+    return mod ? !mod.isTemplate : false;
+  });
+
+  /** Whether context-menu node belongs to a template module */
+  let contextNodeIsInTemplate = $derived.by(() => {
+    if (!contextNodeModuleId) return false;
+    const mod = diagram.modules.find((m) => m.id === contextNodeModuleId);
+    return mod?.isTemplate === true;
+  });
+
+  function handleConvertToTemplate() {
+    if (contextNodeModuleId) {
+      diagram.convertToTemplate(contextNodeModuleId);
+    }
+    closeContextMenu();
+  }
+
+  let instanceNameInput = $state('');
+  let instanceNameError = $state('');
+  let showInstanceNameDialog = $state(false);
+  let pendingInstanceTemplateId = $state<string | null>(null);
+
+  function handleCreateInstance(templateId?: string) {
+    const tid = templateId ?? contextNodeModuleId;
+    if (!tid) return;
+    pendingInstanceTemplateId = tid;
+    instanceNameInput = '';
+    instanceNameError = '';
+    showInstanceNameDialog = true;
+    closeContextMenu();
+  }
+
+  function confirmCreateInstance() {
+    const name = instanceNameInput.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+    if (!name || !pendingInstanceTemplateId) return;
+    // Check uniqueness
+    if (diagram.moduleInstances.some((i) => i.name === name)) {
+      instanceNameError = `Name "${name}" is already in use`;
+      return;
+    }
+    instanceNameError = '';
+    diagram.createModuleInstance(pendingInstanceTemplateId, name);
+    showInstanceNameDialog = false;
+    pendingInstanceTemplateId = null;
+  }
+
   /** Check if the context-menu node is a container with children */
   let contextNodeIsContainerWithChildren = $derived.by(() => {
     const nodeId = contextMenu?.nodeId;
@@ -847,6 +899,7 @@
             {screenToFlowPosition}
             onselect={(id) => { diagram.selectedNodeId = null; diagram.selectedEdgeId = null; diagram.selectedModuleId = id; }}
             ontogglecollapse={(id) => diagram.toggleModuleCollapsed(id)}
+            oncreateinstance={(id) => handleCreateInstance(id)}
           />
         {/each}
       </ViewportPortal>
@@ -887,6 +940,16 @@
         <button class="context-menu-item" onclick={handleRemoveFromModule}>
           <span class="ctx-label"><svg class="ctx-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="1.5" width="13" height="13" rx="2" stroke-dasharray="3 2" /><path d="M5.5 8h5" /></svg>Remove from Module</span>
         </button>
+        {#if canConvertToTemplate}
+          <button class="context-menu-item" onclick={handleConvertToTemplate}>
+            <span class="ctx-label"><svg class="ctx-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="12" height="12" rx="2" /><path d="M5 6h6M5 8h6M5 10h4" opacity="0.6" /></svg>Convert to Template</span>
+          </button>
+        {/if}
+        {#if contextNodeIsInTemplate}
+          <button class="context-menu-item" onclick={() => handleCreateInstance()}>
+            <span class="ctx-label"><svg class="ctx-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="12" height="12" rx="2" stroke-dasharray="3 2" /><path d="M8 5v6" /><path d="M5 8h6" /></svg>Create Instance...</span>
+          </button>
+        {/if}
       {/if}
       <div class="context-menu-separator"></div>
       <button class="context-menu-item" onclick={handleContextSelectAll}>
@@ -948,6 +1011,37 @@
           class="module-dialog-btn module-dialog-confirm"
           disabled={!moduleNameInput.trim()}
           onclick={confirmCreateModule}
+        >Create</button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Instance Name Dialog -->
+{#if showInstanceNameDialog}
+  <div class="module-dialog-backdrop" role="presentation">
+    <!-- svelte-ignore a11y_autofocus -->
+    <div class="module-dialog">
+      <h3 class="module-dialog-title">Create Instance</h3>
+      <p class="module-dialog-desc">Enter a name for the module instance (lowercase, alphanumeric, underscores).</p>
+      <input
+        class="module-dialog-input"
+        type="text"
+        placeholder="e.g. net_prod"
+        bind:value={instanceNameInput}
+        autofocus
+        oninput={() => instanceNameError = ''}
+        onkeydown={(e) => { if (e.key === 'Enter') confirmCreateInstance(); if (e.key === 'Escape') showInstanceNameDialog = false; }}
+      />
+      {#if instanceNameError}
+        <p class="module-dialog-error">{instanceNameError}</p>
+      {/if}
+      <div class="module-dialog-actions">
+        <button class="module-dialog-btn module-dialog-cancel" onclick={() => showInstanceNameDialog = false}>Cancel</button>
+        <button
+          class="module-dialog-btn module-dialog-confirm"
+          disabled={!instanceNameInput.trim()}
+          onclick={confirmCreateInstance}
         >Create</button>
       </div>
     </div>
@@ -1055,6 +1149,11 @@
     margin: 0 0 12px;
     font-size: 12px;
     color: var(--color-text-muted);
+  }
+  .module-dialog-error {
+    margin: 4px 0 0;
+    font-size: 11px;
+    color: #f87171;
   }
   .module-dialog-input {
     width: 100%;

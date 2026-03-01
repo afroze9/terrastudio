@@ -6,11 +6,13 @@
     module,
     onselect,
     ontogglecollapse,
+    oncreateinstance,
     screenToFlowPosition,
   }: {
     module: ModuleDefinition;
     onselect: (moduleId: string) => void;
     ontogglecollapse: (moduleId: string) => void;
+    oncreateinstance?: (moduleId: string) => void;
     screenToFlowPosition: (pos: { x: number; y: number }) => { x: number; y: number };
   } = $props();
 
@@ -70,6 +72,10 @@
   const borderColor = $derived(module.color ?? '#6366f1');
   const isSelected = $derived(diagram.selectedModuleId === module.id);
   const memberCount = $derived(diagram.nodes.filter((n) => n.data.moduleId === module.id).length);
+  const isTemplate = $derived(module.isTemplate === true);
+  const instanceCount = $derived(
+    isTemplate ? diagram.moduleInstances.filter((i) => i.templateId === module.id).length : 0,
+  );
 
   // ── Module drag ────────────────────────────────────────────────
   let dragging = $state(false);
@@ -218,8 +224,23 @@
           <path d="M4 6l4 4 4-4" />
         </svg>
       </button>
+      {#if isTemplate}
+        <span class="template-badge">TEMPLATE</span>
+      {/if}
       <span class="module-name">{module.name}</span>
       <span class="module-badge">{memberCount}</span>
+      {#if isTemplate}
+        <span class="instance-count" title="{instanceCount} instance{instanceCount !== 1 ? 's' : ''}">{instanceCount}</span>
+        <button
+          class="create-instance-btn"
+          title="Create instance"
+          onclick={(e) => { e.stopPropagation(); oncreateinstance?.(module.id); }}
+        >
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 3v10" /><path d="M3 8h10" />
+          </svg>
+        </button>
+      {/if}
     </div>
   </div>
 {/if}
@@ -333,6 +354,44 @@
   }
 
   .collapse-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .template-badge {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--module-color);
+    background: white;
+    border-radius: 4px;
+    padding: 1px 4px;
+    user-select: none;
+  }
+
+  .instance-count {
+    font-size: 10px;
+    font-weight: 600;
+    color: white;
+    opacity: 0.7;
+    user-select: none;
+  }
+
+  .create-instance-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: none;
+    color: white;
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 0;
+    flex-shrink: 0;
+  }
+
+  .create-instance-btn:hover {
     background: rgba(255, 255, 255, 0.2);
   }
 </style>

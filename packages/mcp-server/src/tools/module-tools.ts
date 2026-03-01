@@ -8,6 +8,11 @@ import {
   AddToModuleSchema,
   RemoveFromModuleSchema,
   ToggleModuleCollapsedSchema,
+  ConvertToTemplateSchema,
+  CreateModuleInstanceSchema,
+  DeleteModuleInstanceSchema,
+  UpdateInstanceVariableSchema,
+  ListInstancesSchema,
 } from '../schemas.js';
 
 export function registerModuleTools(server: McpServer, bridge: BridgeClient): void {
@@ -132,6 +137,103 @@ export function registerModuleTools(server: McpServer, bridge: BridgeClient): vo
     async (params) => {
       try {
         const result = await bridge.request('mcp_toggle_module_collapsed', params);
+        return {
+          content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (err: any) {
+        return {
+          content: [{ type: 'text' as const, text: `Error: ${err.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // ── Template / instance tools ──
+
+  server.tool(
+    'convert_to_template',
+    'Convert an existing module into a reusable template. Template resources define the module once; instances stamp it out with different variable values.',
+    ConvertToTemplateSchema.shape,
+    async (params) => {
+      try {
+        await bridge.request('mcp_convert_to_template', params);
+        return {
+          content: [{ type: 'text' as const, text: 'Module converted to template successfully' }],
+        };
+      } catch (err: any) {
+        return {
+          content: [{ type: 'text' as const, text: `Error: ${err.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    'create_module_instance',
+    'Create an instance of a template module. The instance appears as a card on the canvas and generates a separate module {} block in HCL with its own variable values.',
+    CreateModuleInstanceSchema.shape,
+    async (params) => {
+      try {
+        const result = await bridge.request('mcp_create_module_instance', params);
+        return {
+          content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (err: any) {
+        return {
+          content: [{ type: 'text' as const, text: `Error: ${err.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    'delete_module_instance',
+    'Delete a module instance. Removes the instance card and its edges from the canvas.',
+    DeleteModuleInstanceSchema.shape,
+    async (params) => {
+      try {
+        await bridge.request('mcp_delete_module_instance', params);
+        return {
+          content: [{ type: 'text' as const, text: 'Module instance deleted successfully' }],
+        };
+      } catch (err: any) {
+        return {
+          content: [{ type: 'text' as const, text: `Error: ${err.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    'update_instance_variable',
+    'Set a variable value on a module instance. Variables are defined by template member nodes with properties toggled to "variable" mode.',
+    UpdateInstanceVariableSchema.shape,
+    async (params) => {
+      try {
+        await bridge.request('mcp_update_instance_variable', params);
+        return {
+          content: [{ type: 'text' as const, text: 'Instance variable updated successfully' }],
+        };
+      } catch (err: any) {
+        return {
+          content: [{ type: 'text' as const, text: `Error: ${err.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    'list_instances',
+    'List module instances. Optionally filter by template ID.',
+    ListInstancesSchema.shape,
+    async (params) => {
+      try {
+        const result = await bridge.request('mcp_list_instances', params);
         return {
           content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
         };

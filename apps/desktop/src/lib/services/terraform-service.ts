@@ -210,6 +210,7 @@ export async function generateAndWrite(): Promise<Record<string, string>> {
       projectConfig: project.projectConfig,
       bindings,
       modules: diagram.modules,
+      moduleInstances: diagram.moduleInstances,
     });
 
     // Store collected variables for UI display

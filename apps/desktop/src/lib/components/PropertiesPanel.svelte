@@ -9,13 +9,56 @@
   import KeyVaultAccessControlSection from './KeyVaultAccessControlSection.svelte';
   import CollapsiblePanelSection from './CollapsiblePanelSection.svelte';
   import EdgeStyleEditor from './EdgeStyleEditor.svelte';
-  import type { ResourceTypeId, PropertyVariableMode, AccessModel, AccessGrant, EdgeStyleSettings, EdgeCategoryId, HandleDefinition, PropertySchema, OutputDefinition } from '@terrastudio/types';
+  import type { ResourceTypeId, PropertyVariableMode, AccessModel, AccessGrant, EdgeStyleSettings, EdgeCategoryId, HandleDefinition, PropertySchema, OutputDefinition, ModuleInstance, TerraformVariable } from '@terrastudio/types';
 
   let schema = $derived(
     diagram.selectedNode
       ? registry.getResourceSchema(diagram.selectedNode.data.typeId)
       : null
   );
+
+  // ─── Module Instance detection ──────────────────────────────────────
+  /** When the selected node is a module instance synthetic node, resolve the instance */
+  let selectedInstance = $derived.by((): ModuleInstance | null => {
+    const node = diagram.selectedNode;
+    if (!node || !node.id.startsWith('_modinst_')) return null;
+    const instanceId = (node.data as any).instanceId as string;
+    return diagram.moduleInstances.find((i) => i.id === instanceId) ?? null;
+  });
+
+  let instanceTemplate = $derived(
+    selectedInstance ? diagram.modules.find((m) => m.id === selectedInstance!.templateId) : null,
+  );
+
+  /** Derive template variables from template member nodes' variableOverrides */
+  let templateVariables = $derived.by((): Array<{ name: string; type: string; defaultValue: unknown }> => {
+    if (!instanceTemplate) return [];
+    const memberNodes = diagram.nodes.filter((n) => n.data.moduleId === instanceTemplate!.id);
+    const vars: Array<{ name: string; type: string; defaultValue: unknown }> = [];
+    const seen = new Set<string>();
+
+    for (const node of memberNodes) {
+      const overrides = node.data.variableOverrides ?? {};
+      const nodeSchema = registry.getResourceSchema(node.data.typeId);
+      if (!nodeSchema) continue;
+
+      for (const [key, mode] of Object.entries(overrides)) {
+        if (mode !== 'variable') continue;
+        const varName = `${node.data.terraformName}_${key}`;
+        if (seen.has(varName)) continue;
+        seen.add(varName);
+
+        const propSchema = nodeSchema.properties.find((p: PropertySchema) => p.key === key);
+        const value = node.data.properties[key];
+        vars.push({
+          name: varName,
+          type: typeof value === 'number' ? 'number' : 'string',
+          defaultValue: value,
+        });
+      }
+    }
+    return vars;
+  });
 
   // ─── Naming convention ────────────────────────────────────────────────────
 
@@ -181,6 +224,7 @@
   );
 
   const panelTitle = $derived.by(() => {
+    if (selectedInstance) return 'Module Instance';
     if (diagram.selectedNode && schema) return schema.displayName;
     if (diagram.selectedEdge) return 'Connection';
     return 'Properties';
@@ -249,7 +293,95 @@
   </div>
 
   <div class="panel-content">
-    {#if diagram.selectedNode && schema}
+    {#if selectedInstance && instanceTemplate}
+      <div class="tf-name-field">
+        <label class="field-label">
+          <span class="label-text">Instance Name</span>
+          <input
+            type="text"
+            value={selectedInstance.name}
+            oninput={(e) => {
+              if (selectedInstance) {
+                const name = (e.target as HTMLInputElement).value.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+                diagram.updateModuleInstance(selectedInstance.id, { name });
+              }
+            }}
+          />
+        </label>
+      </div>
+
+      <div class="instance-template-info">
+        <span class="endpoint-label">Template</span>
+        <span class="endpoint-value">{instanceTemplate.name}</span>
+      </div>
+
+      {#if selectedInstance.description !== undefined}
+        <div class="tf-name-field">
+          <label class="field-label">
+            <span class="label-text">Description</span>
+            <input
+              type="text"
+              value={selectedInstance.description ?? ''}
+              oninput={(e) => {
+                if (selectedInstance) {
+                  diagram.updateModuleInstance(selectedInstance.id, { description: (e.target as HTMLInputElement).value || undefined });
+                }
+              }}
+              placeholder="Optional description..."
+            />
+          </label>
+        </div>
+      {/if}
+
+      {#if templateVariables.length > 0}
+        <CollapsiblePanelSection
+          id="instance-variables"
+          label="Variable Values"
+          count={templateVariables.length}
+        >
+          {#each templateVariables as variable (variable.name)}
+            <div class="instance-var-field">
+              <label class="field-label">
+                <span class="label-row-conv">
+                  <span class="label-text">{variable.name}</span>
+                  <span class="convention-badge">{variable.type}</span>
+                </span>
+                <input
+                  type="text"
+                  value={selectedInstance.variableValues[variable.name] ?? ''}
+                  placeholder={variable.defaultValue != null ? String(variable.defaultValue) : ''}
+                  oninput={(e) => {
+                    if (selectedInstance) {
+                      diagram.updateInstanceVariable(selectedInstance.id, variable.name, (e.target as HTMLInputElement).value);
+                    }
+                  }}
+                />
+                {#if variable.defaultValue != null}
+                  <span class="name-preview">default: {String(variable.defaultValue)}</span>
+                {/if}
+              </label>
+            </div>
+          {/each}
+        </CollapsiblePanelSection>
+      {:else}
+        <div class="empty-state">
+          <p class="empty-hint">No variables defined. Toggle properties to "variable" mode on template nodes.</p>
+        </div>
+      {/if}
+
+      <button
+        class="delete-edge-btn"
+        onclick={() => {
+          if (selectedInstance) {
+            diagram.selectedNodeId = null;
+            diagram.deleteModuleInstance(selectedInstance.id);
+          }
+        }}
+      >
+        Delete Instance
+      </button>
+
+    {:else if diagram.selectedNode && schema}
       <div class="tf-name-field">
         <label class="field-label">
           <span class="label-text">Terraform Name</span>
@@ -796,5 +928,19 @@
     color: var(--color-text-muted);
     white-space: nowrap;
     flex-shrink: 0;
+  }
+
+  /* Module instance panel */
+  .instance-template-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--color-bg);
+    border-radius: 6px;
+    margin-bottom: 8px;
+  }
+  .instance-var-field {
+    margin-bottom: 4px;
   }
 </style>

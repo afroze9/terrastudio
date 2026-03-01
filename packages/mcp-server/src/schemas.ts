@@ -201,3 +201,32 @@ export const ToggleModuleCollapsedSchema = z.object({
   project: projectParam,
   moduleId: z.string().describe('Module ID to toggle collapsed/expanded'),
 });
+
+// Module template / instance tools
+export const ConvertToTemplateSchema = z.object({
+  project: projectParam,
+  moduleId: z.string().describe('Module ID to convert into a reusable template'),
+});
+
+export const CreateModuleInstanceSchema = z.object({
+  project: projectParam,
+  templateId: z.string().describe('Template module ID to instantiate'),
+  name: z.string().describe('Instance name (lowercase alphanumeric + underscores, valid Terraform module block name)'),
+});
+
+export const DeleteModuleInstanceSchema = z.object({
+  project: projectParam,
+  instanceId: z.string().describe('Module instance ID to delete'),
+});
+
+export const UpdateInstanceVariableSchema = z.object({
+  project: projectParam,
+  instanceId: z.string().describe('Module instance ID'),
+  varName: z.string().describe('Variable name to set'),
+  value: z.unknown().describe('Value for the variable (string, number, boolean, or null to clear)'),
+});
+
+export const ListInstancesSchema = z.object({
+  project: projectParam,
+  templateId: z.string().optional().describe('Filter instances by template module ID. If omitted, returns all instances.'),
+});

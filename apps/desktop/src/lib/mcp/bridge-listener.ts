@@ -85,6 +85,29 @@ interface McpMutationRemoveFromModule {
   nodeIds: string[];
 }
 
+interface McpMutationConvertToTemplate {
+  op: 'convert_to_template';
+  moduleId: string;
+}
+
+interface McpMutationCreateModuleInstance {
+  op: 'create_module_instance';
+  templateId: string;
+  name: string;
+}
+
+interface McpMutationDeleteModuleInstance {
+  op: 'delete_module_instance';
+  instanceId: string;
+}
+
+interface McpMutationUpdateInstanceVariable {
+  op: 'update_instance_variable';
+  instanceId: string;
+  varName: string;
+  value: unknown;
+}
+
 type McpMutation =
   | McpMutationAddNode
   | McpMutationUpdateNodeData
@@ -99,7 +122,11 @@ type McpMutation =
   | McpMutationRenameModule
   | McpMutationToggleModuleCollapsed
   | McpMutationAddToModule
-  | McpMutationRemoveFromModule;
+  | McpMutationRemoveFromModule
+  | McpMutationConvertToTemplate
+  | McpMutationCreateModuleInstance
+  | McpMutationDeleteModuleInstance
+  | McpMutationUpdateInstanceVariable;
 
 const unlisteners: UnlistenFn[] = [];
 
@@ -158,6 +185,18 @@ export async function initBridgeListener(): Promise<void> {
         break;
       case 'remove_from_module':
         diagram.removeNodesFromModuleSkipHistory(mutation.nodeIds);
+        break;
+      case 'convert_to_template':
+        diagram.convertToTemplateSkipHistory(mutation.moduleId);
+        break;
+      case 'create_module_instance':
+        diagram.createModuleInstanceSkipHistory(mutation.templateId, mutation.name);
+        break;
+      case 'delete_module_instance':
+        diagram.deleteModuleInstanceSkipHistory(mutation.instanceId);
+        break;
+      case 'update_instance_variable':
+        diagram.updateInstanceVariableSkipHistory(mutation.instanceId, mutation.varName, mutation.value);
         break;
     }
   });

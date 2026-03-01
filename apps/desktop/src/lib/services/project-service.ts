@@ -194,11 +194,12 @@ export async function loadProjectByPath(path: string): Promise<void> {
 
   // Restore diagram if it exists, migrating old edges to new format
   if (data.diagram) {
-    const d = data.diagram as { nodes?: unknown[]; edges?: unknown[]; modules?: unknown[] };
+    const d = data.diagram as { nodes?: unknown[]; edges?: unknown[]; modules?: unknown[]; moduleInstances?: unknown[] };
     const nodes = (d.nodes ?? []) as any[];
     const edges = migrateEdges(d.edges ?? []);
     const modules = (d.modules ?? []) as any[];
-    diagram.loadDiagram(nodes, edges, modules);
+    const moduleInstances = (d.moduleInstances ?? []) as any[];
+    diagram.loadDiagram(nodes, edges, modules, moduleInstances);
   }
 
   // Restore cost estimates if present, then check if diagram changed since last save
@@ -222,6 +223,7 @@ export async function saveDiagram(): Promise<void> {
     nodes: diagram.nodes,
     edges: diagram.edges,
     modules: diagram.modules,
+    moduleInstances: diagram.moduleInstances,
   };
 
   // Determine which variable names are sensitive from the last HCL generation

@@ -2,6 +2,7 @@ import { pluginRegistry } from '@terrastudio/core';
 import DefaultResourceNode from '$lib/components/DefaultResourceNode.svelte';
 import ContainerResourceNode from '$lib/components/ContainerResourceNode.svelte';
 import ModuleNode from '$lib/components/ModuleNode.svelte';
+import ModuleInstanceNode from '$lib/components/ModuleInstanceNode.svelte';
 import { TerraStudioEdge } from '$lib/components/edges';
 import { checkTerraform } from '$lib/services/terraform-service';
 import { setLoggerLevel, type LogLevel } from '$lib/logger';
@@ -96,6 +97,8 @@ export function buildNodeTypes(): Record<string, Component<any>> {
   }
   // Synthetic node type for collapsed modules
   map['_terrastudio/module'] = ModuleNode;
+  // Synthetic node type for module template instances
+  map['_terrastudio/module_instance'] = ModuleInstanceNode;
   return map;
 }
 

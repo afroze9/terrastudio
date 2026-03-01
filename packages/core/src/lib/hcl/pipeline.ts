@@ -9,6 +9,7 @@ import type {
   NamingConvention,
   ProjectEdgeStyles,
   ModuleDefinition,
+  ModuleInstance,
 } from '@terrastudio/types';
 import type { PluginRegistry } from '../registry/plugin-registry.js';
 import { DependencyGraph } from './dependency-graph.js';
@@ -44,6 +45,8 @@ export interface PipelineInput {
   bindings?: OutputBinding[];
   /** Module definitions for module-aware HCL generation */
   modules?: ModuleDefinition[];
+  /** Module template instances for reusable module generation */
+  moduleInstances?: ModuleInstance[];
 }
 
 export interface PipelineResult {
@@ -61,6 +64,7 @@ export class HclPipeline {
   generate(input: PipelineInput): PipelineResult {
     const { resources, projectConfig } = input;
     const modules = input.modules ?? [];
+    const moduleInstances = input.moduleInstances ?? [];
 
     // 1. Build resource map (instanceId -> ResourceInstance)
     const resourceMap = new Map<string, ResourceInstance>();
@@ -288,18 +292,46 @@ export class HclPipeline {
       const modLocalsHcl = this.generateLocals(projectConfig);
       if (modLocalsHcl) files[`${prefix}/locals.tf`] = modLocalsHcl;
 
-      // Generate root module block
-      const modBlockLines: string[] = [`module "${mod.name}" {`];
-      modBlockLines.push(`  source = "./modules/${mod.name}"`);
-      for (const [varName, expression] of wiring.moduleBlockInputs) {
-        modBlockLines.push(`  ${varName} = ${expression}`);
+      // Generate root module block(s)
+      const templateInstances = mod.isTemplate
+        ? moduleInstances.filter((inst) => inst.templateId === mod.id)
+        : [];
+
+      if (mod.isTemplate && templateInstances.length > 0) {
+        // Template with instances: one module block per instance
+        for (const instance of templateInstances) {
+          const instBlockLines: string[] = [`module "${instance.name}" {`];
+          instBlockLines.push(`  source = "./modules/${mod.name}"`);
+          for (const [varName, expression] of wiring.moduleBlockInputs) {
+            // Check if this instance has a variable override
+            const override = instance.variableValues[varName];
+            if (override !== undefined && override !== '') {
+              instBlockLines.push(`  ${varName} = ${this.formatVariableValue(override)}`);
+            } else {
+              instBlockLines.push(`  ${varName} = ${expression}`);
+            }
+          }
+          instBlockLines.push('}');
+          moduleBlockLines.push(instBlockLines.join('\n'));
+        }
+      } else if (!mod.isTemplate) {
+        // Regular (non-template) module: single module block
+        const modBlockLines: string[] = [`module "${mod.name}" {`];
+        modBlockLines.push(`  source = "./modules/${mod.name}"`);
+        for (const [varName, expression] of wiring.moduleBlockInputs) {
+          modBlockLines.push(`  ${varName} = ${expression}`);
+        }
+        modBlockLines.push('}');
+        moduleBlockLines.push(modBlockLines.join('\n'));
       }
-      modBlockLines.push('}');
-      moduleBlockLines.push(modBlockLines.join('\n'));
+      // else: template with no instances — generate module directory but no module block
 
       // Register module variables at root level (so they appear in root variables.tf)
-      for (const v of moduleCtx.getVariableCollector().getAll()) {
-        variableCollector.add(v);
+      // For templates, only register if there are no instances (instances provide their own values)
+      if (!mod.isTemplate || templateInstances.length === 0) {
+        for (const v of moduleCtx.getVariableCollector().getAll()) {
+          variableCollector.add(v);
+        }
       }
     }
 
@@ -582,6 +614,15 @@ export class HclPipeline {
     }
 
     return allBlocks;
+  }
+
+  /** Format a variable value for HCL output. */
+  private formatVariableValue(value: unknown): string {
+    if (typeof value === 'string') return `"${escapeHclString(value)}"`;
+    if (typeof value === 'number') return String(value);
+    if (typeof value === 'boolean') return value ? 'true' : 'false';
+    if (value === null || value === undefined) return 'null';
+    return JSON.stringify(value);
   }
 
   /** Strip _cost_* keys from resource properties before generation. */

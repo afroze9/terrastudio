@@ -19,6 +19,9 @@ export function convertToResourceInstances(
   const instances: ResourceInstance[] = [];
 
   for (const node of nodes) {
+    // Skip synthetic nodes (collapsed modules, module instances)
+    if (node.id.startsWith('_mod_') || node.id.startsWith('_modinst_')) continue;
+
     const data = node.data;
     const references: Record<string, string> = { ...data.references };
 

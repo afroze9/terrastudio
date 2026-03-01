@@ -38,23 +38,25 @@ export function initDiagramSync(): void {
       const nodes = diagram.nodes;
       const edges = diagram.edges;
       const modules = diagram.modules;
+      const moduleInstances = diagram.moduleInstances;
 
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         debounceTimer = null;
-        syncDiagram(nodes, edges, modules);
+        syncDiagram(nodes, edges, modules, moduleInstances);
       }, 100);
     });
   });
 }
 
-async function syncDiagram(nodes: unknown[], edges: unknown[], modules: unknown[]): Promise<void> {
+async function syncDiagram(nodes: unknown[], edges: unknown[], modules: unknown[], moduleInstances: unknown[]): Promise<void> {
   try {
     await invoke('mcp_sync_diagram', {
       windowLabel,
       nodes: JSON.parse(JSON.stringify(nodes)),
       edges: JSON.parse(JSON.stringify(edges)),
       modules: JSON.parse(JSON.stringify(modules)),
+      moduleInstances: JSON.parse(JSON.stringify(moduleInstances)),
     });
   } catch (e) {
     // Silently ignore — MCP sync is best-effort

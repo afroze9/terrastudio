@@ -1,5 +1,5 @@
 import type { Node, Edge } from '@xyflow/svelte';
-import type { ResourceNodeData, ResourceTypeId, ValidationError, TerraStudioEdgeData, EdgeCategoryId, ReferenceEdgeOverrides, HandleDefinition, ModuleDefinition } from '@terrastudio/types';
+import type { ResourceNodeData, ResourceTypeId, ValidationError, TerraStudioEdgeData, EdgeCategoryId, ReferenceEdgeOverrides, HandleDefinition, ModuleDefinition, ModuleInstance } from '@terrastudio/types';
 import { generateNodeId, generateUniqueTerraformName } from '@terrastudio/core';
 import { project } from './project.svelte';
 import { terraform } from './terraform.svelte';
@@ -13,6 +13,7 @@ interface DiagramSnapshot {
   nodes: DiagramNode[];
   edges: DiagramEdge[];
   modules: ModuleDefinition[];
+  moduleInstances: ModuleInstance[];
 }
 
 const MAX_HISTORY = 50;
@@ -32,6 +33,7 @@ class DiagramStore {
   nodes = $state<DiagramNode[]>([]);
   edges = $state<DiagramEdge[]>([]);
   modules = $state<ModuleDefinition[]>([]);
+  moduleInstances = $state<ModuleInstance[]>([]);
 
   selectedNodeId = $state<string | null>(null);
   selectedEdgeId = $state<string | null>(null);
@@ -125,10 +127,12 @@ class DiagramStore {
     const nodesSnap = $state.snapshot(this.nodes) as unknown;
     const edgesSnap = $state.snapshot(this.edges) as unknown;
     const modulesSnap = $state.snapshot(this.modules) as unknown;
+    const instancesSnap = $state.snapshot(this.moduleInstances) as unknown;
     return {
       nodes: structuredClone(nodesSnap) as DiagramNode[],
       edges: structuredClone(edgesSnap) as DiagramEdge[],
       modules: structuredClone(modulesSnap) as ModuleDefinition[],
+      moduleInstances: structuredClone(instancesSnap) as ModuleInstance[],
     };
   }
 
@@ -197,9 +201,11 @@ class DiagramStore {
     const nodesSnap = $state.snapshot(snapshot.nodes) as unknown;
     const edgesSnap = $state.snapshot(snapshot.edges) as unknown;
     const modulesSnap = $state.snapshot(snapshot.modules ?? []) as unknown;
+    const instancesSnap = $state.snapshot(snapshot.moduleInstances ?? []) as unknown;
     this.nodes = structuredClone(nodesSnap) as DiagramNode[];
     this.edges = structuredClone(edgesSnap) as DiagramEdge[];
     this.modules = structuredClone(modulesSnap) as ModuleDefinition[];
+    this.moduleInstances = structuredClone(instancesSnap) as ModuleInstance[];
     this.selectedNodeId = null;
     this.selectedEdgeId = null;
     this.selectedModuleId = null;
@@ -670,7 +676,7 @@ class DiagramStore {
   }
 
   /** Load a saved diagram without marking dirty or pushing per-node history. */
-  loadDiagram(nodes: DiagramNode[], edges: DiagramEdge[], modules?: ModuleDefinition[]) {
+  loadDiagram(nodes: DiagramNode[], edges: DiagramEdge[], modules?: ModuleDefinition[], moduleInstances?: ModuleInstance[]) {
     this.skipHistory = true;
     const cloned = structuredClone(nodes);
     // Validate parentId constraints — strip invalid containment relationships
@@ -690,6 +696,30 @@ class DiagramStore {
     this.nodes = cloned;
     this.edges = structuredClone(edges);
     this.modules = structuredClone(modules ?? []);
+    this.moduleInstances = structuredClone(moduleInstances ?? []);
+
+    // Ensure synthetic nodes exist for all module instances
+    for (const inst of this.moduleInstances) {
+      const syntheticId = `_modinst_${inst.id}`;
+      if (!this.nodes.some((n) => n.id === syntheticId)) {
+        this.nodes.push({
+          id: syntheticId,
+          type: '_terrastudio/module_instance',
+          position: inst.position,
+          zIndex: 1000,
+          data: {
+            instanceId: inst.id,
+            label: inst.name,
+            typeId: '_terrastudio/module_instance' as any,
+            properties: {},
+            references: {},
+            terraformName: '',
+            validationErrors: [],
+          },
+        } as unknown as DiagramNode);
+      }
+    }
+
     this.selectedNodeId = null;
     this.selectedModuleId = null;
     this.skipHistory = false;
@@ -735,11 +765,13 @@ class DiagramStore {
   /**
    * Delete a module. Clears moduleId from all member nodes but does NOT delete the resources.
    * Also removes any synthetic collapsed node and unhides members.
+   * If the module is a template, cascade-deletes all its instances and their edges.
    */
   deleteModule(moduleId: string) {
     this.flushPendingSnapshot();
     this.ensureInitialSnapshot();
 
+    const mod = this.modules.find((m) => m.id === moduleId);
     const syntheticId = `_mod_${moduleId}`;
     this.modules = this.modules.filter((m) => m.id !== moduleId);
     this.nodes = this.nodes
@@ -749,6 +781,20 @@ class DiagramStore {
           ? { ...n, hidden: false, data: { ...n.data, moduleId: undefined } }
           : n,
       );
+
+    // Cascade-delete instances if this was a template
+    if (mod?.isTemplate) {
+      const instanceIds = new Set(
+        this.moduleInstances.filter((i) => i.templateId === moduleId).map((i) => i.id),
+      );
+      this.moduleInstances = this.moduleInstances.filter((i) => i.templateId !== moduleId);
+      // Remove synthetic instance nodes and their edges
+      const syntheticInstanceIds = new Set([...instanceIds].map((id) => `_modinst_${id}`));
+      this.nodes = this.nodes.filter((n) => !syntheticInstanceIds.has(n.id));
+      this.edges = this.edges.filter(
+        (e) => !syntheticInstanceIds.has(e.source) && !syntheticInstanceIds.has(e.target),
+      );
+    }
 
     if (this.selectedModuleId === moduleId) {
       this.selectedModuleId = null;
@@ -1076,6 +1122,140 @@ class DiagramStore {
     return { newModuleId, nodeIdMap };
   }
 
+  // ── Module template/instance CRUD ────────────────────────────────
+
+  /** Convert an existing module to a reusable template. */
+  convertToTemplate(moduleId: string) {
+    this.flushPendingSnapshot();
+    this.ensureInitialSnapshot();
+    this.modules = this.modules.map((m) =>
+      m.id === moduleId ? { ...m, isTemplate: true } : m,
+    );
+    this.pushSnapshot();
+  }
+
+  /** Convert a template back to a regular module. Cascade-deletes all instances. */
+  unconvertTemplate(moduleId: string) {
+    this.flushPendingSnapshot();
+    this.ensureInitialSnapshot();
+    this.modules = this.modules.map((m) =>
+      m.id === moduleId ? { ...m, isTemplate: false } : m,
+    );
+    // Remove all instances of this template
+    const instanceIds = new Set(
+      this.moduleInstances.filter((i) => i.templateId === moduleId).map((i) => i.id),
+    );
+    this.moduleInstances = this.moduleInstances.filter((i) => i.templateId !== moduleId);
+    // Remove synthetic instance nodes and their edges
+    const syntheticIds = new Set([...instanceIds].map((id) => `_modinst_${id}`));
+    this.nodes = this.nodes.filter((n) => !syntheticIds.has(n.id));
+    this.edges = this.edges.filter(
+      (e) => !syntheticIds.has(e.source) && !syntheticIds.has(e.target),
+    );
+    this.pushSnapshot();
+  }
+
+  /**
+   * Create a new instance of a module template.
+   * Returns the new instance ID.
+   */
+  createModuleInstance(templateId: string, name: string): string {
+    this.flushPendingSnapshot();
+    this.ensureInitialSnapshot();
+
+    const template = this.modules.find((m) => m.id === templateId);
+    if (!template || !template.isTemplate) {
+      throw new Error(`Module "${templateId}" is not a template`);
+    }
+
+    // Validate instance name uniqueness across all instances
+    const nameExists = this.moduleInstances.some((i) => i.name === name);
+    if (nameExists) {
+      throw new Error(`Instance name "${name}" is already in use`);
+    }
+
+    const id = `modinst-${crypto.randomUUID().slice(0, 8)}`;
+    // Position the instance card near the template, offset to the right
+    const position = {
+      x: template.position.x + 300,
+      y: template.position.y + (this.getTemplateInstances(templateId).length * 120),
+    };
+
+    const instance: ModuleInstance = {
+      id,
+      templateId,
+      name,
+      position,
+      variableValues: {},
+      color: template.color,
+    };
+
+    this.moduleInstances = [...this.moduleInstances, instance];
+
+    // Insert synthetic node for SvelteFlow rendering
+    const syntheticId = `_modinst_${id}`;
+    const syntheticNode = {
+      id: syntheticId,
+      type: '_terrastudio/module_instance',
+      position,
+      zIndex: 1000,
+      data: {
+        instanceId: id,
+        label: name,
+        typeId: '_terrastudio/module_instance' as any,
+        properties: {},
+        references: {},
+        terraformName: '',
+        validationErrors: [],
+      },
+    } as unknown as DiagramNode;
+    this.nodes = [...this.nodes, syntheticNode];
+
+    this.pushSnapshot();
+    return id;
+  }
+
+  /** Delete a module instance and its edges. */
+  deleteModuleInstance(instanceId: string) {
+    this.flushPendingSnapshot();
+    this.ensureInitialSnapshot();
+
+    this.moduleInstances = this.moduleInstances.filter((i) => i.id !== instanceId);
+
+    // Remove synthetic instance node and connected edges
+    const syntheticId = `_modinst_${instanceId}`;
+    this.nodes = this.nodes.filter((n) => n.id !== syntheticId);
+    this.edges = this.edges.filter(
+      (e) => e.source !== syntheticId && e.target !== syntheticId,
+    );
+
+    this.pushSnapshot();
+  }
+
+  /** Update a variable value on a module instance. */
+  updateInstanceVariable(instanceId: string, varName: string, value: unknown) {
+    this.flushPendingSnapshot();
+    this.ensureInitialSnapshot();
+
+    this.moduleInstances = this.moduleInstances.map((i) =>
+      i.id === instanceId
+        ? { ...i, variableValues: { ...i.variableValues, [varName]: value } }
+        : i,
+    );
+    this.pushSnapshot();
+  }
+
+  /** Update module instance properties (name, description, position, color). */
+  updateModuleInstance(instanceId: string, updates: Partial<Pick<ModuleInstance, 'name' | 'description' | 'position' | 'color'>>) {
+    this.flushPendingSnapshot();
+    this.ensureInitialSnapshot();
+
+    this.moduleInstances = this.moduleInstances.map((i) =>
+      i.id === instanceId ? { ...i, ...updates } : i,
+    );
+    this.pushSnapshot();
+  }
+
   // ── Module derived helpers ──────────────────────────────────────
 
   /** Get all nodes belonging to a module. */
@@ -1095,6 +1275,16 @@ class DiagramStore {
     return this.edges.filter(
       (e) => (memberIds.has(e.source)) !== (memberIds.has(e.target)),
     );
+  }
+
+  /** Get all instances of a template module. */
+  getTemplateInstances(templateId: string): ModuleInstance[] {
+    return this.moduleInstances.filter((i) => i.templateId === templateId);
+  }
+
+  /** Get a module instance by ID. */
+  getModuleInstance(instanceId: string): ModuleInstance | undefined {
+    return this.moduleInstances.find((i) => i.id === instanceId);
   }
 
   // ── MCP bypass methods ────────────────────────────────────────────
@@ -1203,12 +1393,25 @@ class DiagramStore {
   }
 
   deleteModuleSkipHistory(moduleId: string) {
+    const mod = this.modules.find((m) => m.id === moduleId);
     this.modules = this.modules.filter((m) => m.id !== moduleId);
     this.nodes = this.nodes.map((n) =>
       n.data.moduleId === moduleId
         ? { ...n, data: { ...n.data, moduleId: undefined } }
         : n,
     );
+    // Cascade-delete instances if this was a template
+    if (mod?.isTemplate) {
+      const instanceIds = new Set(
+        this.moduleInstances.filter((i) => i.templateId === moduleId).map((i) => i.id),
+      );
+      this.moduleInstances = this.moduleInstances.filter((i) => i.templateId !== moduleId);
+      const syntheticIds = new Set([...instanceIds].map((id) => `_modinst_${id}`));
+      this.nodes = this.nodes.filter((n) => !syntheticIds.has(n.id));
+      this.edges = this.edges.filter(
+        (e) => !syntheticIds.has(e.source) && !syntheticIds.has(e.target),
+      );
+    }
     if (this.selectedModuleId === moduleId) this.selectedModuleId = null;
     project.markDirty();
     terraform.markFilesStale();
@@ -1250,6 +1453,77 @@ class DiagramStore {
     terraform.markFilesStale();
   }
 
+  // ── MCP bypass: template/instance operations ────────────────────
+
+  convertToTemplateSkipHistory(moduleId: string) {
+    this.modules = this.modules.map((m) =>
+      m.id === moduleId ? { ...m, isTemplate: true } : m,
+    );
+    project.markDirty();
+    terraform.markFilesStale();
+  }
+
+  createModuleInstanceSkipHistory(templateId: string, name: string): string {
+    const template = this.modules.find((m) => m.id === templateId);
+    if (!template || !template.isTemplate) {
+      throw new Error(`Module "${templateId}" is not a template`);
+    }
+    const id = `modinst-${crypto.randomUUID().slice(0, 8)}`;
+    const position = {
+      x: template.position.x + 300,
+      y: template.position.y + (this.getTemplateInstances(templateId).length * 120),
+    };
+    this.moduleInstances = [...this.moduleInstances, {
+      id,
+      templateId,
+      name,
+      position,
+      variableValues: {},
+      color: template.color,
+    }];
+    // Insert synthetic node
+    const syntheticId = `_modinst_${id}`;
+    this.nodes = [...this.nodes, {
+      id: syntheticId,
+      type: '_terrastudio/module_instance',
+      position,
+      zIndex: 1000,
+      data: {
+        instanceId: id,
+        label: name,
+        typeId: '_terrastudio/module_instance' as any,
+        properties: {},
+        references: {},
+        terraformName: '',
+        validationErrors: [],
+      },
+    } as unknown as DiagramNode];
+    project.markDirty();
+    terraform.markFilesStale();
+    return id;
+  }
+
+  deleteModuleInstanceSkipHistory(instanceId: string) {
+    this.moduleInstances = this.moduleInstances.filter((i) => i.id !== instanceId);
+    const syntheticId = `_modinst_${instanceId}`;
+    this.nodes = this.nodes.filter((n) => n.id !== syntheticId);
+    this.edges = this.edges.filter(
+      (e) => e.source !== syntheticId && e.target !== syntheticId,
+    );
+    project.markDirty();
+    terraform.markFilesStale();
+  }
+
+  updateInstanceVariableSkipHistory(instanceId: string, varName: string, value: unknown) {
+    this.moduleInstances = this.moduleInstances.map((i) =>
+      i.id === instanceId
+        ? { ...i, variableValues: { ...i.variableValues, [varName]: value } }
+        : i,
+    );
+    project.markDirty();
+    terraform.markFilesStale();
+  }
+
   clear() {
     if (this.debounceTimer !== null) {
       clearTimeout(this.debounceTimer);
@@ -1258,6 +1532,7 @@ class DiagramStore {
     this.nodes = [];
     this.edges = [];
     this.modules = [];
+    this.moduleInstances = [];
     this.selectedNodeId = null;
     this.selectedEdgeId = null;
     this.selectedModuleId = null;
