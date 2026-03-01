@@ -103,7 +103,6 @@
     border: 2px dashed var(--module-color);
     border-radius: 8px;
     pointer-events: none;
-    z-index: -1;
     background: color-mix(in srgb, var(--module-color) 4%, transparent);
     transition: border-color 0.15s, background 0.15s;
   }
@@ -126,7 +125,7 @@
     pointer-events: auto;
     cursor: pointer;
     border-radius: 6px 6px 0 0;
-    background: color-mix(in srgb, var(--module-color) 12%, transparent);
+    background: color-mix(in srgb, var(--module-color) 20%, transparent);
   }
 
   .module-name {

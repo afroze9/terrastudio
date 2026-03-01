@@ -836,7 +836,7 @@
     <Background variant={BackgroundVariant.Dots} gap={ui.gridSize} size={1} />
     <EdgeMarkers />
     {#if diagram.modules.length > 0}
-      <ViewportPortal target="back">
+      <ViewportPortal target="front">
         {#each diagram.modules.filter((m) => !m.collapsed) as mod (mod.id)}
           <ModuleBoundary
             module={mod}
