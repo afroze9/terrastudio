@@ -97,12 +97,12 @@
         }
         if (memberIds.has(edge.source) && !memberIds.has(edge.target)) {
           newSource = syntheticId;
-          newSourceHandle = `mod-out-${edge.sourceHandle ?? edge.source}`;
+          newSourceHandle = `mod-out-${edge.source}-${edge.sourceHandle ?? 'default'}`;
           redirected = true;
         }
         if (memberIds.has(edge.target) && !memberIds.has(edge.source)) {
           newTarget = syntheticId;
-          newTargetHandle = `mod-in-${edge.targetHandle ?? edge.target}`;
+          newTargetHandle = `mod-in-${edge.target}-${edge.targetHandle ?? 'default'}`;
           redirected = true;
         }
       }

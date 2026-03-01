@@ -9,7 +9,7 @@
   const memberCount = $derived(data.memberCount as number ?? 0);
   const borderColor = $derived(mod?.color ?? '#6366f1');
 
-  /** Derived handles from cross-module edges */
+  /** Derived handles from cross-module edges (persisted + reference edges) */
   const derivedHandles = $derived.by(() => {
     const handles: Array<{ id: string; type: 'source' | 'target'; position: 'left' | 'right'; label: string }> = [];
     if (!moduleId) return handles;
@@ -18,21 +18,21 @@
       diagram.nodes.filter((n) => n.data.moduleId === moduleId).map((n) => n.id),
     );
 
-    // Track seen connections to deduplicate
-    const seenTargets = new Set<string>();
-    const seenSources = new Set<string>();
+    // Deduplicate by handle ID (matches the handle IDs used in displayEdges redirection)
+    const seenHandleIds = new Set<string>();
+    const allEdges = [...diagram.edges, ...diagram.referenceEdges];
 
-    for (const edge of diagram.edges) {
+    for (const edge of allEdges) {
       const srcIn = memberIds.has(edge.source);
       const tgtIn = memberIds.has(edge.target);
 
       if (srcIn && !tgtIn) {
         // Outgoing: source inside module → target outside
-        const key = `${edge.target}-${edge.targetHandle ?? 'default'}`;
-        if (!seenSources.has(key)) {
-          seenSources.add(key);
+        const handleId = `mod-out-${edge.source}-${edge.sourceHandle ?? 'default'}`;
+        if (!seenHandleIds.has(handleId)) {
+          seenHandleIds.add(handleId);
           handles.push({
-            id: `mod-out-${edge.sourceHandle ?? edge.source}`,
+            id: handleId,
             type: 'source',
             position: 'right',
             label: (edge.data as any)?.label ?? '',
@@ -40,11 +40,11 @@
         }
       } else if (!srcIn && tgtIn) {
         // Incoming: source outside → target inside module
-        const key = `${edge.source}-${edge.sourceHandle ?? 'default'}`;
-        if (!seenTargets.has(key)) {
-          seenTargets.add(key);
+        const handleId = `mod-in-${edge.target}-${edge.targetHandle ?? 'default'}`;
+        if (!seenHandleIds.has(handleId)) {
+          seenHandleIds.add(handleId);
           handles.push({
-            id: `mod-in-${edge.targetHandle ?? edge.target}`,
+            id: handleId,
             type: 'target',
             position: 'left',
             label: (edge.data as any)?.label ?? '',
@@ -56,6 +56,12 @@
     return handles;
   });
 
+  const sourceHandles = $derived(derivedHandles.filter((h) => h.type === 'source'));
+  const targetHandles = $derived(derivedHandles.filter((h) => h.type === 'target'));
+  const maxHandles = $derived(Math.max(sourceHandles.length, targetHandles.length));
+  // Base height for header + hint; add space per handle row beyond what the base covers
+  const nodeMinHeight = $derived(Math.max(60, 40 + maxHandles * 20));
+
   function handleExpand() {
     if (moduleId) diagram.toggleModuleCollapsed(moduleId);
   }
@@ -66,6 +72,7 @@
   class="module-node"
   class:selected
   style:--module-color={borderColor}
+  style:min-height="{nodeMinHeight}px"
   ondblclick={handleExpand}
 >
   <div class="module-node-header">
@@ -80,21 +87,23 @@
   </div>
   <div class="module-node-hint">Double-click to expand</div>
 
-  {#each derivedHandles.filter((h) => h.type === 'target') as handle, i (handle.id)}
+  {#each targetHandles as handle, i (handle.id)}
+    {@const pct = (i + 1) / (targetHandles.length + 1) * 100}
     <Handle
       type="target"
       position={Position.Left}
       id={handle.id}
-      style="top: {30 + i * 20}px;"
+      style="top: {pct}%;"
     />
   {/each}
 
-  {#each derivedHandles.filter((h) => h.type === 'source') as handle, i (handle.id)}
+  {#each sourceHandles as handle, i (handle.id)}
+    {@const pct = (i + 1) / (sourceHandles.length + 1) * 100}
     <Handle
       type="source"
       position={Position.Right}
       id={handle.id}
-      style="top: {30 + i * 20}px;"
+      style="top: {pct}%;"
     />
   {/each}
 </div>

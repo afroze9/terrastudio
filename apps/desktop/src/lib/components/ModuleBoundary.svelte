@@ -13,7 +13,6 @@
   } = $props();
 
   const PADDING = 24;
-  const HEADER_HEIGHT = 32;
 
   /**
    * Compute absolute position for a node by walking up the parent chain.
@@ -57,9 +56,9 @@
 
     return {
       x: minX - PADDING,
-      y: minY - PADDING - HEADER_HEIGHT,
+      y: minY - PADDING,
       width: maxX - minX + PADDING * 2,
-      height: maxY - minY + PADDING * 2 + HEADER_HEIGHT,
+      height: maxY - minY + PADDING * 2,
     };
   });
 
@@ -100,38 +99,41 @@
 <style>
   .module-boundary {
     position: absolute;
-    border: 2px dashed var(--module-color);
-    border-radius: 8px;
+    border: 2.5px dashed var(--module-color);
+    border-radius: 10px;
     pointer-events: none;
-    background: color-mix(in srgb, var(--module-color) 4%, transparent);
+    background: color-mix(in srgb, var(--module-color) 6%, transparent);
     transition: border-color 0.15s, background 0.15s;
+    z-index: 1000;
   }
 
   .module-boundary.selected {
     border-style: solid;
-    background: color-mix(in srgb, var(--module-color) 8%, transparent);
+    border-width: 3px;
+    background: color-mix(in srgb, var(--module-color) 10%, transparent);
   }
 
   .module-header {
     position: absolute;
-    top: 0;
+    top: -32px;
     left: 0;
-    right: 0;
-    height: 32px;
+    height: 30px;
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 0 8px;
+    padding: 0 10px;
     pointer-events: auto;
     cursor: pointer;
     border-radius: 6px 6px 0 0;
-    background: color-mix(in srgb, var(--module-color) 20%, transparent);
+    background: var(--module-color);
+    opacity: 0.9;
+    z-index: 1001;
   }
 
   .module-name {
     font-size: 12px;
     font-weight: 600;
-    color: var(--module-color);
+    color: white;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -141,8 +143,8 @@
   .module-badge {
     font-size: 10px;
     font-weight: 600;
-    color: white;
-    background: var(--module-color);
+    color: var(--module-color);
+    background: white;
     border-radius: 8px;
     padding: 1px 6px;
     min-width: 18px;
@@ -158,7 +160,7 @@
     height: 20px;
     border: none;
     background: none;
-    color: var(--module-color);
+    color: white;
     cursor: pointer;
     border-radius: 4px;
     padding: 0;
@@ -166,6 +168,6 @@
   }
 
   .collapse-btn:hover {
-    background: color-mix(in srgb, var(--module-color) 20%, transparent);
+    background: rgba(255, 255, 255, 0.2);
   }
 </style>

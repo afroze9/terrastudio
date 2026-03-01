@@ -811,6 +811,7 @@ class DiagramStore {
         id: syntheticId,
         type: '_terrastudio/module',
         position: { x: cx, y: cy },
+        zIndex: 1000,
         data: {
           moduleId,
           memberCount,
