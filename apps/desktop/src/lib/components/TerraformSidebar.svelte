@@ -204,7 +204,7 @@
   // Debounce timer for variable value changes
   let varDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-  function onVariableValueChange(varName: string, value: string) {
+  function onVariableValueChange(varName: string, value: unknown) {
     if (varDebounceTimer) clearTimeout(varDebounceTimer);
     varDebounceTimer = setTimeout(() => {
       project.projectConfig.variableValues = {
@@ -347,9 +347,12 @@
     <div class="variables-wrapper">
       <CollapsibleSection id="tf-variables" label="VARIABLES" count={filteredVariables.length} forceExpand={!!searchQuery}>
         {#each filteredVariables as v (v.name)}
-          {@const currentValue = project.projectConfig.variableValues[v.name] ?? ''}
+          {@const isList = v.type.startsWith('list(')}
+          {@const rawValue = project.projectConfig.variableValues[v.name]}
+          {@const currentValue = rawValue ?? (isList ? [] : '')}
           {@const hasDefault = v.defaultValue !== undefined && v.defaultValue !== ''}
-          {@const isMissing = !hasDefault && !currentValue}
+          {@const hasValue = isList ? (Array.isArray(currentValue) && currentValue.length > 0) : !!currentValue}
+          {@const isMissing = !hasDefault && !hasValue}
           <div class="var-row" class:var-missing={isMissing}>
             <div class="var-header">
               <span class="var-name" title={v.name}>{v.name}</span>
@@ -358,15 +361,44 @@
             {#if hasDefault}
               <span class="var-default">default: {Array.isArray(v.defaultValue) ? v.defaultValue.join(', ') : v.defaultValue}</span>
             {/if}
-            <input
-              type={v.sensitive ? 'password' : 'text'}
-              class="var-input"
-              placeholder={hasDefault
-                ? (Array.isArray(v.defaultValue) ? v.defaultValue.join(', ') : String(v.defaultValue))
-                : (v.type.startsWith('list(') ? 'comma-separated values' : 'required')}
-              value={currentValue}
-              oninput={(e) => onVariableValueChange(v.name, (e.target as HTMLInputElement).value)}
-            />
+            {#if isList}
+              {@const items = Array.isArray(currentValue) ? currentValue as string[] : []}
+              <div class="var-list-field">
+                {#each items as item, index (index)}
+                  <div class="var-list-item">
+                    <input
+                      type="text"
+                      class="var-input"
+                      value={item}
+                      oninput={(e) => {
+                        const updated = [...items];
+                        updated[index] = (e.target as HTMLInputElement).value;
+                        onVariableValueChange(v.name, updated);
+                      }}
+                    />
+                    <button
+                      class="var-list-remove"
+                      onclick={() => {
+                        const updated = items.filter((_: string, i: number) => i !== index);
+                        onVariableValueChange(v.name, updated);
+                      }}
+                    >&times;</button>
+                  </div>
+                {/each}
+                <button
+                  class="var-list-add"
+                  onclick={() => onVariableValueChange(v.name, [...items, ''])}
+                >+ Add</button>
+              </div>
+            {:else}
+              <input
+                type={v.sensitive ? 'password' : 'text'}
+                class="var-input"
+                placeholder={hasDefault ? String(v.defaultValue) : 'required'}
+                value={currentValue}
+                oninput={(e) => onVariableValueChange(v.name, (e.target as HTMLInputElement).value)}
+              />
+            {/if}
           </div>
         {/each}
       </CollapsibleSection>
@@ -804,5 +836,44 @@
   }
   .var-input:focus {
     border-color: var(--color-accent);
+  }
+  .var-list-field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .var-list-item {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  .var-list-item .var-input {
+    flex: 1;
+  }
+  .var-list-remove {
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 2px;
+    line-height: 1;
+  }
+  .var-list-remove:hover {
+    color: var(--color-danger, #ef4444);
+  }
+  .var-list-add {
+    background: none;
+    border: 1px dashed var(--color-border);
+    border-radius: 4px;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-size: 10px;
+    padding: 2px 6px;
+    margin-top: 2px;
+  }
+  .var-list-add:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
   }
 </style>

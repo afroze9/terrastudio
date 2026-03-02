@@ -180,25 +180,33 @@
             />
 
           {:else if prop.type === 'boolean'}
-            <label class="checkbox-label">
-              <input
-                type="checkbox"
-                checked={(values[prop.key] as boolean) ?? false}
-                onchange={(e) => handleBooleanInput(prop.key, e)}
-              />
-              <span>{prop.description ?? prop.label}</span>
-            </label>
+            {#if isVariable}
+              <input type="text" placeholder="(using variable)" disabled class="is-variable-input" />
+            {:else}
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={(values[prop.key] as boolean) ?? false}
+                  onchange={(e) => handleBooleanInput(prop.key, e)}
+                />
+                <span>{prop.description ?? prop.label}</span>
+              </label>
+            {/if}
 
           {:else if prop.type === 'select'}
-            <select
-              value={(values[prop.key] as string) ?? ''}
-              onchange={(e) => handleSelectInput(prop.key, e)}
-            >
-              <option value="" disabled>Select...</option>
-              {#each prop.options ?? [] as opt}
-                <option value={opt.value}>{opt.label}</option>
-              {/each}
-            </select>
+            {#if isVariable}
+              <input type="text" placeholder="(using variable)" disabled class="is-variable-input" />
+            {:else}
+              <select
+                value={(values[prop.key] as string) ?? ''}
+                onchange={(e) => handleSelectInput(prop.key, e)}
+              >
+                <option value="" disabled>Select...</option>
+                {#each prop.options ?? [] as opt}
+                  <option value={opt.value}>{opt.label}</option>
+                {/each}
+              </select>
+            {/if}
 
           {:else if prop.type === 'multiselect'}
             <div class="multiselect">
@@ -221,27 +229,31 @@
             </div>
 
           {:else if prop.type === 'array'}
-            <div class="array-field">
-              {#each ((values[prop.key] as unknown[]) ?? []) as item, index}
-                <div class="array-item">
-                  <input
-                    type="text"
-                    value={item as string}
-                    placeholder={prop.itemSchema?.placeholder}
-                    oninput={(e) => handleArrayItemChange(prop.key, index, (e.target as HTMLInputElement).value)}
-                  />
-                  <button
-                    class="remove-btn"
-                    onclick={() => handleArrayRemove(prop.key, index)}
-                    aria-label="Remove item"
-                  >&times;</button>
-                </div>
-              {/each}
-              <button
-                class="add-btn"
-                onclick={() => handleArrayAdd(prop.key, prop.itemSchema?.defaultValue ?? '')}
-              >+ Add</button>
-            </div>
+            {#if isVariable}
+              <input type="text" placeholder="(using variable)" disabled class="is-variable-input" />
+            {:else}
+              <div class="array-field">
+                {#each ((values[prop.key] as unknown[]) ?? []) as item, index}
+                  <div class="array-item">
+                    <input
+                      type="text"
+                      value={item as string}
+                      placeholder={prop.itemSchema?.placeholder}
+                      oninput={(e) => handleArrayItemChange(prop.key, index, (e.target as HTMLInputElement).value)}
+                    />
+                    <button
+                      class="remove-btn"
+                      onclick={() => handleArrayRemove(prop.key, index)}
+                      aria-label="Remove item"
+                    >&times;</button>
+                  </div>
+                {/each}
+                <button
+                  class="add-btn"
+                  onclick={() => handleArrayAdd(prop.key, prop.itemSchema?.defaultValue ?? '')}
+                >+ Add</button>
+              </div>
+            {/if}
 
           {:else if prop.type === 'reference'}
             {@const options = getReferenceOptions(prop)}

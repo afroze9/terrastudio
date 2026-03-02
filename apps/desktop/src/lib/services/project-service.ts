@@ -238,11 +238,11 @@ export async function saveDiagram(): Promise<void> {
 
   // Split variableValues into public (saved in .tstudio) and secret (saved in app data)
   const allValues = { ...project.projectConfig.variableValues };
-  const publicValues: Record<string, string> = {};
+  const publicValues: Record<string, unknown> = {};
   const secretValues: Record<string, string> = {};
 
   for (const [key, value] of Object.entries(allValues)) {
-    if (sensitiveNames.has(key) && value) {
+    if (sensitiveNames.has(key) && value && typeof value === 'string') {
       secretValues[key] = value;
     } else {
       publicValues[key] = value;

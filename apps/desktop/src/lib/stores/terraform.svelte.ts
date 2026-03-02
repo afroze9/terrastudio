@@ -90,19 +90,20 @@ class TerraformStore {
   canRun = $derived(!this.isRunning);
 
   /** Check if all required variables have values */
-  hasAllRequiredVariables(variableValues: Record<string, string>): boolean {
+  hasAllRequiredVariables(variableValues: Record<string, unknown>): boolean {
     const missingVars = this.getMissingVariables(variableValues);
     return missingVars.length === 0;
   }
 
   /** Get list of required variables without values */
-  getMissingVariables(variableValues: Record<string, string>): TerraformVariable[] {
+  getMissingVariables(variableValues: Record<string, unknown>): TerraformVariable[] {
     return this.collectedVariables.filter(v => {
       // Variables with defaults are not required
       if (v.defaultValue !== undefined && v.defaultValue !== null) return false;
       // Check if value is provided
       const value = variableValues[v.name];
-      return !value || value.trim() === '';
+      if (Array.isArray(value)) return value.length === 0;
+      return !value || (typeof value === 'string' && value.trim() === '');
     });
   }
 

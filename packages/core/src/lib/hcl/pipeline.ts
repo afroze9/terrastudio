@@ -24,7 +24,7 @@ export type LayoutAlgorithm = 'dagre' | 'hybrid';
 export interface ProjectConfig {
   providerConfigs: Record<ProviderId, Record<string, unknown>>;
   commonTags: Record<string, string>;
-  variableValues: Record<string, string>;
+  variableValues: Record<string, unknown>;
   layoutAlgorithm?: LayoutAlgorithm;
   namingConvention?: NamingConvention;
   backend?: {
@@ -657,29 +657,27 @@ export class HclPipeline {
     variables: TerraformVariable[],
     config: ProjectConfig,
   ): string {
-    const values: Record<string, string> = { ...(config.variableValues ?? {}) };
+    const values = config.variableValues ?? {};
     const lines: string[] = [];
 
     for (const v of variables) {
       const value = values[v.name];
       if (value !== undefined && value !== '') {
-        lines.push(`${v.name} = ${this.formatTfvarValue(value, v.type)}`);
+        lines.push(`${v.name} = ${this.formatTfvarValue(value)}`);
       }
     }
 
     return lines.join('\n');
   }
 
-  /** Format a user-supplied variable value for terraform.tfvars based on its declared type. */
-  private formatTfvarValue(value: string, type: string): string {
-    if (type === 'number') return value;
-    if (type === 'bool') return value;
-    if (type.startsWith('list(')) {
-      // User enters comma-separated values; wrap as HCL list
-      const items = value.split(',').map((s) => s.trim()).filter(Boolean);
-      return `[${items.map((i) => `"${escapeHclString(i)}"`).join(', ')}]`;
+  /** Format a variable value for terraform.tfvars. Handles strings, numbers, booleans, and arrays. */
+  private formatTfvarValue(value: unknown): string {
+    if (Array.isArray(value)) {
+      return `[${value.map((i) => `"${escapeHclString(String(i))}"`).join(', ')}]`;
     }
-    return `"${escapeHclString(value)}"`;
+    if (typeof value === 'number') return String(value);
+    if (typeof value === 'boolean') return value ? 'true' : 'false';
+    return `"${escapeHclString(String(value))}"`;
   }
 
   /**
@@ -690,7 +688,7 @@ export class HclPipeline {
     variables: TerraformVariable[],
     config: ProjectConfig,
   ): string {
-    const values: Record<string, string> = { ...(config.variableValues ?? {}) };
+    const values = config.variableValues ?? {};
     const lines: string[] = [
       '# Terraform variable values',
       '# Copy this file to terraform.tfvars and fill in sensitive values.',
@@ -703,12 +701,9 @@ export class HclPipeline {
       if (v.sensitive) {
         lines.push(`# ${v.name} = "" # sensitive — set in terraform.tfvars`);
       } else if (value !== undefined && value !== '') {
-        lines.push(`${v.name} = ${this.formatTfvarValue(value, v.type)}`);
+        lines.push(`${v.name} = ${this.formatTfvarValue(value)}`);
       } else if (v.defaultValue !== undefined) {
-        const defaultStr = Array.isArray(v.defaultValue)
-          ? `[${v.defaultValue.map((i: unknown) => `"${escapeHclString(String(i))}"`).join(', ')}]`
-          : `"${escapeHclString(String(v.defaultValue))}"`;
-        lines.push(`# ${v.name} = ${defaultStr} # has default`);
+        lines.push(`# ${v.name} = ${this.formatTfvarValue(v.defaultValue)} # has default`);
       } else {
         const emptyVal = v.type.startsWith('list(') ? '[]' : '""';
         lines.push(`${v.name} = ${emptyVal} # required`);

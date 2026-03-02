@@ -22,8 +22,9 @@ export const vnetHclGenerator: HclGenerator = {
       `  address_space       = ${addrExpr}`,
     ];
 
-    if (dnsServers && dnsServers.length > 0) {
-      lines.push(`  dns_servers         = ${context.getPropertyExpression(resource, 'dns_servers', dnsServers)}`);
+    const dnsIsVar = resource.variableOverrides?.['dns_servers'] === 'variable';
+    if (dnsIsVar || (dnsServers && dnsServers.length > 0)) {
+      lines.push(`  dns_servers         = ${context.getPropertyExpression(resource, 'dns_servers', dnsServers ?? [])}`);
     }
 
     lines.push('');

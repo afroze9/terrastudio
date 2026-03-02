@@ -37,8 +37,9 @@ export const subnetHclGenerator: HclGenerator = {
       `  address_prefixes     = ${addrExpr}`,
     ];
 
-    if (serviceEndpoints && serviceEndpoints.length > 0) {
-      lines.push(`  service_endpoints    = ${context.getPropertyExpression(resource, 'service_endpoints', serviceEndpoints)}`);
+    const seIsVar = resource.variableOverrides?.['service_endpoints'] === 'variable';
+    if (seIsVar || (serviceEndpoints && serviceEndpoints.length > 0)) {
+      lines.push(`  service_endpoints    = ${context.getPropertyExpression(resource, 'service_endpoints', serviceEndpoints ?? [])}`);
     }
 
     if (delegationEnabled) {
