@@ -698,15 +698,29 @@ class DiagramStore {
     this.modules = structuredClone(modules ?? []);
     this.moduleInstances = structuredClone(moduleInstances ?? []);
 
-    // Ensure synthetic nodes exist for all module instances
+    // Ensure synthetic nodes exist for all module instances.
+    // Parent them to the same container as the template's root members.
     for (const inst of this.moduleInstances) {
       const syntheticId = `_modinst_${inst.id}`;
       if (!this.nodes.some((n) => n.id === syntheticId)) {
+        const externalParent = this.getTemplateExternalParent(inst.templateId);
+        let synPos = inst.position;
+        if (externalParent) {
+          let px = 0, py = 0;
+          let cur: DiagramNode | undefined = this.nodes.find((n) => n.id === externalParent);
+          while (cur) {
+            px += cur.position.x;
+            py += cur.position.y;
+            cur = cur.parentId ? this.nodes.find((n) => n.id === (cur!.parentId as string)) : undefined;
+          }
+          synPos = { x: inst.position.x - px, y: inst.position.y - py };
+        }
         this.nodes.push({
           id: syntheticId,
           type: '_terrastudio/module_instance',
-          position: inst.position,
+          position: synPos,
           zIndex: 1000,
+          ...(externalParent ? { parentId: externalParent } : {}),
           data: {
             instanceId: inst.id,
             label: inst.name,
@@ -718,6 +732,16 @@ class DiagramStore {
           },
         } as unknown as DiagramNode);
       }
+    }
+
+    // Hide member nodes of template modules (templates are only visible via instances)
+    const templateModuleIds = new Set(
+      this.modules.filter((m) => m.isTemplate).map((m) => m.id),
+    );
+    if (templateModuleIds.size > 0) {
+      this.nodes = this.nodes.map((n) =>
+        templateModuleIds.has(n.data.moduleId as string) ? { ...n, hidden: true } : n,
+      );
     }
 
     this.selectedNodeId = null;
@@ -788,11 +812,15 @@ class DiagramStore {
         this.moduleInstances.filter((i) => i.templateId === moduleId).map((i) => i.id),
       );
       this.moduleInstances = this.moduleInstances.filter((i) => i.templateId !== moduleId);
-      // Remove synthetic instance nodes and their edges
+      // Remove synthetic instance nodes, cloned member nodes, and their edges
       const syntheticInstanceIds = new Set([...instanceIds].map((id) => `_modinst_${id}`));
-      this.nodes = this.nodes.filter((n) => !syntheticInstanceIds.has(n.id));
+      const clonePrefixes = [...instanceIds].map((id) => `_instmem_${id}_`);
+      this.nodes = this.nodes.filter((n) =>
+        !syntheticInstanceIds.has(n.id) && !clonePrefixes.some((p) => n.id.startsWith(p)),
+      );
       this.edges = this.edges.filter(
-        (e) => !syntheticInstanceIds.has(e.source) && !syntheticInstanceIds.has(e.target),
+        (e) => !syntheticInstanceIds.has(e.source) && !syntheticInstanceIds.has(e.target)
+          && !clonePrefixes.some((p) => e.id.startsWith(p)),
       );
     }
 
@@ -1124,12 +1152,20 @@ class DiagramStore {
 
   // ── Module template/instance CRUD ────────────────────────────────
 
-  /** Convert an existing module to a reusable template. */
+  /**
+   * Convert an existing module to a reusable template.
+   * Template member nodes are hidden from the canvas (like a collapsed module).
+   * Instances are created by dragging from the palette.
+   */
   convertToTemplate(moduleId: string) {
     this.flushPendingSnapshot();
     this.ensureInitialSnapshot();
     this.modules = this.modules.map((m) =>
       m.id === moduleId ? { ...m, isTemplate: true } : m,
+    );
+    // Hide template member nodes from canvas
+    this.nodes = this.nodes.map((n) =>
+      n.data.moduleId === moduleId ? { ...n, hidden: true } : n,
     );
     this.pushSnapshot();
   }
@@ -1148,7 +1184,10 @@ class DiagramStore {
     this.moduleInstances = this.moduleInstances.filter((i) => i.templateId !== moduleId);
     // Remove synthetic instance nodes and their edges
     const syntheticIds = new Set([...instanceIds].map((id) => `_modinst_${id}`));
-    this.nodes = this.nodes.filter((n) => !syntheticIds.has(n.id));
+    this.nodes = this.nodes
+      .filter((n) => !syntheticIds.has(n.id))
+      // Unhide template member nodes
+      .map((n) => n.data.moduleId === moduleId ? { ...n, hidden: false } : n);
     this.edges = this.edges.filter(
       (e) => !syntheticIds.has(e.source) && !syntheticIds.has(e.target),
     );
@@ -1157,9 +1196,10 @@ class DiagramStore {
 
   /**
    * Create a new instance of a module template.
+   * Optionally accepts a canvas position (used when dragging from palette).
    * Returns the new instance ID.
    */
-  createModuleInstance(templateId: string, name: string): string {
+  createModuleInstance(templateId: string, name: string, atPosition?: { x: number; y: number }): string {
     this.flushPendingSnapshot();
     this.ensureInitialSnapshot();
 
@@ -1175,8 +1215,7 @@ class DiagramStore {
     }
 
     const id = `modinst-${crypto.randomUUID().slice(0, 8)}`;
-    // Position the instance card near the template, offset to the right
-    const position = {
+    const position = atPosition ?? {
       x: template.position.x + 300,
       y: template.position.y + (this.getTemplateInstances(templateId).length * 120),
     };
@@ -1192,13 +1231,32 @@ class DiagramStore {
 
     this.moduleInstances = [...this.moduleInstances, instance];
 
-    // Insert synthetic node for SvelteFlow rendering
+    // Insert synthetic node for SvelteFlow rendering.
+    // Parent it to the same container as the template's root members so it moves with the hierarchy.
+    const externalParent = this.getTemplateExternalParent(templateId);
+    let syntheticPosition = position;
+    // If the template members are inside a container, convert the absolute position to parent-relative
+    if (externalParent) {
+      const parentNode = this.nodes.find((n) => n.id === externalParent);
+      if (parentNode) {
+        // Walk parent chain to get absolute position of the container
+        let px = 0, py = 0;
+        let cur: DiagramNode | undefined = parentNode;
+        while (cur) {
+          px += cur.position.x;
+          py += cur.position.y;
+          cur = cur.parentId ? this.nodes.find((n) => n.id === (cur!.parentId as string)) : undefined;
+        }
+        syntheticPosition = { x: position.x - px, y: position.y - py };
+      }
+    }
     const syntheticId = `_modinst_${id}`;
     const syntheticNode = {
       id: syntheticId,
       type: '_terrastudio/module_instance',
-      position,
+      position: syntheticPosition,
       zIndex: 1000,
+      ...(externalParent ? { parentId: externalParent } : {}),
       data: {
         instanceId: id,
         label: name,
@@ -1220,13 +1278,17 @@ class DiagramStore {
     this.flushPendingSnapshot();
     this.ensureInitialSnapshot();
 
+    const inst = this.moduleInstances.find((i) => i.id === instanceId);
     this.moduleInstances = this.moduleInstances.filter((i) => i.id !== instanceId);
 
     // Remove synthetic instance node and connected edges
     const syntheticId = `_modinst_${instanceId}`;
-    this.nodes = this.nodes.filter((n) => n.id !== syntheticId);
+    const clonePrefix = `_instmem_${instanceId}_`;
+    this.nodes = this.nodes.filter((n) =>
+      n.id !== syntheticId && !n.id.startsWith(clonePrefix),
+    );
     this.edges = this.edges.filter(
-      (e) => e.source !== syntheticId && e.target !== syntheticId,
+      (e) => e.source !== syntheticId && e.target !== syntheticId && !e.id.startsWith(clonePrefix),
     );
 
     this.pushSnapshot();
@@ -1245,6 +1307,159 @@ class DiagramStore {
     this.pushSnapshot();
   }
 
+  /**
+   * Toggle instance collapsed state.
+   * Expanding clones the template's member nodes as read-only copies near the instance.
+   * Multiple instances of the same template can be expanded simultaneously.
+   */
+  toggleInstanceCollapsed(instanceId: string) {
+    this.flushPendingSnapshot();
+    this.ensureInitialSnapshot();
+
+    const inst = this.moduleInstances.find((i) => i.id === instanceId);
+    if (!inst) return;
+
+    const expanding = inst.collapsed !== false; // default true → expanding means setting collapsed=false
+    const syntheticId = `_modinst_${instanceId}`;
+
+    if (expanding) {
+      // Mark this instance as expanded
+      this.moduleInstances = this.moduleInstances.map((i) =>
+        i.id === instanceId ? { ...i, collapsed: false } : i,
+      );
+
+      // Clone template member nodes for this instance (only originals, never other instance clones)
+      const templateMembers = this.nodes.filter(
+        (n) => n.data.moduleId === inst.templateId && !n.id.startsWith('_instmem_'),
+      );
+      const templateMemberIds = new Set(templateMembers.map((n) => n.id));
+      const syntheticNode = this.nodes.find((n) => n.id === syntheticId);
+      const instPos = syntheticNode?.position ?? inst.position;
+
+      // Pass 1: Build complete ID mapping (original → clone) BEFORE creating any clones
+      const idMap = new Map<string, string>();
+      for (const node of templateMembers) {
+        idMap.set(node.id, `_instmem_${instanceId}_${node.id}`);
+      }
+
+      // Identify root-level template members (no parent, or parent outside template)
+      const rootMembers = templateMembers.filter(
+        (n) => !n.parentId || !templateMemberIds.has(n.parentId as string),
+      );
+
+      // Compute offset in parent-relative coordinates.
+      // Both instPos and root member positions are relative to the same external parent
+      // (or both absolute if no parent), so the offset is a simple subtraction.
+      let tMinX = Infinity, tMinY = Infinity;
+      for (const n of rootMembers) {
+        if (n.position.x < tMinX) tMinX = n.position.x;
+        if (n.position.y < tMinY) tMinY = n.position.y;
+      }
+      const offsetX = instPos.x - tMinX;
+      const offsetY = instPos.y - tMinY + 10;
+
+      // Pass 2: Create clones with correct parentId and position
+      const clonedNodes: DiagramNode[] = [];
+      for (const node of templateMembers) {
+        const clonedId = idMap.get(node.id)!;
+        const snapshot = structuredClone($state.snapshot(node) as any);
+        const hasParentInTemplate = node.parentId && templateMemberIds.has(node.parentId as string);
+        const hasExternalParent = node.parentId && !templateMemberIds.has(node.parentId as string);
+
+        // Position logic:
+        // - Child of another template member: keep relative position (parent clone is already offset)
+        // - Has external parent or no parent: apply offset (same coordinate space)
+        const position = hasParentInTemplate
+          ? { x: node.position.x, y: node.position.y }
+          : { x: node.position.x + offsetX, y: node.position.y + offsetY };
+
+        // ParentId: remap if within template, preserve if external, clear if none
+        let cloneParentId: string | undefined;
+        let extent: string | undefined;
+        if (hasParentInTemplate) {
+          cloneParentId = idMap.get(node.parentId as string);
+          extent = node.extent as string | undefined;
+        } else if (hasExternalParent) {
+          cloneParentId = node.parentId as string;
+          extent = node.extent as string | undefined;
+        }
+
+        const clone: any = {
+          ...snapshot,
+          id: clonedId,
+          position,
+          hidden: false,
+          selected: false,
+          draggable: false,
+          selectable: true,
+          data: {
+            ...structuredClone($state.snapshot(node.data) as any),
+            moduleId: undefined,
+            instanceMemberId: instanceId,
+            sourceTemplateNodeId: node.id,
+          },
+        };
+
+        if (cloneParentId) {
+          clone.parentId = cloneParentId;
+          if (hasParentInTemplate && extent) {
+            clone.extent = extent;
+          } else {
+            delete clone.extent;
+          }
+        } else {
+          delete clone.parentId;
+          delete clone.extent;
+        }
+
+        clonedNodes.push(clone as DiagramNode);
+      }
+
+      // Clone internal edges between template members
+      const clonedEdges: DiagramEdge[] = [];
+      for (const edge of this.edges) {
+        if (templateMemberIds.has(edge.source) && templateMemberIds.has(edge.target)) {
+          clonedEdges.push({
+            ...structuredClone($state.snapshot(edge) as any),
+            id: `_instmem_${instanceId}_${edge.id}`,
+            source: idMap.get(edge.source)!,
+            target: idMap.get(edge.target)!,
+          });
+        }
+      }
+
+      // Hide the synthetic instance node, add cloned nodes and edges
+      this.nodes = [
+        ...this.nodes.map((n) => n.id === syntheticId ? { ...n, hidden: true } : n),
+        ...clonedNodes,
+      ];
+      this.edges = [...this.edges, ...clonedEdges];
+    } else {
+      this._collapseInstance(instanceId);
+    }
+
+    this.pushSnapshot();
+  }
+
+  /** Internal: collapse a single instance — remove cloned nodes/edges, show card. */
+  private _collapseInstance(instanceId: string) {
+    const inst = this.moduleInstances.find((i) => i.id === instanceId);
+    if (!inst) return;
+
+    const syntheticId = `_modinst_${instanceId}`;
+    const clonePrefix = `_instmem_${instanceId}_`;
+
+    this.moduleInstances = this.moduleInstances.map((i) =>
+      i.id === instanceId ? { ...i, collapsed: true } : i,
+    );
+
+    // Remove cloned nodes and edges, show synthetic instance node
+    this.nodes = this.nodes
+      .filter((n) => !n.id.startsWith(clonePrefix))
+      .map((n) => n.id === syntheticId ? { ...n, hidden: false } : n);
+    this.edges = this.edges.filter((e) => !e.id.startsWith(clonePrefix));
+  }
+
   /** Update module instance properties (name, description, position, color). */
   updateModuleInstance(instanceId: string, updates: Partial<Pick<ModuleInstance, 'name' | 'description' | 'position' | 'color'>>) {
     this.flushPendingSnapshot();
@@ -1261,6 +1476,21 @@ class DiagramStore {
   /** Get all nodes belonging to a module. */
   getModuleNodes(moduleId: string): DiagramNode[] {
     return this.nodes.filter((n) => n.data.moduleId === moduleId);
+  }
+
+  /**
+   * Find the external parent (e.g., Resource Group) of a template's root members.
+   * Returns the parentId if all root members share the same external parent, or undefined.
+   */
+  getTemplateExternalParent(templateId: string): string | undefined {
+    const members = this.nodes.filter((n) => n.data.moduleId === templateId && !n.id.startsWith('_instmem_'));
+    const memberIds = new Set(members.map((n) => n.id));
+    // Root members: no parent, or parent outside the template
+    const rootMembers = members.filter((n) => !n.parentId || !memberIds.has(n.parentId as string));
+    if (rootMembers.length === 0) return undefined;
+    // Check if they all share the same external parent
+    const parents = new Set(rootMembers.map((n) => n.parentId as string | undefined).filter(Boolean));
+    return parents.size === 1 ? [...parents][0] : undefined;
   }
 
   /** Get edges where both endpoints are in the same module. */
@@ -1407,9 +1637,13 @@ class DiagramStore {
       );
       this.moduleInstances = this.moduleInstances.filter((i) => i.templateId !== moduleId);
       const syntheticIds = new Set([...instanceIds].map((id) => `_modinst_${id}`));
-      this.nodes = this.nodes.filter((n) => !syntheticIds.has(n.id));
+      const clonePrefixes = [...instanceIds].map((id) => `_instmem_${id}_`);
+      this.nodes = this.nodes.filter((n) =>
+        !syntheticIds.has(n.id) && !clonePrefixes.some((p) => n.id.startsWith(p)),
+      );
       this.edges = this.edges.filter(
-        (e) => !syntheticIds.has(e.source) && !syntheticIds.has(e.target),
+        (e) => !syntheticIds.has(e.source) && !syntheticIds.has(e.target)
+          && !clonePrefixes.some((p) => e.id.startsWith(p)),
       );
     }
     if (this.selectedModuleId === moduleId) this.selectedModuleId = null;
@@ -1459,6 +1693,10 @@ class DiagramStore {
     this.modules = this.modules.map((m) =>
       m.id === moduleId ? { ...m, isTemplate: true } : m,
     );
+    // Hide template member nodes
+    this.nodes = this.nodes.map((n) =>
+      n.data.moduleId === moduleId ? { ...n, hidden: true } : n,
+    );
     project.markDirty();
     terraform.markFilesStale();
   }
@@ -1481,13 +1719,29 @@ class DiagramStore {
       variableValues: {},
       color: template.color,
     }];
-    // Insert synthetic node
+    // Insert synthetic node — parent to same container as template root members
+    const externalParent = this.getTemplateExternalParent(templateId);
+    let syntheticPosition = position;
+    if (externalParent) {
+      const parentNode = this.nodes.find((n) => n.id === externalParent);
+      if (parentNode) {
+        let px = 0, py = 0;
+        let cur: DiagramNode | undefined = parentNode;
+        while (cur) {
+          px += cur.position.x;
+          py += cur.position.y;
+          cur = cur.parentId ? this.nodes.find((n) => n.id === (cur!.parentId as string)) : undefined;
+        }
+        syntheticPosition = { x: position.x - px, y: position.y - py };
+      }
+    }
     const syntheticId = `_modinst_${id}`;
     this.nodes = [...this.nodes, {
       id: syntheticId,
       type: '_terrastudio/module_instance',
-      position,
+      position: syntheticPosition,
       zIndex: 1000,
+      ...(externalParent ? { parentId: externalParent } : {}),
       data: {
         instanceId: id,
         label: name,
@@ -1506,9 +1760,12 @@ class DiagramStore {
   deleteModuleInstanceSkipHistory(instanceId: string) {
     this.moduleInstances = this.moduleInstances.filter((i) => i.id !== instanceId);
     const syntheticId = `_modinst_${instanceId}`;
-    this.nodes = this.nodes.filter((n) => n.id !== syntheticId);
+    const clonePrefix = `_instmem_${instanceId}_`;
+    this.nodes = this.nodes.filter((n) =>
+      n.id !== syntheticId && !n.id.startsWith(clonePrefix),
+    );
     this.edges = this.edges.filter(
-      (e) => e.source !== syntheticId && e.target !== syntheticId,
+      (e) => e.source !== syntheticId && e.target !== syntheticId && !e.id.startsWith(clonePrefix),
     );
     project.markDirty();
     terraform.markFilesStale();

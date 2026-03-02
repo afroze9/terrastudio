@@ -60,6 +60,20 @@
     return vars;
   });
 
+  // ─── Template/instance member detection (read-only) ──────────────────────
+  /** True when the selected node is a cloned instance member or a template original — properties are read-only */
+  let isTemplateMember = $derived.by(() => {
+    const node = diagram.selectedNode;
+    if (!node || selectedInstance) return false;
+    // Check if this is a cloned instance member
+    if (node.data.instanceMemberId) return true;
+    // Check if this is an original template member
+    const modId = node.data.moduleId as string | undefined;
+    if (!modId) return false;
+    const mod = diagram.modules.find((m) => m.id === modId);
+    return mod?.isTemplate === true;
+  });
+
   // ─── Naming convention ────────────────────────────────────────────────────
 
   /** True when a naming convention is active and this resource has a cafAbbreviation */
@@ -225,6 +239,14 @@
 
   const panelTitle = $derived.by(() => {
     if (selectedInstance) return 'Module Instance';
+    if (isTemplateMember && schema) {
+      const instId = diagram.selectedNode?.data.instanceMemberId as string | undefined;
+      if (instId) {
+        const inst = diagram.moduleInstances.find((i) => i.id === instId);
+        return `${schema.displayName} (${inst?.name ?? 'Instance'})`;
+      }
+      return `${schema.displayName} (Template)`;
+    }
     if (diagram.selectedNode && schema) return schema.displayName;
     if (diagram.selectedEdge) return 'Connection';
     return 'Properties';
@@ -333,6 +355,10 @@
         </div>
       {/if}
 
+      <div class="instance-readonly-hint">
+        Instance resources are read-only. Edit variables below to customize this instance.
+      </div>
+
       {#if templateVariables.length > 0}
         <CollapsiblePanelSection
           id="instance-variables"
@@ -382,12 +408,19 @@
       </button>
 
     {:else if diagram.selectedNode && schema}
+      {#if isTemplateMember}
+        <div class="instance-readonly-hint">
+          This resource belongs to a template module. Properties are read-only. Toggle properties to "variable" mode to make them configurable per-instance.
+        </div>
+      {/if}
+
       <div class="tf-name-field">
         <label class="field-label">
           <span class="label-text">Terraform Name</span>
           <input
             type="text"
             value={diagram.selectedNode.data.terraformName}
+            disabled={isTemplateMember}
             oninput={(e) => {
               if (diagram.selectedNode) {
                 diagram.updateNodeData(diagram.selectedNode.id, {
@@ -409,6 +442,7 @@
             <input
               type="text"
               placeholder="e.g. backendapi"
+              disabled={isTemplateMember}
               bind:value={localSlugValue}
               oninput={(e) => onConventionNameChange((e.target as HTMLInputElement).value)}
             />
@@ -419,7 +453,7 @@
         </div>
       {/if}
 
-      {#if isSubscription}
+      {#if isSubscription && !isTemplateMember}
         <SubscriptionPicker
           displayName={(diagram.selectedNode.data.properties['display_name'] as string) ?? ''}
           subscriptionId={(diagram.selectedNode.data.properties['subscription_id'] as string) ?? ''}
@@ -440,6 +474,7 @@
         variableOverrides={diagram.selectedNode.data.variableOverrides ?? {}}
         onVariableModeChange={onVariableModeChange}
         showVariableToggle={true}
+        readonly={isTemplateMember}
       />
 
       {#if isKeyVault}
@@ -931,6 +966,17 @@
   }
 
   /* Module instance panel */
+  .instance-readonly-hint {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    opacity: 0.7;
+    line-height: 1.4;
+    padding: 8px 10px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    margin-bottom: 8px;
+  }
   .instance-template-info {
     display: flex;
     align-items: center;

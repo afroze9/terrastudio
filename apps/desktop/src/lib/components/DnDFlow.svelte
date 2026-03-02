@@ -29,6 +29,7 @@
   import { autofitContainer } from '$lib/services/layout-service';
   import ConnectionPointsModal from './ConnectionPointsModal.svelte';
   import ModuleBoundary from './ModuleBoundary.svelte';
+  import ModuleInstanceBoundary from './ModuleInstanceBoundary.svelte';
   import type { ConnectionPointConfig, HandlePositionOverrides, HandleDefinition, OutputDefinition, ResourceTypeId as TypeId } from '@terrastudio/types';
 
   let { nodeTypes }: { nodeTypes: Record<string, ResourceNodeComponent> } = $props();
@@ -56,7 +57,7 @@
   const collapsedModuleMap = $derived.by(() => {
     const map = new Map<string, { syntheticId: string; memberIds: Set<string> }>();
     for (const mod of diagram.modules) {
-      if (!mod.collapsed) continue;
+      if (!mod.collapsed || mod.isTemplate) continue; // templates use instance-based visibility
       const memberIds = new Set(
         diagram.nodes.filter((n) => n.data.moduleId === mod.id).map((n) => n.id),
       );
@@ -65,9 +66,24 @@
     return map;
   });
 
+  // Build a set of template member node IDs — these are always hidden on canvas.
+  // Edges involving original template members are filtered out (cloned instance members have their own edges).
+  // Only original template nodes (never _instmem_ clones) are included.
+  const hiddenTemplateMemberIds = $derived.by(() => {
+    const ids = new Set<string>();
+    for (const mod of diagram.modules) {
+      if (!mod.isTemplate) continue;
+      for (const n of diagram.nodes) {
+        if (n.data.moduleId === mod.id && !n.id.startsWith('_instmem_')) ids.add(n.id);
+      }
+    }
+    return ids;
+  });
+
   // Type assertion to Edge[] for SvelteFlow compatibility (our TerraStudioEdgeData extends Record<string, unknown>).
   // Also filter out edges whose category is hidden via the visibility toggle.
   // Redirects cross-module edges to the synthetic collapsed node when a module is collapsed.
+  // Hides edges involving hidden template members.
   const displayEdges = $derived.by(() => {
     const allEdges = [...diagram.edges, ...diagram.referenceEdges] as Edge[];
     const result: Edge[] = [];
@@ -75,6 +91,13 @@
     for (const edge of allEdges) {
       const category = (edge.data as TerraStudioEdgeData | undefined)?.category ?? 'structural';
       if (!ui.isEdgeCategoryVisible(category)) continue;
+
+      // Hide edges involving hidden template member nodes
+      if (hiddenTemplateMemberIds.size > 0) {
+        if (hiddenTemplateMemberIds.has(edge.source) || hiddenTemplateMemberIds.has(edge.target)) {
+          continue;
+        }
+      }
 
       if (collapsedModuleMap.size === 0) {
         result.push(edge);
@@ -316,11 +339,13 @@
   let instanceNameError = $state('');
   let showInstanceNameDialog = $state(false);
   let pendingInstanceTemplateId = $state<string | null>(null);
+  let pendingInstancePosition = $state<{ x: number; y: number } | null>(null);
 
-  function handleCreateInstance(templateId?: string) {
+  function handleCreateInstance(templateId?: string, position?: { x: number; y: number }) {
     const tid = templateId ?? contextNodeModuleId;
     if (!tid) return;
     pendingInstanceTemplateId = tid;
+    pendingInstancePosition = position ?? null;
     instanceNameInput = '';
     instanceNameError = '';
     showInstanceNameDialog = true;
@@ -336,9 +361,10 @@
       return;
     }
     instanceNameError = '';
-    diagram.createModuleInstance(pendingInstanceTemplateId, name);
+    diagram.createModuleInstance(pendingInstanceTemplateId, name, pendingInstancePosition ?? undefined);
     showInstanceNameDialog = false;
     pendingInstanceTemplateId = null;
+    pendingInstancePosition = null;
   }
 
   /** Check if the context-menu node is a container with children */
@@ -519,6 +545,12 @@
       event.preventDefault();
       if (!event.dataTransfer) return;
 
+      // Template instance drag — always allow drop (no containment rules)
+      if (event.dataTransfer.types.includes('application/terrastudio-template')) {
+        event.dataTransfer.dropEffect = 'copy';
+        return;
+      }
+
       const typeId = event.dataTransfer.getData('application/terrastudio-type');
       if (typeId) {
         const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
@@ -532,6 +564,14 @@
       event.preventDefault();
       clearDragFeedback();
       if (!event.dataTransfer) return;
+
+      // Handle template instance drop from palette
+      const templateId = event.dataTransfer.getData('application/terrastudio-template');
+      if (templateId) {
+        const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+        handleCreateInstance(templateId, position);
+        return;
+      }
 
       const typeId = event.dataTransfer.getData('application/terrastudio-type');
       if (!typeId) return;
@@ -891,15 +931,23 @@
     {#if ui.showMinimap}<MiniMap />{/if}
     <Background variant={BackgroundVariant.Dots} gap={ui.gridSize} size={1} />
     <EdgeMarkers />
-    {#if diagram.modules.length > 0}
+    {#if diagram.modules.length > 0 || diagram.moduleInstances.some((i) => i.collapsed === false)}
       <ViewportPortal target="front">
-        {#each diagram.modules.filter((m) => !m.collapsed) as mod (mod.id)}
+        {#each diagram.modules.filter((m) => !m.collapsed && !m.isTemplate) as mod (mod.id)}
           <ModuleBoundary
             module={mod}
             {screenToFlowPosition}
             onselect={(id) => { diagram.selectedNodeId = null; diagram.selectedEdgeId = null; diagram.selectedModuleId = id; }}
             ontogglecollapse={(id) => diagram.toggleModuleCollapsed(id)}
             oncreateinstance={(id) => handleCreateInstance(id)}
+          />
+        {/each}
+        {#each diagram.moduleInstances.filter((i) => i.collapsed === false) as inst (inst.id)}
+          <ModuleInstanceBoundary
+            instance={inst}
+            {screenToFlowPosition}
+            onselect={(id) => { diagram.selectedNodeId = `_modinst_${id}`; diagram.selectedEdgeId = null; diagram.selectedModuleId = null; }}
+            oncollapse={(id) => diagram.toggleInstanceCollapsed(id)}
           />
         {/each}
       </ViewportPortal>

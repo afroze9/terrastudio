@@ -53,4 +53,6 @@ export interface ModuleInstance {
   readonly variableValues: Record<string, unknown>;
   /** Visual color override (defaults to template color) */
   readonly color?: string;
+  /** Whether the instance is visually collapsed (card-only) on the canvas. Defaults to true. */
+  readonly collapsed?: boolean;
 }

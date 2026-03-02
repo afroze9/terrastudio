@@ -75,6 +75,12 @@
       diagram.selectedNodeId = id;
     }
   }
+
+  function handleExpand() {
+    if (instanceId) {
+      diagram.toggleInstanceCollapsed(instanceId);
+    }
+  }
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -84,6 +90,7 @@
   style:--instance-color={borderColor}
   style:min-height="{nodeMinHeight}px"
   onclick={handleClick}
+  ondblclick={handleExpand}
 >
   <div class="instance-header">
     <svg class="instance-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -95,7 +102,7 @@
       <span class="instance-badge">{varCount} var{varCount !== 1 ? 's' : ''}</span>
     {/if}
   </div>
-  <div class="instance-template-ref">{template?.name ?? 'template'}</div>
+  <div class="instance-template-ref">{template?.name ?? 'template'} · double-click to expand</div>
 
   {#each targetHandles as handle, i (handle.id)}
     {@const pct = (i + 1) / (targetHandles.length + 1) * 100}
