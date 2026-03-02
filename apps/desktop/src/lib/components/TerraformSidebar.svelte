@@ -356,12 +356,14 @@
               <span class="var-type-badge">{v.type}</span>
             </div>
             {#if hasDefault}
-              <span class="var-default">default: {v.defaultValue}</span>
+              <span class="var-default">default: {Array.isArray(v.defaultValue) ? v.defaultValue.join(', ') : v.defaultValue}</span>
             {/if}
             <input
               type={v.sensitive ? 'password' : 'text'}
               class="var-input"
-              placeholder={hasDefault ? String(v.defaultValue) : 'required'}
+              placeholder={hasDefault
+                ? (Array.isArray(v.defaultValue) ? v.defaultValue.join(', ') : String(v.defaultValue))
+                : (v.type.startsWith('list(') ? 'comma-separated values' : 'required')}
               value={currentValue}
               oninput={(e) => onVariableValueChange(v.name, (e.target as HTMLInputElement).value)}
             />
