@@ -46,9 +46,11 @@ export const appServiceHclGenerator: HclGenerator = {
       ? 'azurerm_windows_web_app'
       : 'azurerm_linux_web_app';
 
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
+
     const lines: string[] = [
       `resource "${terraformType}" "${resource.terraformName}" {`,
-      `  name                = "${e(name)}"`,
+      `  name                = ${nameExpr}`,
       `  resource_group_name = ${rgExpr}`,
       `  location            = ${locExpr}`,
       `  service_plan_id     = ${planIdExpr}`,
@@ -59,14 +61,14 @@ export const appServiceHclGenerator: HclGenerator = {
     }
 
     if (httpsOnly !== false) {
-      lines.push('  https_only          = true');
+      lines.push(`  https_only          = ${context.getPropertyExpression(resource, 'https_only', true)}`);
     }
 
     lines.push('');
     lines.push('  site_config {');
 
     if (alwaysOn) {
-      lines.push('    always_on = true');
+      lines.push(`    always_on = ${context.getPropertyExpression(resource, 'always_on', alwaysOn)}`);
     }
 
     if (runtimeStack && osType === 'linux') {

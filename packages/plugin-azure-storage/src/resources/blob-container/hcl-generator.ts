@@ -1,5 +1,4 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
-import { escapeHclString as e } from '@terrastudio/core';
 
 export const blobContainerHclGenerator: HclGenerator = {
   typeId: 'azurerm/storage/blob_container',
@@ -26,11 +25,13 @@ export const blobContainerHclGenerator: HclGenerator = {
       variableDescription: `Name of the Blob Container ${name || resource.terraformName}`,
     });
 
+    const accessTypeExpr = context.getPropertyExpression(resource, 'container_access_type', accessType);
+
     const lines: string[] = [
       `resource "azurerm_storage_container" "${resource.terraformName}" {`,
       `  name                  = ${nameExpr}`,
       `  storage_account_id    = ${saIdExpr}`,
-      `  container_access_type = "${e(accessType)}"`,
+      `  container_access_type = ${accessTypeExpr}`,
       '}',
     ];
 

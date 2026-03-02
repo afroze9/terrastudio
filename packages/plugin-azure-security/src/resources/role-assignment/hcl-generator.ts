@@ -1,5 +1,4 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
-import { escapeHclString as e } from '@terrastudio/core';
 
 export const roleAssignmentHclGenerator: HclGenerator = {
   typeId: 'azurerm/identity/role_assignment',
@@ -8,13 +7,13 @@ export const roleAssignmentHclGenerator: HclGenerator = {
     const props = resource.properties;
     const roleName = (props['role_definition_name'] as string) ?? 'Reader';
 
-    // Resolve principal reference (managed identity → principal_id)
+    // Resolve principal reference (managed identity -> principal_id)
     const principalRef = resource.references['principal_id'];
     const principalIdExpr = principalRef
       ? context.getAttributeReference(principalRef, 'principal_id')
       : '"<principal-id>"';
 
-    // Resolve scope reference (target resource → id)
+    // Resolve scope reference (target resource -> id)
     const scopeRef = resource.references['scope'];
     const scopeExpr = scopeRef
       ? context.getAttributeReference(scopeRef, 'id')
@@ -30,10 +29,12 @@ export const roleAssignmentHclGenerator: HclGenerator = {
       if (addr) dependsOn.push(addr);
     }
 
+    const roleExpr = context.getPropertyExpression(resource, 'role_definition_name', roleName);
+
     const lines: string[] = [
       `resource "azurerm_role_assignment" "${resource.terraformName}" {`,
       `  scope                = ${scopeExpr}`,
-      `  role_definition_name = "${e(roleName)}"`,
+      `  role_definition_name = ${roleExpr}`,
       `  principal_id         = ${principalIdExpr}`,
       '}',
     ];

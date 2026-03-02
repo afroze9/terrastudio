@@ -1,5 +1,4 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
-import { escapeHclString as e } from '@terrastudio/core';
 
 export const logAnalyticsWorkspaceHclGenerator: HclGenerator = {
   typeId: 'azurerm/monitoring/log_analytics_workspace',
@@ -14,18 +13,23 @@ export const logAnalyticsWorkspaceHclGenerator: HclGenerator = {
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
 
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
+    const skuExpr = context.getPropertyExpression(resource, 'sku', sku);
+    const retentionExpr = context.getPropertyExpression(resource, 'retention_in_days', retention ?? 30);
+
     const lines: string[] = [
       `resource "azurerm_log_analytics_workspace" "${resource.terraformName}" {`,
-      `  name                = "${e(name)}"`,
+      `  name                = ${nameExpr}`,
       `  resource_group_name = ${rgExpr}`,
       `  location            = ${locExpr}`,
-      `  sku                 = "${e(sku)}"`,
+      `  sku                 = ${skuExpr}`,
     ];
 
-    lines.push(`  retention_in_days   = ${retention ?? 30}`);
+    lines.push(`  retention_in_days   = ${retentionExpr}`);
 
     if (dailyQuota !== undefined && dailyQuota !== -1) {
-      lines.push(`  daily_quota_gb      = ${dailyQuota}`);
+      const quotaExpr = context.getPropertyExpression(resource, 'daily_quota_gb', dailyQuota);
+      lines.push(`  daily_quota_gb      = ${quotaExpr}`);
     }
 
     lines.push('');

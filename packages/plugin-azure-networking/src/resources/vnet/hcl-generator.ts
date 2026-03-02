@@ -12,11 +12,12 @@ export const vnetHclGenerator: HclGenerator = {
 
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
     const addrList = addressSpace.map((a) => `"${e(a)}"`).join(', ');
 
     const lines: string[] = [
       `resource "azurerm_virtual_network" "${resource.terraformName}" {`,
-      `  name                = "${e(name)}"`,
+      `  name                = ${nameExpr}`,
       `  resource_group_name = ${rgExpr}`,
       `  location            = ${locExpr}`,
       `  address_space       = [${addrList}]`,

@@ -1,5 +1,4 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
-import { escapeHclString as e } from '@terrastudio/core';
 
 export const serviceBusNamespaceHclGenerator: HclGenerator = {
   typeId: 'azurerm/messaging/servicebus_namespace',
@@ -14,20 +13,23 @@ export const serviceBusNamespaceHclGenerator: HclGenerator = {
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
 
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
+    const skuExpr = context.getPropertyExpression(resource, 'sku', sku);
+
     const lines: string[] = [
       `resource "azurerm_servicebus_namespace" "${resource.terraformName}" {`,
-      `  name                = "${e(name)}"`,
+      `  name                = ${nameExpr}`,
       `  location            = ${locExpr}`,
       `  resource_group_name = ${rgExpr}`,
-      `  sku                 = "${e(sku)}"`,
+      `  sku                 = ${skuExpr}`,
     ];
 
     if (sku === 'Premium' && capacity !== undefined) {
-      lines.push(`  capacity            = ${capacity}`);
+      lines.push(`  capacity            = ${context.getPropertyExpression(resource, 'capacity', capacity)}`);
     }
 
     if (sku === 'Premium' && zoneRedundant === true) {
-      lines.push('  zone_redundant      = true');
+      lines.push(`  zone_redundant      = ${context.getPropertyExpression(resource, 'zone_redundant', zoneRedundant)}`);
     }
 
     lines.push('');

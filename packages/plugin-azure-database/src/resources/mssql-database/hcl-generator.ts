@@ -1,5 +1,4 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
-import { escapeHclString as e } from '@terrastudio/core';
 
 export const mssqlDatabaseHclGenerator: HclGenerator = {
   typeId: 'azurerm/database/mssql_database',
@@ -26,30 +25,37 @@ export const mssqlDatabaseHclGenerator: HclGenerator = {
       if (serverAddr) dependsOn.push(serverAddr);
     }
 
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
+
     const lines: string[] = [
       `resource "azurerm_mssql_database" "${resource.terraformName}" {`,
-      `  name      = "${e(name)}"`,
+      `  name      = ${nameExpr}`,
       `  server_id = ${serverIdExpr}`,
     ];
 
     if (skuName) {
-      lines.push(`  sku_name  = "${e(skuName)}"`);
+      const skuExpr = context.getPropertyExpression(resource, 'sku_name', skuName);
+      lines.push(`  sku_name  = ${skuExpr}`);
     }
 
     if (collation && collation !== 'SQL_Latin1_General_CP1_CI_AS') {
-      lines.push(`  collation = "${e(collation)}"`);
+      const collationExpr = context.getPropertyExpression(resource, 'collation', collation);
+      lines.push(`  collation = ${collationExpr}`);
     }
 
     if (maxSizeGb !== undefined && maxSizeGb !== 2) {
-      lines.push(`  max_size_gb = ${maxSizeGb}`);
+      const maxSizeExpr = context.getPropertyExpression(resource, 'max_size_gb', maxSizeGb);
+      lines.push(`  max_size_gb = ${maxSizeExpr}`);
     }
 
     if (zoneRedundant === true) {
-      lines.push('  zone_redundant = true');
+      const zoneExpr = context.getPropertyExpression(resource, 'zone_redundant', zoneRedundant);
+      lines.push(`  zone_redundant = ${zoneExpr}`);
     }
 
     if (licenseType) {
-      lines.push(`  license_type = "${e(licenseType)}"`);
+      const licenseExpr = context.getPropertyExpression(resource, 'license_type', licenseType);
+      lines.push(`  license_type = ${licenseExpr}`);
     }
 
     lines.push('');

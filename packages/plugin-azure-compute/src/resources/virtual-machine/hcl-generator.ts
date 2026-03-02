@@ -55,6 +55,14 @@ export const vmHclGenerator: HclGenerator = {
       ? 'azurerm_windows_virtual_machine'
       : 'azurerm_linux_virtual_machine';
 
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
+    const sizeExpr = context.getPropertyExpression(resource, 'size', size);
+    const adminUsernameExpr = context.getPropertyExpression(resource, 'admin_username', adminUsername);
+    const imagePublisherExpr = context.getPropertyExpression(resource, 'image_publisher', imagePublisher);
+    const imageOfferExpr = context.getPropertyExpression(resource, 'image_offer', imageOffer);
+    const imageSkuExpr = context.getPropertyExpression(resource, 'image_sku', imageSku);
+    const osDiskTypeExpr = context.getPropertyExpression(resource, 'os_disk_type', osDiskType);
+
     // Generate NIC
     const nicLines: string[] = [
       `resource "azurerm_network_interface" "${nicName}" {`,
@@ -82,11 +90,11 @@ export const vmHclGenerator: HclGenerator = {
     // Generate VM
     const vmLines: string[] = [
       `resource "${terraformType}" "${resource.terraformName}" {`,
-      `  name                = "${e(name)}"`,
+      `  name                = ${nameExpr}`,
       `  resource_group_name = ${rgExpr}`,
       `  location            = ${locExpr}`,
-      `  size                = "${e(size)}"`,
-      `  admin_username      = "${e(adminUsername)}"`,
+      `  size                = ${sizeExpr}`,
+      `  admin_username      = ${adminUsernameExpr}`,
       '',
       `  network_interface_ids = [azurerm_network_interface.${nicName}.id]`,
     ];
@@ -110,7 +118,7 @@ export const vmHclGenerator: HclGenerator = {
       });
       vmLines.push('');
       vmLines.push('  admin_ssh_key {');
-      vmLines.push(`    username   = "${e(adminUsername)}"`);
+      vmLines.push(`    username   = ${adminUsernameExpr}`);
       vmLines.push(`    public_key = var.${sshKeyVarName}`);
       vmLines.push('  }');
 
@@ -121,17 +129,17 @@ export const vmHclGenerator: HclGenerator = {
     vmLines.push('');
     vmLines.push('  os_disk {');
     vmLines.push('    caching              = "ReadWrite"');
-    vmLines.push(`    storage_account_type = "${e(osDiskType)}"`);
+    vmLines.push(`    storage_account_type = ${osDiskTypeExpr}`);
     if (osDiskSizeGb) {
-      vmLines.push(`    disk_size_gb         = ${osDiskSizeGb}`);
+      vmLines.push(`    disk_size_gb         = ${context.getPropertyExpression(resource, 'os_disk_size_gb', osDiskSizeGb)}`);
     }
     vmLines.push('  }');
 
     vmLines.push('');
     vmLines.push('  source_image_reference {');
-    vmLines.push(`    publisher = "${e(imagePublisher)}"`);
-    vmLines.push(`    offer     = "${e(imageOffer)}"`);
-    vmLines.push(`    sku       = "${e(imageSku)}"`);
+    vmLines.push(`    publisher = ${imagePublisherExpr}`);
+    vmLines.push(`    offer     = ${imageOfferExpr}`);
+    vmLines.push(`    sku       = ${imageSkuExpr}`);
     vmLines.push('    version   = "latest"');
     vmLines.push('  }');
 

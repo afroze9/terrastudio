@@ -1,5 +1,4 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
-import { escapeHclString as e } from '@terrastudio/core';
 
 export const mssqlServerHclGenerator: HclGenerator = {
   typeId: 'azurerm/database/mssql_server',
@@ -16,6 +15,10 @@ export const mssqlServerHclGenerator: HclGenerator = {
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
 
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
+    const versionExpr = context.getPropertyExpression(resource, 'version', version);
+    const loginExpr = context.getPropertyExpression(resource, 'administrator_login', adminLogin);
+
     // Use getPropertyExpression to respect variable mode
     // Use default naming pattern (terraformName_propertyKey) to match UI-derived variables
     const passwordExpr = context.getPropertyExpression(
@@ -31,20 +34,22 @@ export const mssqlServerHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_mssql_server" "${resource.terraformName}" {`,
-      `  name                         = "${e(name)}"`,
+      `  name                         = ${nameExpr}`,
       `  resource_group_name          = ${rgExpr}`,
       `  location                     = ${locExpr}`,
-      `  version                      = "${e(version)}"`,
-      `  administrator_login          = "${e(adminLogin)}"`,
+      `  version                      = ${versionExpr}`,
+      `  administrator_login          = ${loginExpr}`,
       `  administrator_login_password = ${passwordExpr}`,
     ];
 
     if (minTls && minTls !== '1.2') {
-      lines.push(`  minimum_tls_version          = "${e(minTls)}"`);
+      const minTlsExpr = context.getPropertyExpression(resource, 'minimum_tls_version', minTls);
+      lines.push(`  minimum_tls_version          = ${minTlsExpr}`);
     }
 
     if (publicAccess === false) {
-      lines.push('  public_network_access_enabled = false');
+      const publicExpr = context.getPropertyExpression(resource, 'public_network_access_enabled', publicAccess);
+      lines.push(`  public_network_access_enabled = ${publicExpr}`);
     }
 
     lines.push('');

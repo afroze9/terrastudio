@@ -1,5 +1,4 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
-import { escapeHclString as e } from '@terrastudio/core';
 
 export const userAssignedIdentityHclGenerator: HclGenerator = {
   typeId: 'azurerm/identity/user_assigned_identity',
@@ -11,9 +10,11 @@ export const userAssignedIdentityHclGenerator: HclGenerator = {
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
 
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
+
     const lines: string[] = [
       `resource "azurerm_user_assigned_identity" "${resource.terraformName}" {`,
-      `  name                = "${e(name)}"`,
+      `  name                = ${nameExpr}`,
       `  resource_group_name = ${rgExpr}`,
       `  location            = ${locExpr}`,
       '',

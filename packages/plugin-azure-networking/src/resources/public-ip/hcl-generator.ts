@@ -1,5 +1,4 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
-import { escapeHclString as e } from '@terrastudio/core';
 
 export const publicIpHclGenerator: HclGenerator = {
   typeId: 'azurerm/networking/public_ip',
@@ -15,26 +14,32 @@ export const publicIpHclGenerator: HclGenerator = {
 
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
+    const allocationMethodExpr = context.getPropertyExpression(resource, 'allocation_method', allocationMethod);
+    const skuExpr = context.getPropertyExpression(resource, 'sku', sku);
 
     const lines: string[] = [
       `resource "azurerm_public_ip" "${resource.terraformName}" {`,
-      `  name                = "${e(name)}"`,
+      `  name                = ${nameExpr}`,
       `  resource_group_name = ${rgExpr}`,
       `  location            = ${locExpr}`,
-      `  allocation_method   = "${e(allocationMethod)}"`,
-      `  sku                 = "${e(sku)}"`,
+      `  allocation_method   = ${allocationMethodExpr}`,
+      `  sku                 = ${skuExpr}`,
     ];
 
     if (ipVersion && ipVersion !== 'IPv4') {
-      lines.push(`  ip_version          = "${e(ipVersion)}"`);
+      const ipVersionExpr = context.getPropertyExpression(resource, 'ip_version', ipVersion);
+      lines.push(`  ip_version          = ${ipVersionExpr}`);
     }
 
     if (idleTimeout && idleTimeout !== 4) {
-      lines.push(`  idle_timeout_in_minutes = ${idleTimeout}`);
+      const idleTimeoutExpr = context.getPropertyExpression(resource, 'idle_timeout_in_minutes', idleTimeout);
+      lines.push(`  idle_timeout_in_minutes = ${idleTimeoutExpr}`);
     }
 
     if (domainLabel) {
-      lines.push(`  domain_name_label   = "${e(domainLabel)}"`);
+      const domainLabelExpr = context.getPropertyExpression(resource, 'domain_name_label', domainLabel);
+      lines.push(`  domain_name_label   = ${domainLabelExpr}`);
     }
 
     lines.push('');

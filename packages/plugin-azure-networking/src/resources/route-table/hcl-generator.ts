@@ -1,5 +1,4 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
-import { escapeHclString as e } from '@terrastudio/core';
 
 export const routeTableHclGenerator: HclGenerator = {
   typeId: 'azurerm/networking/route_table',
@@ -11,16 +10,18 @@ export const routeTableHclGenerator: HclGenerator = {
 
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
 
     const lines: string[] = [
       `resource "azurerm_route_table" "${resource.terraformName}" {`,
-      `  name                = "${e(name)}"`,
+      `  name                = ${nameExpr}`,
       `  location            = ${locExpr}`,
       `  resource_group_name = ${rgExpr}`,
     ];
 
     if (bgpPropagation === false) {
-      lines.push('  bgp_route_propagation_enabled = false');
+      const bgpExpr = context.getPropertyExpression(resource, 'bgp_route_propagation_enabled', false);
+      lines.push(`  bgp_route_propagation_enabled = ${bgpExpr}`);
     }
 
     lines.push('');

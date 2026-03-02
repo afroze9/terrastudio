@@ -1,5 +1,4 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
-import { escapeHclString as e } from '@terrastudio/core';
 
 export const redisCacheHclGenerator: HclGenerator = {
   typeId: 'azurerm/database/redis_cache',
@@ -17,22 +16,30 @@ export const redisCacheHclGenerator: HclGenerator = {
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
 
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
+    const skuExpr = context.getPropertyExpression(resource, 'sku_name', skuName);
+    const capacityExpr = context.getPropertyExpression(resource, 'capacity', capacity);
+
     const lines: string[] = [
       `resource "azurerm_redis_cache" "${resource.terraformName}" {`,
-      `  name                = "${e(name)}"`,
+      `  name                = ${nameExpr}`,
       `  location            = ${locExpr}`,
       `  resource_group_name = ${rgExpr}`,
-      `  sku_name            = "${e(skuName)}"`,
-      `  family              = "${e(family)}"`,
-      `  capacity            = ${capacity}`,
+      `  sku_name            = ${skuExpr}`,
+      `  family              = "${family}"`,
+      `  capacity            = ${capacityExpr}`,
     ];
 
     if (redisVersion) {
-      lines.push(`  redis_version       = "${e(redisVersion)}"`);
+      const versionExpr = context.getPropertyExpression(resource, 'redis_version', redisVersion);
+      lines.push(`  redis_version       = ${versionExpr}`);
     }
 
-    lines.push(`  minimum_tls_version  = "${e(minTls ?? '1.2')}"`);
-    lines.push(`  non_ssl_port_enabled = ${enableNonSsl === true}`);
+    const minTlsExpr = context.getPropertyExpression(resource, 'minimum_tls_version', minTls ?? '1.2');
+    lines.push(`  minimum_tls_version  = ${minTlsExpr}`);
+
+    const nonSslExpr = context.getPropertyExpression(resource, 'non_ssl_port_enabled', enableNonSsl === true);
+    lines.push(`  non_ssl_port_enabled = ${nonSslExpr}`);
 
     lines.push('');
     lines.push('  tags = local.common_tags');

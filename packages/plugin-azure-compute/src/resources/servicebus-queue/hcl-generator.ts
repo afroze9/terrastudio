@@ -1,5 +1,4 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
-import { escapeHclString as e } from '@terrastudio/core';
 
 export const serviceBusQueueHclGenerator: HclGenerator = {
   typeId: 'azurerm/messaging/servicebus_queue',
@@ -25,30 +24,32 @@ export const serviceBusQueueHclGenerator: HclGenerator = {
       if (nsAddr) dependsOn.push(nsAddr);
     }
 
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
+
     const lines: string[] = [
       `resource "azurerm_servicebus_queue" "${resource.terraformName}" {`,
-      `  name         = "${e(name)}"`,
+      `  name         = ${nameExpr}`,
       `  namespace_id = ${namespaceIdExpr}`,
     ];
 
     if (lockDuration && lockDuration !== 'PT1M') {
-      lines.push(`  lock_duration = "${e(lockDuration)}"`);
+      lines.push(`  lock_duration = ${context.getPropertyExpression(resource, 'lock_duration', lockDuration)}`);
     }
 
     if (maxDeliveryCount !== undefined && maxDeliveryCount !== 10) {
-      lines.push(`  max_delivery_count = ${maxDeliveryCount}`);
+      lines.push(`  max_delivery_count = ${context.getPropertyExpression(resource, 'max_delivery_count', maxDeliveryCount)}`);
     }
 
     if (requiresDedupe === true) {
-      lines.push('  requires_duplicate_detection = true');
+      lines.push(`  requires_duplicate_detection = ${context.getPropertyExpression(resource, 'requires_duplicate_detection', requiresDedupe)}`);
     }
 
     if (requiresSession === true) {
-      lines.push('  requires_session = true');
+      lines.push(`  requires_session = ${context.getPropertyExpression(resource, 'requires_session', requiresSession)}`);
     }
 
     if (deadLetterOnExpiry === true) {
-      lines.push('  dead_lettering_on_message_expiration = true');
+      lines.push(`  dead_lettering_on_message_expiration = ${context.getPropertyExpression(resource, 'dead_lettering_on_message_expiration', deadLetterOnExpiry)}`);
     }
 
     lines.push('}');

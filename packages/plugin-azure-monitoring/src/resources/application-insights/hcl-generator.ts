@@ -1,5 +1,4 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
-import { escapeHclString as e } from '@terrastudio/core';
 
 export const applicationInsightsHclGenerator: HclGenerator = {
   typeId: 'azurerm/monitoring/application_insights',
@@ -16,12 +15,15 @@ export const applicationInsightsHclGenerator: HclGenerator = {
     const locExpr = context.getLocationExpression(resource);
     const dependsOn: string[] = [];
 
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
+    const appTypeExpr = context.getPropertyExpression(resource, 'application_type', appType);
+
     const lines: string[] = [
       `resource "azurerm_application_insights" "${resource.terraformName}" {`,
-      `  name                = "${e(name)}"`,
+      `  name                = ${nameExpr}`,
       `  resource_group_name = ${rgExpr}`,
       `  location            = ${locExpr}`,
-      `  application_type    = "${e(appType)}"`,
+      `  application_type    = ${appTypeExpr}`,
     ];
 
     // Resolve Log Analytics Workspace reference
@@ -34,15 +36,18 @@ export const applicationInsightsHclGenerator: HclGenerator = {
     }
 
     if (retention && retention !== 90) {
-      lines.push(`  retention_in_days   = ${retention}`);
+      const retentionExpr = context.getPropertyExpression(resource, 'retention_in_days', retention);
+      lines.push(`  retention_in_days   = ${retentionExpr}`);
     }
 
     if (dailyCap !== undefined) {
-      lines.push(`  daily_data_cap_in_gb = ${dailyCap}`);
+      const dailyCapExpr = context.getPropertyExpression(resource, 'daily_data_cap_in_gb', dailyCap);
+      lines.push(`  daily_data_cap_in_gb = ${dailyCapExpr}`);
     }
 
     if (sampling !== undefined && sampling !== 100) {
-      lines.push(`  sampling_percentage = ${sampling}`);
+      const samplingExpr = context.getPropertyExpression(resource, 'sampling_percentage', sampling);
+      lines.push(`  sampling_percentage = ${samplingExpr}`);
     }
 
     lines.push('');

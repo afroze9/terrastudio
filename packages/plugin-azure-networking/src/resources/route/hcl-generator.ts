@@ -1,5 +1,4 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
-import { escapeHclString as e } from '@terrastudio/core';
 
 export const routeHclGenerator: HclGenerator = {
   typeId: 'azurerm/networking/route',
@@ -12,6 +11,9 @@ export const routeHclGenerator: HclGenerator = {
     const nextHopIp = props['next_hop_in_ip_address'] as string | undefined;
 
     const rgExpr = context.getResourceGroupExpression(resource);
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
+    const addressPrefixExpr = context.getPropertyExpression(resource, 'address_prefix', addressPrefix);
+    const nextHopTypeExpr = context.getPropertyExpression(resource, 'next_hop_type', nextHopType);
 
     const rtRef = resource.references['route_table_name'];
     const rtNameExpr = rtRef
@@ -26,15 +28,16 @@ export const routeHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_route" "${resource.terraformName}" {`,
-      `  name                = "${e(name)}"`,
+      `  name                = ${nameExpr}`,
       `  resource_group_name = ${rgExpr}`,
       `  route_table_name    = ${rtNameExpr}`,
-      `  address_prefix      = "${e(addressPrefix)}"`,
-      `  next_hop_type       = "${e(nextHopType)}"`,
+      `  address_prefix      = ${addressPrefixExpr}`,
+      `  next_hop_type       = ${nextHopTypeExpr}`,
     ];
 
     if (nextHopType === 'VirtualAppliance' && nextHopIp) {
-      lines.push(`  next_hop_in_ip_address = "${e(nextHopIp)}"`);
+      const nextHopIpExpr = context.getPropertyExpression(resource, 'next_hop_in_ip_address', nextHopIp);
+      lines.push(`  next_hop_in_ip_address = ${nextHopIpExpr}`);
     }
 
     lines.push('}');

@@ -1,5 +1,4 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
-import { escapeHclString as e } from '@terrastudio/core';
 
 export const bastionHclGenerator: HclGenerator = {
   typeId: 'azurerm/networking/bastion_host',
@@ -15,6 +14,8 @@ export const bastionHclGenerator: HclGenerator = {
 
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
+    const skuExpr = context.getPropertyExpression(resource, 'sku', sku);
 
     const subnetRef = resource.references['subnet_id'];
     const subnetIdExpr = subnetRef
@@ -38,25 +39,29 @@ export const bastionHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_bastion_host" "${resource.terraformName}" {`,
-      `  name                = "${e(name)}"`,
+      `  name                = ${nameExpr}`,
       `  location            = ${locExpr}`,
       `  resource_group_name = ${rgExpr}`,
-      `  sku                 = "${e(sku)}"`,
+      `  sku                 = ${skuExpr}`,
     ];
 
     if (copyPaste === false) {
-      lines.push('  copy_paste_enabled = false');
+      const copyPasteExpr = context.getPropertyExpression(resource, 'copy_paste_enabled', false);
+      lines.push(`  copy_paste_enabled = ${copyPasteExpr}`);
     }
 
     if (sku === 'Standard') {
       if (fileCopy === true) {
-        lines.push('  file_copy_enabled = true');
+        const fileCopyExpr = context.getPropertyExpression(resource, 'file_copy_enabled', true);
+        lines.push(`  file_copy_enabled = ${fileCopyExpr}`);
       }
       if (tunneling === true) {
-        lines.push('  tunneling_enabled = true');
+        const tunnelingExpr = context.getPropertyExpression(resource, 'tunneling_enabled', true);
+        lines.push(`  tunneling_enabled = ${tunnelingExpr}`);
       }
       if (scaleUnits !== undefined && scaleUnits !== 2) {
-        lines.push(`  scale_units = ${scaleUnits}`);
+        const scaleUnitsExpr = context.getPropertyExpression(resource, 'scale_units', scaleUnits);
+        lines.push(`  scale_units = ${scaleUnitsExpr}`);
       }
     }
 

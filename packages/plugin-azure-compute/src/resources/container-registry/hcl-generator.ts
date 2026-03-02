@@ -1,5 +1,4 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
-import { escapeHclString as e } from '@terrastudio/core';
 
 export const containerRegistryHclGenerator: HclGenerator = {
   typeId: 'azurerm/containers/container_registry',
@@ -14,20 +13,23 @@ export const containerRegistryHclGenerator: HclGenerator = {
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
 
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
+    const skuExpr = context.getPropertyExpression(resource, 'sku', sku);
+
     const lines: string[] = [
       `resource "azurerm_container_registry" "${resource.terraformName}" {`,
-      `  name                = "${e(name)}"`,
+      `  name                = ${nameExpr}`,
       `  resource_group_name = ${rgExpr}`,
       `  location            = ${locExpr}`,
-      `  sku                 = "${e(sku)}"`,
+      `  sku                 = ${skuExpr}`,
     ];
 
     if (adminEnabled === true) {
-      lines.push('  admin_enabled       = true');
+      lines.push(`  admin_enabled       = ${context.getPropertyExpression(resource, 'admin_enabled', adminEnabled)}`);
     }
 
     if (publicAccess === false) {
-      lines.push('  public_network_access_enabled = false');
+      lines.push(`  public_network_access_enabled = ${context.getPropertyExpression(resource, 'public_network_access_enabled', publicAccess)}`);
     }
 
     lines.push('');

@@ -13,6 +13,7 @@ export const subnetHclGenerator: HclGenerator = {
     const delegationService = (props['delegation_service'] as string | undefined) ?? 'Microsoft.Web/serverFarms';
 
     const rgExpr = context.getResourceGroupExpression(resource);
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
 
     // Resolve VNet reference
     const vnetRef = resource.references['virtual_network_name'];
@@ -30,7 +31,7 @@ export const subnetHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_subnet" "${resource.terraformName}" {`,
-      `  name                 = "${e(name)}"`,
+      `  name                 = ${nameExpr}`,
       `  resource_group_name  = ${rgExpr}`,
       `  virtual_network_name = ${vnetNameExpr}`,
       `  address_prefixes     = [${addrList}]`,

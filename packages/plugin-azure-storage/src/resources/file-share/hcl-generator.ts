@@ -1,5 +1,4 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
-import { escapeHclString as e } from '@terrastudio/core';
 
 export const fileShareHclGenerator: HclGenerator = {
   typeId: 'azurerm/storage/file_share',
@@ -22,19 +21,24 @@ export const fileShareHclGenerator: HclGenerator = {
       if (saAddr) dependsOn.push(saAddr);
     }
 
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
+    const quotaExpr = context.getPropertyExpression(resource, 'quota', quota);
+
     const lines: string[] = [
       `resource "azurerm_storage_share" "${resource.terraformName}" {`,
-      `  name                 = "${e(name)}"`,
+      `  name                 = ${nameExpr}`,
       `  storage_account_id   = ${saIdExpr}`,
-      `  quota                = ${quota}`,
+      `  quota                = ${quotaExpr}`,
     ];
 
     if (accessTier && accessTier !== 'Hot') {
-      lines.push(`  access_tier          = "${e(accessTier)}"`);
+      const accessTierExpr = context.getPropertyExpression(resource, 'access_tier', accessTier);
+      lines.push(`  access_tier          = ${accessTierExpr}`);
     }
 
     if (protocol && protocol !== 'SMB') {
-      lines.push(`  enabled_protocol     = "${e(protocol)}"`);
+      const protocolExpr = context.getPropertyExpression(resource, 'enabled_protocol', protocol);
+      lines.push(`  enabled_protocol     = ${protocolExpr}`);
     }
 
     lines.push('}');

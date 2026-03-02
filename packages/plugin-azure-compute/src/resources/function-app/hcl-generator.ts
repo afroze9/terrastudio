@@ -52,9 +52,11 @@ export const functionAppHclGenerator: HclGenerator = {
       if (saAddr) dependsOn.push(saAddr);
     }
 
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
+
     const lines: string[] = [
       `resource "${terraformType}" "${resource.terraformName}" {`,
-      `  name                       = "${e(name)}"`,
+      `  name                       = ${nameExpr}`,
       `  resource_group_name        = ${rgExpr}`,
       `  location                   = ${locExpr}`,
       `  service_plan_id            = ${planIdExpr}`,
@@ -63,11 +65,11 @@ export const functionAppHclGenerator: HclGenerator = {
     ];
 
     if (httpsOnly !== false) {
-      lines.push('  https_only                 = true');
+      lines.push(`  https_only                 = ${context.getPropertyExpression(resource, 'https_only', true)}`);
     }
 
     if (enabled === false) {
-      lines.push('  enabled                    = false');
+      lines.push(`  enabled                    = ${context.getPropertyExpression(resource, 'enabled', false)}`);
     }
 
     // site_config with application_stack

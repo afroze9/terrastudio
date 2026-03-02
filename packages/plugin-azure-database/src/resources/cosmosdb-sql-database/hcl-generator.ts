@@ -1,5 +1,4 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
-import { escapeHclString as e } from '@terrastudio/core';
 
 export const cosmosdbSqlDatabaseHclGenerator: HclGenerator = {
   typeId: 'azurerm/database/cosmosdb_sql_database',
@@ -22,15 +21,18 @@ export const cosmosdbSqlDatabaseHclGenerator: HclGenerator = {
       if (accountAddr) dependsOn.push(accountAddr);
     }
 
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
+
     const lines: string[] = [
       `resource "azurerm_cosmosdb_sql_database" "${resource.terraformName}" {`,
-      `  name                = "${e(name)}"`,
+      `  name                = ${nameExpr}`,
       `  resource_group_name = ${rgExpr}`,
       `  account_name        = ${accountNameExpr}`,
     ];
 
     if (throughput !== undefined && throughput > 0) {
-      lines.push(`  throughput          = ${throughput}`);
+      const throughputExpr = context.getPropertyExpression(resource, 'throughput', throughput);
+      lines.push(`  throughput          = ${throughputExpr}`);
     }
 
     lines.push('}');

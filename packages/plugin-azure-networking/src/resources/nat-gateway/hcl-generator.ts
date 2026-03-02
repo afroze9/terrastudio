@@ -1,5 +1,4 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
-import { escapeHclString as e } from '@terrastudio/core';
 
 export const natGatewayHclGenerator: HclGenerator = {
   typeId: 'azurerm/networking/nat_gateway',
@@ -11,17 +10,19 @@ export const natGatewayHclGenerator: HclGenerator = {
 
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
 
     const lines: string[] = [
       `resource "azurerm_nat_gateway" "${resource.terraformName}" {`,
-      `  name                = "${e(name)}"`,
+      `  name                = ${nameExpr}`,
       `  location            = ${locExpr}`,
       `  resource_group_name = ${rgExpr}`,
       '  sku_name            = "Standard"',
     ];
 
     if (idleTimeout !== undefined && idleTimeout !== 4) {
-      lines.push(`  idle_timeout_in_minutes = ${idleTimeout}`);
+      const idleTimeoutExpr = context.getPropertyExpression(resource, 'idle_timeout_in_minutes', idleTimeout);
+      lines.push(`  idle_timeout_in_minutes = ${idleTimeoutExpr}`);
     }
 
     lines.push('');

@@ -12,6 +12,7 @@ export const privateEndpointHclGenerator: HclGenerator = {
 
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
 
     // Resolve subnet reference (parent)
     const subnetRef = resource.references['subnet_id'];
@@ -37,7 +38,7 @@ export const privateEndpointHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_private_endpoint" "${resource.terraformName}" {`,
-      `  name                = "${e(name)}"`,
+      `  name                = ${nameExpr}`,
       `  resource_group_name = ${rgExpr}`,
       `  location            = ${locExpr}`,
       `  subnet_id           = ${subnetIdExpr}`,

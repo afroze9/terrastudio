@@ -1,5 +1,4 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
-import { escapeHclString as e } from '@terrastudio/core';
 
 export const cosmosdbAccountHclGenerator: HclGenerator = {
   typeId: 'azurerm/database/cosmosdb_account',
@@ -17,34 +16,43 @@ export const cosmosdbAccountHclGenerator: HclGenerator = {
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
 
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
+    const kindExpr = context.getPropertyExpression(resource, 'kind', kind);
+
     const lines: string[] = [
       `resource "azurerm_cosmosdb_account" "${resource.terraformName}" {`,
-      `  name                = "${e(name)}"`,
+      `  name                = ${nameExpr}`,
       `  location            = ${locExpr}`,
       `  resource_group_name = ${rgExpr}`,
       `  offer_type          = "Standard"`,
-      `  kind                = "${e(kind)}"`,
+      `  kind                = ${kindExpr}`,
     ];
 
     if (autoFailover !== false) {
-      lines.push('  automatic_failover_enabled = true');
+      const failoverExpr = context.getPropertyExpression(resource, 'automatic_failover_enabled', true);
+      lines.push(`  automatic_failover_enabled = ${failoverExpr}`);
     }
 
     if (multiWrite === true) {
-      lines.push('  multiple_write_locations_enabled = true');
+      const multiWriteExpr = context.getPropertyExpression(resource, 'multiple_write_locations_enabled', true);
+      lines.push(`  multiple_write_locations_enabled = ${multiWriteExpr}`);
     }
 
     if (geoRedundant === true) {
-      lines.push('  geo_redundant_backup_enabled = true');
+      const geoExpr = context.getPropertyExpression(resource, 'geo_redundant_backup_enabled', true);
+      lines.push(`  geo_redundant_backup_enabled = ${geoExpr}`);
     }
 
     if (publicAccess === false) {
-      lines.push('  public_network_access_enabled = false');
+      const publicExpr = context.getPropertyExpression(resource, 'public_network_access_enabled', false);
+      lines.push(`  public_network_access_enabled = ${publicExpr}`);
     }
+
+    const consistencyExpr = context.getPropertyExpression(resource, 'consistency_level', consistencyLevel);
 
     lines.push('');
     lines.push('  consistency_policy {');
-    lines.push(`    consistency_level = "${e(consistencyLevel)}"`);
+    lines.push(`    consistency_level = ${consistencyExpr}`);
     lines.push('  }');
     lines.push('');
     lines.push('  geo_location {');

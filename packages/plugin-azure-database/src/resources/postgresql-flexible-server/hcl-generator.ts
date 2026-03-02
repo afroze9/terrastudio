@@ -1,5 +1,4 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
-import { escapeHclString as e } from '@terrastudio/core';
 
 export const postgresqlFlexibleServerHclGenerator: HclGenerator = {
   typeId: 'azurerm/database/postgresql_flexible_server',
@@ -18,6 +17,12 @@ export const postgresqlFlexibleServerHclGenerator: HclGenerator = {
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
 
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
+    const versionExpr = context.getPropertyExpression(resource, 'version', version);
+    const skuExpr = context.getPropertyExpression(resource, 'sku_name', skuName);
+    const storageMbExpr = context.getPropertyExpression(resource, 'storage_mb', storageMb);
+    const loginExpr = context.getPropertyExpression(resource, 'administrator_login', adminLogin);
+
     const passwordExpr = context.getPropertyExpression(
       resource,
       'administrator_password',
@@ -31,24 +36,27 @@ export const postgresqlFlexibleServerHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_postgresql_flexible_server" "${resource.terraformName}" {`,
-      `  name                   = "${e(name)}"`,
+      `  name                   = ${nameExpr}`,
       `  location               = ${locExpr}`,
       `  resource_group_name    = ${rgExpr}`,
-      `  version                = "${e(version)}"`,
-      `  sku_name               = "${e(skuName)}"`,
-      `  storage_mb             = ${storageMb}`,
-      `  administrator_login    = "${e(adminLogin)}"`,
+      `  version                = ${versionExpr}`,
+      `  sku_name               = ${skuExpr}`,
+      `  storage_mb             = ${storageMbExpr}`,
+      `  administrator_login    = ${loginExpr}`,
       `  administrator_password = ${passwordExpr}`,
     ];
 
     if (backupRetention !== undefined && backupRetention !== 7) {
-      lines.push(`  backup_retention_days  = ${backupRetention}`);
+      const retentionExpr = context.getPropertyExpression(resource, 'backup_retention_days', backupRetention);
+      lines.push(`  backup_retention_days  = ${retentionExpr}`);
     }
 
     if (publicAccess === true) {
-      lines.push('  public_network_access_enabled = true');
+      const publicExpr = context.getPropertyExpression(resource, 'public_network_access_enabled', publicAccess);
+      lines.push(`  public_network_access_enabled = ${publicExpr}`);
     } else {
-      lines.push('  public_network_access_enabled = false');
+      const publicExpr = context.getPropertyExpression(resource, 'public_network_access_enabled', false);
+      lines.push(`  public_network_access_enabled = ${publicExpr}`);
     }
 
     lines.push('');

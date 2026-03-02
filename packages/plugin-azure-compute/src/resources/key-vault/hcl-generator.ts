@@ -70,12 +70,16 @@ export const keyVaultHclGenerator: HclGenerator = {
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
 
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
+    const skuNameExpr = context.getPropertyExpression(resource, 'sku_name', skuName);
+    const softDeleteDaysExpr = context.getPropertyExpression(resource, 'soft_delete_retention_days', softDeleteDays ?? 90);
+
     const lines: string[] = [
       `resource "azurerm_key_vault" "${resource.terraformName}" {`,
-      `  name                = "${e(name)}"`,
+      `  name                = ${nameExpr}`,
       `  resource_group_name = ${rgExpr}`,
       `  location            = ${locExpr}`,
-      `  sku_name            = "${e(skuName)}"`,
+      `  sku_name            = ${skuNameExpr}`,
       '  tenant_id           = data.azurerm_client_config.current.tenant_id',
     ];
 
@@ -84,22 +88,22 @@ export const keyVaultHclGenerator: HclGenerator = {
       lines.push('  enable_rbac_authorization = true');
     }
 
-    lines.push(`  soft_delete_retention_days = ${softDeleteDays ?? 90}`);
+    lines.push(`  soft_delete_retention_days = ${softDeleteDaysExpr}`);
 
     if (purgeProtection) {
-      lines.push('  purge_protection_enabled  = true');
+      lines.push(`  purge_protection_enabled  = ${context.getPropertyExpression(resource, 'purge_protection_enabled', purgeProtection)}`);
     }
 
     if (forDeployment) {
-      lines.push('  enabled_for_deployment = true');
+      lines.push(`  enabled_for_deployment = ${context.getPropertyExpression(resource, 'enabled_for_deployment', forDeployment)}`);
     }
 
     if (forDiskEncryption) {
-      lines.push('  enabled_for_disk_encryption = true');
+      lines.push(`  enabled_for_disk_encryption = ${context.getPropertyExpression(resource, 'enabled_for_disk_encryption', forDiskEncryption)}`);
     }
 
     if (forTemplateDeployment) {
-      lines.push('  enabled_for_template_deployment = true');
+      lines.push(`  enabled_for_template_deployment = ${context.getPropertyExpression(resource, 'enabled_for_template_deployment', forTemplateDeployment)}`);
     }
 
     // For Access Policy mode: embed access_policy blocks inside the Key Vault

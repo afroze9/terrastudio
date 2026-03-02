@@ -1,5 +1,4 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
-import { escapeHclString as e } from '@terrastudio/core';
 
 export const privateDnsZoneVnetLinkHclGenerator: HclGenerator = {
   typeId: 'azurerm/networking/private_dns_zone_vnet_link',
@@ -10,6 +9,8 @@ export const privateDnsZoneVnetLinkHclGenerator: HclGenerator = {
     const registrationEnabled = (props['registration_enabled'] as boolean) ?? false;
 
     const rgExpr = context.getResourceGroupExpression(resource);
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
+    const registrationEnabledExpr = context.getPropertyExpression(resource, 'registration_enabled', registrationEnabled);
 
     // Resolve Private DNS Zone reference → name
     const dnsZoneRef = resource.references['private_dns_zone_id'];
@@ -35,11 +36,11 @@ export const privateDnsZoneVnetLinkHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_private_dns_zone_virtual_network_link" "${resource.terraformName}" {`,
-      `  name                  = "${e(name)}"`,
+      `  name                  = ${nameExpr}`,
       `  resource_group_name   = ${rgExpr}`,
       `  private_dns_zone_name = ${dnsZoneNameExpr}`,
       `  virtual_network_id    = ${vnetIdExpr}`,
-      `  registration_enabled  = ${registrationEnabled}`,
+      `  registration_enabled  = ${registrationEnabledExpr}`,
       '',
       '  tags = local.common_tags',
       '}',
