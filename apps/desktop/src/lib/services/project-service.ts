@@ -97,6 +97,9 @@ export async function createProject(
   await loadPluginsForProject(providers);
 
   diagram.clear();
+  terraform.clear();
+  cost.clear();
+  ui.closeAllFileTabs();
   project.open(data.path, data.metadata);
 
   // Set window title and sync project info to MCP state
@@ -160,7 +163,9 @@ export async function loadProjectByPath(path: string): Promise<void> {
   await loadPluginsForProject(resolveActiveProviders(data.metadata.projectConfig));
 
   diagram.clear();
+  terraform.clear();
   cost.clear();
+  ui.closeAllFileTabs();
   project.open(data.path, data.metadata);
 
   // Merge user secrets into variableValues if this project has a secretsId

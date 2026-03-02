@@ -107,6 +107,20 @@ class TerraformStore {
     });
   }
 
+  /** Reset all terraform state (called when closing/switching projects). */
+  clear() {
+    this.status = 'idle';
+    this.currentCommand = null;
+    this.outputLines = [];
+    this.collectedVariables = [];
+    this.filesStale = true;
+    this.lastGenerationHash = null;
+    this.autoRegenBlocked = false;
+    this.lastResult = null;
+    this.errorAddresses = new Map();
+    // Keep terraformVersion/terraformInstalled — those are global, not per-project
+  }
+
   /** Mark terraform files as needing regeneration */
   markFilesStale() {
     if (this.suppressStaleMarking) return;

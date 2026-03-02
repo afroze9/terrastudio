@@ -149,6 +149,12 @@ class UiStore {
     }
   }
 
+  /** Close all file tabs, returning to just the canvas tab. */
+  closeAllFileTabs() {
+    this.tabs = [{ id: 'canvas', label: 'Canvas', type: 'canvas' as const }];
+    this.activeTabId = 'canvas';
+  }
+
   /** Close all file tabs except the given one (canvas is always kept) */
   closeOtherTabs(keepTabId: string) {
     this.tabs = this.tabs.filter((t) => t.id === 'canvas' || t.id === keepTabId);

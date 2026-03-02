@@ -113,6 +113,8 @@
 				if (project.isOpen) {
 					if (!(await guardUnsavedChanges())) return;
 					diagram.clear();
+					terraform.clear();
+					ui.closeAllFileTabs();
 					project.close();
 					const win = getCurrentWindow();
 					win.setTitle('TerraStudio').catch(() => {});
