@@ -569,7 +569,7 @@ export class HclPipeline {
         const mode = resource.variableOverrides?.[propertyKey] ?? 'literal';
         if (mode === 'variable') {
           const varName = options.variableName ?? `${resource.terraformName}_${propertyKey}`;
-          const varType = options.variableType ?? (typeof value === 'number' ? 'number' : 'string');
+          const varType = options.variableType ?? (typeof value === 'boolean' ? 'bool' : typeof value === 'number' ? 'number' : 'string');
           const varDesc = options.variableDescription ?? `${propertyKey} for ${resource.terraformName}`;
           variableCollector.add({ name: varName, type: varType, description: varDesc, defaultValue: value, sensitive: options.sensitive });
           return `var.${varName}`;
