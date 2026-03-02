@@ -1,5 +1,4 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
-import { escapeHclString as e } from '@terrastudio/core';
 
 export const privateEndpointHclGenerator: HclGenerator = {
   typeId: 'azurerm/networking/private_endpoint',
@@ -46,7 +45,7 @@ export const privateEndpointHclGenerator: HclGenerator = {
       '  private_service_connection {',
       `    name                           = "${name}-psc"`,
       `    private_connection_resource_id = ${targetIdExpr}`,
-      `    subresource_names              = ["${e(subresource)}"]`,
+      `    subresource_names              = [${context.getPropertyExpression(resource, 'subresource_names', subresource)}]`,
       '    is_manual_connection           = false',
       '  }',
     ];

@@ -194,7 +194,10 @@ export class ModuleHclContext implements HclGenerationContext {
 
     if (mode === 'variable') {
       const varName = options.variableName ?? `${resource.terraformName}_${propertyKey}`;
-      const varType = options.variableType ?? (typeof value === 'number' ? 'number' : 'string');
+      const varType = options.variableType ??
+        (Array.isArray(value) ? 'list(string)' :
+        typeof value === 'boolean' ? 'bool' :
+        typeof value === 'number' ? 'number' : 'string');
       const varDesc = options.variableDescription ?? `${propertyKey} for ${resource.terraformName}`;
 
       this.variableCollector.add({
@@ -208,6 +211,10 @@ export class ModuleHclContext implements HclGenerationContext {
       return `var.${varName}`;
     }
 
+    if (Array.isArray(value)) {
+      const items = value.map((v) => typeof v === 'string' ? `"${escapeHclString(v)}"` : String(v));
+      return `[${items.join(', ')}]`;
+    }
     if (typeof value === 'string') return `"${escapeHclString(value)}"`;
     if (typeof value === 'number') return String(value);
     if (typeof value === 'boolean') return value ? 'true' : 'false';

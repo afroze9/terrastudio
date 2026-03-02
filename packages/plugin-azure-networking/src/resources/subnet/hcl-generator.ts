@@ -21,7 +21,7 @@ export const subnetHclGenerator: HclGenerator = {
       ? context.getAttributeReference(vnetRef, 'name')
       : '"<vnet-name>"';
 
-    const addrList = addressPrefixes.map((a) => `"${e(a)}"`).join(', ');
+    const addrExpr = context.getPropertyExpression(resource, 'address_prefixes', addressPrefixes);
     const dependsOn: string[] = [];
 
     if (vnetRef) {
@@ -34,12 +34,11 @@ export const subnetHclGenerator: HclGenerator = {
       `  name                 = ${nameExpr}`,
       `  resource_group_name  = ${rgExpr}`,
       `  virtual_network_name = ${vnetNameExpr}`,
-      `  address_prefixes     = [${addrList}]`,
+      `  address_prefixes     = ${addrExpr}`,
     ];
 
     if (serviceEndpoints && serviceEndpoints.length > 0) {
-      const epList = serviceEndpoints.map((ep) => `"${e(ep)}"`).join(', ');
-      lines.push(`  service_endpoints    = [${epList}]`);
+      lines.push(`  service_endpoints    = ${context.getPropertyExpression(resource, 'service_endpoints', serviceEndpoints)}`);
     }
 
     if (delegationEnabled) {

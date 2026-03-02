@@ -50,8 +50,8 @@
 
   /** Check if a property type supports variable mode toggle */
   function supportsVariableToggle(type: string): boolean {
-    // Scalar types that map to Terraform variables
-    return ['string', 'number', 'cidr', 'select', 'boolean'].includes(type);
+    // Scalar types + arrays of scalars map to Terraform variables
+    return ['string', 'number', 'cidr', 'select', 'boolean', 'array'].includes(type);
   }
 
   function isVisible(prop: PropertySchema, vals: Record<string, unknown>): boolean {
