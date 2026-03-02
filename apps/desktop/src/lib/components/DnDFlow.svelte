@@ -8,6 +8,7 @@
     Background,
     BackgroundVariant,
     SelectionMode,
+    ViewportPortal,
     type OnConnect,
     type OnDelete,
     type IsValidConnection,
@@ -27,6 +28,8 @@
   import { EdgeMarkers } from './edges';
   import { autofitContainer } from '$lib/services/layout-service';
   import ConnectionPointsModal from './ConnectionPointsModal.svelte';
+  import ModuleBoundary from './ModuleBoundary.svelte';
+  import ModuleInstanceBoundary from './ModuleInstanceBoundary.svelte';
   import type { ConnectionPointConfig, HandlePositionOverrides, HandleDefinition, OutputDefinition, ResourceTypeId as TypeId } from '@terrastudio/types';
 
   let { nodeTypes }: { nodeTypes: Record<string, ResourceNodeComponent> } = $props();
@@ -50,14 +53,102 @@
   // ── Reference edge display ──────────────────────────────────────────────
   // Merge real (persisted) edges with auto-generated reference edges.
   // $derived re-computes reactively whenever diagram.edges or diagram.nodes changes.
+  // Build a set of collapsed module IDs and their member node IDs for edge redirection.
+  const collapsedModuleMap = $derived.by(() => {
+    const map = new Map<string, { syntheticId: string; memberIds: Set<string> }>();
+    for (const mod of diagram.modules) {
+      if (!mod.collapsed || mod.isTemplate) continue; // templates use instance-based visibility
+      const memberIds = new Set(
+        diagram.nodes.filter((n) => n.data.moduleId === mod.id).map((n) => n.id),
+      );
+      map.set(mod.id, { syntheticId: `_mod_${mod.id}`, memberIds });
+    }
+    return map;
+  });
+
+  // Build a set of template member node IDs — these are always hidden on canvas.
+  // Edges involving original template members are filtered out (cloned instance members have their own edges).
+  // Only original template nodes (never _instmem_ clones) are included.
+  const hiddenTemplateMemberIds = $derived.by(() => {
+    const ids = new Set<string>();
+    for (const mod of diagram.modules) {
+      if (!mod.isTemplate) continue;
+      for (const n of diagram.nodes) {
+        if (n.data.moduleId === mod.id && !n.id.startsWith('_instmem_')) ids.add(n.id);
+      }
+    }
+    return ids;
+  });
+
   // Type assertion to Edge[] for SvelteFlow compatibility (our TerraStudioEdgeData extends Record<string, unknown>).
   // Also filter out edges whose category is hidden via the visibility toggle.
-  const displayEdges = $derived(
-    ([...diagram.edges, ...diagram.referenceEdges] as Edge[]).filter((edge) => {
+  // Redirects cross-module edges to the synthetic collapsed node when a module is collapsed.
+  // Hides edges involving hidden template members.
+  const displayEdges = $derived.by(() => {
+    const allEdges = [...diagram.edges, ...diagram.referenceEdges] as Edge[];
+    const result: Edge[] = [];
+
+    for (const edge of allEdges) {
       const category = (edge.data as TerraStudioEdgeData | undefined)?.category ?? 'structural';
-      return ui.isEdgeCategoryVisible(category);
-    })
-  );
+      if (!ui.isEdgeCategoryVisible(category)) continue;
+
+      // Hide edges involving hidden template member nodes
+      if (hiddenTemplateMemberIds.size > 0) {
+        if (hiddenTemplateMemberIds.has(edge.source) || hiddenTemplateMemberIds.has(edge.target)) {
+          continue;
+        }
+      }
+
+      if (collapsedModuleMap.size === 0) {
+        result.push(edge);
+        continue;
+      }
+
+      // Check if source or target is in a collapsed module
+      let newSource = edge.source;
+      let newTarget = edge.target;
+      let newSourceHandle = edge.sourceHandle;
+      let newTargetHandle = edge.targetHandle;
+      let redirected = false;
+
+      for (const [, { syntheticId, memberIds }] of collapsedModuleMap) {
+        if (memberIds.has(edge.source) && memberIds.has(edge.target)) {
+          // Both endpoints inside same collapsed module — hide edge
+          redirected = true;
+          newSource = ''; // signal to skip
+          break;
+        }
+        if (memberIds.has(edge.source) && !memberIds.has(edge.target)) {
+          newSource = syntheticId;
+          newSourceHandle = `mod-out-${edge.source}-${edge.sourceHandle ?? 'default'}`;
+          redirected = true;
+        }
+        if (memberIds.has(edge.target) && !memberIds.has(edge.source)) {
+          newTarget = syntheticId;
+          newTargetHandle = `mod-in-${edge.target}-${edge.targetHandle ?? 'default'}`;
+          redirected = true;
+        }
+      }
+
+      if (newSource === '') continue; // both inside collapsed module
+
+      if (redirected) {
+        result.push({
+          ...edge,
+          id: `${edge.id}-mod`,
+          source: newSource,
+          target: newTarget,
+          sourceHandle: newSourceHandle,
+          targetHandle: newTargetHandle,
+          zIndex: 1001,
+        });
+      } else {
+        result.push(edge);
+      }
+    }
+
+    return result;
+  });
 
   let defaultEdgeOptions = $derived({ type: ui.edgeType });
 
@@ -173,6 +264,109 @@
     closeContextMenu();
   }
 
+  // ── Module context menu ─────────────────────────────────────────
+
+  /** Whether the context shows "Create Module" — need 2+ selected nodes */
+  let canCreateModule = $derived.by(() => {
+    if (!contextMenu?.nodeId) return false;
+    const selectedIds = diagram.nodes.filter((n) => n.selected).map((n) => n.id);
+    if (!selectedIds.includes(contextMenu.nodeId)) selectedIds.push(contextMenu.nodeId);
+    return selectedIds.length >= 2;
+  });
+
+  /** Whether context-menu node belongs to a module */
+  let contextNodeModuleId = $derived.by(() => {
+    const nodeId = contextMenu?.nodeId;
+    if (!nodeId) return null;
+    const node = diagram.nodes.find((n) => n.id === nodeId);
+    return (node?.data.moduleId as string) ?? null;
+  });
+
+  let moduleNameInput = $state('');
+  let showModuleNameDialog = $state(false);
+  let pendingModuleNodeIds = $state<string[]>([]);
+
+  function handleCreateModule() {
+    const selectedIds = diagram.nodes.filter((n) => n.selected).map((n) => n.id);
+    if (contextMenu?.nodeId && !selectedIds.includes(contextMenu.nodeId)) {
+      selectedIds.push(contextMenu.nodeId);
+    }
+    pendingModuleNodeIds = selectedIds;
+    moduleNameInput = '';
+    showModuleNameDialog = true;
+    closeContextMenu();
+  }
+
+  function confirmCreateModule() {
+    const name = moduleNameInput.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    if (!name || pendingModuleNodeIds.length < 2) return;
+    const moduleId = diagram.createModule(name, pendingModuleNodeIds);
+    diagram.selectedModuleId = moduleId;
+    showModuleNameDialog = false;
+    pendingModuleNodeIds = [];
+  }
+
+  function handleRemoveFromModule() {
+    const nodeId = contextMenu?.nodeId;
+    if (nodeId) diagram.removeNodesFromModule([nodeId]);
+    closeContextMenu();
+  }
+
+  // ── Template / Instance context menu ──────────────────────────
+
+  /** Whether context-menu node belongs to a module that can be converted to template */
+  let canConvertToTemplate = $derived.by(() => {
+    if (!contextNodeModuleId) return false;
+    const mod = diagram.modules.find((m) => m.id === contextNodeModuleId);
+    return mod ? !mod.isTemplate : false;
+  });
+
+  /** Whether context-menu node belongs to a template module */
+  let contextNodeIsInTemplate = $derived.by(() => {
+    if (!contextNodeModuleId) return false;
+    const mod = diagram.modules.find((m) => m.id === contextNodeModuleId);
+    return mod?.isTemplate === true;
+  });
+
+  function handleConvertToTemplate() {
+    if (contextNodeModuleId) {
+      diagram.convertToTemplate(contextNodeModuleId);
+    }
+    closeContextMenu();
+  }
+
+  let instanceNameInput = $state('');
+  let instanceNameError = $state('');
+  let showInstanceNameDialog = $state(false);
+  let pendingInstanceTemplateId = $state<string | null>(null);
+  let pendingInstancePosition = $state<{ x: number; y: number } | null>(null);
+
+  function handleCreateInstance(templateId?: string, position?: { x: number; y: number }) {
+    const tid = templateId ?? contextNodeModuleId;
+    if (!tid) return;
+    pendingInstanceTemplateId = tid;
+    pendingInstancePosition = position ?? null;
+    instanceNameInput = '';
+    instanceNameError = '';
+    showInstanceNameDialog = true;
+    closeContextMenu();
+  }
+
+  function confirmCreateInstance() {
+    const name = instanceNameInput.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+    if (!name || !pendingInstanceTemplateId) return;
+    // Check uniqueness
+    if (diagram.moduleInstances.some((i) => i.name === name)) {
+      instanceNameError = `Name "${name}" is already in use`;
+      return;
+    }
+    instanceNameError = '';
+    diagram.createModuleInstance(pendingInstanceTemplateId, name, pendingInstancePosition ?? undefined);
+    showInstanceNameDialog = false;
+    pendingInstanceTemplateId = null;
+    pendingInstancePosition = null;
+  }
+
   /** Check if the context-menu node is a container with children */
   let contextNodeIsContainerWithChildren = $derived.by(() => {
     const nodeId = contextMenu?.nodeId;
@@ -222,6 +416,8 @@
 
     for (const node of diagram.nodes) {
       if (node.id === excludeNodeId) continue;
+      if (node.hidden) continue;
+      if (node.id.startsWith('_instmem_')) continue; // skip transient instance clones
       const nodeTypeId = node.type as ResourceTypeId;
       if (!allowedParents.includes(nodeTypeId)) continue;
 
@@ -279,6 +475,7 @@
 
     for (const node of diagram.nodes) {
       if (node.id === excludeNodeId) continue;
+      if (node.hidden) continue;
       const nodeSchema = registry.getResourceSchema(node.type as ResourceTypeId);
       if (!nodeSchema?.isContainer) continue;
 
@@ -317,6 +514,7 @@
 
     for (const node of diagram.nodes) {
       if (node.id === excludeNodeId) continue;
+      if (node.hidden) continue;
       const nodeSchema = registry.getResourceSchema(node.type as ResourceTypeId);
       if (!nodeSchema?.isContainer) continue;
 
@@ -348,6 +546,12 @@
       event.preventDefault();
       if (!event.dataTransfer) return;
 
+      // Template instance drag — always allow drop (no containment rules)
+      if (event.dataTransfer.types.includes('application/terrastudio-template')) {
+        event.dataTransfer.dropEffect = 'copy';
+        return;
+      }
+
       const typeId = event.dataTransfer.getData('application/terrastudio-type');
       if (typeId) {
         const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
@@ -361,6 +565,14 @@
       event.preventDefault();
       clearDragFeedback();
       if (!event.dataTransfer) return;
+
+      // Handle template instance drop from palette
+      const templateId = event.dataTransfer.getData('application/terrastudio-template');
+      if (templateId) {
+        const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+        handleCreateInstance(templateId, position);
+        return;
+      }
 
       const typeId = event.dataTransfer.getData('application/terrastudio-type');
       if (!typeId) return;
@@ -696,9 +908,9 @@
     onnodedragstart={(event) => { contextMenu = null; handleNodeDragStart(event); }}
     onnodedrag={handleNodeDrag}
     onnodedragstop={(event) => { handleNodeDragStop(event); diagram.saveSnapshot(); }}
-    onnodeclick={({ node }) => { contextMenu = null; diagram.selectedEdgeId = null; diagram.selectedNodeId = node.id; }}
-    onedgeclick={({ edge }) => { contextMenu = null; diagram.selectedNodeId = null; diagram.selectedEdgeId = edge.id; }}
-    onpaneclick={() => { contextMenu = null; diagram.selectedNodeId = null; diagram.selectedEdgeId = null; }}
+    onnodeclick={({ node }) => { contextMenu = null; diagram.selectedEdgeId = null; diagram.selectedModuleId = null; diagram.selectedNodeId = node.id; }}
+    onedgeclick={({ edge }) => { contextMenu = null; diagram.selectedNodeId = null; diagram.selectedModuleId = null; diagram.selectedEdgeId = edge.id; }}
+    onpaneclick={() => { contextMenu = null; diagram.selectedNodeId = null; diagram.selectedEdgeId = null; diagram.selectedModuleId = null; }}
     onnodecontextmenu={({ event, node }) => { event.preventDefault(); contextMenu = { x: event.clientX, y: event.clientY, nodeId: node.id }; }}
     onselectioncontextmenu={({ event, nodes: selNodes }) => { event.preventDefault(); contextMenu = { x: event.clientX, y: event.clientY, nodeId: selNodes[0]?.id }; }}
     onedgecontextmenu={({ event, edge }) => { event.preventDefault(); contextMenu = { x: event.clientX, y: event.clientY, edgeId: edge.id }; }}
@@ -720,6 +932,27 @@
     {#if ui.showMinimap}<MiniMap />{/if}
     <Background variant={BackgroundVariant.Dots} gap={ui.gridSize} size={1} />
     <EdgeMarkers />
+    {#if diagram.modules.length > 0 || diagram.moduleInstances.some((i) => i.collapsed === false)}
+      <ViewportPortal target="front">
+        {#each diagram.modules.filter((m) => !m.collapsed && !m.isTemplate) as mod (mod.id)}
+          <ModuleBoundary
+            module={mod}
+            {screenToFlowPosition}
+            onselect={(id) => { diagram.selectedNodeId = null; diagram.selectedEdgeId = null; diagram.selectedModuleId = id; }}
+            ontogglecollapse={(id) => diagram.toggleModuleCollapsed(id)}
+            oncreateinstance={(id) => handleCreateInstance(id)}
+          />
+        {/each}
+        {#each diagram.moduleInstances.filter((i) => i.collapsed === false) as inst (inst.id)}
+          <ModuleInstanceBoundary
+            instance={inst}
+            {screenToFlowPosition}
+            onselect={(id) => { diagram.selectedNodeId = `_modinst_${id}`; diagram.selectedEdgeId = null; diagram.selectedModuleId = null; }}
+            oncollapse={(id) => diagram.toggleInstanceCollapsed(id)}
+          />
+        {/each}
+      </ViewportPortal>
+    {/if}
   </SvelteFlow>
 </div>
 
@@ -745,6 +978,27 @@
         <button class="context-menu-item" onclick={handleContextFitToContents}>
           <span class="ctx-label"><svg class="ctx-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5V3a1 1 0 0 1 1-1h2.5" /><path d="M10.5 2H13a1 1 0 0 1 1 1v2.5" /><path d="M14 10.5V13a1 1 0 0 1-1 1h-2.5" /><path d="M5.5 14H3a1 1 0 0 1-1-1v-2.5" /><rect x="5" y="5" width="6" height="6" rx="1" /></svg>Fit to Contents</span>
         </button>
+      {/if}
+      {#if canCreateModule}
+        <div class="context-menu-separator"></div>
+        <button class="context-menu-item" onclick={handleCreateModule}>
+          <span class="ctx-label"><svg class="ctx-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="1.5" width="13" height="13" rx="2" stroke-dasharray="3 2" /><path d="M5.5 8h5" /><path d="M8 5.5v5" /></svg>Create Module...</span>
+        </button>
+      {/if}
+      {#if contextNodeModuleId}
+        <button class="context-menu-item" onclick={handleRemoveFromModule}>
+          <span class="ctx-label"><svg class="ctx-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="1.5" width="13" height="13" rx="2" stroke-dasharray="3 2" /><path d="M5.5 8h5" /></svg>Remove from Module</span>
+        </button>
+        {#if canConvertToTemplate}
+          <button class="context-menu-item" onclick={handleConvertToTemplate}>
+            <span class="ctx-label"><svg class="ctx-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="12" height="12" rx="2" /><path d="M5 6h6M5 8h6M5 10h4" opacity="0.6" /></svg>Convert to Template</span>
+          </button>
+        {/if}
+        {#if contextNodeIsInTemplate}
+          <button class="context-menu-item" onclick={() => handleCreateInstance()}>
+            <span class="ctx-label"><svg class="ctx-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="12" height="12" rx="2" stroke-dasharray="3 2" /><path d="M8 5v6" /><path d="M5 8h6" /></svg>Create Instance...</span>
+          </button>
+        {/if}
       {/if}
       <div class="context-menu-separator"></div>
       <button class="context-menu-item" onclick={handleContextSelectAll}>
@@ -784,6 +1038,64 @@
   onSave={handleSaveHandleManager}
   onClose={handleCloseHandleManager}
 />
+
+<!-- Module Name Dialog -->
+{#if showModuleNameDialog}
+  <div class="module-dialog-backdrop" role="presentation">
+    <!-- svelte-ignore a11y_autofocus -->
+    <div class="module-dialog">
+      <h3 class="module-dialog-title">Create Module</h3>
+      <p class="module-dialog-desc">Enter a name for the module (lowercase, alphanumeric, hyphens).</p>
+      <input
+        class="module-dialog-input"
+        type="text"
+        placeholder="e.g. networking"
+        bind:value={moduleNameInput}
+        autofocus
+        onkeydown={(e) => { if (e.key === 'Enter') confirmCreateModule(); if (e.key === 'Escape') showModuleNameDialog = false; }}
+      />
+      <div class="module-dialog-actions">
+        <button class="module-dialog-btn module-dialog-cancel" onclick={() => showModuleNameDialog = false}>Cancel</button>
+        <button
+          class="module-dialog-btn module-dialog-confirm"
+          disabled={!moduleNameInput.trim()}
+          onclick={confirmCreateModule}
+        >Create</button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Instance Name Dialog -->
+{#if showInstanceNameDialog}
+  <div class="module-dialog-backdrop" role="presentation">
+    <!-- svelte-ignore a11y_autofocus -->
+    <div class="module-dialog">
+      <h3 class="module-dialog-title">Create Instance</h3>
+      <p class="module-dialog-desc">Enter a name for the module instance (lowercase, alphanumeric, underscores).</p>
+      <input
+        class="module-dialog-input"
+        type="text"
+        placeholder="e.g. net_prod"
+        bind:value={instanceNameInput}
+        autofocus
+        oninput={() => instanceNameError = ''}
+        onkeydown={(e) => { if (e.key === 'Enter') confirmCreateInstance(); if (e.key === 'Escape') showInstanceNameDialog = false; }}
+      />
+      {#if instanceNameError}
+        <p class="module-dialog-error">{instanceNameError}</p>
+      {/if}
+      <div class="module-dialog-actions">
+        <button class="module-dialog-btn module-dialog-cancel" onclick={() => showInstanceNameDialog = false}>Cancel</button>
+        <button
+          class="module-dialog-btn module-dialog-confirm"
+          disabled={!instanceNameInput.trim()}
+          onclick={confirmCreateInstance}
+        >Create</button>
+      </div>
+    </div>
+  </div>
+{/if}
 
 <style>
   .dnd-flow-wrapper {
@@ -856,5 +1168,80 @@
     height: 1px;
     background: var(--color-border);
     margin: 4px 0;
+  }
+
+  /* Module name dialog */
+  .module-dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .module-dialog {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 20px;
+    min-width: 320px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
+  .module-dialog-title {
+    margin: 0 0 4px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+  .module-dialog-desc {
+    margin: 0 0 12px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+  .module-dialog-error {
+    margin: 4px 0 0;
+    font-size: 11px;
+    color: #f87171;
+  }
+  .module-dialog-input {
+    width: 100%;
+    padding: 6px 10px;
+    font-size: 13px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-surface);
+    color: var(--color-text);
+    outline: none;
+    box-sizing: border-box;
+  }
+  .module-dialog-input:focus {
+    border-color: var(--color-primary, #6366f1);
+  }
+  .module-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .module-dialog-btn {
+    padding: 5px 14px;
+    font-size: 12px;
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+  }
+  .module-dialog-cancel {
+    background: none;
+    color: var(--color-text-muted);
+  }
+  .module-dialog-confirm {
+    background: var(--color-primary, #6366f1);
+    color: white;
+    border-color: var(--color-primary, #6366f1);
+  }
+  .module-dialog-confirm:disabled {
+    opacity: 0.5;
+    cursor: default;
   }
 </style>

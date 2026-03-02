@@ -69,6 +69,9 @@ export type {
 // Validation types
 export type { ValidationError, PropertyValidation } from './validation.js';
 
+// Module types
+export type { ModuleDefinition, ModuleInstance } from './module.js';
+
 // Naming convention types
 export type { NamingConvention } from './naming.js';
 

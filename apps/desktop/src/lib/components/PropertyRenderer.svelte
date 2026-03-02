@@ -21,6 +21,8 @@
     onVariableModeChange?: (key: string, mode: PropertyVariableMode) => void;
     /** Show variable toggle buttons (disabled by default for backwards compat) */
     showVariableToggle?: boolean;
+    /** When true, all property inputs are disabled (template member read-only mode) */
+    readonly?: boolean;
   }
 
   let {
@@ -33,6 +35,7 @@
     variableOverrides = {},
     onVariableModeChange,
     showVariableToggle = false,
+    readonly: isReadonly = false,
   }: Props = $props();
 
   function getVariableMode(key: string): PropertyVariableMode {
@@ -47,8 +50,8 @@
 
   /** Check if a property type supports variable mode toggle */
   function supportsVariableToggle(type: string): boolean {
-    // Only simple scalar types can be variables
-    return ['string', 'number', 'cidr'].includes(type);
+    // Scalar types that map to Terraform variables
+    return ['string', 'number', 'cidr', 'select', 'boolean'].includes(type);
   }
 
   function isVisible(prop: PropertySchema, vals: Record<string, unknown>): boolean {
@@ -120,6 +123,7 @@
 
 {#each grouped as [groupName, props]}
   <CollapsiblePanelSection id="props-group-{groupName.toLowerCase().replace(/\s+/g, '-')}" label={groupName} count={props.length}>
+    <fieldset class="props-fieldset" disabled={isReadonly}>
     {#each props as prop}
       {@const isVariable = showVariableToggle && supportsVariableToggle(prop.type) && getVariableMode(prop.key) === 'variable'}
       <div class="field">
@@ -308,10 +312,16 @@
         </label>
       </div>
     {/each}
+    </fieldset>
   </CollapsiblePanelSection>
 {/each}
 
 <style>
+  .props-fieldset {
+    border: none;
+    padding: 0;
+    margin: 0;
+  }
   .field {
     margin-bottom: 10px;
   }

@@ -48,6 +48,7 @@ export function registerQueryTools(server: McpServer, bridge: BridgeClient): voi
             data: {
               label: node.data?.label,
               terraformName: node.data?.terraformName,
+              moduleId: node.data?.moduleId,
             },
           })),
         };
@@ -79,6 +80,7 @@ export function registerQueryTools(server: McpServer, bridge: BridgeClient): voi
         references: node.data?.references ?? {},
         enabledOutputs: node.data?.enabledOutputs ?? [],
         parentId: node.parentId,
+        moduleId: node.data?.moduleId,
         position: node.position,
       }));
 
@@ -103,6 +105,9 @@ export function registerQueryTools(server: McpServer, bridge: BridgeClient): voi
           r.label?.toLowerCase().includes(needle)
         );
       }
+      if (params.moduleId) {
+        resources = resources.filter((r: any) => r.moduleId === params.moduleId);
+      }
 
       // --- Total count (after filtering, before pagination) ---
       const total = resources.length;
@@ -123,12 +128,13 @@ export function registerQueryTools(server: McpServer, bridge: BridgeClient): voi
           label: r.label,
           terraformName: r.terraformName,
           parentId: r.parentId,
+          moduleId: r.moduleId,
         }));
       }
 
       // --- Response ---
       const usedNewParams = params.typeId || params.typePattern || params.parentId ||
-        params.label || params.detail || params.limit !== undefined ||
+        params.label || params.moduleId || params.detail || params.limit !== undefined ||
         params.offset !== undefined;
 
       if (!usedNewParams) {

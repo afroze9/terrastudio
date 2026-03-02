@@ -57,11 +57,15 @@ gantt
     Phase 21 Cost Estimation          :done, p21, 2026-02-26, 2026-02-26
     Phase 21.5 Edge Visibility UI     :done, p215, 2026-02-26, 2026-02-26
     Phase 21.6 TS Build Infra         :done, p216, 2026-02-26, 2026-02-27
-    Phase 21.7 External File Watch    :p217, 2026-02-27, 2026-03-02
-    Phase 21.8 Plugin Test Harness    :p218, 2026-02-27, 2026-03-02
-    Phase 21.9 Canvas Layout Tools    :p219, 2026-02-27, 2026-03-02
-    Phase 19 Import Terraform         :p19, 2026-03-02, 2026-03-07
-    Phase 24 MCP Server               :p24, 2026-03-07, 2026-03-14
+    Phase 21.9 Canvas Layout Tools    :done, p219, 2026-02-27, 2026-02-27
+    Phase 22.1 Structured Logging     :done, p221, 2026-02-27, 2026-02-27
+    Phase 24 MCP Server               :done, p24, 2026-02-27, 2026-02-28
+    Phase 22.2 File Assoc + Instance  :done, p222, 2026-02-28, 2026-02-28
+    Phase 22.3 Multi-Window Support   :done, p223, 2026-02-28, 2026-02-28
+    Phase 22.4 Security Hardening     :done, p224, 2026-02-28, 2026-02-28
+    Phase 21.7 External File Watch    :p217, 2026-03-02, 2026-03-07
+    Phase 21.8 Plugin Test Harness    :p218, 2026-03-02, 2026-03-07
+    Phase 19 Import Terraform         :p19, 2026-03-07, 2026-03-14
 ```
 
 ---
@@ -1075,9 +1079,27 @@ When generated `.tf` files are modified outside the app, warn the user before ov
 
 ---
 
-## Phase 21.9: Canvas Layout Tools
+## Phase 21.9: Canvas Layout Tools ✅
 
 **Goal**: Give users precise control over node positioning — multi-select alignment, even distribution, minimum-spacing enforcement, and tidy edge-label placement.
+
+### What Was Implemented
+
+1. **Alignment toolbar** ✅
+   - Floating toolbar appears when ≥ 2 nodes are selected
+   - All 6 alignment operations: left, center-H, right, top, middle-V, bottom
+   - Works correctly with contained nodes (parent-relative coordinate translation)
+
+2. **Distribution** ✅
+   - Horizontal and vertical distribution when ≥ 3 nodes selected
+   - Equal spacing calculated between outermost fixed nodes
+
+3. **Auto-fit** ✅
+   - "Fit to content" resizes containers to snugly fit their children with padding
+   - Schema-defined minimum sizes prevent containers from collapsing too small
+
+4. **Batch undo** ✅
+   - All alignment/distribution moves grouped as a single undo snapshot
 
 ---
 
@@ -1177,6 +1199,88 @@ All layout controls live in a **"Layout" toolbar section** that appears contextu
 
 ---
 
+## Phase 22.1: Structured Logging ✅
+
+**Goal**: Add a configurable logging system so developers and users can control verbosity and trace issues.
+
+### What Was Implemented
+
+1. **Configurable log levels** ✅
+   - Log levels: trace, debug, info, warn, error
+   - Level configurable via app settings (persisted in project config)
+   - Frontend logging utility wraps `console.*` with level gating
+
+2. **Structured log output** ✅
+   - Consistent format: `[LEVEL] [module] message` with timestamps
+   - Module-scoped loggers for core, plugins, MCP server, Terraform bridge
+   - Log output visible in Tauri dev console and optionally written to file
+
+---
+
+## Phase 22.2: File Association & Single Instance ✅
+
+**Goal**: Register `.tstudio` as a native file extension so users can double-click project files to open them, with single-instance enforcement.
+
+### What Was Implemented
+
+1. **`.tstudio` file extension** ✅
+   - OS-level file association registered during install (Windows via NSIS, macOS via Info.plist)
+   - Custom file icon for `.tstudio` files in OS file explorer
+
+2. **Single-instance handling** ✅
+   - Second app launch sends the file path to the running instance via Tauri single-instance plugin
+   - Running instance receives the path and opens the project in a new window
+   - Prevents multiple app processes competing for the same project lock
+
+3. **Deep link support** ✅
+   - File paths passed as CLI args on cold launch are opened automatically after the app initializes
+
+---
+
+## Phase 22.3: Multi-Window Support ✅
+
+**Goal**: Allow multiple project windows within a single app process for side-by-side editing.
+
+### What Was Implemented
+
+1. **Single-process multi-window** ✅
+   - New window via File → New Window or Ctrl+Shift+N
+   - Each window has independent diagram state, sidebar, and toolbar
+   - Windows share the same Tauri process and Rust backend
+
+2. **Per-window state isolation** ✅
+   - Each window maintains its own `diagram.svelte.ts` state, undo history, and project config
+   - Window labels used as keys for state partitioning
+   - MCP server targets specific windows via `windowLabel` parameter
+
+3. **Settings sync across windows** ✅
+   - App-level settings (theme, grid snap, log level) sync across all open windows in real time
+   - Project-level settings remain per-window
+
+---
+
+## Phase 22.4: Security Hardening ✅
+
+**Goal**: Protect user credentials, prevent HCL injection, and secure the app against common attack vectors.
+
+### What Was Implemented
+
+1. **User secrets management** ✅
+   - Sensitive values (API keys, connection strings) stored in OS keychain via Tauri secure storage
+   - Secrets never written to `.terrastudio` project files or `.tf` output in plaintext
+   - Sidebar masks sensitive fields with password-style input
+
+2. **HCL injection prevention** ✅
+   - All user-supplied strings escaped before embedding in HCL output
+   - Prevents Terraform code injection via resource names, tags, or property values
+   - Escape function handles quotes, backslashes, interpolation sequences (`${...}`)
+
+3. **About dialog & UX improvements** ✅
+   - About modal shows app version, build info, and license
+   - Version read from `__APP_VERSION__` injected at build time
+
+---
+
 ## Phase 19: Import Existing Terraform State
 
 **Goal**: Parse existing Terraform state into a visual diagram for brownfield adoption.
@@ -1269,50 +1373,55 @@ All layout controls live in a **"Layout" toolbar section** that appears contextu
 
 ---
 
-## Phase 24: MCP Server
+## Phase 24: MCP Server ✅
 
 **Goal**: Expose TerraStudio's diagram and Terraform functionality via a Model Context Protocol server so that AI assistants and other apps can programmatically control the app.
 
-### Tasks
+### What Was Implemented
 
-1. **Transport layer**
-   - Implement an MCP server as a Tauri sidecar process (Node.js or Rust) that communicates with the desktop app over a local IPC channel (e.g., Tauri events or a localhost WebSocket)
-   - Support stdio transport for direct AI assistant integration (Claude Desktop, VS Code Copilot, etc.)
-   - Support SSE/HTTP transport for web-based clients
+1. **Transport layer** ✅
+   - MCP server running as Tauri sidecar process (Node.js) with stdio transport
+   - Communicates with desktop app via localhost WebSocket IPC channel
+   - Claude Desktop / VS Code Copilot integration via `mcp.json` manifest
 
-2. **Resource tools**
-   - `list_resources` — return all nodes on the current diagram with type, name, and properties
-   - `add_resource` — add a resource to the canvas by typeId, with optional position and initial properties
-   - `update_resource` — update properties of an existing resource by node ID
-   - `remove_resource` — delete a resource (and its children) from the diagram
-   - `connect_resources` — create an edge between two nodes (source handle → target handle)
-   - `disconnect_resources` — remove an edge by ID
+2. **Resource tools** ✅
+   - `list_resources` — returns all nodes with type, name, properties; supports filtering by type/name/category
+   - `add_resource` — adds resource by typeId with optional position and initial properties
+   - `update_resource` — updates properties of existing resource by node ID
+   - `remove_resource` — deletes resource and children from diagram
+   - `connect_resources` — creates edge between two nodes
+   - `disconnect_resources` — removes edge by ID
+   - `move_resource` / `resize_resource` — repositions or resizes nodes on canvas
 
-3. **Project tools**
-   - `open_project` — open a `.terrastudio` project file by path
-   - `save_project` — save the current project
-   - `new_project` — create a new project with a given name and directory
-   - `get_project_config` — return the current project config (region, naming conventions, tags)
-   - `set_project_config` — update project config fields
+3. **Project tools** ✅
+   - `open_project`, `save_project`, `new_project`
+   - `get_project_config`, `set_project_config`
 
-4. **Terraform tools**
-   - `generate_hcl` — run the HCL pipeline and return generated file contents
-   - `run_terraform` — execute a Terraform command (`init`, `validate`, `plan`, `apply`, `destroy`) and stream output
-   - `get_deployment_status` — return deployment status for all nodes
+4. **Terraform tools** ✅
+   - `generate_hcl` — runs HCL pipeline and returns generated file contents
+   - `run_terraform` — executes Terraform commands (init, validate, plan, apply, destroy)
+   - `get_deployment_status` — returns deployment status for all nodes
 
-5. **Query / read tools**
-   - `get_diagram` — return the full diagram as a JSON snapshot (nodes + edges)
-   - `get_available_resource_types` — list all registered resource types by provider and category
-   - `estimate_costs` — trigger cost estimation and return per-resource estimates
+5. **Query / read tools** ✅
+   - `get_diagram` — full diagram as JSON snapshot (nodes + edges)
+   - `get_available_resource_types` — all registered resource types by provider and category
+   - `estimate_costs` — triggers cost estimation and returns per-resource estimates
 
-6. **MCP resources (read-only context)**
-   - Expose the current diagram as an MCP `resource` so AI assistants can read it as context without a tool call
-   - Expose the generated HCL files as MCP resources
+6. **MCP resources (read-only context)** ✅
+   - Current diagram exposed as MCP resource for AI assistant context
+   - Generated HCL files exposed as MCP resources
 
-7. **Packaging**
-   - Ship the MCP server as part of the TerraStudio app bundle (Tauri sidecar)
-   - Provide an `mcp.json` manifest so Claude Desktop / VS Code can auto-discover the server
-   - Document setup in README: how to point an AI assistant at the running server
+7. **Multi-window support** ✅
+   - Per-window state management — MCP commands target a specific project window
+   - `list_windows` tool to discover open project windows
+   - Window targeting via `windowLabel` parameter on all tools
+
+8. **Containment validation & output control** ✅
+   - `add_resource` validates containment rules (e.g., Subnet must be inside VNet)
+   - Output filtering to control response verbosity
+
+### Implementation Notes
+- Three iterations: v0.6.0 (initial), v0.11.0 (multi-window), v0.13.0 (query filtering, move/resize, containment validation)
 
 ---
 

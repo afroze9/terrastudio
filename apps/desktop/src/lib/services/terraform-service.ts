@@ -102,16 +102,20 @@ async function setTaskbarProgress(status: 'indeterminate' | 'success' | 'error' 
  */
 function computeDiagramHash(): string {
   const state = {
-    nodes: diagram.nodes.map(n => ({
-      id: n.id,
-      type: n.type,
-      data: n.data,
-      parentId: n.parentId,
-    })),
-    edges: diagram.edges.map(e => ({
-      id: e.id,
-      source: e.source,
-      target: e.target,
+    nodes: diagram.nodes
+      .filter(n => !n.id.startsWith('_instmem_'))  // exclude transient instance clones
+      .map(n => ({
+        id: n.id,
+        type: n.type,
+        data: n.data,
+        parentId: n.parentId,
+      })),
+    edges: diagram.edges
+      .filter(e => !e.id.startsWith('_instmem_'))
+      .map(e => ({
+        id: e.id,
+        source: e.source,
+        target: e.target,
       sourceHandle: e.sourceHandle,
       targetHandle: e.targetHandle,
     })),
@@ -209,6 +213,8 @@ export async function generateAndWrite(): Promise<Record<string, string>> {
       resources,
       projectConfig: project.projectConfig,
       bindings,
+      modules: diagram.modules,
+      moduleInstances: diagram.moduleInstances,
     });
 
     // Store collected variables for UI display
@@ -219,7 +225,7 @@ export async function generateAndWrite(): Promise<Record<string, string>> {
     // Filter out empty files and send to Rust backend
     const fileMap: Record<string, string> = {};
     for (const [name, content] of Object.entries(result.files)) {
-      if (content.trim()) {
+      if (content && content.trim()) {
         fileMap[name] = content;
       }
     }
@@ -263,6 +269,8 @@ export function validateVariablesBeforeRun(): string[] {
 function buildAddressToNodeIdMap(): Map<string, string> {
   const addressToNodeId = new Map<string, string>();
   for (const node of diagram.nodes) {
+    // Skip synthetic/transient nodes
+    if (node.id.startsWith('_mod_') || node.id.startsWith('_modinst_') || node.id.startsWith('_instmem_')) continue;
     const typeId = node.data.typeId as ResourceTypeId;
     const schema = registry.getResourceSchema(typeId);
     if (!schema) continue;
@@ -286,8 +294,9 @@ function buildAddressToNodeIdMap(): Map<string, string> {
 function updateNodeErrorStatus(result: TerraformJsonResult) {
   const addressToNodeId = buildAddressToNodeIdMap();
 
-  // Clear previous error states
+  // Clear previous error states (skip synthetic/transient nodes)
   for (const node of diagram.nodes) {
+    if (node.id.startsWith('_mod_') || node.id.startsWith('_modinst_') || node.id.startsWith('_instmem_')) continue;
     if (node.data.deploymentStatus === 'failed') {
       diagram.updateNodeData(node.id, { deploymentStatus: 'pending' });
     }
@@ -444,6 +453,12 @@ export async function runTerraformCommand(
       unlisten();
     }
 
+    // Safety net: if status is still 'running' after the command completes,
+    // force it to 'error' so buttons aren't permanently disabled
+    if (terraform.isRunning) {
+      terraform.setStatus('error');
+    }
+
     // Update taskbar progress and send notification for long-running commands
     if (isLongRunning) {
       await setTaskbarProgress(success ? 'success' : 'error');
@@ -485,6 +500,8 @@ export async function refreshDeploymentStatus(): Promise<void> {
   // Build a lookup: "terraform_type.terraform_name" -> nodeId
   const addressToNodeId = new Map<string, string>();
   for (const node of diagram.nodes) {
+    // Skip synthetic/transient nodes
+    if (node.id.startsWith('_mod_') || node.id.startsWith('_modinst_') || node.id.startsWith('_instmem_')) continue;
     const typeId = node.data.typeId as ResourceTypeId;
     const schema = registry.getResourceSchema(typeId);
     if (!schema) continue;
@@ -525,8 +542,9 @@ export async function refreshDeploymentStatus(): Promise<void> {
   // Suppress stale marking during status updates to prevent auto-regen loop
   terraform.beginStatusRefresh();
   try {
-    // Update all diagram nodes
+    // Update all real diagram nodes (skip synthetic/transient)
     for (const node of diagram.nodes) {
+      if (node.id.startsWith('_mod_') || node.id.startsWith('_modinst_') || node.id.startsWith('_instmem_')) continue;
       let status: DeploymentStatus;
       if (deployedNodeIds.has(node.id)) {
         status = 'created';

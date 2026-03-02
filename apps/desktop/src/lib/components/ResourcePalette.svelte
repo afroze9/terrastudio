@@ -3,6 +3,7 @@
   import { registry } from '$lib/bootstrap';
   import { ui } from '$lib/stores/ui.svelte';
   import { project } from '$lib/stores/project.svelte';
+  import { diagram } from '$lib/stores/diagram.svelte';
   import type { PaletteCategory, ResourceTypeRegistration } from '@terrastudio/types';
 
   let searchQuery = $state('');
@@ -36,9 +37,23 @@
       .filter((c: { category: PaletteCategory; resources: ResourceTypeRegistration[] }) => c.resources.length > 0),
   );
 
+  /** Template modules that can be instantiated via drag-and-drop */
+  let templateModules = $derived.by(() => {
+    const templates = diagram.modules.filter((m) => m.isTemplate === true);
+    if (!searchQuery.trim()) return templates;
+    const q = searchQuery.toLowerCase();
+    return templates.filter((m) => m.name.toLowerCase().includes(q));
+  });
+
   function onDragStart(event: DragEvent, typeId: string) {
     if (!event.dataTransfer) return;
     event.dataTransfer.setData('application/terrastudio-type', typeId);
+    event.dataTransfer.effectAllowed = 'copyMove';
+  }
+
+  function onTemplateDragStart(event: DragEvent, templateId: string) {
+    if (!event.dataTransfer) return;
+    event.dataTransfer.setData('application/terrastudio-template', templateId);
     event.dataTransfer.effectAllowed = 'copyMove';
   }
 </script>
@@ -60,9 +75,53 @@
     {/if}
   </div>
 
+  {#if templateModules.length > 0}
+    {@const modulesCollapsed = !searchQuery && ui.isCategoryCollapsed('_modules')}
+    <div class="palette-category">
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <div
+        class="category-header"
+        onclick={() => { if (!searchQuery) ui.toggleCategory('_modules'); }}
+      >
+        <svg
+          class="chevron"
+          class:collapsed={modulesCollapsed}
+          width="12" height="12" viewBox="0 0 12 12"
+        >
+          <path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span class="category-label module-category-label">Modules</span>
+        <span class="category-count">{templateModules.length}</span>
+      </div>
+      {#if !modulesCollapsed}
+        <div class="category-items" transition:slide={{ duration: 150 }}>
+          {#each templateModules as mod (mod.id)}
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <div
+              class="palette-item module-palette-item"
+              draggable="true"
+              ondragstart={(e) => onTemplateDragStart(e, mod.id)}
+              title="Drag to create a new instance of {mod.name}"
+            >
+              <span class="palette-icon module-icon" style:--module-tpl-color={mod.color ?? '#6366f1'}>
+                <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="2" width="12" height="12" rx="2" />
+                  <path d="M5 6h6M5 8h6M5 10h4" opacity="0.6" />
+                </svg>
+              </span>
+              <span class="palette-label">{mod.name}</span>
+              <span class="module-instance-count">{diagram.moduleInstances.filter((i) => i.templateId === mod.id).length}</span>
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </div>
+  {/if}
+
   {#if registry.isLoading}
     <div class="palette-loading">Loading resources...</div>
-  {:else if filteredCategories.length === 0}
+  {:else if filteredCategories.length === 0 && templateModules.length === 0}
     <div class="palette-empty">
       {#if searchQuery}
         No resources match your search.
@@ -263,5 +322,21 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  .module-category-label {
+    color: #a78bfa;
+  }
+  .module-palette-item {
+    border-left: 2px dashed var(--module-tpl-color, #6366f1);
+  }
+  .module-icon {
+    color: var(--module-tpl-color, #6366f1);
+  }
+  .module-instance-count {
+    font-size: 10px;
+    color: var(--color-text-muted);
+    opacity: 0.6;
+    margin-left: auto;
+    flex-shrink: 0;
   }
 </style>

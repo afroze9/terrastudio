@@ -194,10 +194,12 @@ export async function loadProjectByPath(path: string): Promise<void> {
 
   // Restore diagram if it exists, migrating old edges to new format
   if (data.diagram) {
-    const d = data.diagram as { nodes?: unknown[]; edges?: unknown[] };
+    const d = data.diagram as { nodes?: unknown[]; edges?: unknown[]; modules?: unknown[]; moduleInstances?: unknown[] };
     const nodes = (d.nodes ?? []) as any[];
     const edges = migrateEdges(d.edges ?? []);
-    diagram.loadDiagram(nodes, edges);
+    const modules = (d.modules ?? []) as any[];
+    const moduleInstances = (d.moduleInstances ?? []) as any[];
+    diagram.loadDiagram(nodes, edges, modules, moduleInstances);
   }
 
   // Restore cost estimates if present, then check if diagram changed since last save
@@ -217,9 +219,14 @@ export async function loadProjectByPath(path: string): Promise<void> {
 export async function saveDiagram(): Promise<void> {
   if (!project.path) return;
 
+  // Filter out transient cloned nodes (_instmem_) — they're rebuilt on expand and shouldn't be persisted.
+  // Also filter their cloned edges. Synthetic module/instance nodes (_mod_, _modinst_) are kept as they're
+  // recreated on load if missing.
   const diagramData = {
-    nodes: diagram.nodes,
-    edges: diagram.edges,
+    nodes: diagram.nodes.filter((n) => !n.id.startsWith('_instmem_')),
+    edges: diagram.edges.filter((e) => !e.id.startsWith('_instmem_')),
+    modules: diagram.modules,
+    moduleInstances: diagram.moduleInstances,
   };
 
   // Determine which variable names are sensitive from the last HCL generation

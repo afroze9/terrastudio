@@ -223,6 +223,11 @@ function generateDocumentation(): string {
   const lines: string[] = [];
   const projectName = project.name || 'TerraStudio Project';
 
+  // Filter out synthetic/transient nodes for documentation
+  const isSyntheticNode = (n: { id: string }) =>
+    n.id.startsWith('_mod_') || n.id.startsWith('_modinst_') || n.id.startsWith('_instmem_');
+  const realNodes = diagram.nodes.filter((n) => !isSyntheticNode(n));
+
   // Title
   lines.push(`# ${projectName} — Architecture Documentation`);
   lines.push('');
@@ -233,14 +238,14 @@ function generateDocumentation(): string {
   lines.push('## Resource Inventory');
   lines.push('');
 
-  if (diagram.nodes.length === 0) {
+  if (realNodes.length === 0) {
     lines.push('*No resources in diagram.*');
     lines.push('');
   } else {
     lines.push('| Resource | Type | Terraform Name | Provider Type | Status |');
     lines.push('|----------|------|----------------|---------------|--------|');
 
-    for (const node of diagram.nodes) {
+    for (const node of realNodes) {
       const typeId = node.data.typeId as ResourceTypeId;
       const schema = registry.getResourceSchema(typeId);
       const displayType = schema?.displayName ?? typeId;
@@ -272,7 +277,7 @@ function generateDocumentation(): string {
     lines.push('| Resource | Type | Est. Monthly Cost | Notes |');
     lines.push('|----------|------|-------------------|-------|');
 
-    for (const node of diagram.nodes) {
+    for (const node of realNodes) {
       const est = cost.estimates.get(node.id);
       if (!est) continue;
 
@@ -307,7 +312,7 @@ function generateDocumentation(): string {
   }
 
   // Hierarchy
-  const containers = diagram.nodes.filter((n) => {
+  const containers = realNodes.filter((n) => {
     const schema = registry.getResourceSchema(n.data.typeId as ResourceTypeId);
     return schema?.isContainer;
   });
@@ -317,8 +322,8 @@ function generateDocumentation(): string {
     lines.push('');
 
     // Build parent->children map
-    const childrenMap = new Map<string | undefined, typeof diagram.nodes>();
-    for (const node of diagram.nodes) {
+    const childrenMap = new Map<string | undefined, typeof realNodes>();
+    for (const node of realNodes) {
       const parentId = node.parentId as string | undefined;
       if (!childrenMap.has(parentId)) childrenMap.set(parentId, []);
       childrenMap.get(parentId)!.push(node);
@@ -346,7 +351,7 @@ function generateDocumentation(): string {
     lines.push('graph TD');
 
     // Node definitions
-    for (const node of diagram.nodes) {
+    for (const node of realNodes) {
       const label = node.data.label.replace(/"/g, "'");
       lines.push(`    ${node.id}["${label}"]`);
     }
@@ -364,7 +369,7 @@ function generateDocumentation(): string {
   lines.push('## Resource Details');
   lines.push('');
 
-  for (const node of diagram.nodes) {
+  for (const node of realNodes) {
     const typeId = node.data.typeId as ResourceTypeId;
     const schema = registry.getResourceSchema(typeId);
     lines.push(`### ${node.data.label}`);

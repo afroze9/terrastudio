@@ -52,6 +52,62 @@ interface McpMutationReparentNode {
   parentId: string | null;
 }
 
+interface McpMutationCreateModule {
+  op: 'create_module';
+  name: string;
+  nodeIds: string[];
+}
+
+interface McpMutationDeleteModule {
+  op: 'delete_module';
+  moduleId: string;
+}
+
+interface McpMutationRenameModule {
+  op: 'rename_module';
+  moduleId: string;
+  name: string;
+}
+
+interface McpMutationToggleModuleCollapsed {
+  op: 'toggle_module_collapsed';
+  moduleId: string;
+}
+
+interface McpMutationAddToModule {
+  op: 'add_to_module';
+  moduleId: string;
+  nodeIds: string[];
+}
+
+interface McpMutationRemoveFromModule {
+  op: 'remove_from_module';
+  nodeIds: string[];
+}
+
+interface McpMutationConvertToTemplate {
+  op: 'convert_to_template';
+  moduleId: string;
+}
+
+interface McpMutationCreateModuleInstance {
+  op: 'create_module_instance';
+  templateId: string;
+  name: string;
+}
+
+interface McpMutationDeleteModuleInstance {
+  op: 'delete_module_instance';
+  instanceId: string;
+}
+
+interface McpMutationUpdateInstanceVariable {
+  op: 'update_instance_variable';
+  instanceId: string;
+  varName: string;
+  value: unknown;
+}
+
 type McpMutation =
   | McpMutationAddNode
   | McpMutationUpdateNodeData
@@ -60,7 +116,17 @@ type McpMutation =
   | McpMutationRemoveEdge
   | McpMutationMoveNode
   | McpMutationResizeNode
-  | McpMutationReparentNode;
+  | McpMutationReparentNode
+  | McpMutationCreateModule
+  | McpMutationDeleteModule
+  | McpMutationRenameModule
+  | McpMutationToggleModuleCollapsed
+  | McpMutationAddToModule
+  | McpMutationRemoveFromModule
+  | McpMutationConvertToTemplate
+  | McpMutationCreateModuleInstance
+  | McpMutationDeleteModuleInstance
+  | McpMutationUpdateInstanceVariable;
 
 const unlisteners: UnlistenFn[] = [];
 
@@ -101,6 +167,36 @@ export async function initBridgeListener(): Promise<void> {
         break;
       case 'reparent_node':
         diagram.reparentNodeSkipHistory(mutation.instanceId, mutation.position, mutation.parentId);
+        break;
+      case 'create_module':
+        diagram.createModuleSkipHistory(mutation.name, mutation.nodeIds);
+        break;
+      case 'delete_module':
+        diagram.deleteModuleSkipHistory(mutation.moduleId);
+        break;
+      case 'rename_module':
+        diagram.renameModuleSkipHistory(mutation.moduleId, mutation.name);
+        break;
+      case 'toggle_module_collapsed':
+        diagram.toggleModuleCollapsedSkipHistory(mutation.moduleId);
+        break;
+      case 'add_to_module':
+        diagram.addNodesToModuleSkipHistory(mutation.moduleId, mutation.nodeIds);
+        break;
+      case 'remove_from_module':
+        diagram.removeNodesFromModuleSkipHistory(mutation.nodeIds);
+        break;
+      case 'convert_to_template':
+        diagram.convertToTemplateSkipHistory(mutation.moduleId);
+        break;
+      case 'create_module_instance':
+        diagram.createModuleInstanceSkipHistory(mutation.templateId, mutation.name);
+        break;
+      case 'delete_module_instance':
+        diagram.deleteModuleInstanceSkipHistory(mutation.instanceId);
+        break;
+      case 'update_instance_variable':
+        diagram.updateInstanceVariableSkipHistory(mutation.instanceId, mutation.varName, mutation.value);
         break;
     }
   });

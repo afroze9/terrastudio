@@ -19,6 +19,9 @@ export function convertToResourceInstances(
   const instances: ResourceInstance[] = [];
 
   for (const node of nodes) {
+    // Skip synthetic/visual-only nodes (collapsed modules, module instance cards, instance member clones)
+    if (node.id.startsWith('_mod_') || node.id.startsWith('_modinst_') || node.id.startsWith('_instmem_')) continue;
+
     const data = node.data;
     const references: Record<string, string> = { ...data.references };
 
@@ -46,6 +49,7 @@ export function convertToResourceInstances(
       references,
       terraformName: data.terraformName,
       variableOverrides: data.variableOverrides,
+      moduleId: data.moduleId as string | undefined,
     });
   }
 

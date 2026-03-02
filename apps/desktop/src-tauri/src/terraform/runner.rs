@@ -162,6 +162,7 @@ pub async fn run_terraform_json(
     cmd.arg("-json");
     cmd.args(args);
     cmd.current_dir(working_dir);
+    cmd.stdin(std::process::Stdio::null());
     cmd.stdout(std::process::Stdio::piped());
     cmd.stderr(std::process::Stdio::piped());
 
@@ -379,6 +380,7 @@ pub async fn run_terraform(
     cmd.arg(subcommand);
     cmd.args(args);
     cmd.current_dir(working_dir);
+    cmd.stdin(std::process::Stdio::null());
     cmd.stdout(std::process::Stdio::piped());
     cmd.stderr(std::process::Stdio::piped());
 

@@ -112,9 +112,11 @@ pub async fn mcp_sync_diagram(
     window_label: String,
     nodes: Value,
     edges: Value,
+    modules: Value,
+    module_instances: Value,
     state: State<'_, McpState>,
 ) -> Result<(), String> {
-    let snapshot = json!({ "nodes": nodes, "edges": edges });
+    let snapshot = json!({ "nodes": nodes, "edges": edges, "modules": modules, "moduleInstances": module_instances });
     let mut windows = state.windows.write().await;
     let entry = windows.entry(window_label).or_insert_with(WindowEntry::new);
     entry.diagram_cache = Some(snapshot);
@@ -259,7 +261,7 @@ pub async fn dispatch_bridge_command(
             let windows = state.windows.read().await;
             match windows.get(&label).and_then(|e| e.diagram_cache.as_ref()) {
                 Some(snapshot) => BridgeResponse::success(id, snapshot.clone()),
-                None => BridgeResponse::success(id, json!({ "nodes": [], "edges": [] })),
+                None => BridgeResponse::success(id, json!({ "nodes": [], "edges": [], "modules": [], "moduleInstances": [] })),
             }
         }
 
@@ -307,6 +309,100 @@ pub async fn dispatch_bridge_command(
         "mcp_resize_resource" => {
             let _guard = state.write_lock.lock().await;
             handle_resize_resource(params, &state, app_handle).await
+        }
+
+        // ── Module commands ──
+        "mcp_create_module" => {
+            let _guard = state.write_lock.lock().await;
+            handle_create_module(params, &state, app_handle).await
+        }
+
+        "mcp_delete_module" => {
+            let _guard = state.write_lock.lock().await;
+            handle_delete_module(params, &state, app_handle).await
+        }
+
+        "mcp_list_modules" => {
+            let label = match resolve_window_label(&params, &state).await {
+                Ok(l) => l,
+                Err(e) => return e,
+            };
+            let windows = state.windows.read().await;
+            let modules = windows
+                .get(&label)
+                .and_then(|e| e.diagram_cache.as_ref())
+                .and_then(|s| s.get("modules"))
+                .cloned()
+                .unwrap_or(json!([]));
+            BridgeResponse::success(id, json!({ "modules": modules }))
+        }
+
+        "mcp_rename_module" => {
+            let _guard = state.write_lock.lock().await;
+            handle_rename_module(params, &state, app_handle).await
+        }
+
+        "mcp_add_to_module" => {
+            let _guard = state.write_lock.lock().await;
+            handle_add_to_module(params, &state, app_handle).await
+        }
+
+        "mcp_remove_from_module" => {
+            let _guard = state.write_lock.lock().await;
+            handle_remove_from_module(params, &state, app_handle).await
+        }
+
+        "mcp_toggle_module_collapsed" => {
+            let _guard = state.write_lock.lock().await;
+            handle_toggle_module_collapsed(params, &state, app_handle).await
+        }
+
+        // ── Template / instance commands ──
+        "mcp_convert_to_template" => {
+            let _guard = state.write_lock.lock().await;
+            handle_convert_to_template(params, &state, app_handle).await
+        }
+
+        "mcp_create_module_instance" => {
+            let _guard = state.write_lock.lock().await;
+            handle_create_module_instance(params, &state, app_handle).await
+        }
+
+        "mcp_delete_module_instance" => {
+            let _guard = state.write_lock.lock().await;
+            handle_delete_module_instance(params, &state, app_handle).await
+        }
+
+        "mcp_update_instance_variable" => {
+            let _guard = state.write_lock.lock().await;
+            handle_update_instance_variable(params, &state, app_handle).await
+        }
+
+        "mcp_list_instances" => {
+            let label = match resolve_window_label(&params, &state).await {
+                Ok(l) => l,
+                Err(e) => return e,
+            };
+            let windows = state.windows.read().await;
+            let all_instances = windows
+                .get(&label)
+                .and_then(|e| e.diagram_cache.as_ref())
+                .and_then(|s| s.get("moduleInstances"))
+                .cloned()
+                .unwrap_or(json!([]));
+
+            // Optional templateId filter
+            let filtered = if let Some(template_id) = params.get("templateId").and_then(|t| t.as_str()) {
+                let arr = all_instances.as_array().cloned().unwrap_or_default();
+                let filtered_arr: Vec<Value> = arr.into_iter()
+                    .filter(|inst| inst.get("templateId").and_then(|t| t.as_str()) == Some(template_id))
+                    .collect();
+                json!(filtered_arr)
+            } else {
+                all_instances
+            };
+
+            BridgeResponse::success(id, json!({ "instances": filtered }))
         }
 
         // ── Project/Terraform commands (delegated to frontend via events) ──
@@ -1190,6 +1286,376 @@ async fn handle_resize_resource(
         "instanceId": instance_id,
         "width": width,
         "height": height,
+    });
+    if let Err(e) = app_handle.emit_to(&label, "diagram:mcp_mutated", &mutation) {
+        return BridgeResponse::error(id, "INTERNAL_ERROR", format!("Failed to emit event: {}", e));
+    }
+
+    BridgeResponse::success(id, json!({}))
+}
+
+// ── Module mutation handlers ─────────────────────────────────────────────
+
+async fn handle_create_module(
+    params: Value,
+    state: &McpState,
+    app_handle: &AppHandle,
+) -> BridgeResponse {
+    let id = String::new();
+
+    let label = match resolve_window_label(&params, state).await {
+        Ok(l) => l,
+        Err(e) => return e,
+    };
+
+    let name = match params.get("name").and_then(|n| n.as_str()) {
+        Some(n) => n.to_string(),
+        None => return BridgeResponse::error(id, "VALIDATION_ERROR", "name is required"),
+    };
+
+    let node_ids = match params.get("nodeIds").and_then(|n| n.as_array()) {
+        Some(arr) => arr.iter().filter_map(|v| v.as_str().map(String::from)).collect::<Vec<_>>(),
+        None => return BridgeResponse::error(id, "VALIDATION_ERROR", "nodeIds is required"),
+    };
+
+    if node_ids.is_empty() {
+        return BridgeResponse::error(id, "VALIDATION_ERROR", "nodeIds must not be empty");
+    }
+
+    // Validate module name (lowercase alphanumeric + hyphens)
+    if !name.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-') || name.is_empty() {
+        return BridgeResponse::error(
+            id,
+            "VALIDATION_ERROR",
+            "Module name must be lowercase alphanumeric with hyphens (e.g., 'networking', 'web-tier')",
+        );
+    }
+
+    // Emit mutation to frontend — the frontend diagram store handles ID generation and state
+    let mutation = json!({
+        "op": "create_module",
+        "name": name,
+        "nodeIds": node_ids,
+    });
+    if let Err(e) = app_handle.emit_to(&label, "diagram:mcp_mutated", &mutation) {
+        return BridgeResponse::error(id, "INTERNAL_ERROR", format!("Failed to emit event: {}", e));
+    }
+
+    BridgeResponse::success(id, json!({ "name": name, "nodeIds": node_ids }))
+}
+
+async fn handle_delete_module(
+    params: Value,
+    state: &McpState,
+    app_handle: &AppHandle,
+) -> BridgeResponse {
+    let id = String::new();
+
+    let label = match resolve_window_label(&params, state).await {
+        Ok(l) => l,
+        Err(e) => return e,
+    };
+
+    let module_id = match params.get("moduleId").and_then(|m| m.as_str()) {
+        Some(m) => m.to_string(),
+        None => return BridgeResponse::error(id, "VALIDATION_ERROR", "moduleId is required"),
+    };
+
+    let mutation = json!({ "op": "delete_module", "moduleId": module_id });
+    if let Err(e) = app_handle.emit_to(&label, "diagram:mcp_mutated", &mutation) {
+        return BridgeResponse::error(id, "INTERNAL_ERROR", format!("Failed to emit event: {}", e));
+    }
+
+    BridgeResponse::success(id, json!({}))
+}
+
+async fn handle_rename_module(
+    params: Value,
+    state: &McpState,
+    app_handle: &AppHandle,
+) -> BridgeResponse {
+    let id = String::new();
+
+    let label = match resolve_window_label(&params, state).await {
+        Ok(l) => l,
+        Err(e) => return e,
+    };
+
+    let module_id = match params.get("moduleId").and_then(|m| m.as_str()) {
+        Some(m) => m.to_string(),
+        None => return BridgeResponse::error(id, "VALIDATION_ERROR", "moduleId is required"),
+    };
+
+    let name = match params.get("name").and_then(|n| n.as_str()) {
+        Some(n) => n.to_string(),
+        None => return BridgeResponse::error(id, "VALIDATION_ERROR", "name is required"),
+    };
+
+    if !name.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-') || name.is_empty() {
+        return BridgeResponse::error(
+            id,
+            "VALIDATION_ERROR",
+            "Module name must be lowercase alphanumeric with hyphens",
+        );
+    }
+
+    let mutation = json!({ "op": "rename_module", "moduleId": module_id, "name": name });
+    if let Err(e) = app_handle.emit_to(&label, "diagram:mcp_mutated", &mutation) {
+        return BridgeResponse::error(id, "INTERNAL_ERROR", format!("Failed to emit event: {}", e));
+    }
+
+    BridgeResponse::success(id, json!({}))
+}
+
+async fn handle_add_to_module(
+    params: Value,
+    state: &McpState,
+    app_handle: &AppHandle,
+) -> BridgeResponse {
+    let id = String::new();
+
+    let label = match resolve_window_label(&params, state).await {
+        Ok(l) => l,
+        Err(e) => return e,
+    };
+
+    let module_id = match params.get("moduleId").and_then(|m| m.as_str()) {
+        Some(m) => m.to_string(),
+        None => return BridgeResponse::error(id, "VALIDATION_ERROR", "moduleId is required"),
+    };
+
+    let node_ids = match params.get("nodeIds").and_then(|n| n.as_array()) {
+        Some(arr) => arr.iter().filter_map(|v| v.as_str().map(String::from)).collect::<Vec<_>>(),
+        None => return BridgeResponse::error(id, "VALIDATION_ERROR", "nodeIds is required"),
+    };
+
+    if node_ids.is_empty() {
+        return BridgeResponse::error(id, "VALIDATION_ERROR", "nodeIds must not be empty");
+    }
+
+    let mutation = json!({ "op": "add_to_module", "moduleId": module_id, "nodeIds": node_ids });
+    if let Err(e) = app_handle.emit_to(&label, "diagram:mcp_mutated", &mutation) {
+        return BridgeResponse::error(id, "INTERNAL_ERROR", format!("Failed to emit event: {}", e));
+    }
+
+    BridgeResponse::success(id, json!({}))
+}
+
+async fn handle_remove_from_module(
+    params: Value,
+    state: &McpState,
+    app_handle: &AppHandle,
+) -> BridgeResponse {
+    let id = String::new();
+
+    let label = match resolve_window_label(&params, state).await {
+        Ok(l) => l,
+        Err(e) => return e,
+    };
+
+    let node_ids = match params.get("nodeIds").and_then(|n| n.as_array()) {
+        Some(arr) => arr.iter().filter_map(|v| v.as_str().map(String::from)).collect::<Vec<_>>(),
+        None => return BridgeResponse::error(id, "VALIDATION_ERROR", "nodeIds is required"),
+    };
+
+    if node_ids.is_empty() {
+        return BridgeResponse::error(id, "VALIDATION_ERROR", "nodeIds must not be empty");
+    }
+
+    let mutation = json!({ "op": "remove_from_module", "nodeIds": node_ids });
+    if let Err(e) = app_handle.emit_to(&label, "diagram:mcp_mutated", &mutation) {
+        return BridgeResponse::error(id, "INTERNAL_ERROR", format!("Failed to emit event: {}", e));
+    }
+
+    BridgeResponse::success(id, json!({}))
+}
+
+async fn handle_toggle_module_collapsed(
+    params: Value,
+    state: &McpState,
+    app_handle: &AppHandle,
+) -> BridgeResponse {
+    let id = String::new();
+
+    let label = match resolve_window_label(&params, state).await {
+        Ok(l) => l,
+        Err(e) => return e,
+    };
+
+    let module_id = match params.get("moduleId").and_then(|m| m.as_str()) {
+        Some(m) => m.to_string(),
+        None => return BridgeResponse::error(id, "VALIDATION_ERROR", "moduleId is required"),
+    };
+
+    let mutation = json!({ "op": "toggle_module_collapsed", "moduleId": module_id });
+    if let Err(e) = app_handle.emit_to(&label, "diagram:mcp_mutated", &mutation) {
+        return BridgeResponse::error(id, "INTERNAL_ERROR", format!("Failed to emit event: {}", e));
+    }
+
+    BridgeResponse::success(id, json!({}))
+}
+
+// ── Template / instance mutation handlers ─────────────────────────────────
+
+async fn handle_convert_to_template(
+    params: Value,
+    state: &McpState,
+    app_handle: &AppHandle,
+) -> BridgeResponse {
+    let id = String::new();
+
+    let label = match resolve_window_label(&params, state).await {
+        Ok(l) => l,
+        Err(e) => return e,
+    };
+
+    let module_id = match params.get("moduleId").and_then(|m| m.as_str()) {
+        Some(m) => m.to_string(),
+        None => return BridgeResponse::error(id, "VALIDATION_ERROR", "moduleId is required"),
+    };
+
+    // Validate module exists
+    {
+        let windows = state.windows.read().await;
+        let exists = windows
+            .get(&label)
+            .and_then(|e| e.diagram_cache.as_ref())
+            .and_then(|s| s.get("modules"))
+            .and_then(|m| m.as_array())
+            .map(|mods| mods.iter().any(|m| m.get("id").and_then(|i| i.as_str()) == Some(&module_id)))
+            .unwrap_or(false);
+        if !exists {
+            return BridgeResponse::error(id, "NOT_FOUND", format!("Module not found: {}", module_id));
+        }
+    }
+
+    let mutation = json!({ "op": "convert_to_template", "moduleId": module_id });
+    if let Err(e) = app_handle.emit_to(&label, "diagram:mcp_mutated", &mutation) {
+        return BridgeResponse::error(id, "INTERNAL_ERROR", format!("Failed to emit event: {}", e));
+    }
+
+    BridgeResponse::success(id, json!({}))
+}
+
+async fn handle_create_module_instance(
+    params: Value,
+    state: &McpState,
+    app_handle: &AppHandle,
+) -> BridgeResponse {
+    let id = String::new();
+
+    let label = match resolve_window_label(&params, state).await {
+        Ok(l) => l,
+        Err(e) => return e,
+    };
+
+    let template_id = match params.get("templateId").and_then(|t| t.as_str()) {
+        Some(t) => t.to_string(),
+        None => return BridgeResponse::error(id, "VALIDATION_ERROR", "templateId is required"),
+    };
+
+    let name = match params.get("name").and_then(|n| n.as_str()) {
+        Some(n) => n.to_string(),
+        None => return BridgeResponse::error(id, "VALIDATION_ERROR", "name is required"),
+    };
+
+    // Validate name (lowercase alphanumeric + underscores — Terraform module block name)
+    if name.is_empty() || !name.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_') {
+        return BridgeResponse::error(
+            id,
+            "VALIDATION_ERROR",
+            "Instance name must be lowercase alphanumeric with underscores (e.g., 'net_prod')",
+        );
+    }
+
+    // Validate template exists and is actually a template
+    {
+        let windows = state.windows.read().await;
+        let cache = windows.get(&label).and_then(|e| e.diagram_cache.as_ref());
+        let modules = cache.and_then(|s| s.get("modules")).and_then(|m| m.as_array());
+        match modules {
+            None => return BridgeResponse::error(id, "NOT_FOUND", format!("Template not found: {}", template_id)),
+            Some(mods) => {
+                let tmpl = mods.iter().find(|m| m.get("id").and_then(|i| i.as_str()) == Some(&template_id));
+                match tmpl {
+                    None => return BridgeResponse::error(id, "NOT_FOUND", format!("Template not found: {}", template_id)),
+                    Some(m) => {
+                        let is_template = m.get("isTemplate").and_then(|t| t.as_bool()).unwrap_or(false);
+                        if !is_template {
+                            return BridgeResponse::error(
+                                id,
+                                "VALIDATION_ERROR",
+                                format!("Module '{}' is not a template. Use convert_to_template first.", template_id),
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let mutation = json!({ "op": "create_module_instance", "templateId": template_id, "name": name });
+    if let Err(e) = app_handle.emit_to(&label, "diagram:mcp_mutated", &mutation) {
+        return BridgeResponse::error(id, "INTERNAL_ERROR", format!("Failed to emit event: {}", e));
+    }
+
+    BridgeResponse::success(id, json!({ "templateId": template_id, "name": name }))
+}
+
+async fn handle_delete_module_instance(
+    params: Value,
+    state: &McpState,
+    app_handle: &AppHandle,
+) -> BridgeResponse {
+    let id = String::new();
+
+    let label = match resolve_window_label(&params, state).await {
+        Ok(l) => l,
+        Err(e) => return e,
+    };
+
+    let instance_id = match params.get("instanceId").and_then(|i| i.as_str()) {
+        Some(i) => i.to_string(),
+        None => return BridgeResponse::error(id, "VALIDATION_ERROR", "instanceId is required"),
+    };
+
+    let mutation = json!({ "op": "delete_module_instance", "instanceId": instance_id });
+    if let Err(e) = app_handle.emit_to(&label, "diagram:mcp_mutated", &mutation) {
+        return BridgeResponse::error(id, "INTERNAL_ERROR", format!("Failed to emit event: {}", e));
+    }
+
+    BridgeResponse::success(id, json!({}))
+}
+
+async fn handle_update_instance_variable(
+    params: Value,
+    state: &McpState,
+    app_handle: &AppHandle,
+) -> BridgeResponse {
+    let id = String::new();
+
+    let label = match resolve_window_label(&params, state).await {
+        Ok(l) => l,
+        Err(e) => return e,
+    };
+
+    let instance_id = match params.get("instanceId").and_then(|i| i.as_str()) {
+        Some(i) => i.to_string(),
+        None => return BridgeResponse::error(id, "VALIDATION_ERROR", "instanceId is required"),
+    };
+
+    let var_name = match params.get("varName").and_then(|v| v.as_str()) {
+        Some(v) => v.to_string(),
+        None => return BridgeResponse::error(id, "VALIDATION_ERROR", "varName is required"),
+    };
+
+    let value = params.get("value").cloned().unwrap_or(Value::Null);
+
+    let mutation = json!({
+        "op": "update_instance_variable",
+        "instanceId": instance_id,
+        "varName": var_name,
+        "value": value,
     });
     if let Err(e) = app_handle.emit_to(&label, "diagram:mcp_mutated", &mutation) {
         return BridgeResponse::error(id, "INTERNAL_ERROR", format!("Failed to emit event: {}", e));

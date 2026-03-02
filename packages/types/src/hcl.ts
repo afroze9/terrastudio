@@ -9,6 +9,8 @@ export interface ResourceInstance {
   readonly terraformName: string;
   /** Per-property override for literal vs variable mode */
   readonly variableOverrides?: Record<string, PropertyVariableMode>;
+  /** Module this resource belongs to (for module-aware HCL generation) */
+  readonly moduleId?: string;
 }
 
 export interface HclGenerationContext {

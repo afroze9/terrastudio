@@ -34,25 +34,31 @@ export function initDiagramSync(): void {
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
     $effect(() => {
-      // Access reactive state to establish dependency tracking
-      const nodes = diagram.nodes;
-      const edges = diagram.edges;
+      // Access reactive state to establish dependency tracking.
+      // Filter out transient instance-member clones — they're visual-only and shouldn't
+      // be exposed to MCP consumers.
+      const nodes = diagram.nodes.filter((n) => !n.id.startsWith('_instmem_'));
+      const edges = diagram.edges.filter((e) => !e.id.startsWith('_instmem_'));
+      const modules = diagram.modules;
+      const moduleInstances = diagram.moduleInstances;
 
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         debounceTimer = null;
-        syncDiagram(nodes, edges);
+        syncDiagram(nodes, edges, modules, moduleInstances);
       }, 100);
     });
   });
 }
 
-async function syncDiagram(nodes: unknown[], edges: unknown[]): Promise<void> {
+async function syncDiagram(nodes: unknown[], edges: unknown[], modules: unknown[], moduleInstances: unknown[]): Promise<void> {
   try {
     await invoke('mcp_sync_diagram', {
       windowLabel,
       nodes: JSON.parse(JSON.stringify(nodes)),
       edges: JSON.parse(JSON.stringify(edges)),
+      modules: JSON.parse(JSON.stringify(modules)),
+      moduleInstances: JSON.parse(JSON.stringify(moduleInstances)),
     });
   } catch (e) {
     // Silently ignore — MCP sync is best-effort

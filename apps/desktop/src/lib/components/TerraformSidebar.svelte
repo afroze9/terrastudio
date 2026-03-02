@@ -21,6 +21,8 @@
   const diagramVariables = $derived.by((): TerraformVariable[] => {
     const vars: TerraformVariable[] = [];
     for (const node of diagram.nodes) {
+      // Skip synthetic/transient nodes
+      if (node.id.startsWith('_mod_') || node.id.startsWith('_modinst_') || node.id.startsWith('_instmem_')) continue;
       const overrides = node.data.variableOverrides as Record<string, string> | undefined;
       if (!overrides) continue;
       const schema = registry.getResourceSchema(node.data.typeId as ResourceTypeId);
@@ -114,6 +116,82 @@
       ? ui.generatedFiles.filter((f) => f.toLowerCase().includes(searchQuery.toLowerCase()))
       : ui.generatedFiles,
   );
+
+  // ─── File tree ─────────────────────────────────────────────────────────
+  interface FileTreeNode {
+    name: string;
+    path: string;
+    isDir: boolean;
+    children: FileTreeNode[];
+  }
+
+  /** Build a nested tree from flat file paths like "modules/net/main.tf" */
+  function buildFileTree(files: string[]): FileTreeNode[] {
+    const root: FileTreeNode[] = [];
+
+    for (const filePath of files) {
+      const parts = filePath.split('/');
+      let current = root;
+
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        const isLast = i === parts.length - 1;
+
+        let existing = current.find((n) => n.name === part);
+        if (!existing) {
+          existing = {
+            name: part,
+            path: isLast ? filePath : parts.slice(0, i + 1).join('/'),
+            isDir: !isLast,
+            children: [],
+          };
+          current.push(existing);
+        }
+        current = existing.children;
+      }
+    }
+
+    // Sort: folders first, then files, alphabetically within each group
+    function sortNodes(nodes: FileTreeNode[]) {
+      nodes.sort((a, b) => {
+        if (a.isDir !== b.isDir) return a.isDir ? -1 : 1;
+        return a.name.localeCompare(b.name);
+      });
+      for (const n of nodes) {
+        if (n.children.length > 0) sortNodes(n.children);
+      }
+    }
+    sortNodes(root);
+
+    return root;
+  }
+
+  const fileTree = $derived(buildFileTree(filteredFiles));
+
+  /** Track which folders are expanded (all expanded by default) */
+  let expandedFolders = $state(new Set<string>());
+
+  /** Initialize expanded folders when files change */
+  $effect(() => {
+    const folders = new Set<string>();
+    for (const f of ui.generatedFiles) {
+      const parts = f.split('/');
+      for (let i = 1; i < parts.length; i++) {
+        folders.add(parts.slice(0, i).join('/'));
+      }
+    }
+    expandedFolders = folders;
+  });
+
+  function toggleFolder(path: string) {
+    const next = new Set(expandedFolders);
+    if (next.has(path)) {
+      next.delete(path);
+    } else {
+      next.add(path);
+    }
+    expandedFolders = next;
+  }
 
   const filteredVariables = $derived(
     searchQuery.trim()
@@ -225,12 +303,39 @@
           <p class="empty-hint">No files match "{searchQuery}".</p>
         {:else}
           <div class="file-list">
-            {#each filteredFiles as filename (filename)}
-              <button class="file-item" onclick={() => openFile(filename)} oncontextmenu={(e) => onFileContextMenu(e, filename)}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                <span>{filename}</span>
-              </button>
-            {/each}
+            {#snippet fileTreeNodes(nodes: FileTreeNode[], depth: number)}
+              {#each nodes as node (node.path)}
+                {#if node.isDir}
+                  <!-- svelte-ignore a11y_no_static_element_interactions -->
+                  <!-- svelte-ignore a11y_click_events_have_key_events -->
+                  <div
+                    class="folder-item"
+                    style:padding-left="{depth * 12 + 8}px"
+                    onclick={() => toggleFolder(node.path)}
+                  >
+                    <svg class="folder-chevron" class:expanded={expandedFolders.has(node.path)} width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M6 4l4 4-4 4" />
+                    </svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+                    <span>{node.name}</span>
+                  </div>
+                  {#if expandedFolders.has(node.path)}
+                    {@render fileTreeNodes(node.children, depth + 1)}
+                  {/if}
+                {:else}
+                  <button
+                    class="file-item"
+                    style:padding-left="{depth * 12 + 8}px"
+                    onclick={() => openFile(node.path)}
+                    oncontextmenu={(e) => onFileContextMenu(e, node.path)}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    <span>{node.name}</span>
+                  </button>
+                {/if}
+              {/each}
+            {/snippet}
+            {@render fileTreeNodes(fileTree, 0)}
           </div>
         {/if}
       </CollapsibleSection>
@@ -548,6 +653,32 @@
   .file-item svg {
     flex-shrink: 0;
     opacity: 0.6;
+  }
+  .folder-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: var(--color-text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+  }
+  .folder-item:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+  }
+  .folder-item svg {
+    flex-shrink: 0;
+    opacity: 0.6;
+  }
+  .folder-chevron {
+    transition: transform 0.15s;
+  }
+  .folder-chevron.expanded {
+    transform: rotate(90deg);
   }
   .ctx-backdrop {
     position: fixed;
