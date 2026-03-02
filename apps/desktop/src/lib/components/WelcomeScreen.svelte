@@ -13,7 +13,8 @@
 
   // ── View state ─────────────────────────────────────────────────────────────
   type View = 'home' | 'step1' | 'step2' | 'step3';
-  let view = $state<View>('home');
+  let { startInWizard = false }: { startInWizard?: boolean } = $props();
+  let view = $state<View>(startInWizard ? 'step1' : 'home');
 
   // ── Recent projects ────────────────────────────────────────────────────────
   interface RecentProject { name: string; path: string; opened_at: number; }
@@ -26,6 +27,9 @@
       recentProjects = await invoke<RecentProject[]>('get_recent_projects');
     } catch { /* empty list is fine */ }
     finally { recentLoading = false; }
+
+    // If launched with startInWizard, enter the wizard to load templates etc.
+    if (startInWizard) enterWizard();
   });
 
   function formatRelativeTime(epochMs: number): string {

@@ -22,6 +22,27 @@
 	import { initSettingsSync, destroySettingsSync } from '$lib/stores/settings-sync';
 
 	let showNewProjectDialog = $state(false);
+	let startWelcomeInWizard = $state(false);
+
+	/** Close the current project and go to the welcome screen's new project wizard. */
+	async function handleNewProject() {
+		if (project.isOpen) {
+			if (!(await guardUnsavedChanges())) return;
+			diagram.clear();
+			terraform.clear();
+			ui.closeAllFileTabs();
+			project.close();
+			const win = getCurrentWindow();
+			win.setTitle('TerraStudio').catch(() => {});
+			invoke('mcp_set_window_project', {
+				windowLabel: win.label,
+				projectName: '',
+				projectPath: '',
+			}).catch(() => {});
+		}
+		// Signal the welcome screen to go straight into the wizard
+		startWelcomeInWizard = true;
+	}
 
 	declarePlugins();
 
@@ -93,7 +114,7 @@
 			}
 			if (e.ctrlKey && !e.shiftKey && e.key === 'n' && !inInput) {
 				e.preventDefault();
-				showNewProjectDialog = true;
+				handleNewProject();
 				return;
 			}
 			if (e.ctrlKey && e.key === 'o' && !inInput) {
@@ -115,6 +136,7 @@
 					diagram.clear();
 					terraform.clear();
 					ui.closeAllFileTabs();
+					startWelcomeInWizard = false;
 					project.close();
 					const win = getCurrentWindow();
 					win.setTitle('TerraStudio').catch(() => {});
@@ -180,7 +202,7 @@
 
 {#if project.isOpen}
 	<div class="app-shell">
-		<Titlebar onNewProject={() => (showNewProjectDialog = true)} />
+		<Titlebar onNewProject={handleNewProject} />
 		<div class="main-body">
 			<ActivityBar />
 			{#if ui.showSidePanel}
@@ -194,7 +216,7 @@
 		<StatusBar />
 	</div>
 {:else}
-	<WelcomeScreen />
+	<WelcomeScreen startInWizard={startWelcomeInWizard} />
 {/if}
 
 <NewProjectDialog
