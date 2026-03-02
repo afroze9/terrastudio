@@ -21,6 +21,8 @@
   const diagramVariables = $derived.by((): TerraformVariable[] => {
     const vars: TerraformVariable[] = [];
     for (const node of diagram.nodes) {
+      // Skip synthetic/transient nodes
+      if (node.id.startsWith('_mod_') || node.id.startsWith('_modinst_') || node.id.startsWith('_instmem_')) continue;
       const overrides = node.data.variableOverrides as Record<string, string> | undefined;
       if (!overrides) continue;
       const schema = registry.getResourceSchema(node.data.typeId as ResourceTypeId);

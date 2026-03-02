@@ -34,9 +34,11 @@ export function initDiagramSync(): void {
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
     $effect(() => {
-      // Access reactive state to establish dependency tracking
-      const nodes = diagram.nodes;
-      const edges = diagram.edges;
+      // Access reactive state to establish dependency tracking.
+      // Filter out transient instance-member clones — they're visual-only and shouldn't
+      // be exposed to MCP consumers.
+      const nodes = diagram.nodes.filter((n) => !n.id.startsWith('_instmem_'));
+      const edges = diagram.edges.filter((e) => !e.id.startsWith('_instmem_'));
       const modules = diagram.modules;
       const moduleInstances = diagram.moduleInstances;
 

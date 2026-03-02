@@ -417,6 +417,7 @@
     for (const node of diagram.nodes) {
       if (node.id === excludeNodeId) continue;
       if (node.hidden) continue;
+      if (node.id.startsWith('_instmem_')) continue; // skip transient instance clones
       const nodeTypeId = node.type as ResourceTypeId;
       if (!allowedParents.includes(nodeTypeId)) continue;
 

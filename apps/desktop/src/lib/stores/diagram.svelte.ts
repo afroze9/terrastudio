@@ -696,7 +696,10 @@ class DiagramStore {
     this.nodes = cloned;
     this.edges = structuredClone(edges);
     this.modules = structuredClone(modules ?? []);
-    this.moduleInstances = structuredClone(moduleInstances ?? []);
+    // Reset all instances to collapsed on load — transient _instmem_ clones aren't persisted
+    this.moduleInstances = structuredClone(moduleInstances ?? []).map(
+      (inst) => ({ ...inst, collapsed: true }),
+    );
 
     // Ensure synthetic nodes exist for all module instances.
     // Parent them to the same container as the template's root members.
