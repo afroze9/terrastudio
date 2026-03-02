@@ -63,8 +63,11 @@ gantt
     Phase 22.2 File Assoc + Instance  :done, p222, 2026-02-28, 2026-02-28
     Phase 22.3 Multi-Window Support   :done, p223, 2026-02-28, 2026-02-28
     Phase 22.4 Security Hardening     :done, p224, 2026-02-28, 2026-02-28
-    Phase 21.7 External File Watch    :p217, 2026-03-02, 2026-03-07
-    Phase 21.8 Plugin Test Harness    :p218, 2026-03-02, 2026-03-07
+    Phase 25 Terraform Modules         :done, p25, 2026-03-01, 2026-03-02
+    Phase 25.5 Module Templates       :done, p255, 2026-03-02, 2026-03-03
+    Phase 26 Variable Toggle Refactor :done, p26, 2026-03-03, 2026-03-03
+    Phase 21.7 External File Watch    :p217, 2026-03-03, 2026-03-07
+    Phase 21.8 Plugin Test Harness    :p218, 2026-03-03, 2026-03-07
     Phase 19 Import Terraform         :p19, 2026-03-07, 2026-03-14
 ```
 
@@ -1339,21 +1342,50 @@ All layout controls live in a **"Layout" toolbar section** that appears contextu
 
 ---
 
-## Phase 22: Module Support
+## Phase 25: Terraform Module Support ✅
 
-**Goal**: Group resources into reusable Terraform modules.
+**Goal**: Group resources into reusable Terraform modules with visual boundaries.
 
-### Tasks
+### What Was Implemented (v0.14.0)
 
-1. **Module abstraction**
-   - Select multiple resources → "Create Module"
-   - Module becomes a collapsible group on the canvas
-   - Auto-extract input variables from cross-module references
-   - Generate `modules/` directory with self-contained `.tf` files
+1. **Module grouping** — select 2+ resources → "Create Module" → visual boundary with drag, collapse/expand
+2. **Module-scoped HCL generation** — per-module directories (`modules/{name}/main.tf`, `variables.tf`, `outputs.tf`, `locals.tf`)
+3. **Cross-module references** — auto-wired as module input variables and root-level `module {}` block arguments
+4. **ModuleBoundary.svelte** — draggable visual boundary with header badge, collapse button, member count
+5. **ModuleNode.svelte** — synthetic collapsed card showing module name and member/edge counts
+6. **MCP commands** — create/delete/rename/collapse modules, add/remove nodes from modules
 
-2. **Module reuse**
-   - Instantiate a module multiple times with different variable values
-   - Module instances rendered as single nodes with input/output handles
+---
+
+## Phase 25.5: Module Template Reuse ✅
+
+**Goal**: Define a module once, instantiate many times with per-instance variable overrides.
+
+### What Was Implemented (v0.15.0)
+
+1. **Template conversion** — "Convert to Template" hides member nodes, enables instance creation
+2. **Instance cards** — `ModuleInstanceNode.svelte` with double-click to expand
+3. **Instance expansion** — clones template members as read-only nodes, parented to same container hierarchy
+4. **Variable system** — template variables derived from member `variableOverrides`; instances override via `variableValues`
+5. **ModuleInstanceBoundary.svelte** — boundary around expanded instances with collapse support
+6. **Modules palette section** — drag templates from ResourcePalette to create instances
+7. **Synthetic node isolation** — `_instmem_` clones filtered from save, HCL generation, export, MCP sync, deployment status
+8. **MCP commands** — convert to template, create/delete instances, update instance variables
+
+---
+
+## Phase 26: Variable Toggle Refactor ✅
+
+**Goal**: Enable all resource properties to support the "is variable" toggle for Terraform parametrization.
+
+### What Was Implemented
+
+1. **36 HCL generators converted** — all scalar properties across all 6 Azure plugins use `context.getPropertyExpression()` instead of hardcoded formatting
+2. **Array variable support** — `address_space`, `dns_servers`, `address_prefixes`, `service_endpoints` toggleable as `list(string)` variables
+3. **Boolean variable type fix** — `getPropertyExpression` correctly infers `type = "bool"` for boolean properties
+4. **Native array storage** — `ProjectConfig.variableValues` widened to `Record<string, unknown>`, arrays stored natively
+5. **UI improvements** — boolean/select/array fields disable when in variable mode; list variables render as add/remove item editor in sidebar
+6. **Type-aware tfvars** — `terraform.tfvars` output formats arrays as `["a", "b"]`, numbers and booleans as raw values
 
 ---
 

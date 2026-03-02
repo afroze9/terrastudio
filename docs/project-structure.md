@@ -12,6 +12,7 @@ graph TB
         subgraph PKG["packages/"]
             TYPES["@terrastudio/types"]
             CORE["@terrastudio/core"]
+            MCP["@terrastudio/mcp-server"]
             PN["@terrastudio/plugin-azure-networking"]
             PC["@terrastudio/plugin-azure-compute"]
             PS["@terrastudio/plugin-azure-storage"]
@@ -65,6 +66,7 @@ packages/types/
     ├── hcl.ts                   # HclGenerator, HclBlock, HclGenerationContext, ResourceInstance
     ├── node.ts                  # ResourceNodeData, ResourceNodeComponent, PropertyEditorComponent
     ├── connection.ts            # ConnectionRule
+    ├── module.ts                # ModuleDefinition, ModuleInstance
     ├── plugin.ts                # InfraPlugin, ResourceTypeRegistration, PaletteCategory
     └── validation.ts            # ValidationError, PropertyValidation
 ```
@@ -89,6 +91,7 @@ packages/core/
         │   ├── pipeline.ts                  # HCL generation orchestrator
         │   ├── block-builder.ts             # Assembles HCL blocks into file contents
         │   ├── dependency-graph.ts          # Topological sort of resource blocks
+        │   ├── module-context.ts            # ModuleHclContext for module-scoped generation
         │   ├── variable-collector.ts        # Collects variables across generators
         │   ├── output-collector.ts          # Collects outputs
         │   └── provider-config-builder.ts   # Builds provider + required_providers blocks
@@ -166,6 +169,32 @@ packages/plugin-azure-networking/
 2. Import and add to the `resourceTypes` map in `src/index.ts`
 3. Add connection rules in `connections/rules.ts`
 
+## packages/mcp-server/
+
+MCP (Model Context Protocol) server for AI-assisted infrastructure editing. Exposes TerraStudio operations as MCP tools consumable by LLM agents.
+
+```
+packages/mcp-server/
+├── package.json                 # @terrastudio/mcp-server
+├── tsconfig.json
+└── src/
+    ├── index.ts                 # Entry point, tool registration
+    ├── server.ts                # MCP server setup (stdio transport)
+    ├── schemas.ts               # Zod schemas for tool parameters
+    ├── bridge.ts                # IPC bridge to the Tauri backend
+    ├── types.ts                 # Request/response type definitions
+    ├── tools/
+    │   ├── resource-tools.ts    # Add/remove/update resource tools
+    │   ├── module-tools.ts      # Create module, add instance, assign resources
+    │   ├── project-tools.ts     # Project config, save/load tools
+    │   ├── terraform-tools.ts   # Init, plan, apply, destroy tools
+    │   └── query-tools.ts       # List resources, inspect diagram tools
+    └── resources/
+        ├── diagram-resource.ts  # Diagram state as MCP resource
+        ├── hcl-resources.ts     # Generated HCL files as MCP resources
+        └── config-resource.ts   # Project config as MCP resource
+```
+
 ## apps/desktop/
 
 The Tauri 2 desktop application. Wires core + plugins together.
@@ -187,6 +216,12 @@ apps/desktop/
 │       ├── main.rs                  # Tauri entry point
 │       ├── lib.rs                   # Plugin/command registration
 │       ├── commands.rs              # Tauri #[command] IPC handlers
+│       ├── mcp/
+│       │   ├── mod.rs               # Module exports
+│       │   ├── server.rs            # MCP server implementation (stdio transport)
+│       │   ├── commands.rs          # MCP command handlers
+│       │   ├── manifest.rs          # Tool manifest definitions
+│       │   └── types.rs             # MCP request/response types
 │       └── terraform/
 │           ├── mod.rs
 │           ├── runner.rs            # Spawn terraform CLI, stream stdout/stderr
@@ -213,6 +248,10 @@ apps/desktop/
 │   │       ├── PaletteCategory.svelte
 │   │       ├── PaletteItem.svelte
 │   │       ├── Sidebar.svelte       # Right sidebar wrapper
+│   │       ├── ModuleBoundary.svelte        # Visual boundary for module definitions
+│   │       ├── ModuleInstanceBoundary.svelte # Visual boundary for module instances
+│   │       ├── ModuleNode.svelte            # Collapsed module definition node
+│   │       ├── ModuleInstanceNode.svelte    # Collapsed module instance node
 │   │       ├── TerraformPanel.svelte
 │   │       ├── OutputConsole.svelte
 │   │       ├── VarsInputForm.svelte
@@ -242,6 +281,7 @@ graph LR
     APP["apps/desktop"]
 
     CORE -->|depends on| TYPES
+    MCP["mcp-server"] -->|depends on| TYPES
     PN -->|peer dep| TYPES
     PC -->|peer dep| TYPES
     PS -->|peer dep| TYPES
@@ -249,6 +289,7 @@ graph LR
     PC -->|peer dep| XYFLOW
     PS -->|peer dep| XYFLOW
     APP -->|depends on| CORE
+    APP -->|depends on| MCP
     APP -->|depends on| PN
     APP -->|depends on| PC
     APP -->|depends on| PS

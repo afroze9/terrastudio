@@ -149,6 +149,7 @@ The data payload stored in each Svelte Flow node (`node.data`).
 
 ```typescript
 interface ResourceNodeData {
+  [key: string]: unknown;
   typeId: ResourceTypeId;
   properties: Record<string, unknown>;
   references: Record<string, string>;       // property key -> target node id
@@ -156,6 +157,18 @@ interface ResourceNodeData {
   label: string;                            // Display label on node
   validationErrors: ValidationError[];
   deploymentStatus?: DeploymentStatus;
+  /** Per-property override for literal vs variable mode */
+  variableOverrides?: Record<string, PropertyVariableMode>;
+  /** User-defined connection points for annotation edges */
+  connectionPoints?: ConnectionPointConfig;
+  /** User overrides for schema/output handle positions */
+  handlePositions?: HandlePositionOverrides;
+  /** Which outputs are enabled (creates dynamic out-* handles) */
+  enabledOutputs?: string[];
+  /** User customizations for reference edges originating from this node */
+  referenceEdgeOverrides?: ReferenceEdgeOverrides;
+  /** Module this resource belongs to (logical grouping, independent of parentId) */
+  moduleId?: string;
 }
 
 type DeploymentStatus =
@@ -219,12 +232,16 @@ interface ResourceInstance {
   readonly properties: Record<string, unknown>;
   readonly references: Record<string, string>;  // property key -> target instance id
   readonly terraformName: string;               // e.g., "main"
+  /** Per-property override for literal vs variable mode */
+  readonly variableOverrides?: Record<string, PropertyVariableMode>;
+  /** Module this resource belongs to (for module-aware HCL generation) */
+  readonly moduleId?: string;
 }
 ```
 
 ### HclGenerationContext
 
-Passed to every HCL generator. Provides cross-resource lookups and variable registration.
+Passed to every HCL generator. Provides cross-resource lookups, variable registration, and property expression formatting.
 
 ```typescript
 interface HclGenerationContext {
@@ -234,10 +251,34 @@ interface HclGenerationContext {
   addVariable(variable: TerraformVariable): void;
   addOutput(output: TerraformOutput): void;
   getProviderConfig(providerId: string): Record<string, unknown>;
-  getResourceGroupExpression(): string;
-  getLocationExpression(): string;
+  /** Get the resource group name expression. Resolves via _resource_group reference. */
+  getResourceGroupExpression(resource: ResourceInstance): string;
+  /** Get the location expression. Resolves via _resource_group reference. */
+  getLocationExpression(resource: ResourceInstance): string;
+  /**
+   * Get the HCL expression for a property value, respecting variable overrides.
+   * If property is set to 'variable' mode, registers a variable and returns var.xxx.
+   * Otherwise returns the literal value as a properly formatted HCL string.
+   */
+  getPropertyExpression(
+    resource: ResourceInstance,
+    propertyKey: string,
+    value: unknown,
+    options?: {
+      variableName?: string;
+      variableType?: string;
+      variableDescription?: string;
+      sensitive?: boolean;
+    },
+  ): string;
 }
 ```
+
+- **Cross-resource references**: A subnet generator can look up its parent VNet's terraform address to produce `azurerm_virtual_network.main.name`
+- **Variable registration**: Any generator can register a variable (e.g., when a user toggles a property to become a tfvar)
+- **Output registration**: Generators can register outputs for important attributes
+- **Provider config access**: Generators can read provider-level settings
+- **Property expressions**: `getPropertyExpression()` handles string quoting, numbers, booleans, arrays, and variable-mode toggling in one call
 
 ### HclGenerator
 
@@ -247,6 +288,8 @@ Implemented by plugins for each resource type. Produces HCL blocks from a resour
 interface HclGenerator {
   readonly typeId: ResourceTypeId;
   generate(resource: ResourceInstance, context: HclGenerationContext): HclBlock[];
+  /** Resolve the actual Terraform type based on properties (for OS-variant resources). */
+  resolveTerraformType?(properties: Record<string, unknown>): string;
 }
 ```
 
@@ -374,6 +417,72 @@ interface PluginRegistryReader {
   hasResourceType(typeId: ResourceTypeId): boolean;
 }
 ```
+
+## Module Types
+
+### PropertyVariableMode
+
+Controls how a property value is treated during HCL generation.
+
+```typescript
+type PropertyVariableMode = 'literal' | 'variable';
+```
+
+When `'variable'`, the HCL pipeline emits `var.{name}` instead of the literal value and registers a corresponding `TerraformVariable`.
+
+### ModuleDefinition
+
+A logical grouping of resources that generates into its own `modules/{name}/` directory.
+
+```typescript
+interface ModuleDefinition {
+  readonly id: string;                // e.g., "mod-abc123"
+  readonly name: string;              // Valid Terraform module name (lowercase, alphanumeric + hyphens)
+  readonly description?: string;
+  readonly collapsed: boolean;        // Whether visually collapsed on the canvas
+  readonly position: { x: number; y: number };  // Canvas position when collapsed
+  readonly color?: string;            // Visual border/header color
+  readonly isTemplate?: boolean;      // When true, supports ModuleInstance reuse
+}
+```
+
+### ModuleInstance
+
+An instance of a module template. References a `ModuleDefinition` with `isTemplate: true`.
+
+```typescript
+interface ModuleInstance {
+  readonly id: string;                // e.g., "modinst-abc123"
+  readonly templateId: string;        // Reference to ModuleDefinition.id
+  readonly name: string;              // Terraform module block name (e.g., "net_prod")
+  readonly description?: string;
+  readonly position: { x: number; y: number };
+  readonly variableValues: Record<string, unknown>;  // Per-variable value overrides
+  readonly color?: string;
+  readonly collapsed?: boolean;       // Defaults to true
+}
+```
+
+### ProjectConfig (updated)
+
+```typescript
+interface ProjectConfig {
+  providerConfigs: Record<ProviderId, Record<string, unknown>>;
+  commonTags: Record<string, string>;
+  variableValues: Record<string, unknown>;   // Changed from Record<string, string>
+  layoutAlgorithm?: LayoutAlgorithm;
+  namingConvention?: NamingConvention;
+  backend?: {
+    type: string;
+    config: Record<string, string>;
+  };
+  edgeStyles?: ProjectEdgeStyles;
+  activeProviders?: ProviderId[];
+  secretsId?: string;
+}
+```
+
+`variableValues` was widened from `Record<string, string>` to `Record<string, unknown>` to support non-string variable types (numbers, booleans, lists).
 
 ## Related Docs
 

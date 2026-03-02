@@ -64,6 +64,27 @@ Resources declare `outputs` in their schema (e.g., connection strings, IPs). Use
 ### Export + doc generation
 Core provides image export (PNG/SVG/clipboard) and a documentation generator that walks the diagram graph to produce Markdown architecture docs with resource inventory, network topology, Mermaid dependency graphs, and variable reference. Plugins can contribute doc sections.
 
+### Module system
+Select 2+ resources on the canvas and "Create Module" to group them into a named module with a visual boundary (collapse/expand). Modules can be converted to **reusable templates** (`isTemplate: true`); template instances render as compact card nodes referencing the template definition.
+
+**Module instances**: Each instance references a template by `templateModuleId`, carries per-variable overrides in `variableValues`, and renders via `ModuleInstanceNode.svelte`. Double-click an instance card to expand it — this clones the template's resources as read-only nodes parented to the same container hierarchy.
+
+**Synthetic node prefixes**: The system creates transient nodes that must be filtered from HCL generation, save/load, export, and MCP sync:
+- `_mod_` — collapsed module placeholder nodes
+- `_modinst_` — module instance card nodes
+- `_instmem_` — expanded instance clone nodes
+
+**Module HCL generation**: Each module gets its own directory with `variables.tf`, `main.tf`, and `locals.tf`. Cross-module references are auto-wired as input variables. Template instances each generate a separate `module {}` block with variable pass-through.
+
+**Key files**: `diagram.svelte.ts` (store + module operations), `ModuleBoundary.svelte`, `ModuleInstanceBoundary.svelte`, `ModuleInstanceNode.svelte`, `ModuleNode.svelte`, `module-context.ts`, `packages/types/src/module.ts`.
+
+### Variable toggle system
+Any property can be toggled between literal value and Terraform variable. Node data stores `variableOverrides: Record<string, PropertyVariableMode>` where `PropertyVariableMode = 'literal' | 'variable'`.
+
+**Generator usage**: HCL generators call `context.getPropertyExpression(resource, key, value)` which returns either a quoted literal (e.g., `"my-rg"`) or a variable reference (e.g., `var.resource_group_name`). Supported types: string, number, cidr, select, boolean, array. Array variables generate `type = list(string)` in Terraform.
+
+**Project-level variables**: `ProjectConfig.variableValues` is `Record<string, unknown>` storing user overrides that populate `terraform.tfvars`. For module templates, variables are derived from member nodes' `variableOverrides`; instances can override individual values via their own `variableValues`.
+
 ### State management
 Svelte 5 runes (`$state`, `$derived`). No stores library. Diagram state in `diagram.svelte.ts`.
 
@@ -125,6 +146,8 @@ Resources can expose Terraform output attributes (e.g., connection strings, IPs)
 - `containerStyle`: Only for containers — border color, style, background, header color, radius.
 
 ### 6. HCL generator considerations
+- Use `context.getPropertyExpression(resource, key, value)` for **all scalar properties** instead of manual `"${e(value)}"` formatting. It handles string quoting, number formatting, boolean formatting, array formatting, and variable-mode emission (`var.xxx`) automatically.
+- For optional properties behind conditionals, check `resource.variableOverrides?.[key] === 'variable'` to emit even when the raw value is empty/undefined (the user intends to supply the value via a variable).
 - Use `context.getResourceGroupExpression()` and `context.getLocationExpression()` for RG/location references.
 - Use `resource.references[key]` + `context.getAttributeReference(ref, attr)` for cross-resource references.
 - If extra data sources are needed (e.g., `data.azurerm_client_config` for Key Vault), emit them as additional `HclBlock` entries with `blockType: 'data'`.

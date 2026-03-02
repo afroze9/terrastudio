@@ -146,6 +146,49 @@ flowchart LR
 - **Doc generation**: Walks the diagram to produce a Markdown architecture document with resource inventory, network topology, Mermaid dependency graphs, and variable reference
 - **Plugin-extensible**: Plugins can contribute doc sections (e.g., networking plugin adds a subnet CIDR table)
 
+## Module System
+
+TerraStudio supports Terraform modules as a first-class concept, allowing users to group resources into reusable, scoped units directly on the canvas.
+
+### Module Definitions and Instances
+
+There are two module primitives:
+
+- **ModuleDefinition** — a logical grouping of resources on the canvas. Resources are assigned to a module via `moduleId` on `ResourceNodeData` (independent of `parentId` containment). Each module generates its own `modules/{name}/` directory with scoped `main.tf`, `variables.tf`, `outputs.tf`, and `locals.tf`.
+
+- **ModuleInstance** — a template reuse mechanism. When a `ModuleDefinition` has `isTemplate: true`, multiple `ModuleInstance` records can reference it. Each instance generates a separate `module "{name}" {}` block in root `main.tf` pointing to the same shared source directory. Instances carry `variableValues` overrides so the same template can be parameterized differently per environment (e.g., `net_dev`, `net_prod`).
+
+### Visual Representation
+
+Modules are rendered on the canvas as boundary rectangles that enclose their member resources:
+
+- **ModuleBoundary.svelte** — renders the visual boundary for a `ModuleDefinition` (colored border, header with name, collapse/expand toggle)
+- **ModuleInstanceBoundary.svelte** — renders a boundary for a `ModuleInstance` (similar style, references the template)
+- **ModuleNode.svelte** / **ModuleInstanceNode.svelte** — collapsed-mode card nodes shown when a module or instance is collapsed
+
+Users can collapse a module to hide its internal resources and show a single compact card node, or expand it to see and edit the member resources.
+
+### Synthetic Node Types
+
+The module system uses synthetic Svelte Flow node types that do not correspond to real Terraform resources:
+
+| Prefix | Purpose | Example |
+|--------|---------|---------|
+| `_mod_` | Collapsed module definition node | `_mod_networking` |
+| `_modinst_` | Collapsed module instance node | `_modinst_net_prod` |
+| `_instmem_` | Instance member placeholder | `_instmem_vm_01` |
+
+These synthetic types are filtered out of HCL generation (schemas have `terraformType` starting with `_`), project save/export, and image export. They exist only for canvas rendering.
+
+### Module-Scoped HCL Generation
+
+When resources belong to modules, the HCL pipeline partitions resources by `moduleId` and creates a `ModuleHclContext` per module. Cross-boundary references (a module resource referencing a root resource, or vice versa) are automatically wired:
+
+- **Inbound references** (root to module internals): the pipeline auto-registers `output` declarations inside the module and references them as `module.{name}.{output}` from root.
+- **Outbound references** (module internals to root): the context replaces the reference with `var.{name}` inside the module, registers an input variable, and passes the real expression via the root `module {}` block.
+
+See [HCL Generation — Module-Aware Pipeline](hcl-generation.md#module-aware-pipeline) for the full pipeline details.
+
 ## Architectural Decisions
 
 | Decision | Choice | Rationale |

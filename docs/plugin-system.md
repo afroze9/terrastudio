@@ -237,6 +237,38 @@ const generator: HclGenerator = {
 };
 ```
 
+#### Variable Toggle Pattern
+
+HCL generators should use `context.getPropertyExpression()` for all scalar property values. This method handles string quoting, number/boolean formatting, array serialization, and — critically — variable mode toggling.
+
+**Before** (manual formatting):
+```typescript
+generate(resource, context) {
+  const props = resource.properties;
+  const name = `"${escapeHclString(props.name as string)}"`;
+  const sku = `"${escapeHclString(props.sku as string)}"`;
+  // No variable support — always emits literals
+  return [{ content: `  name = ${name}\n  sku  = ${sku}` }];
+}
+```
+
+**After** (using `getPropertyExpression`):
+```typescript
+generate(resource, context) {
+  const props = resource.properties;
+  const name = context.getPropertyExpression(resource, 'name', props.name);
+  const sku = context.getPropertyExpression(resource, 'sku', props.sku);
+  // Emits literal or var.xxx depending on user toggle
+  return [{ content: `  name = ${name}\n  sku  = ${sku}` }];
+}
+```
+
+How it works:
+- Checks `resource.variableOverrides?.[key]` — if `'variable'`, registers a `TerraformVariable` and returns `var.{resource}_{key}`
+- If `'literal'` (default), formats the value as HCL: strings get quoted, numbers/booleans are bare, arrays become `["a", "b"]`
+- Optional `options` parameter overrides the auto-derived variable name, type, description, or sensitivity
+- For optional properties behind conditionals, check `resource.variableOverrides?.[key] === 'variable'` to decide whether to emit the property even when the value is empty (the user wants it as a variable input)
+
 ### Step 5: Register in bootstrap.ts
 
 ```typescript

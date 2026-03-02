@@ -268,6 +268,95 @@ interface ProjectConfig {
 
 When `resourceGroupAsVariable` is true, the pipeline automatically adds a `var.resource_group_name` variable and all generators use `var.resource_group_name` instead of a literal string.
 
+## Module-Aware Pipeline
+
+When resources are assigned to modules (via `moduleId` on `ResourceNodeData`), the pipeline switches from flat generation to module-aware generation.
+
+### Resource Partitioning
+
+The pipeline partitions `realResources` by `moduleId`:
+
+```mermaid
+flowchart TB
+    ALL["All real resources"] --> PART["Partition by moduleId"]
+    PART --> ROOT["Root resources<br/><i>no moduleId</i>"]
+    PART --> MOD1["Module A resources"]
+    PART --> MOD2["Module B resources"]
+
+    ROOT --> RCTX["Root HclGenerationContext"]
+    MOD1 --> MCTX1["ModuleHclContext (A)"]
+    MOD2 --> MCTX2["ModuleHclContext (B)"]
+```
+
+If no modules contain resources, the pipeline falls back to the original flat generation path (unchanged behavior).
+
+### ModuleHclContext
+
+Each module gets its own `ModuleHclContext` (implements `HclGenerationContext`). It provides the same interface as the root context but scopes references to module-internal resources and auto-wires cross-boundary references:
+
+- **Intra-module reference** (both resources in the same module): resolved directly, e.g., `azurerm_virtual_network.main.name`
+- **Cross-boundary outbound reference** (module resource references something outside):
+  1. Replaces with `var.{name}` inside the module
+  2. Registers a `TerraformVariable` on the module's variable collector
+  3. Records the real expression (e.g., `azurerm_resource_group.main.name`) for the root `module {}` block
+
+Cross-boundary inbound references (root resources referencing module internals) are handled by the root context, which auto-registers `output` declarations on the module and returns `module.{name}.{output_name}`.
+
+### getPropertyExpression()
+
+Both the root context and `ModuleHclContext` implement `getPropertyExpression(resource, key, value, options?)`:
+
+```typescript
+context.getPropertyExpression(resource, 'name', props.name);
+// If mode is 'literal': returns '"my-vnet"'
+// If mode is 'variable': registers var.main_name, returns 'var.main_name'
+```
+
+The method checks `resource.variableOverrides?.[key]`:
+- **`'literal'`** (default): formats the value as an HCL literal (handles strings, numbers, booleans, arrays)
+- **`'variable'`**: registers a `TerraformVariable` (with auto-derived name, type, and description) and returns `var.{name}`
+
+Options allow overriding the variable name, type, description, and sensitivity.
+
+### Variable Collector Integration
+
+The variable collector gathers variables from two sources in module-aware mode:
+1. **User-toggled property variables** — via `getPropertyExpression()` when `variableOverrides[key] === 'variable'`
+2. **Cross-boundary reference variables** — auto-created by `ModuleHclContext` when a module resource references an external resource
+
+For template modules with instances, user-toggled variables are passed through to each `module {}` block as `var.{name}` (so the root must also declare them). Instance-specific `variableValues` override the passed-through expression with a literal.
+
+### Template Instance Generation
+
+When a `ModuleDefinition` has `isTemplate: true`:
+
+```mermaid
+flowchart LR
+    TMPL["Module template<br/><i>isTemplate: true</i>"] --> DIR["modules/{name}/<br/>main.tf, variables.tf,<br/>outputs.tf, locals.tf"]
+    TMPL --> INST1["ModuleInstance 'net_dev'"]
+    TMPL --> INST2["ModuleInstance 'net_prod'"]
+    INST1 --> BLK1["module 'net_dev' {<br/>  source = './modules/{name}'<br/>  name = 'dev-vnet'<br/>}"]
+    INST2 --> BLK2["module 'net_prod' {<br/>  source = './modules/{name}'<br/>  name = 'prod-vnet'<br/>}"]
+```
+
+One module source directory is generated. Each `ModuleInstance` produces a `module {}` block in root `main.tf` with:
+- `source = "./modules/{template.name}"`
+- Cross-boundary input values from the wiring
+- Per-instance `variableValues` overrides (literal values replace the default expressions)
+
+Non-template modules produce a single `module {}` block.
+
+### Generated File Structure for Modules
+
+| Path | Contents |
+|---|---|
+| `modules/{name}/main.tf` | Resource and data blocks for the module's members |
+| `modules/{name}/variables.tf` | Input variables (cross-boundary + user-toggled) |
+| `modules/{name}/outputs.tf` | Output declarations (cross-boundary + generator-registered) |
+| `modules/{name}/locals.tf` | Common tags (replicated from root for generator compatibility) |
+
+Root-level files (`main.tf`, `variables.tf`, etc.) contain root resources plus `module {}` blocks.
+
 ## Related Docs
 
 - [Type Interfaces](type-interfaces.md) - HclGenerator, HclBlock, HclGenerationContext definitions
