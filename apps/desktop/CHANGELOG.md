@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.18.1](https://github.com/afroze9/terrastudio/compare/v0.18.0...v0.18.1) (2026-03-04)
+
+
+### Bug Fixes
+
+* add repository field to desktop package.json ([44e4619](https://github.com/afroze9/terrastudio/commit/44e4619b5c1b1fcac4dfc8e2a2cceee8678e20f6))
+* add repository field to desktop package.json ([30e0301](https://github.com/afroze9/terrastudio/commit/30e0301d7dd03e5e5cba4249a44f7e4e6a489e59))
+
 ## [0.5.2](https://github.com/afroze9/terrastudio/compare/v0.5.1...v0.5.2) (2026-02-26)
 
 
