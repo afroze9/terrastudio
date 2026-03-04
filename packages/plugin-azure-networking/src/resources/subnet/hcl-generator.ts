@@ -7,7 +7,8 @@ export const subnetHclGenerator: HclGenerator = {
   generate(resource: ResourceInstance, context: HclGenerationContext): HclBlock[] {
     const props = resource.properties;
     const name = props['name'] as string;
-    const addressPrefixes = (props['address_prefixes'] as string[]) ?? ['10.0.1.0/24'];
+    const rawAddr = props['address_prefixes'];
+    const addressPrefixes: string[] = Array.isArray(rawAddr) ? rawAddr : rawAddr ? [String(rawAddr)] : ['10.0.1.0/24'];
     const serviceEndpoints = props['service_endpoints'] as string[] | undefined;
     const delegationEnabled = props['delegation_enabled'] as boolean | undefined;
     const delegationService = (props['delegation_service'] as string | undefined) ?? 'Microsoft.Web/serverFarms';

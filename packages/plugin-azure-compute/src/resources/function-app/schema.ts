@@ -12,7 +12,14 @@ export const functionAppSchema: ResourceSchema = {
   cafAbbreviation: 'func',
   namingConstraints: { maxLength: 60 },
 
-  canBeChildOf: ['azurerm/compute/app_service_plan'],
+  canBeChildOf: ['azurerm/compute/app_service_plan', 'azurerm/networking/subnet'],
+  visualContainment: true,
+  privateEndpointConfig: {
+    subresources: [
+      { key: 'sites', label: 'Function App' },
+    ],
+    defaultSubresource: 'sites',
+  },
 
   parentReference: { propertyKey: 'service_plan_id' },
 
@@ -104,6 +111,12 @@ export const functionAppSchema: ResourceSchema = {
   ],
 
   handles: [
+    {
+      id: 'asp-in',
+      type: 'target',
+      position: 'top',
+      label: 'Service Plan',
+    },
     {
       id: 'pep-target',
       type: 'target',

@@ -13,7 +13,7 @@
 
   // ── View state ─────────────────────────────────────────────────────────────
   type View = 'home' | 'step1' | 'step2' | 'step3';
-  let { startInWizard = false }: { startInWizard?: boolean } = $props();
+  const { startInWizard = false }: { startInWizard?: boolean } = $props();
   let view = $state<View>(startInWizard ? 'step1' : 'home');
 
   // ── Recent projects ────────────────────────────────────────────────────────

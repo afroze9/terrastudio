@@ -14,7 +14,18 @@ export const storageAccountSchema: ResourceSchema = {
   isContainer: true,
   canBeChildOf: [
     'azurerm/core/resource_group',
+    'azurerm/networking/subnet',
   ],
+  visualContainment: true,
+  privateEndpointConfig: {
+    subresources: [
+      { key: 'blob', label: 'Blob Storage' },
+      { key: 'file', label: 'File Storage' },
+      { key: 'queue', label: 'Queue Storage' },
+      { key: 'table', label: 'Table Storage' },
+    ],
+    defaultSubresource: 'blob',
+  },
   containerStyle: {
     borderColor: '#2B7CF6',
     borderStyle: 'dotted',

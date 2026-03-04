@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Handle, Position, useUpdateNodeInternals } from '@xyflow/svelte';
   import { registry } from '$lib/bootstrap';
+  import { diagram } from '$lib/stores/diagram.svelte';
   import { terraform } from '$lib/stores/terraform.svelte';
   import { cost } from '$lib/stores/cost.svelte';
   import { ui } from '$lib/stores/ui.svelte';
@@ -167,6 +168,22 @@
   let hasNsg = $derived(!!data.references?.['nsg_id']);
   let nsgIcon = $derived(hasNsg ? registry.getIcon('azurerm/networking/network_security_group' as any) : null);
 
+  // PEP badge: show when resource has privateEndpointConfig and is inside a subnet
+  let hasPep = $derived.by(() => {
+    if (!schema?.privateEndpointConfig) return false;
+    const thisNode = diagram.nodes.find((n) => n.id === id);
+    if (!thisNode?.parentId) return false;
+    const parentNode = diagram.nodes.find((n) => n.id === thisNode.parentId);
+    return parentNode?.data.typeId === 'azurerm/networking/subnet';
+  });
+  let pepIcon = $derived(hasPep ? registry.getIcon('azurerm/networking/private_endpoint' as any) : null);
+  let pepSubresources = $derived.by(() => {
+    if (!hasPep) return '';
+    const subs = data.properties?.['pep_subresources'] as string[] | undefined;
+    if (subs && subs.length > 0) return subs.join(', ');
+    return schema?.privateEndpointConfig?.defaultSubresource ?? '';
+  });
+
   let costEstimate = $derived(ui.showCostBadges ? cost.estimates.get(id) : undefined);
   let costLabel = $derived.by(() => {
     if (!costEstimate || costEstimate.loading) return null;
@@ -212,6 +229,9 @@
     </div>
     {#if hasNsg && nsgIcon?.type === 'svg' && nsgIcon.svg}
       <span class="nsg-badge" title="NSG attached">{@html nsgIcon.svg}</span>
+    {/if}
+    {#if hasPep && pepIcon?.type === 'svg' && pepIcon.svg}
+      <span class="pep-badge" title="Private Endpoint ({pepSubresources})">{@html pepIcon.svg}</span>
     {/if}
     {#if hasValidationErrors}
       <span class="validation-badge" title={validationTooltip}>!</span>
@@ -333,6 +353,18 @@
     height: 16px;
   }
   .nsg-badge :global(svg) {
+    width: 16px;
+    height: 16px;
+  }
+  .pep-badge {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    cursor: help;
+  }
+  .pep-badge :global(svg) {
     width: 16px;
     height: 16px;
   }

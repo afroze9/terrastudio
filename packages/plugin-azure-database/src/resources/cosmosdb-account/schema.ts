@@ -15,7 +15,19 @@ export const cosmosdbAccountSchema: ResourceSchema = {
 
   canBeChildOf: [
     'azurerm/core/resource_group',
+    'azurerm/networking/subnet',
   ],
+  visualContainment: true,
+  privateEndpointConfig: {
+    subresources: [
+      { key: 'Sql', label: 'SQL API' },
+      { key: 'MongoDB', label: 'MongoDB API' },
+      { key: 'Cassandra', label: 'Cassandra API' },
+      { key: 'Gremlin', label: 'Gremlin API' },
+      { key: 'Table', label: 'Table API' },
+    ],
+    defaultSubresource: 'Sql',
+  },
 
   containerStyle: {
     borderColor: '#2B7CF6',

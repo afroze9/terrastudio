@@ -10,6 +10,7 @@ export const privateEndpointSchema: ResourceSchema = {
   supportsTags: true,
   requiresResourceGroup: true,
   cafAbbreviation: 'pep',
+  hideFromPalette: true,
 
   canBeChildOf: [
     'azurerm/networking/subnet',

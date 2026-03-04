@@ -12,7 +12,8 @@ export const containerAppEnvironmentSchema: ResourceSchema = {
   cafAbbreviation: 'cae',
   namingConstraints: { maxLength: 64 },
   isContainer: true,
-  canBeChildOf: ['azurerm/core/resource_group'],
+  canBeChildOf: ['azurerm/core/resource_group', 'azurerm/networking/subnet'],
+  visualContainment: true,
   containerStyle: {
     borderColor: '#00796B',
     borderStyle: 'dotted',

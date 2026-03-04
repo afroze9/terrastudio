@@ -15,7 +15,15 @@ export const mssqlServerSchema: ResourceSchema = {
 
   canBeChildOf: [
     'azurerm/core/resource_group',
+    'azurerm/networking/subnet',
   ],
+  visualContainment: true,
+  privateEndpointConfig: {
+    subresources: [
+      { key: 'sqlServer', label: 'SQL Server' },
+    ],
+    defaultSubresource: 'sqlServer',
+  },
 
   containerStyle: {
     borderColor: '#2B7CF6',

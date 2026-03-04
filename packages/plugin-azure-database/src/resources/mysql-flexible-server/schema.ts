@@ -15,7 +15,15 @@ export const mysqlFlexibleServerSchema: ResourceSchema = {
 
   canBeChildOf: [
     'azurerm/core/resource_group',
+    'azurerm/networking/subnet',
   ],
+  visualContainment: true,
+  privateEndpointConfig: {
+    subresources: [
+      { key: 'mysqlServer', label: 'MySQL Server' },
+    ],
+    defaultSubresource: 'mysqlServer',
+  },
 
   containerStyle: {
     borderColor: '#00758F',

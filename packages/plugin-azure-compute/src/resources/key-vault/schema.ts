@@ -14,7 +14,15 @@ export const keyVaultSchema: ResourceSchema = {
   isContainer: true,
   canBeChildOf: [
     'azurerm/core/resource_group',
+    'azurerm/networking/subnet',
   ],
+  visualContainment: true,
+  privateEndpointConfig: {
+    subresources: [
+      { key: 'vault', label: 'Key Vault' },
+    ],
+    defaultSubresource: 'vault',
+  },
   containerStyle: {
     borderColor: '#E3A62E',
     borderStyle: 'dotted',
