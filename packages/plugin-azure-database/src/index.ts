@@ -6,6 +6,8 @@ import { postgresqlFlexibleServerRegistration } from './resources/postgresql-fle
 import { postgresqlFlexibleServerDatabaseRegistration } from './resources/postgresql-flexible-server-database/index.js';
 import { cosmosdbAccountRegistration } from './resources/cosmosdb-account/index.js';
 import { cosmosdbSqlDatabaseRegistration } from './resources/cosmosdb-sql-database/index.js';
+import { mysqlFlexibleServerRegistration } from './resources/mysql-flexible-server/index.js';
+import { mysqlFlexibleServerDatabaseRegistration } from './resources/mysql-flexible-server-database/index.js';
 import { databaseConnectionRules } from './connections/rules.js';
 
 const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
@@ -16,6 +18,8 @@ const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
   ['azurerm/database/postgresql_flexible_server_database', postgresqlFlexibleServerDatabaseRegistration],
   ['azurerm/database/cosmosdb_account', cosmosdbAccountRegistration],
   ['azurerm/database/cosmosdb_sql_database', cosmosdbSqlDatabaseRegistration],
+  ['azurerm/database/mysql_flexible_server', mysqlFlexibleServerRegistration],
+  ['azurerm/database/mysql_flexible_server_database', mysqlFlexibleServerDatabaseRegistration],
 ]);
 
 const plugin: InfraPlugin = {
@@ -39,14 +43,19 @@ const plugin: InfraPlugin = {
       order: 26,
     },
     {
+      id: 'mysql',
+      label: 'MySQL',
+      order: 27,
+    },
+    {
       id: 'cache',
       label: 'Cache',
-      order: 27,
+      order: 28,
     },
     {
       id: 'cosmosdb',
       label: 'Cosmos DB',
-      order: 28,
+      order: 29,
     },
   ],
 };

@@ -11,9 +11,22 @@ export const keyVaultSchema: ResourceSchema = {
   requiresResourceGroup: true,
   cafAbbreviation: 'kv',
   namingConstraints: { maxLength: 24 },
+  isContainer: true,
   canBeChildOf: [
     'azurerm/core/resource_group',
   ],
+  containerStyle: {
+    borderColor: '#E3A62E',
+    borderStyle: 'dotted',
+    backgroundColor: '#ffffff',
+    headerColor: '#1a1a2e',
+    borderRadius: 12,
+    borderWidth: 3,
+    hideHeaderBorder: true,
+    iconSize: 28,
+    labelSize: 16,
+    dashArray: '4,8',
+  },
 
   properties: [
     {

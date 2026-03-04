@@ -12,6 +12,16 @@ import { kubernetesClusterNodePoolRegistration } from './resources/kubernetes-cl
 import { serviceBusNamespaceRegistration } from './resources/servicebus-namespace/index.js';
 import { serviceBusQueueRegistration } from './resources/servicebus-queue/index.js';
 import { serviceBusTopicRegistration } from './resources/servicebus-topic/index.js';
+import { eventhubNamespaceRegistration } from './resources/eventhub-namespace/index.js';
+import { eventhubRegistration } from './resources/eventhub/index.js';
+import { keyVaultSecretRegistration } from './resources/key-vault-secret/index.js';
+import { keyVaultKeyRegistration } from './resources/key-vault-key/index.js';
+import { cdnProfileRegistration } from './resources/cdn-profile/index.js';
+import { cdnEndpointRegistration } from './resources/cdn-endpoint/index.js';
+import { frontdoorProfileRegistration } from './resources/frontdoor-profile/index.js';
+import { containerAppEnvironmentRegistration } from './resources/container-app-environment/index.js';
+import { containerAppRegistration } from './resources/container-app/index.js';
+import { containerGroupRegistration } from './resources/container-group/index.js';
 import { computeConnectionRules } from './connections/rules.js';
 import { keyVaultSecretBinding } from './bindings/keyvault-secret.js';
 
@@ -29,6 +39,16 @@ const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
   ['azurerm/messaging/servicebus_namespace', serviceBusNamespaceRegistration],
   ['azurerm/messaging/servicebus_queue', serviceBusQueueRegistration],
   ['azurerm/messaging/servicebus_topic', serviceBusTopicRegistration],
+  ['azurerm/messaging/eventhub_namespace', eventhubNamespaceRegistration],
+  ['azurerm/messaging/eventhub', eventhubRegistration],
+  ['azurerm/security/key_vault_secret', keyVaultSecretRegistration],
+  ['azurerm/security/key_vault_key', keyVaultKeyRegistration],
+  ['azurerm/web/cdn_profile', cdnProfileRegistration],
+  ['azurerm/web/cdn_endpoint', cdnEndpointRegistration],
+  ['azurerm/web/frontdoor_profile', frontdoorProfileRegistration],
+  ['azurerm/containers/container_app_environment', containerAppEnvironmentRegistration],
+  ['azurerm/containers/container_app', containerAppRegistration],
+  ['azurerm/containers/container_group', containerGroupRegistration],
 ]);
 
 const plugin: InfraPlugin = {
@@ -66,6 +86,11 @@ const plugin: InfraPlugin = {
       id: 'security',
       label: 'Security',
       order: 40,
+    },
+    {
+      id: 'web',
+      label: 'Web',
+      order: 45,
     },
   ],
 };
