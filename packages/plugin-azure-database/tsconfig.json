@@ -5,5 +5,5 @@
     "rootDir": "src"
   },
   "include": ["src"],
-  "exclude": ["src/**/*.svelte", "src/**/*.svelte.ts"]
+  "exclude": ["src/**/*.svelte", "src/**/*.svelte.ts", "src/**/*.test.ts"]
 }

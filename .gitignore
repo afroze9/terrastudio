@@ -13,6 +13,9 @@ src-tauri/target/
 src-tauri/WixTools/
 src-tauri/icons/icon.ico
 
+# Test coverage
+coverage/
+
 # Environment
 .env
 .env.*
