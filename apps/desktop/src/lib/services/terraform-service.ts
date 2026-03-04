@@ -161,17 +161,20 @@ export async function generateAndWrite(): Promise<Record<string, string>> {
     // Validate diagram before generation
     const validation = validateDiagram(resources, registry.inner);
     if (!validation.valid) {
+      const errorDetails: string[] = [];
       for (const diagramError of validation.errors) {
-        terraform.appendError(
-          `[${diagramError.label}] ${diagramError.errors.map((e) => e.message).join(', ')}`,
-        );
+        const detail = `[${diagramError.label}] ${diagramError.errors.map((e) => e.message).join(', ')}`;
+        terraform.appendError(detail);
+        errorDetails.push(detail);
         diagram.setNodeValidationErrors(diagramError.instanceId, diagramError.errors);
       }
       terraform.appendError(
         `Validation failed with ${validation.errors.length} resource(s) having errors. Fix issues and try again.`,
       );
       terraform.setStatus('error');
-      throw new Error('Diagram validation failed');
+      const err = new Error('Diagram validation failed');
+      (err as any).validationErrors = errorDetails;
+      throw err;
     }
 
     // Validate network topology (subnet CIDR containment + overlap detection)
@@ -194,7 +197,13 @@ export async function generateAndWrite(): Promise<Record<string, string>> {
       if (hasErrors) {
         terraform.appendError('Network topology validation failed. Fix CIDR issues and try again.');
         terraform.setStatus('error');
-        throw new Error('Network topology validation failed');
+        const networkErr = new Error('Network topology validation failed');
+        const networkDetails = topologyErrors.flatMap((te) => {
+          const nodeLabel = diagram.nodes.find((n) => n.id === te.instanceId)?.data?.label ?? te.instanceId;
+          return te.errors.filter((e) => e.severity === 'error').map((e) => `[${nodeLabel}] ${e.message}`);
+        });
+        (networkErr as any).validationErrors = networkDetails;
+        throw networkErr;
       }
     }
 

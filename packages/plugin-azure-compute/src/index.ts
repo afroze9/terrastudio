@@ -7,6 +7,8 @@ import { appServicePlanRegistration } from './resources/app-service-plan/index.j
 import { appServiceRegistration } from './resources/app-service/index.js';
 import { functionAppRegistration } from './resources/function-app/index.js';
 import { containerRegistryRegistration } from './resources/container-registry/index.js';
+import { kubernetesClusterRegistration } from './resources/kubernetes-cluster/index.js';
+import { kubernetesClusterNodePoolRegistration } from './resources/kubernetes-cluster-node-pool/index.js';
 import { serviceBusNamespaceRegistration } from './resources/servicebus-namespace/index.js';
 import { serviceBusQueueRegistration } from './resources/servicebus-queue/index.js';
 import { serviceBusTopicRegistration } from './resources/servicebus-topic/index.js';
@@ -22,6 +24,8 @@ const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
   ['azurerm/compute/app_service', appServiceRegistration],
   ['azurerm/compute/function_app', functionAppRegistration],
   ['azurerm/containers/container_registry', containerRegistryRegistration],
+  ['azurerm/containers/kubernetes_cluster', kubernetesClusterRegistration],
+  ['azurerm/containers/kubernetes_cluster_node_pool', kubernetesClusterNodePoolRegistration],
   ['azurerm/messaging/servicebus_namespace', serviceBusNamespaceRegistration],
   ['azurerm/messaging/servicebus_queue', serviceBusQueueRegistration],
   ['azurerm/messaging/servicebus_topic', serviceBusTopicRegistration],

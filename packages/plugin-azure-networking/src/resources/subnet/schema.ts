@@ -173,6 +173,12 @@ export const subnetSchema: ResourceSchema = {
       position: 'right',
       label: 'VNet Integration',
     },
+    {
+      id: 'subnet-out',
+      type: 'source',
+      position: 'right',
+      label: 'Subnet',
+    },
   ],
 
   outputs: [

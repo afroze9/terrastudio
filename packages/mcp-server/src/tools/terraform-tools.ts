@@ -28,8 +28,13 @@ export function registerTerraformTools(server: McpServer, bridge: BridgeClient):
 
         // Check if result contains an error from the frontend
         if (result && typeof result === 'object' && 'error' in result) {
+          let errorText = `Generation failed: ${result.error}`;
+          const validationErrors = (result as any).validationErrors;
+          if (Array.isArray(validationErrors) && validationErrors.length > 0) {
+            errorText += '\n\nValidation errors:\n' + validationErrors.map((e: string) => `  - ${e}`).join('\n');
+          }
           return {
-            content: [{ type: 'text' as const, text: `Generation failed: ${result.error}` }],
+            content: [{ type: 'text' as const, text: errorText }],
             isError: true,
           };
         }

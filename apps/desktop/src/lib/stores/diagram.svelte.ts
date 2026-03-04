@@ -1594,7 +1594,7 @@ class DiagramStore {
     this.nodes = this.nodes.map((n) => {
       if (n.id !== id) return n;
       if (parentId) {
-        return { ...n, position, parentId, extent: 'parent' as const };
+        return { ...n, position, parentId };
       }
       // Unparent: remove parentId and extent
       const { parentId: _pid, extent: _ext, ...rest } = n;

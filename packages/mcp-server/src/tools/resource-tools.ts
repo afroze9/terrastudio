@@ -18,9 +18,15 @@ export function registerResourceTools(server: McpServer, bridge: BridgeClient): 
     AddResourceSchema.shape,
     async (params) => {
       try {
-        const result = await bridge.request('mcp_add_resource', params);
+        const result = await bridge.request('mcp_add_resource', params) as Record<string, unknown>;
+        const warnings = Array.isArray(result?.warnings) ? result.warnings as string[] : [];
+        const { warnings: _w, ...rest } = result;
+        let text = JSON.stringify(rest, null, 2);
+        if (warnings.length > 0) {
+          text += '\n\n⚠ Layout warnings:\n' + warnings.map((w: string) => `  - ${w}`).join('\n');
+        }
         return {
-          content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
+          content: [{ type: 'text' as const, text }],
         };
       } catch (err: any) {
         return {
@@ -132,9 +138,14 @@ export function registerResourceTools(server: McpServer, bridge: BridgeClient): 
     MoveResourceSchema.shape,
     async (params) => {
       try {
-        await bridge.request('mcp_move_resource', params);
+        const result = await bridge.request('mcp_move_resource', params) as Record<string, unknown>;
+        const warnings = Array.isArray(result?.warnings) ? result.warnings as string[] : [];
+        let text = 'Resource moved successfully';
+        if (warnings.length > 0) {
+          text += '\n\n⚠ Layout warnings:\n' + warnings.map((w: string) => `  - ${w}`).join('\n');
+        }
         return {
-          content: [{ type: 'text' as const, text: 'Resource moved successfully' }],
+          content: [{ type: 'text' as const, text }],
         };
       } catch (err: any) {
         return {
@@ -151,9 +162,14 @@ export function registerResourceTools(server: McpServer, bridge: BridgeClient): 
     ResizeResourceSchema.shape,
     async (params) => {
       try {
-        await bridge.request('mcp_resize_resource', params);
+        const result = await bridge.request('mcp_resize_resource', params) as Record<string, unknown>;
+        const warnings = Array.isArray(result?.warnings) ? result.warnings as string[] : [];
+        let text = 'Resource resized successfully';
+        if (warnings.length > 0) {
+          text += '\n\n⚠ Layout warnings:\n' + warnings.map((w: string) => `  - ${w}`).join('\n');
+        }
         return {
-          content: [{ type: 'text' as const, text: 'Resource resized successfully' }],
+          content: [{ type: 'text' as const, text }],
         };
       } catch (err: any) {
         return {

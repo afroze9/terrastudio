@@ -74,6 +74,12 @@ export const containerRegistrySchema: ResourceSchema = {
       position: 'left',
       label: 'Private Endpoint',
     },
+    {
+      id: 'acr-out',
+      type: 'source',
+      position: 'right',
+      label: 'AKS Integration',
+    },
   ],
 
   outputs: [

@@ -654,7 +654,6 @@ async fn handle_add_resource(
 
     if let Some(ref pid) = parent_id {
         node["parentId"] = json!(pid);
-        node["extent"] = json!("parent");
     }
 
     // Emit mutation to targeted window
@@ -663,21 +662,28 @@ async fn handle_add_resource(
         return BridgeResponse::error(id, "INTERNAL_ERROR", format!("Failed to emit event: {}", e));
     }
 
-    // Update per-window cache
-    {
+    // Update per-window cache and collect layout warnings
+    let warnings = {
         let mut windows = state.windows.write().await;
         if let Some(entry) = windows.get_mut(&label) {
             if let Some(ref mut snapshot) = entry.diagram_cache {
                 if let Some(nodes) = snapshot.get_mut("nodes").and_then(|n| n.as_array_mut()) {
                     nodes.push(node);
+                    collect_layout_warnings(nodes, &instance_id)
+                } else {
+                    vec![]
                 }
+            } else {
+                vec![]
             }
+        } else {
+            vec![]
         }
-    }
+    };
 
     BridgeResponse::success(
         id,
-        json!({ "instanceId": instance_id, "terraformName": tf_name, "position": position }),
+        json!({ "instanceId": instance_id, "terraformName": tf_name, "position": position, "warnings": warnings }),
     )
 }
 
@@ -1159,7 +1165,7 @@ async fn handle_move_resource(
         }
     }
 
-    {
+    let warnings = {
         let mut windows = state.windows.write().await;
         if let Some(entry) = windows.get_mut(&label) {
             if let Some(ref mut snapshot) = entry.diagram_cache {
@@ -1179,10 +1185,9 @@ async fn handle_move_resource(
                                 match &new_parent_str {
                                     Some(pid) => {
                                         node["parentId"] = json!(pid);
-                                        node["extent"] = json!("parent");
                                     }
                                     None => {
-                                        // Unparent: remove parentId and extent
+                                        // Unparent: remove parentId
                                         if let Some(obj) = node.as_object_mut() {
                                             obj.remove("parentId");
                                             obj.remove("extent");
@@ -1192,14 +1197,19 @@ async fn handle_move_resource(
                             }
                         }
                     }
+                    collect_layout_warnings(nodes, &instance_id)
+                } else {
+                    vec![]
                 }
             } else {
                 return BridgeResponse::error(
                     id, "NOT_FOUND", format!("Resource not found: {}", instance_id),
                 );
             }
+        } else {
+            vec![]
         }
-    }
+    };
 
     if reparent {
         // Emit reparent mutation (includes position + parentId change)
@@ -1223,7 +1233,7 @@ async fn handle_move_resource(
         }
     }
 
-    BridgeResponse::success(id, json!({}))
+    BridgeResponse::success(id, json!({ "warnings": warnings }))
 }
 
 async fn handle_resize_resource(
@@ -1253,7 +1263,7 @@ async fn handle_resize_resource(
         None => return BridgeResponse::error(id, "VALIDATION_ERROR", "height is required"),
     };
 
-    {
+    let warnings = {
         let mut windows = state.windows.write().await;
         if let Some(entry) = windows.get_mut(&label) {
             if let Some(ref mut snapshot) = entry.diagram_cache {
@@ -1272,14 +1282,31 @@ async fn handle_resize_resource(
                             node["height"] = json!(height);
                         }
                     }
+                    // Check this node's own overlaps + overflow
+                    let mut w = collect_layout_warnings(nodes, &instance_id);
+                    // Also check children that may now overflow due to container shrinking
+                    let child_ids: Vec<String> = nodes.iter()
+                        .filter(|n| n.get("parentId").and_then(|p| p.as_str()) == Some(&instance_id))
+                        .filter_map(|n| n.get("id").and_then(|i| i.as_str()).map(String::from))
+                        .collect();
+                    for cid in &child_ids {
+                        for cw in collect_layout_warnings(nodes, cid) {
+                            w.push(format!("Child: {}", cw));
+                        }
+                    }
+                    w
+                } else {
+                    vec![]
                 }
             } else {
                 return BridgeResponse::error(
                     id, "NOT_FOUND", format!("Resource not found: {}", instance_id),
                 );
             }
+        } else {
+            vec![]
         }
-    }
+    };
 
     let mutation = json!({
         "op": "resize_node",
@@ -1291,7 +1318,7 @@ async fn handle_resize_resource(
         return BridgeResponse::error(id, "INTERNAL_ERROR", format!("Failed to emit event: {}", e));
     }
 
-    BridgeResponse::success(id, json!({}))
+    BridgeResponse::success(id, json!({ "warnings": warnings }))
 }
 
 // ── Module mutation handlers ─────────────────────────────────────────────
@@ -1836,6 +1863,73 @@ fn get_display_name(type_id: &str) -> String {
         })
         .collect::<Vec<_>>()
         .join(" ")
+}
+
+/// Collect layout warnings for a node after a position/size mutation.
+/// Checks for sibling overlaps and container boundary overflow.
+fn collect_layout_warnings(nodes: &[Value], instance_id: &str) -> Vec<String> {
+    let mut warnings: Vec<String> = Vec::new();
+
+    // Find the target node
+    let target = match nodes.iter().find(|n| n.get("id").and_then(|i| i.as_str()) == Some(instance_id)) {
+        Some(n) => n,
+        None => return warnings,
+    };
+
+    let tx = target.get("position").and_then(|p| p.get("x")).and_then(|x| x.as_f64()).unwrap_or(0.0);
+    let ty = target.get("position").and_then(|p| p.get("y")).and_then(|y| y.as_f64()).unwrap_or(0.0);
+    let tw = target.get("width").and_then(|w| w.as_f64()).unwrap_or(250.0);
+    let th = target.get("height").and_then(|h| h.as_f64()).unwrap_or(80.0);
+    let parent_id = target.get("parentId").and_then(|p| p.as_str());
+
+    // 1. Sibling overlap check — nodes at the same level (same parentId)
+    for sibling in nodes.iter() {
+        let sid = sibling.get("id").and_then(|i| i.as_str()).unwrap_or("");
+        if sid == instance_id {
+            continue;
+        }
+        let s_parent = sibling.get("parentId").and_then(|p| p.as_str());
+        if s_parent != parent_id {
+            continue;
+        }
+
+        let sx = sibling.get("position").and_then(|p| p.get("x")).and_then(|x| x.as_f64()).unwrap_or(0.0);
+        let sy = sibling.get("position").and_then(|p| p.get("y")).and_then(|y| y.as_f64()).unwrap_or(0.0);
+        let sw = sibling.get("width").and_then(|w| w.as_f64()).unwrap_or(250.0);
+        let sh = sibling.get("height").and_then(|h| h.as_f64()).unwrap_or(80.0);
+
+        // AABB intersection test
+        if tx < sx + sw && tx + tw > sx && ty < sy + sh && ty + th > sy {
+            let s_label = sibling.get("data")
+                .and_then(|d| d.get("label"))
+                .and_then(|l| l.as_str())
+                .unwrap_or(sid);
+            warnings.push(format!("Overlaps with '{}' — consider repositioning", s_label));
+        }
+    }
+
+    // 2. Container overflow check — does this node extend beyond its parent?
+    if let Some(pid) = parent_id {
+        if let Some(parent) = nodes.iter().find(|n| n.get("id").and_then(|i| i.as_str()) == Some(pid)) {
+            let pw = parent.get("width").and_then(|w| w.as_f64()).unwrap_or(250.0);
+            let ph = parent.get("height").and_then(|h| h.as_f64()).unwrap_or(200.0);
+            let header_offset = 40.0;
+
+            let p_label = parent.get("data")
+                .and_then(|d| d.get("label"))
+                .and_then(|l| l.as_str())
+                .unwrap_or(pid);
+
+            if tx < 0.0 || ty < header_offset || tx + tw > pw || ty + th > ph {
+                warnings.push(format!(
+                    "Extends beyond parent container '{}' ({}x{}) — resize the container to fit, or reposition the node",
+                    p_label, pw as i64, ph as i64
+                ));
+            }
+        }
+    }
+
+    warnings
 }
 
 /// Auto-position a new node based on existing nodes in the target window.

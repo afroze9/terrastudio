@@ -220,10 +220,15 @@ export async function initBridgeListener(): Promise<void> {
       const files = await generateAndWrite();
       // Sync generated HCL files back to Rust per-window cache
       await invoke('mcp_sync_hcl_files', { windowLabel, files });
-    } catch (e) {
+    } catch (e: any) {
       logger.error(`[mcp] generate_hcl failed: ${e}`);
+      // Include validation details so the MCP caller can see what's wrong
+      const errorPayload: Record<string, unknown> = { error: String(e) };
+      if (Array.isArray(e?.validationErrors) && e.validationErrors.length > 0) {
+        errorPayload.validationErrors = e.validationErrors;
+      }
       // Sync error result so the bridge doesn't hang waiting
-      await invoke('mcp_sync_hcl_files', { windowLabel, files: { error: String(e) } }).catch(() => {});
+      await invoke('mcp_sync_hcl_files', { windowLabel, files: errorPayload }).catch(() => {});
     }
   });
   unlisteners.push(unlistenGenerate);
