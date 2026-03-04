@@ -6,7 +6,8 @@ export const vnetHclGenerator: HclGenerator = {
   generate(resource: ResourceInstance, context: HclGenerationContext): HclBlock[] {
     const props = resource.properties;
     const name = props['name'] as string;
-    const addressSpace = (props['address_space'] as string[]) ?? ['10.0.0.0/16'];
+    const rawAddr = props['address_space'];
+    const addressSpace: string[] = Array.isArray(rawAddr) ? rawAddr : rawAddr ? [String(rawAddr)] : ['10.0.0.0/16'];
     const dnsServers = props['dns_servers'] as string[] | undefined;
 
     const rgExpr = context.getResourceGroupExpression(resource);

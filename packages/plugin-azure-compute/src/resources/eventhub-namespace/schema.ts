@@ -15,7 +15,15 @@ export const eventhubNamespaceSchema: ResourceSchema = {
 
   canBeChildOf: [
     'azurerm/core/resource_group',
+    'azurerm/networking/subnet',
   ],
+  visualContainment: true,
+  privateEndpointConfig: {
+    subresources: [
+      { key: 'namespace', label: 'Event Hub Namespace' },
+    ],
+    defaultSubresource: 'namespace',
+  },
 
   containerStyle: {
     borderColor: '#7B1FA2',

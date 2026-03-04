@@ -14,7 +14,9 @@ export const kubernetesClusterSchema: ResourceSchema = {
   isContainer: true,
   canBeChildOf: [
     'azurerm/core/resource_group',
+    'azurerm/networking/subnet',
   ],
+  visualContainment: true,
   containerStyle: {
     borderColor: '#326CE5',
     borderStyle: 'solid',

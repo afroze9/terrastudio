@@ -15,7 +15,15 @@ export const postgresqlFlexibleServerSchema: ResourceSchema = {
 
   canBeChildOf: [
     'azurerm/core/resource_group',
+    'azurerm/networking/subnet',
   ],
+  visualContainment: true,
+  privateEndpointConfig: {
+    subresources: [
+      { key: 'postgresqlServer', label: 'PostgreSQL Server' },
+    ],
+    defaultSubresource: 'postgresqlServer',
+  },
 
   containerStyle: {
     borderColor: '#2B7CF6',

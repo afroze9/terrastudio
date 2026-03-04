@@ -10,7 +10,8 @@ export const containerGroupSchema: ResourceSchema = {
   supportsTags: true,
   requiresResourceGroup: true,
   cafAbbreviation: 'ci',
-  canBeChildOf: ['azurerm/core/resource_group'],
+  canBeChildOf: ['azurerm/core/resource_group', 'azurerm/networking/subnet'],
+  visualContainment: true,
   properties: [
     { key: 'name', label: 'Name', type: 'string', required: true, placeholder: 'ci-myapp-dev', group: 'General', order: 1 },
     { key: 'os_type', label: 'OS Type', type: 'select', required: true, group: 'General', order: 2, defaultValue: 'Linux', options: [{ label: 'Linux', value: 'Linux' }, { label: 'Windows', value: 'Windows' }] },

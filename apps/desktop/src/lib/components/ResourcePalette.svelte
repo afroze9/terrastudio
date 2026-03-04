@@ -13,7 +13,8 @@
   let filteredCategories = $derived(
     registry.paletteCategories
       .map((category: PaletteCategory) => {
-        let resources = registry.getResourceTypesForCategory(category.id);
+        let resources = registry.getResourceTypesForCategory(category.id)
+          .filter((r: ResourceTypeRegistration) => !r.schema.hideFromPalette);
 
         // Filter by active providers
         const active = project.projectConfig.activeProviders;

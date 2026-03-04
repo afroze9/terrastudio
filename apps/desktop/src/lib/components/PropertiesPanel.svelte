@@ -254,6 +254,34 @@
 
   let hasCostInputs = $derived(!!(schema?.costEstimation?.usageInputs?.length));
 
+  // Private Endpoint config: show when resource has privateEndpointConfig and is inside a subnet
+  let showPepConfig = $derived.by(() => {
+    if (!schema?.privateEndpointConfig || !diagram.selectedNode) return false;
+    const parentNode = diagram.nodes.find((n) => n.id === diagram.selectedNode!.parentId);
+    return parentNode?.data.typeId === 'azurerm/networking/subnet';
+  });
+
+  let pepConfig = $derived(schema?.privateEndpointConfig);
+
+  function togglePepSubresource(key: string) {
+    if (!diagram.selectedNode) return;
+    const props = { ...diagram.selectedNode.data.properties };
+    const current = (props['pep_subresources'] as string[] | undefined) ?? [pepConfig?.defaultSubresource ?? ''];
+    if (current.includes(key)) {
+      props['pep_subresources'] = current.filter((k: string) => k !== key);
+    } else {
+      props['pep_subresources'] = [...current, key];
+    }
+    diagram.updateNodeData(diagram.selectedNode.id, { properties: props });
+  }
+
+  function togglePepDnsZone() {
+    if (!diagram.selectedNode) return;
+    const props = { ...diagram.selectedNode.data.properties };
+    props['pep_dns_zone_enabled'] = !props['pep_dns_zone_enabled'];
+    diagram.updateNodeData(diagram.selectedNode.id, { properties: props });
+  }
+
   // Collect all collapsible section IDs for this panel
   let propsSectionIds = $derived.by(() => {
     const ids: string[] = [];
@@ -277,6 +305,10 @@
     // Outputs
     if (schema.outputs && schema.outputs.length > 0) {
       ids.push('props-outputs');
+    }
+    // Private Endpoint config
+    if (showPepConfig) {
+      ids.push('props-private-endpoint');
     }
     // Connected secrets (if Key Vault)
     if (connectedBindings.length > 0) {
@@ -531,6 +563,33 @@
               {/if}
             </label>
           {/each}
+        </CollapsiblePanelSection>
+      {/if}
+
+      {#if showPepConfig && pepConfig}
+        <CollapsiblePanelSection id="props-private-endpoint" label="Private Endpoint" count={pepConfig.subresources.length}>
+          <div class="pep-section">
+            <p class="pep-hint">This resource is connected to the subnet via Private Endpoint. Select subresource(s) to expose:</p>
+            {#each pepConfig.subresources as sub (sub.key)}
+              {@const currentSubs = (diagram.selectedNode?.data.properties?.['pep_subresources'] as string[] | undefined) ?? [pepConfig.defaultSubresource]}
+              <label class="output-toggle">
+                <input
+                  type="checkbox"
+                  checked={currentSubs.includes(sub.key)}
+                  onchange={() => togglePepSubresource(sub.key)}
+                />
+                <span class="output-label">{sub.label}</span>
+              </label>
+            {/each}
+            <label class="output-toggle" style="margin-top: 8px;">
+              <input
+                type="checkbox"
+                checked={!!diagram.selectedNode?.data.properties?.['pep_dns_zone_enabled']}
+                onchange={togglePepDnsZone}
+              />
+              <span class="output-label">Private DNS Zone Integration</span>
+            </label>
+          </div>
         </CollapsiblePanelSection>
       {/if}
 
@@ -802,6 +861,17 @@
   .delete-edge-btn:hover {
     background: #ef4444;
     color: #fff;
+  }
+  .pep-section {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .pep-hint {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    margin: 0 0 4px 0;
+    line-height: 1.4;
   }
   .output-toggle {
     display: flex;

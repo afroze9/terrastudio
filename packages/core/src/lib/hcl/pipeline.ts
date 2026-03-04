@@ -1,5 +1,6 @@
 import type {
   ResourceInstance,
+  ResourceSchema,
   HclBlock,
   HclGenerationContext,
   TerraformVariable,
@@ -620,7 +621,83 @@ export class HclPipeline {
       allBlocks.push(...generator.generate(source, target, context, binding.sourceAttribute));
     }
 
+    // Generate implicit Private Endpoint resources for visual containment in subnets
+    for (const resource of resources) {
+      const schema = this.registry.getResourceSchema(resource.typeId);
+      if (!schema?.privateEndpointConfig) continue;
+      const subnetId = resource.references['_visual_subnet'];
+      if (!subnetId) continue;
+
+      const pepBlocks = this.generateImplicitPep(resource, subnetId, schema, context);
+      allBlocks.push(...pepBlocks);
+    }
+
     return allBlocks;
+  }
+
+  /**
+   * Generate implicit Private Endpoint HCL blocks for a resource visually placed in a subnet.
+   */
+  private generateImplicitPep(
+    resource: ResourceInstance,
+    subnetId: string,
+    schema: ResourceSchema,
+    context: HclGenerationContext,
+  ): HclBlock[] {
+    const pepConfig = schema.privateEndpointConfig!;
+    const selectedSubs = (resource.properties['pep_subresources'] as string[] | undefined)
+      ?? [pepConfig.defaultSubresource];
+
+    if (selectedSubs.length === 0) return [];
+
+    const blocks: HclBlock[] = [];
+    const subnetExpr = context.getAttributeReference(subnetId, 'id');
+    const targetExpr = context.getAttributeReference(resource.instanceId, 'id');
+    const rgExpr = context.getResourceGroupExpression(resource);
+    const locationExpr = context.getLocationExpression(resource);
+
+    const resourceAddr = context.getTerraformAddress(resource.instanceId);
+    const subnetAddr = context.getTerraformAddress(subnetId);
+    const dependsOn: string[] = [];
+    if (resourceAddr) dependsOn.push(resourceAddr);
+    if (subnetAddr) dependsOn.push(subnetAddr);
+
+    for (const sub of selectedSubs) {
+      const pepName = `pe_${resource.terraformName}_${sub}`;
+      const lines: string[] = [
+        `resource "azurerm_private_endpoint" "${pepName}" {`,
+        `  name                = "pe-${resource.terraformName}-${sub}"`,
+        `  resource_group_name = ${rgExpr}`,
+        `  location            = ${locationExpr}`,
+        `  subnet_id           = ${subnetExpr}`,
+        ``,
+        `  private_service_connection {`,
+        `    name                           = "pe-${resource.terraformName}-${sub}-psc"`,
+        `    private_connection_resource_id = ${targetExpr}`,
+        `    subresource_names              = ["${sub}"]`,
+        `    is_manual_connection           = false`,
+        `  }`,
+      ];
+
+      // Add Private DNS Zone group if enabled
+      const dnsEnabled = resource.properties['pep_dns_zone_enabled'];
+      if (dnsEnabled) {
+        lines.push(``);
+        lines.push(`  # Private DNS Zone integration — configure dns_zone_id on the resource`);
+      }
+
+      lines.push(`}`);
+
+      blocks.push({
+        blockType: 'resource',
+        terraformType: 'azurerm_private_endpoint',
+        name: pepName,
+        content: lines.join('\n'),
+        dependsOn,
+      });
+    }
+
+    return blocks;
   }
 
   /** Format a variable value for HCL output. */

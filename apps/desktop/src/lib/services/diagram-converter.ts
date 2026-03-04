@@ -122,10 +122,24 @@ function deriveParentReferences(
   if (!parentNode) return;
 
   const childSchema = getSchema(childNode.data.typeId);
-  if (childSchema?.parentReference) {
-    // Only set if not already explicitly set
+
+  // Determine if this is a visual-only containment (e.g., PaaS resource inside subnet)
+  const isVisualParent = childSchema?.visualContainment && (
+    parentNode.data.typeId === 'azurerm/networking/subnet' ||
+    parentNode.data.typeId === 'azurerm/networking/virtual_network'
+  );
+
+  if (childSchema?.parentReference && !isVisualParent) {
+    // Set parentReference for structural containment (skip for visual-only containment in subnets)
     if (!references[childSchema.parentReference.propertyKey]) {
       references[childSchema.parentReference.propertyKey] = parentNode.id;
+    }
+  }
+
+  // For visual containment, store the subnet reference for implicit PEP generation
+  if (childSchema?.visualContainment && parentNode.data.typeId === 'azurerm/networking/subnet') {
+    if (!references['_visual_subnet']) {
+      references['_visual_subnet'] = parentNode.id;
     }
   }
 

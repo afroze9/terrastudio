@@ -14,7 +14,15 @@ export const redisCacheSchema: ResourceSchema = {
 
   canBeChildOf: [
     'azurerm/core/resource_group',
+    'azurerm/networking/subnet',
   ],
+  visualContainment: true,
+  privateEndpointConfig: {
+    subresources: [
+      { key: 'redisCache', label: 'Redis Cache' },
+    ],
+    defaultSubresource: 'redisCache',
+  },
 
   properties: [
     {

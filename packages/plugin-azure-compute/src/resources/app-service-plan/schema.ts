@@ -103,7 +103,14 @@ export const appServicePlanSchema: ResourceSchema = {
     },
   ],
 
-  handles: [],
+  handles: [
+    {
+      id: 'asp-out',
+      type: 'source',
+      position: 'right',
+      label: 'Service Plan',
+    },
+  ],
 
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },

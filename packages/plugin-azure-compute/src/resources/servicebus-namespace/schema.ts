@@ -15,7 +15,15 @@ export const serviceBusNamespaceSchema: ResourceSchema = {
 
   canBeChildOf: [
     'azurerm/core/resource_group',
+    'azurerm/networking/subnet',
   ],
+  visualContainment: true,
+  privateEndpointConfig: {
+    subresources: [
+      { key: 'namespace', label: 'Service Bus Namespace' },
+    ],
+    defaultSubresource: 'namespace',
+  },
 
   containerStyle: {
     borderColor: '#2B7CF6',

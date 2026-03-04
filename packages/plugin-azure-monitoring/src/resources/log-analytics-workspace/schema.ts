@@ -14,7 +14,15 @@ export const logAnalyticsWorkspaceSchema: ResourceSchema = {
 
   canBeChildOf: [
     'azurerm/core/resource_group',
+    'azurerm/networking/subnet',
   ],
+  visualContainment: true,
+  privateEndpointConfig: {
+    subresources: [
+      { key: 'ods', label: 'Log Analytics (ODS)' },
+    ],
+    defaultSubresource: 'ods',
+  },
 
   properties: [
     {

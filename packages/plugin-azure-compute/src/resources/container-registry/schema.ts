@@ -14,7 +14,15 @@ export const containerRegistrySchema: ResourceSchema = {
 
   canBeChildOf: [
     'azurerm/core/resource_group',
+    'azurerm/networking/subnet',
   ],
+  visualContainment: true,
+  privateEndpointConfig: {
+    subresources: [
+      { key: 'registry', label: 'Container Registry' },
+    ],
+    defaultSubresource: 'registry',
+  },
 
   properties: [
     {

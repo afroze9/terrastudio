@@ -167,8 +167,27 @@ export interface ResourceSchema {
   readonly parentReference?: {
     readonly propertyKey: string;
   };
+  /**
+   * If true, this resource uses visual-only containment — it can be placed inside
+   * containers listed in `canBeChildOf` but `parentReference` is NOT auto-set.
+   * The resource still belongs to the Resource Group in Terraform.
+   * Used for PaaS resources placed inside Subnets for visual clarity.
+   */
+  readonly visualContainment?: boolean;
+  /**
+   * If set, this resource supports implicit Private Endpoint generation when placed
+   * inside a Subnet. The PEP is auto-generated in HCL; no separate PEP node needed.
+   */
+  readonly privateEndpointConfig?: {
+    /** Available subresource names for Private Endpoint (e.g., blob, file, vault) */
+    readonly subresources: ReadonlyArray<{ readonly key: string; readonly label: string }>;
+    /** Default subresource selected when the resource is first placed in a subnet */
+    readonly defaultSubresource: string;
+  };
   /** Computed outputs this resource exposes for output binding connections */
   readonly outputs?: ReadonlyArray<OutputDefinition>;
+  /** If true, this resource is registered but hidden from the palette (e.g., superseded by implicit generation) */
+  readonly hideFromPalette?: boolean;
   /** Metadata for Azure cost estimation */
   readonly costEstimation?: CostEstimationMeta;
 }
