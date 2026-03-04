@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.5.3](https://github.com/afroze9/terrastudio/compare/v0.5.2...v0.5.3) (2026-03-04)
+
+
+### Features
+
+* add .tstudio file extension with OS file association and single-instance handling (v0.9.0) ([fb8f136](https://github.com/afroze9/terrastudio/commit/fb8f13646905c2326b70a8c40ca36d13bae2588c))
+* add 13 Azure resources, make Key Vault a container (v0.17.0) ([aa9054e](https://github.com/afroze9/terrastudio/commit/aa9054e63b49c9601cc09e0af475ec55d72c0f05))
+* add AKS resources, subnet edges, MCP layout warnings, and validation error details ([d84644a](https://github.com/afroze9/terrastudio/commit/d84644aa7e960d24a1589e166b165896a29002f7))
+* add canvas layout tools — alignment, auto-fit, schema min sizes (v0.8.0) ([660c182](https://github.com/afroze9/terrastudio/commit/660c182ea2771b867061b369537ab8065635cca6))
+* add MCP multi-window support — per-window state, project targeting, property merge fix (v0.11.0) ([571ffb4](https://github.com/afroze9/terrastudio/commit/571ffb46b87d1ffba12fd07f3808f820694504c3))
+* add MCP server for AI assistant integration (v0.6.0) ([f737a35](https://github.com/afroze9/terrastudio/commit/f737a35333a51db6ea3361bf4d43b577c4f184ba))
+* add multi-window support — single process, multiple project windows (v0.10.0) ([9819acb](https://github.com/afroze9/terrastudio/commit/9819acb80672f4ff6d8dff5d075853a51aa0217b))
+* add structured logging with configurable log level (v0.7.0) ([4be6d91](https://github.com/afroze9/terrastudio/commit/4be6d910b6c42ef6c2c42dbdc537310992a0a2d4))
+* enable variable toggle for array properties (address_space, dns_servers, etc.) ([b64572b](https://github.com/afroze9/terrastudio/commit/b64572b856b9cd82bb1de11932ef27d093a8e5ba))
+* enable variable toggle for select and boolean property types ([8e183b6](https://github.com/afroze9/terrastudio/commit/8e183b668bf2eff81d74541f55735d50ff2ab539))
+* MCP query filtering, move/resize commands, containment validation & output control (v0.13.0) ([489e35c](https://github.com/afroze9/terrastudio/commit/489e35c645e7b75b9a666ffacd49cf8224a113ec))
+* module template reuse — define once, instantiate many with variable overrides (v0.15.0) ([7b478db](https://github.com/afroze9/terrastudio/commit/7b478dbecee9486d3ae229bfe909ad9e4bc80c48))
+* security hardening, user secrets, about dialog & UX improvements (v0.12.0) ([104f21d](https://github.com/afroze9/terrastudio/commit/104f21d000907a38427ac46667aa191c7f8de5f1))
+* sync app settings across multiple windows ([ce93d74](https://github.com/afroze9/terrastudio/commit/ce93d7414c55567d51ef0b78974feb666651fc7d))
+* Terraform module support — visual grouping, HCL generation, collapse/expand & MCP commands (v0.14.0) ([544d8ac](https://github.com/afroze9/terrastudio/commit/544d8ac197de6b84ebbb5a935a85c2b9727de30e))
+* universal variable toggle, array variables, project state cleanup (v0.16.0) ([8106b49](https://github.com/afroze9/terrastudio/commit/8106b494712f60ddedfa59a00779ac05e4afa515))
+* visual subnet placement, implicit PEP generation, ASP edge connections (v0.18.0) ([4f60da0](https://github.com/afroze9/terrastudio/commit/4f60da0bb533a5aa6c48c1f368bec4a5fe19b0a7))
+
+
+### Bug Fixes
+
+* "New Project" closes current project and returns to welcome screen ([ed7b3c3](https://github.com/afroze9/terrastudio/commit/ed7b3c3e92036fe1fec9bb60345b17306112bc0b))
+* add target handle to Subnet for VNet integration edge visibility ([b443623](https://github.com/afroze9/terrastudio/commit/b44362342c7986a4800ec87d2268b41a95936e90))
+* clear terraform state, terminal output, and file tabs on project close/switch ([08a8c73](https://github.com/afroze9/terrastudio/commit/08a8c731fca92a6ec2787c2943dcb4e6b3cd7a1e))
+* filter synthetic/transient nodes from all non-UI pipelines ([e626117](https://github.com/afroze9/terrastudio/commit/e626117096d07a5432acfb8f9dc50f34a1533027))
+* make showAsEdge reference handles positionable via Manage Handles dialog ([b7445ea](https://github.com/afroze9/terrastudio/commit/b7445ea49acb02aebbf4063da92a5a5b893c735c))
+* module boundary visibility — use front viewport portal, remove negative z-index ([6f29216](https://github.com/afroze9/terrastudio/commit/6f29216c2d351bfe2f04cfc1352cdddd17d3eb35))
+* module boundary/collapsed node visibility, handle dedup & layout ([f3aaedc](https://github.com/afroze9/terrastudio/commit/f3aaedc30375e6edcdf6118aeb5e9c4eb1f3eb15))
+* module HCL dedup, locals scope, stdin hang, draggable boundaries & file tree ([05c336f](https://github.com/afroze9/terrastudio/commit/05c336fab2dfe692dfa9e9f8394def68ad1b4b91))
+* module instance expand/collapse — proper cloning, parenting & HCL isolation ([f46eaab](https://github.com/afroze9/terrastudio/commit/f46eaab124af03f1fa37da8496cc01d8fa45894e))
+* MySQL DB requiresResourceGroup, container layout warnings in MCP (v0.17.1) ([c09cacc](https://github.com/afroze9/terrastudio/commit/c09cacc5703db9ae964d94d5854430c36e036d06))
+* native array variable storage, UI disable in variable mode, optional array guards ([4138bd5](https://github.com/afroze9/terrastudio/commit/4138bd565c576081e6edd24713a97838f7ee7bd5))
+* proper list(string) variable handling in tfvars and sidebar display ([2750398](https://github.com/afroze9/terrastudio/commit/275039805ecc6716c3fa6c4fed09213fc3b69242))
+
 ## [0.5.2](https://github.com/afroze9/terrastudio/compare/v0.5.1...v0.5.2) (2026-02-26)
 
 
