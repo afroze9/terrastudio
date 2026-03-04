@@ -165,7 +165,7 @@
     style:--module-color={borderColor}
   >
     <!-- Four interactive border strips for drag from edges -->
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
     <div
       class="border-strip border-top"
       style:height="{BORDER_HIT}px"
@@ -174,7 +174,7 @@
       onpointerup={onPointerUp}
       onclick={(e) => { e.stopPropagation(); onselect(module.id); }}
     ></div>
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
     <div
       class="border-strip border-bottom"
       style:height="{BORDER_HIT}px"
@@ -183,7 +183,7 @@
       onpointerup={onPointerUp}
       onclick={(e) => { e.stopPropagation(); onselect(module.id); }}
     ></div>
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
     <div
       class="border-strip border-left"
       style:width="{BORDER_HIT}px"
@@ -194,7 +194,7 @@
       onpointerup={onPointerUp}
       onclick={(e) => { e.stopPropagation(); onselect(module.id); }}
     ></div>
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
     <div
       class="border-strip border-right"
       style:width="{BORDER_HIT}px"

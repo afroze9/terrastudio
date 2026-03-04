@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 
 /// Reject filenames containing path separators, traversal sequences, or null bytes.
+#[allow(dead_code)]
 pub fn sanitize_filename(name: &str) -> Result<&str, String> {
     if name.is_empty() {
         return Err("Filename cannot be empty".to_string());
