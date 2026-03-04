@@ -21,14 +21,13 @@ export const mysqlFlexibleServerDatabaseHclGenerator: HclGenerator = {
       if (serverAddr) dependsOn.push(serverAddr);
     }
 
-    const rgExpr = context.getResourceGroupExpression(resource);
     const nameExpr = context.getPropertyExpression(resource, 'name', name);
 
     const lines: string[] = [
       `resource "azurerm_mysql_flexible_server_database" "${resource.terraformName}" {`,
       `  name                = ${nameExpr}`,
       `  server_name         = ${serverNameExpr}`,
-      `  resource_group_name = ${rgExpr}`,
+      `  resource_group_name = ${context.getResourceGroupExpression(resource)}`,
     ];
 
     if (charset && charset !== 'utf8mb4') {

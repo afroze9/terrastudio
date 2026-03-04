@@ -669,7 +669,18 @@ async fn handle_add_resource(
             if let Some(ref mut snapshot) = entry.diagram_cache {
                 if let Some(nodes) = snapshot.get_mut("nodes").and_then(|n| n.as_array_mut()) {
                     nodes.push(node);
-                    collect_layout_warnings(nodes, &instance_id)
+                    let mut w = collect_layout_warnings(nodes, &instance_id);
+                    // If this node is a container, also check if any existing children overflow
+                    let child_ids: Vec<String> = nodes.iter()
+                        .filter(|n| n.get("parentId").and_then(|p| p.as_str()) == Some(&instance_id))
+                        .filter_map(|n| n.get("id").and_then(|i| i.as_str()).map(String::from))
+                        .collect();
+                    for cid in &child_ids {
+                        for cw in collect_layout_warnings(nodes, cid) {
+                            w.push(format!("Child: {}", cw));
+                        }
+                    }
+                    w
                 } else {
                     vec![]
                 }
@@ -1197,7 +1208,18 @@ async fn handle_move_resource(
                             }
                         }
                     }
-                    collect_layout_warnings(nodes, &instance_id)
+                    let mut w = collect_layout_warnings(nodes, &instance_id);
+                    // If this node is a container, also check children overflow
+                    let child_ids: Vec<String> = nodes.iter()
+                        .filter(|n| n.get("parentId").and_then(|p| p.as_str()) == Some(&instance_id))
+                        .filter_map(|n| n.get("id").and_then(|i| i.as_str()).map(String::from))
+                        .collect();
+                    for cid in &child_ids {
+                        for cw in collect_layout_warnings(nodes, cid) {
+                            w.push(format!("Child: {}", cw));
+                        }
+                    }
+                    w
                 } else {
                     vec![]
                 }

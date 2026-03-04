@@ -8,7 +8,7 @@ export const mysqlFlexibleServerDatabaseSchema: ResourceSchema = {
   description: 'A database on an Azure MySQL Flexible Server',
   terraformType: 'azurerm_mysql_flexible_server_database',
   supportsTags: false,
-  requiresResourceGroup: false,
+  requiresResourceGroup: true,
 
   canBeChildOf: [
     'azurerm/database/mysql_flexible_server',
