@@ -3,7 +3,7 @@
   import { registry } from '$lib/bootstrap';
   import type { HandleDefinition, ResourceTypeId } from '@terrastudio/types';
 
-  let { handle, nodeTypeId, style }: { handle: HandleDefinition; nodeTypeId: ResourceTypeId; style?: string } = $props();
+  let { handle, nodeTypeId, style, compact = false, hovered = false, connected = false }: { handle: HandleDefinition; nodeTypeId: ResourceTypeId; style?: string; compact?: boolean; hovered?: boolean; connected?: boolean } = $props();
 
   const positionMap = {
     top: Position.Top,
@@ -36,25 +36,33 @@
 
     return 'neutral';
   });
+
+  // In compact mode: hide handle dot unless hovered, connected, or a connection drag is in progress
+  let isDragging = $derived(connection.current.inProgress);
+  let hideHandle = $derived(compact && !hovered && !connected && !isDragging);
+  // Handle labels: hidden in compact mode unless hovered
+  let hideLabel = $derived(compact && !hovered);
 </script>
 
 <Handle
   type={handle.type}
   position={positionMap[handle.position]}
   id={handle.id}
-  class={highlightState === 'compatible' ? 'handle-compatible' : highlightState === 'incompatible' ? 'handle-incompatible' : ''}
+  class="{highlightState === 'compatible' ? 'handle-compatible' : highlightState === 'incompatible' ? 'handle-incompatible' : ''}{hideHandle ? ' handle-hidden' : ''}"
   style={style}
 >
   {#snippet children()}
-    <span
-      class="handle-label"
-      class:handle-label-top={handle.position === 'top'}
-      class:handle-label-bottom={handle.position === 'bottom'}
-      class:handle-label-left={handle.position === 'left'}
-      class:handle-label-right={handle.position === 'right'}
-    >
-      {handle.label}
-    </span>
+    {#if !hideLabel}
+      <span
+        class="handle-label"
+        class:handle-label-top={handle.position === 'top'}
+        class:handle-label-bottom={handle.position === 'bottom'}
+        class:handle-label-left={handle.position === 'left'}
+        class:handle-label-right={handle.position === 'right'}
+      >
+        {handle.label}
+      </span>
+    {/if}
   {/snippet}
 </Handle>
 
@@ -62,7 +70,7 @@
   .handle-label {
     position: absolute;
     font-size: 9px;
-    color: var(--color-text-muted, #8b90a0);
+    color: #8b90a0;
     pointer-events: none;
     white-space: nowrap;
     user-select: none;
@@ -87,5 +95,9 @@
     left: calc(100% + 6px);
     top: 50%;
     transform: translateY(-50%);
+  }
+  :global(.handle-hidden) {
+    opacity: 0 !important;
+    pointer-events: none !important;
   }
 </style>

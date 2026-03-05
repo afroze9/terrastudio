@@ -327,6 +327,22 @@
             <span class="toggle-knob"></span>
           </button>
         </label>
+        <label class="visibility-toggle-item">
+          <span class="toggle-label">
+            <span class="toggle-name">Compact Nodes</span>
+            <span class="toggle-desc">Icon-only view</span>
+          </span>
+          <button
+            class="toggle-switch"
+            class:on={ui.compactNodes}
+            onclick={(e) => { e.preventDefault(); ui.setCompactNodes(!ui.compactNodes); }}
+            role="switch"
+            aria-checked={ui.compactNodes}
+            aria-label="Toggle compact icon-only node view"
+          >
+            <span class="toggle-knob"></span>
+          </button>
+        </label>
       </div>
     {/if}
   </div>
