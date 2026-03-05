@@ -12,6 +12,9 @@ import { routeRegistration } from './resources/route/index.js';
 import { natGatewayRegistration } from './resources/nat-gateway/index.js';
 import { bastionRegistration } from './resources/bastion/index.js';
 import { loadBalancerRegistration } from './resources/load-balancer/index.js';
+import { dnsZoneRegistration } from './resources/dns-zone/index.js';
+import { dnsARecordRegistration } from './resources/dns-a-record/index.js';
+import { dnsCnameRecordRegistration } from './resources/dns-cname-record/index.js';
 import { networkingConnectionRules } from './connections/rules.js';
 
 const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
@@ -27,6 +30,9 @@ const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
   ['azurerm/networking/nat_gateway', natGatewayRegistration],
   ['azurerm/networking/bastion_host', bastionRegistration],
   ['azurerm/networking/load_balancer', loadBalancerRegistration],
+  ['azurerm/dns/dns_zone', dnsZoneRegistration],
+  ['azurerm/dns/dns_a_record', dnsARecordRegistration],
+  ['azurerm/dns/dns_cname_record', dnsCnameRecordRegistration],
 ]);
 
 const plugin: InfraPlugin = {
@@ -44,6 +50,11 @@ const plugin: InfraPlugin = {
       id: 'networking',
       label: 'Networking',
       order: 10,
+    },
+    {
+      id: 'dns',
+      label: 'DNS',
+      order: 12,
     },
   ],
 };

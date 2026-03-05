@@ -1,0 +1,55 @@
+import type { ResourceSchema } from '@terrastudio/types';
+
+export const dnsZoneSchema: ResourceSchema = {
+  typeId: 'azurerm/dns/dns_zone',
+  provider: 'azurerm',
+  displayName: 'DNS Zone',
+  category: 'dns',
+  description: 'Azure Public DNS Zone for domain name resolution',
+  terraformType: 'azurerm_dns_zone',
+  supportsTags: true,
+  requiresResourceGroup: true,
+  cafAbbreviation: 'dnsz',
+  isContainer: true,
+  canBeChildOf: ['azurerm/core/resource_group'],
+  containerStyle: {
+    borderColor: '#0078d4',
+    borderStyle: 'dashed',
+    backgroundColor: '#ffffff',
+    headerColor: '#1a1a2e',
+    borderRadius: 12,
+    borderWidth: 2,
+    hideHeaderBorder: true,
+    iconSize: 28,
+    labelSize: 16,
+    dashArray: '6,6',
+  },
+  properties: [
+    {
+      key: 'name',
+      label: 'Domain Name',
+      type: 'string',
+      required: true,
+      placeholder: 'example.com',
+      group: 'General',
+      order: 1,
+      description: 'Fully qualified domain name for the DNS zone',
+      validation: {
+        minLength: 2,
+        maxLength: 253,
+        pattern: '^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$',
+        patternMessage: 'Must be a valid domain name (e.g. example.com)',
+      },
+    },
+  ],
+  handles: [],
+  outputs: [
+    { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
+    { key: 'name_servers', label: 'Name Servers', terraformAttribute: 'name_servers' },
+    {
+      key: 'number_of_record_sets',
+      label: 'Record Set Count',
+      terraformAttribute: 'number_of_record_sets',
+    },
+  ],
+};

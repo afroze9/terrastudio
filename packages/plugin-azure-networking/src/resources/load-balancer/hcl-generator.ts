@@ -50,6 +50,26 @@ export const loadBalancerHclGenerator: HclGenerator = {
     lines.push('  }');
     lines.push('', '  tags = local.common_tags', '}');
 
-    return [{ blockType: 'resource', terraformType: 'azurerm_lb', name: resource.terraformName, content: lines.join('\n') }];
+    const blocks: HclBlock[] = [
+      { blockType: 'resource', terraformType: 'azurerm_lb', name: resource.terraformName, content: lines.join('\n') },
+    ];
+
+    // Emit a backend address pool for VMSS / VM connections
+    const poolName = `${resource.terraformName}_backend_pool`;
+    const poolLines: string[] = [
+      `resource "azurerm_lb_backend_address_pool" "${poolName}" {`,
+      `  name            = "${name ? name.replace(/[^a-zA-Z0-9-]/g, '-') : 'default'}-backend"`,
+      `  loadbalancer_id = azurerm_lb.${resource.terraformName}.id`,
+      '}',
+    ];
+    blocks.push({
+      blockType: 'resource',
+      terraformType: 'azurerm_lb_backend_address_pool',
+      name: poolName,
+      content: poolLines.join('\n'),
+      dependsOn: [`azurerm_lb.${resource.terraformName}`],
+    });
+
+    return blocks;
   },
 };

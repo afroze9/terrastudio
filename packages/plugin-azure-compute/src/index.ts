@@ -22,6 +22,10 @@ import { frontdoorProfileRegistration } from './resources/frontdoor-profile/inde
 import { containerAppEnvironmentRegistration } from './resources/container-app-environment/index.js';
 import { containerAppRegistration } from './resources/container-app/index.js';
 import { containerGroupRegistration } from './resources/container-group/index.js';
+import { availabilitySetRegistration } from './resources/availability-set/index.js';
+import { vmScaleSetRegistration } from './resources/vm-scale-set/index.js';
+import { staticWebAppRegistration } from './resources/static-web-app/index.js';
+import { signalrServiceRegistration } from './resources/signalr-service/index.js';
 import { computeConnectionRules } from './connections/rules.js';
 import { keyVaultSecretBinding } from './bindings/keyvault-secret.js';
 
@@ -49,6 +53,10 @@ const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
   ['azurerm/containers/container_app_environment', containerAppEnvironmentRegistration],
   ['azurerm/containers/container_app', containerAppRegistration],
   ['azurerm/containers/container_group', containerGroupRegistration],
+  ['azurerm/compute/availability_set', availabilitySetRegistration],
+  ['azurerm/compute/virtual_machine_scale_set', vmScaleSetRegistration],
+  ['azurerm/web/static_web_app', staticWebAppRegistration],
+  ['azurerm/web/signalr_service', signalrServiceRegistration],
 ]);
 
 const plugin: InfraPlugin = {

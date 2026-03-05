@@ -87,6 +87,15 @@ export const vmHclGenerator: HclGenerator = {
       '}',
     );
 
+    // Resolve availability set reference
+    const avsetRef = resource.references['availability_set_id'];
+    let avsetIdExpr: string | undefined;
+    if (avsetRef) {
+      avsetIdExpr = context.getAttributeReference(avsetRef, 'id');
+      const avsetAddr = context.getTerraformAddress(avsetRef);
+      if (avsetAddr) dependsOn.push(avsetAddr);
+    }
+
     // Generate VM
     const vmLines: string[] = [
       `resource "${terraformType}" "${resource.terraformName}" {`,
@@ -98,6 +107,10 @@ export const vmHclGenerator: HclGenerator = {
       '',
       `  network_interface_ids = [azurerm_network_interface.${nicName}.id]`,
     ];
+
+    if (avsetIdExpr) {
+      vmLines.push(`  availability_set_id = ${avsetIdExpr}`);
+    }
 
     if (osType === 'windows') {
       const passwordVarName = `${resource.terraformName}_admin_password`;

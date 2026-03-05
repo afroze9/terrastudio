@@ -189,7 +189,9 @@ export const vmSchema: ResourceSchema = {
 
   parentReference: { propertyKey: 'subnet_id' },
 
-  handles: [],
+  handles: [
+    { id: 'avset-in', type: 'target', position: 'top', label: 'Availability Set' },
+  ],
 
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },

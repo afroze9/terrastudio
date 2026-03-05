@@ -41,4 +41,20 @@ export const computeConnectionRules: ConnectionRule[] = [
     label: 'Subnet',
     createsReference: { side: 'target', propertyKey: 'vnet_subnet_id' },
   },
+  {
+    sourceType: 'azurerm/networking/load_balancer',
+    sourceHandle: 'lb-backend-out',
+    targetType: 'azurerm/compute/virtual_machine_scale_set',
+    targetHandle: 'lb-backend-in',
+    label: 'Backend Pool',
+    createsReference: { side: 'target', propertyKey: 'lb_backend_pool_id' },
+  },
+  {
+    sourceType: 'azurerm/compute/availability_set',
+    sourceHandle: 'avset-out',
+    targetType: 'azurerm/compute/virtual_machine',
+    targetHandle: 'avset-in',
+    label: 'Availability Set',
+    createsReference: { side: 'target', propertyKey: 'availability_set_id' },
+  },
 ];

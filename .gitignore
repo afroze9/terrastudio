@@ -39,3 +39,6 @@ crash.log
 
 # Claude
 .claude/
+
+# Temp
+temp/

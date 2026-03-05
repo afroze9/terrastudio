@@ -21,7 +21,9 @@ export const loadBalancerSchema: ResourceSchema = {
     { key: 'private_ip_address_allocation', label: 'Private IP Allocation', type: 'select', required: false, group: 'Frontend', order: 6, defaultValue: 'Dynamic', options: [{ label: 'Dynamic', value: 'Dynamic' }, { label: 'Static', value: 'Static' }], visibleWhen: { field: 'lb_type', operator: 'eq', value: 'internal' } },
     { key: 'public_ip_id', label: 'Public IP', type: 'reference', required: false, group: 'Frontend', order: 7, referenceTargetTypes: ['azurerm/networking/public_ip'], visibleWhen: { field: 'lb_type', operator: 'eq', value: 'public' } },
   ],
-  handles: [],
+  handles: [
+    { id: 'lb-backend-out', type: 'source', position: 'bottom', label: 'Backend Pool' },
+  ],
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
     { key: 'private_ip_address', label: 'Private IP Address', terraformAttribute: 'private_ip_address' },
