@@ -294,7 +294,7 @@
     border: 1.5px solid var(--color-border, #2e3347);
     border-radius: 8px;
     padding: 10px 14px;
-    min-width: 160px;
+    width: 220px;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     transition: border-color 0.15s, box-shadow 0.15s;
   }
@@ -344,6 +344,9 @@
   .node-type {
     font-size: 10px;
     color: var(--color-text-muted, #8b90a0);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .nsg-badge {
     display: flex;
