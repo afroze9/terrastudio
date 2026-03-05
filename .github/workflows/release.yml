@@ -106,7 +106,7 @@ jobs:
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           cd apps/desktop/src-tauri/target/release
-          tar czf "TerraStudio-${{ needs.release-please.outputs.version }}-portable-linux-x64.tar.gz" terra-studio
+          tar czf "TerraStudio-${{ needs.release-please.outputs.version }}-portable-linux-x64.tar.gz" app
       - name: Upload portable tarball (Linux)
         if: matrix.platform == 'ubuntu-22.04'
         env:
