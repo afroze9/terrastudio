@@ -11,23 +11,9 @@ export const appServicePlanSchema: ResourceSchema = {
   requiresResourceGroup: true,
   cafAbbreviation: 'asp',
   namingConstraints: { maxLength: 60 },
-  isContainer: true,
   canBeChildOf: [
     'azurerm/core/resource_group',
   ],
-  containerStyle: {
-    borderColor: '#2B7CF6',
-    borderStyle: 'dotted',
-    backgroundColor: '#ffffff',
-    headerColor: '#1a1a2e',
-    borderRadius: 12,
-    borderWidth: 3,
-    hideHeaderBorder: true,
-    iconSize: 28,
-    labelSize: 16,
-    dashArray: '4,8',
-  },
-  minSize: { width: 250, height: 180 },
 
   properties: [
     {

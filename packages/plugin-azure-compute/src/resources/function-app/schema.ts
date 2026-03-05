@@ -12,7 +12,7 @@ export const functionAppSchema: ResourceSchema = {
   cafAbbreviation: 'func',
   namingConstraints: { maxLength: 60 },
 
-  canBeChildOf: ['azurerm/compute/app_service_plan', 'azurerm/networking/subnet'],
+  canBeChildOf: ['azurerm/core/resource_group', 'azurerm/networking/subnet'],
   visualContainment: true,
   privateEndpointConfig: {
     subresources: [
@@ -20,8 +20,6 @@ export const functionAppSchema: ResourceSchema = {
     ],
     defaultSubresource: 'sites',
   },
-
-  parentReference: { propertyKey: 'service_plan_id' },
 
   properties: [
     {
