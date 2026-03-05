@@ -128,7 +128,7 @@
 <style>
   .instance-node {
     min-width: 160px;
-    background: var(--color-surface, #1e1e2e);
+    background: #1e1e2e;
     border: 2px dashed var(--instance-color);
     border-radius: 8px;
     padding: 10px 14px;
@@ -155,7 +155,7 @@
   .instance-name {
     font-size: 12px;
     font-weight: 600;
-    color: var(--color-text, #cdd6f4);
+    color: #cdd6f4;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -176,7 +176,7 @@
 
   .instance-template-ref {
     font-size: 10px;
-    color: var(--color-text-muted, #6c7086);
+    color: #6c7086;
     margin-top: 4px;
     font-style: italic;
   }

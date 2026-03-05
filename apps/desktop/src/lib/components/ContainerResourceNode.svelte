@@ -188,10 +188,10 @@
 
   let cs = $derived<ContainerStyle>(schema?.containerStyle ?? {});
 
-  let borderColor = $derived(cs.borderColor ?? 'var(--color-border, #2e3347)');
+  let borderColor = $derived(cs.borderColor ?? '#2e3347');
   let borderStyle = $derived(cs.borderStyle ?? 'dashed');
-  let bg = $derived(cs.backgroundColor ?? 'color-mix(in srgb, var(--color-surface) 60%, transparent)');
-  let headerColor = $derived(cs.headerColor ?? 'var(--color-text-muted, #8b90a0)');
+  let bg = $derived(cs.backgroundColor ?? 'rgba(26, 29, 39, 0.6)');
+  let headerColor = $derived(cs.headerColor ?? '#8b90a0');
   let radius = $derived(cs.borderRadius ?? 10);
   let borderWidth = $derived(cs.borderWidth ?? 1.5);
   let hideHeaderBorder = $derived(cs.hideHeaderBorder ?? false);
@@ -247,13 +247,25 @@
 
   let hoverTimer: ReturnType<typeof setTimeout> | null = null;
   let showTooltip = $state(false);
+  let isHovered = $state(false);
   let nodeEl: HTMLDivElement | undefined = $state();
 
+  let connectedHandleIds = $derived.by(() => {
+    const ids = new Set<string>();
+    for (const edge of diagram.edges) {
+      if (edge.source === id && edge.sourceHandle) ids.add(edge.sourceHandle);
+      if (edge.target === id && edge.targetHandle) ids.add(edge.targetHandle);
+    }
+    return ids;
+  });
+
   function onMouseEnter() {
+    isHovered = true;
     hoverTimer = setTimeout(() => { showTooltip = true; }, 300);
   }
 
   function onMouseLeave() {
+    isHovered = false;
     showTooltip = false;
     if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
   }
@@ -316,7 +328,7 @@
   class:drop-valid={isValidDropTarget}
   class:drop-invalid={isInvalidDropTarget}
   class:has-validation-errors={hasValidationErrors && !isInvalidDropTarget && !isValidDropTarget}
-  style="border-color: {isInvalidDropTarget ? '#ef4444' : isValidDropTarget ? '#22c55e' : hasValidationErrors ? '#ef4444' : selected ? 'var(--color-accent, #3b82f6)' : borderColor}; border-style: {useSvgBorder && !isInvalidDropTarget && !isValidDropTarget && !hasValidationErrors ? 'none' : isInvalidDropTarget || isValidDropTarget || hasValidationErrors ? 'solid' : borderStyle}; background: {isInvalidDropTarget ? 'rgba(239, 68, 68, 0.06)' : isValidDropTarget ? 'rgba(34, 197, 94, 0.06)' : hasValidationErrors ? 'rgba(239, 68, 68, 0.04)' : bg}; border-radius: {radius}px; border-width: {useSvgBorder && !isInvalidDropTarget && !isValidDropTarget && !hasValidationErrors ? 0 : isInvalidDropTarget || isValidDropTarget ? 2.5 : hasValidationErrors ? 2 : borderWidth}px;"
+  style="border-color: {isInvalidDropTarget ? '#ef4444' : isValidDropTarget ? '#22c55e' : hasValidationErrors ? '#ef4444' : selected ? '#3b82f6' : borderColor}; border-style: {useSvgBorder && !isInvalidDropTarget && !isValidDropTarget && !hasValidationErrors ? 'none' : isInvalidDropTarget || isValidDropTarget || hasValidationErrors ? 'solid' : borderStyle}; background: {isInvalidDropTarget ? 'rgba(239, 68, 68, 0.06)' : isValidDropTarget ? 'rgba(34, 197, 94, 0.06)' : hasValidationErrors ? 'rgba(239, 68, 68, 0.04)' : bg}; border-radius: {radius}px; border-width: {useSvgBorder && !isInvalidDropTarget && !isValidDropTarget && !hasValidationErrors ? 0 : isInvalidDropTarget || isValidDropTarget ? 2.5 : hasValidationErrors ? 2 : borderWidth}px;"
   onmouseenter={onMouseEnter}
   onmouseleave={onMouseLeave}
   bind:this={nodeEl}
@@ -327,7 +339,7 @@
         x="{borderWidth / 2}" y="{borderWidth / 2}"
         rx="{radius}" ry="{radius}"
         fill="none"
-        stroke="{selected ? 'var(--color-accent, #3b82f6)' : borderColor}"
+        stroke="{selected ? '#3b82f6' : borderColor}"
         stroke-width="{borderWidth}"
         stroke-dasharray="{dashArray}"
         stroke-linecap="round"
@@ -362,7 +374,7 @@
   <div class="container-body"></div>
 
   {#each handles as handle, i (handle.id)}
-    <HandleWithLabel {handle} nodeTypeId={data.typeId} style={handleStyles[i]} />
+    <HandleWithLabel {handle} nodeTypeId={data.typeId} style={handleStyles[i]} compact={ui.compactNodes} hovered={isHovered} connected={connectedHandleIds.has(handle.id)} />
   {/each}
 
   <!-- User-defined connection point handles for annotation edges -->
@@ -477,7 +489,7 @@
   .cidr-subtitle {
     font-size: 10px;
     font-weight: 400;
-    color: var(--color-text-muted, #8b90a0);
+    color: #8b90a0;
     opacity: 0.7;
     white-space: nowrap;
     flex-shrink: 0;
@@ -490,7 +502,7 @@
   }
   .cost-chip {
     font-size: 9px;
-    color: var(--color-text-muted);
+    color: #8b90a0;
     opacity: 0.8;
     white-space: nowrap;
     letter-spacing: 0.02em;
@@ -541,8 +553,8 @@
   :global(.reference-handle) {
     width: 6px !important;
     height: 6px !important;
-    background: var(--color-text-muted, #8b90a0) !important;
-    border: 1px solid var(--color-surface, #1a1d27) !important;
+    background: #8b90a0 !important;
+    border: 1px solid #1a1d27 !important;
     border-radius: 50% !important;
     pointer-events: none !important;
     opacity: 0.6 !important;
@@ -553,11 +565,11 @@
     width: 8px !important;
     height: 8px !important;
     background: var(--edge-annotation, #f59e0b) !important;
-    border: 2px solid var(--color-surface, #1a1d27) !important;
+    border: 2px solid #1a1d27 !important;
     border-radius: 50% !important;
   }
   :global(.connection-point-handle:hover) {
-    background: var(--color-accent, #3b82f6) !important;
+    background: #3b82f6 !important;
     transform: scale(1.3);
   }
 </style>

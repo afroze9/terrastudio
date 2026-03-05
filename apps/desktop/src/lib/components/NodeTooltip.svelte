@@ -102,8 +102,8 @@
   .node-tooltip-portal {
     position: fixed;
     transform: translate(-50%, -100%);
-    background: var(--color-surface, #1a1d27);
-    border: 1px solid var(--color-border, #2e3347);
+    background: #1a1d27;
+    border: 1px solid #2e3347;
     border-radius: 6px;
     padding: 8px 12px;
     min-width: 200px;
@@ -122,7 +122,7 @@
   }
   .tooltip-type {
     font-weight: 600;
-    color: var(--color-text, #e1e4ed);
+    color: #e1e4ed;
   }
   .tooltip-status {
     font-size: 10px;
@@ -137,12 +137,12 @@
   }
   .tooltip-tf {
     font-size: 10px;
-    color: var(--color-text-muted, #8b90a0);
+    color: #8b90a0;
     font-family: monospace;
     margin-bottom: 4px;
   }
   .tooltip-props {
-    border-top: 1px solid var(--color-border, #2e3347);
+    border-top: 1px solid #2e3347;
     padding-top: 4px;
     display: flex;
     flex-direction: column;
@@ -154,10 +154,10 @@
     gap: 8px;
   }
   .prop-label {
-    color: var(--color-text-muted, #8b90a0);
+    color: #8b90a0;
   }
   .prop-value {
-    color: var(--color-text, #e1e4ed);
+    color: #e1e4ed;
     font-family: monospace;
     text-align: right;
     max-width: 150px;

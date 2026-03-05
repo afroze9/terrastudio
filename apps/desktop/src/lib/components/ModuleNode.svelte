@@ -111,7 +111,7 @@
 <style>
   .module-node {
     min-width: 160px;
-    background: var(--color-surface, #1e1e2e);
+    background: #1e1e2e;
     border: 2px solid var(--module-color);
     border-radius: 8px;
     padding: 10px 14px;
@@ -138,7 +138,7 @@
   .module-node-name {
     font-size: 12px;
     font-weight: 600;
-    color: var(--color-text, #cdd6f4);
+    color: #cdd6f4;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -158,7 +158,7 @@
 
   .module-node-hint {
     font-size: 10px;
-    color: var(--color-text-muted, #6c7086);
+    color: #6c7086;
     margin-top: 4px;
   }
 </style>

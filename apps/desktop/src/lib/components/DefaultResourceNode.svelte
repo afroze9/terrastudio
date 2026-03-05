@@ -198,13 +198,26 @@
 
   let hoverTimer: ReturnType<typeof setTimeout> | null = null;
   let showTooltip = $state(false);
+  let isHovered = $state(false);
   let nodeEl: HTMLDivElement | undefined = $state();
 
+  // Set of handle IDs on this node that have an edge connected
+  let connectedHandleIds = $derived.by(() => {
+    const ids = new Set<string>();
+    for (const edge of diagram.edges) {
+      if (edge.source === id && edge.sourceHandle) ids.add(edge.sourceHandle);
+      if (edge.target === id && edge.targetHandle) ids.add(edge.targetHandle);
+    }
+    return ids;
+  });
+
   function onMouseEnter() {
+    isHovered = true;
     hoverTimer = setTimeout(() => { showTooltip = true; }, 300);
   }
 
   function onMouseLeave() {
+    isHovered = false;
     showTooltip = false;
     if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
   }
@@ -214,37 +227,59 @@
 <div
   class="resource-node"
   class:selected
+  class:compact={ui.compactNodes}
   class:has-validation-errors={hasValidationErrors}
   onmouseenter={onMouseEnter}
   onmouseleave={onMouseLeave}
   bind:this={nodeEl}
 >
-  <div class="node-header">
-    {#if icon?.type === 'svg' && icon.svg}
-      <span class="node-icon">{@html icon.svg}</span>
-    {/if}
-    <div class="node-info">
-      <span class="node-label">{data.label || schema?.displayName || 'Resource'}</span>
-      <span class="node-type">{schema?.terraformType ?? data.typeId}</span>
+  {#if ui.compactNodes}
+    <!-- Compact: Visio-style icon with label below -->
+    <div class="compact-icon-wrap">
+      {#if icon?.type === 'svg' && icon.svg}
+        <span class="compact-icon">{@html icon.svg}</span>
+      {/if}
+      <DeploymentBadge status={data.deploymentStatus} {errorMessage} />
+      {#if hasValidationErrors}
+        <span class="compact-validation" title={validationTooltip}>!</span>
+      {/if}
+      {#if hasNsg && nsgIcon?.type === 'svg' && nsgIcon.svg}
+        <span class="compact-badge compact-badge-nsg" title="NSG attached">{@html nsgIcon.svg}</span>
+      {/if}
+      {#if hasPep && pepIcon?.type === 'svg' && pepIcon.svg}
+        <span class="compact-badge compact-badge-pep" title="Private Endpoint ({pepSubresources})">{@html pepIcon.svg}</span>
+      {/if}
     </div>
-    {#if hasNsg && nsgIcon?.type === 'svg' && nsgIcon.svg}
-      <span class="nsg-badge" title="NSG attached">{@html nsgIcon.svg}</span>
-    {/if}
-    {#if hasPep && pepIcon?.type === 'svg' && pepIcon.svg}
-      <span class="pep-badge" title="Private Endpoint ({pepSubresources})">{@html pepIcon.svg}</span>
-    {/if}
-    {#if hasValidationErrors}
-      <span class="validation-badge" title={validationTooltip}>!</span>
-    {/if}
-    <DeploymentBadge status={data.deploymentStatus} {errorMessage} />
-  </div>
+    <span class="compact-label">{data.label || schema?.displayName || 'Resource'}</span>
+  {:else}
+    <!-- Detailed card view -->
+    <div class="node-header">
+      {#if icon?.type === 'svg' && icon.svg}
+        <span class="node-icon">{@html icon.svg}</span>
+      {/if}
+      <div class="node-info">
+        <span class="node-label">{data.label || schema?.displayName || 'Resource'}</span>
+        <span class="node-type">{schema?.terraformType ?? data.typeId}</span>
+      </div>
+      {#if hasNsg && nsgIcon?.type === 'svg' && nsgIcon.svg}
+        <span class="nsg-badge" title="NSG attached">{@html nsgIcon.svg}</span>
+      {/if}
+      {#if hasPep && pepIcon?.type === 'svg' && pepIcon.svg}
+        <span class="pep-badge" title="Private Endpoint ({pepSubresources})">{@html pepIcon.svg}</span>
+      {/if}
+      {#if hasValidationErrors}
+        <span class="validation-badge" title={validationTooltip}>!</span>
+      {/if}
+      <DeploymentBadge status={data.deploymentStatus} {errorMessage} />
+    </div>
 
-  {#if costLabel}
-    <div class="cost-badge">{costLabel}</div>
+    {#if costLabel}
+      <div class="cost-badge">{costLabel}</div>
+    {/if}
   {/if}
 
   {#each handles as handle, i (handle.id)}
-    <HandleWithLabel {handle} nodeTypeId={data.typeId} style={handleStyles[i]} />
+    <HandleWithLabel {handle} nodeTypeId={data.typeId} style={handleStyles[i]} compact={ui.compactNodes} hovered={isHovered} connected={connectedHandleIds.has(handle.id)} />
   {/each}
 
   <!-- User-defined connection point handles for annotation edges -->
@@ -290,8 +325,8 @@
 <style>
   .resource-node {
     position: relative;
-    background: var(--color-surface, #1a1d27);
-    border: 1.5px solid var(--color-border, #2e3347);
+    background: #1a1d27;
+    border: 1.5px solid #2e3347;
     border-radius: 8px;
     padding: 10px 14px;
     width: 220px;
@@ -299,7 +334,7 @@
     transition: border-color 0.15s, box-shadow 0.15s;
   }
   .resource-node.selected {
-    border-color: var(--color-accent, #3b82f6);
+    border-color: #3b82f6;
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
   }
   .resource-node.has-validation-errors {
@@ -336,14 +371,14 @@
   .node-label {
     font-size: 13px;
     font-weight: 600;
-    color: var(--color-text, #e1e4ed);
+    color: #e1e4ed;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .node-type {
     font-size: 10px;
-    color: var(--color-text-muted, #8b90a0);
+    color: #8b90a0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -389,19 +424,116 @@
 
   .cost-badge {
     font-size: 9px;
-    color: var(--color-text-muted);
+    color: #8b90a0;
     text-align: center;
     margin-top: 3px;
     opacity: 0.75;
     letter-spacing: 0.02em;
   }
 
+  /* ---- Compact (Visio-style) mode ---- */
+  .resource-node.compact {
+    width: auto;
+    background: transparent;
+    border: none;
+    padding: 4px;
+    box-shadow: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .resource-node.compact.selected {
+    border: none;
+    box-shadow: none;
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  .resource-node.compact.has-validation-errors {
+    border: none;
+    box-shadow: none;
+  }
+  .compact-icon-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .compact-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .compact-icon :global(svg) {
+    width: 48px;
+    height: 48px;
+  }
+  .compact-icon-wrap :global(.badge) {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+  }
+  .compact-badge {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .compact-badge :global(svg) {
+    width: 14px;
+    height: 14px;
+  }
+  .compact-badge-nsg {
+    top: -4px;
+    left: -4px;
+  }
+  .compact-badge-pep {
+    bottom: -4px;
+    left: -4px;
+  }
+  .compact-validation {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ef4444;
+    color: #fff;
+    font-size: 8px;
+    font-weight: 700;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: help;
+  }
+  .compact-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #1a1a2e;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+    line-height: 1.2;
+    paint-order: stroke fill;
+    -webkit-text-stroke: 3px rgba(255, 255, 255, 0.85);
+    text-shadow: none;
+  }
+
   /* Reference edge handles — subtle dot, non-interactive */
   :global(.reference-handle) {
     width: 6px !important;
     height: 6px !important;
-    background: var(--color-text-muted, #8b90a0) !important;
-    border: 1px solid var(--color-surface, #1a1d27) !important;
+    background: #8b90a0 !important;
+    border: 1px solid #1a1d27 !important;
     border-radius: 50% !important;
     pointer-events: none !important;
     opacity: 0.6 !important;
@@ -412,11 +544,11 @@
     width: 8px !important;
     height: 8px !important;
     background: var(--edge-annotation, #f59e0b) !important;
-    border: 2px solid var(--color-surface, #1a1d27) !important;
+    border: 2px solid #1a1d27 !important;
     border-radius: 50% !important;
   }
   :global(.connection-point-handle:hover) {
-    background: var(--color-accent, #3b82f6) !important;
+    background: #3b82f6 !important;
     transform: scale(1.3);
   }
 </style>
