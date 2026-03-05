@@ -1,0 +1,69 @@
+import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+
+export const albHclGenerator: HclGenerator = {
+  typeId: 'aws/compute/alb',
+
+  generate(resource: ResourceInstance, context: HclGenerationContext): HclBlock[] {
+    const props = resource.properties;
+    const name = props['name'] as string;
+    const internal = props['internal'] as boolean ?? false;
+    const lbType = (props['load_balancer_type'] as string) ?? 'application';
+    const ipAddrType = (props['ip_address_type'] as string) ?? 'ipv4';
+    const deletionProtection = props['enable_deletion_protection'] as boolean ?? false;
+
+    const dependsOn: string[] = [];
+
+    const nameExpr = context.getPropertyExpression(resource, 'name', name);
+    const internalExpr = context.getPropertyExpression(resource, 'internal', internal);
+    const lbTypeExpr = context.getPropertyExpression(resource, 'load_balancer_type', lbType);
+    const ipAddrTypeExpr = context.getPropertyExpression(resource, 'ip_address_type', ipAddrType);
+    const deletionProtectionExpr = context.getPropertyExpression(resource, 'enable_deletion_protection', deletionProtection);
+
+    const lines: string[] = [
+      `resource "aws_lb" "${resource.terraformName}" {`,
+      `  name               = ${nameExpr}`,
+      `  internal           = ${internalExpr}`,
+      `  load_balancer_type = ${lbTypeExpr}`,
+      `  ip_address_type    = ${ipAddrTypeExpr}`,
+    ];
+
+    // Security group reference
+    const sgRef = resource.references['security_group_ids'];
+    if (sgRef) {
+      const sgIdExpr = context.getAttributeReference(sgRef, 'id');
+      lines.push(`  security_groups    = [${sgIdExpr}]`);
+      const sgAddr = context.getTerraformAddress(sgRef);
+      if (sgAddr) dependsOn.push(sgAddr);
+    }
+
+    // Collect subnet references from edges
+    const subnetRefs: string[] = [];
+    for (const [key, ref] of Object.entries(resource.references)) {
+      if (key.startsWith('subnet') || key === 'subnet_target') {
+        const subnetIdExpr = context.getAttributeReference(ref, 'id');
+        subnetRefs.push(subnetIdExpr);
+        const subnetAddr = context.getTerraformAddress(ref);
+        if (subnetAddr) dependsOn.push(subnetAddr);
+      }
+    }
+    if (subnetRefs.length > 0) {
+      lines.push(`  subnets            = [${subnetRefs.join(', ')}]`);
+    }
+
+    lines.push('');
+    lines.push(`  enable_deletion_protection = ${deletionProtectionExpr}`);
+    lines.push('');
+    lines.push('  tags = local.common_tags');
+    lines.push('}');
+
+    return [
+      {
+        blockType: 'resource',
+        terraformType: 'aws_lb',
+        name: resource.terraformName,
+        content: lines.join('\n'),
+        dependsOn,
+      },
+    ];
+  },
+};

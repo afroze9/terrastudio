@@ -9,6 +9,7 @@ export const serverlessDataApiTemplate: Template = {
       'Function App backed by SQL, Blob Storage, and Key Vault for secrets. Includes monitoring with Log Analytics and Application Insights.',
     categories: ['Serverless'],
     icon: 'compute',
+    providers: ['azurerm'],
   },
   diagram: {
     nodes: [

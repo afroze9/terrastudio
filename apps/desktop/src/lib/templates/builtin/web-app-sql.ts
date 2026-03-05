@@ -8,6 +8,7 @@ export const webAppSqlTemplate: Template = {
     description: 'App Service with SQL Database backend and Application Insights monitoring',
     categories: ['Web Applications'],
     icon: 'web',
+    providers: ['azurerm'],
   },
   diagram: {
     nodes: [

@@ -66,9 +66,7 @@ gantt
     Phase 25 Terraform Modules         :done, p25, 2026-03-01, 2026-03-02
     Phase 25.5 Module Templates       :done, p255, 2026-03-02, 2026-03-03
     Phase 26 Variable Toggle Refactor :done, p26, 2026-03-03, 2026-03-03
-    Phase 21.7 External File Watch    :p217, 2026-03-03, 2026-03-07
-    Phase 21.8 Plugin Test Harness    :p218, 2026-03-03, 2026-03-07
-    Phase 19 Import Terraform         :p19, 2026-03-07, 2026-03-14
+    Phase 21.8 Plugin Test Harness    :done, p218, 2026-03-03, 2026-03-07
 ```
 
 ---
@@ -965,52 +963,7 @@ New palette category: Messaging (order 38)
 
 ---
 
-## Phase 21.7: External File Change Detection
-
-**Goal**: Keep the app in sync when project files or generated Terraform files are modified outside of TerraStudio.
-
-### Part A — Project file hot-reload
-
-When the `.terrastudio` project file is modified on disk while the app is open, reload and reflect the changes in the UI rather than silently diverging.
-
-1. **File watcher (Rust)**
-   - Use `notify` crate to watch the open project file for changes
-   - Debounce rapid changes (e.g., a save from an external editor may fire multiple events)
-   - Emit a Tauri event `project://changed` to the frontend when a modification is detected
-
-2. **Conflict detection (frontend)**
-   - If the in-app diagram has unsaved changes when an external change is detected, show a dialog:
-     - "This project was modified outside TerraStudio. Reload from disk (losing unsaved changes) or keep your current version?"
-   - If there are no unsaved changes, silently hot-reload
-
-3. **Hot-reload path**
-   - Call the existing `load_project` path to re-parse the `.terrastudio` file
-   - Diagram state, project config, and all stores are updated in-place
-   - Undo history is cleared (external edits are not undoable)
-
-### Part B — Terraform file change protection
-
-When generated `.tf` files are modified outside the app, warn the user before overwriting them on the next HCL generation.
-
-1. **Hash tracking**
-   - After every HCL generation, compute SHA-256 hashes of each written `.tf` file and persist them in a `{project_dir}/terraform/.terrastudio-hashes.json` sidecar file
-   - Hashes are keyed by filename: `{ "main.tf": "abc123...", "variables.tf": "def456..." }`
-
-2. **Pre-generation check**
-   - Before writing new `.tf` files, read the existing files from disk and recompute their hashes
-   - Compare against the stored hashes — any file whose current hash differs from the stored hash has been externally modified
-   - If any modified files are detected, show a confirmation dialog listing the changed files:
-     - "The following Terraform files have been modified outside TerraStudio and will be overwritten: [list]. Proceed?"
-   - User can choose **Overwrite** (continue generation) or **Cancel** (abort, keep external edits)
-
-3. **Scope**
-   - Only tracks files that TerraStudio itself generated (files in the hash sidecar)
-   - Files not in the sidecar (e.g., user-created `.tf` files) are never touched by generation and not tracked
-   - Hash sidecar is excluded from git via `.gitignore` recommendation in docs
-
----
-
-## Phase 21.8: Plugin Conformance Test Suite
+## Phase 21.8: Plugin Conformance Test Suite ✅
 
 **Goal**: Provide a shared test harness in `@terrastudio/core` that any plugin can run to verify it correctly implements the plugin contract — catching missing fields, broken HCL generators, invalid schemas, and connection rule errors before they reach the app.
 
@@ -1281,29 +1234,6 @@ All layout controls live in a **"Layout" toolbar section** that appears contextu
 3. **About dialog & UX improvements** ✅
    - About modal shows app version, build info, and license
    - Version read from `__APP_VERSION__` injected at build time
-
----
-
-## Phase 19: Import Existing Terraform State
-
-**Goal**: Parse existing Terraform state into a visual diagram for brownfield adoption.
-
-### Tasks
-
-1. **State parser**
-   - Parse `terraform show -json` output into diagram nodes
-   - Map Terraform resource types back to `ResourceTypeId` via plugin registry
-   - Reconstruct containment hierarchy (RG → VNet → Subnet) from resource references
-
-2. **Import UI**
-   - "Import from State" action in File menu
-   - Point to an existing `.tfstate` or Terraform directory
-   - Preview imported resources before committing to canvas
-   - Auto-layout imported nodes using dagre
-
-3. **Reference reconstruction**
-   - Detect cross-resource references in state and create edges/property references
-   - Handle resources not yet supported by plugins (render as generic nodes)
 
 ---
 

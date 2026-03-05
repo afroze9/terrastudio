@@ -9,6 +9,7 @@ export const microservicesKeyVaultTemplate: Template = {
       'Frontend and API services with shared storage and Key Vault secret management. Demonstrates output binding from Storage to Key Vault.',
     categories: ['Web Applications', 'Security'],
     icon: 'security',
+    providers: ['azurerm'],
   },
   diagram: {
     nodes: [

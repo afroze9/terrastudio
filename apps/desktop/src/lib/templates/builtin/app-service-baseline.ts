@@ -9,6 +9,7 @@ export const appServiceBaselineTemplate: Template = {
       'Zone-redundant web application following the Azure App Service baseline architecture. Includes VNet with integration and private-endpoint subnets, SQL Database (zone-redundant), Key Vault, Storage (ZRS), private endpoints with DNS zones, and monitoring. Based on https://learn.microsoft.com/en-us/azure/architecture/web-apps/app-service/architectures/baseline-zone-redundant',
     categories: ['Web Applications', 'Networking'],
     icon: 'web',
+    providers: ['azurerm'],
   },
   diagram: {
     nodes: [

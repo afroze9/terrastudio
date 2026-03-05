@@ -4,10 +4,11 @@ export const blankTemplate: Template = {
   templateVersion: 1,
   metadata: {
     id: 'blank',
-    name: 'Blank Project',
-    description: 'Empty canvas with Subscription and Resource Group',
+    name: 'Blank Project (Azure)',
+    description: 'Empty canvas with Azure Subscription and Resource Group',
     categories: ['Getting Started'],
     icon: 'blank',
+    providers: ['azurerm'],
   },
   diagram: {
     nodes: [

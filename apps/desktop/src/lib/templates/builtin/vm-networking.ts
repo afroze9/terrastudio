@@ -8,6 +8,7 @@ export const vmNetworkingTemplate: Template = {
     description: 'Virtual Machine with VNet, Subnet, NSG, and Public IP',
     categories: ['Compute', 'Networking'],
     icon: 'compute',
+    providers: ['azurerm'],
   },
   diagram: {
     nodes: [

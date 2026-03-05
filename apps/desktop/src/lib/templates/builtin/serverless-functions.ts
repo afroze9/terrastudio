@@ -8,6 +8,7 @@ export const serverlessFunctionsTemplate: Template = {
     description: 'Function App with Storage Account and Application Insights',
     categories: ['Compute'],
     icon: 'compute',
+    providers: ['azurerm'],
   },
   diagram: {
     nodes: [

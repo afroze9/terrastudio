@@ -33,8 +33,10 @@ export function declarePlugins(): void {
   pluginRegistry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-database'));
   pluginRegistry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-monitoring'));
   pluginRegistry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-security'));
+  // AWS
+  pluginRegistry.registerLazyPlugin('aws', () => import('@terrastudio/plugin-aws-networking'));
+  pluginRegistry.registerLazyPlugin('aws', () => import('@terrastudio/plugin-aws-compute'));
   // Future providers:
-  // pluginRegistry.registerLazyPlugin('aws', () => import('@terrastudio/plugin-aws-compute'));
   // pluginRegistry.registerLazyPlugin('google', () => import('@terrastudio/plugin-gcp-compute'));
 }
 

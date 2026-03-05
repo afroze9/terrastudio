@@ -5,7 +5,7 @@
   import { registry } from '$lib/bootstrap';
   import { getTemplateCategories } from '$lib/templates/service';
   import type { Template, TemplateCategory } from '$lib/templates/types';
-  import type { NamingConvention } from '@terrastudio/types';
+  import type { NamingConvention, ProviderId } from '@terrastudio/types';
   import type { LayoutAlgorithm } from '@terrastudio/core';
   import { applyNamingTemplate, buildTokens } from '@terrastudio/core';
   import { ui, type EdgeStyle } from '$lib/stores/ui.svelte';
@@ -71,6 +71,14 @@
   let step2Error  = $state('');
   let step3Error  = $state('');
 
+  // Provider filter for template gallery
+  const PROVIDER_FILTERS = [
+    { id: '', label: 'All' },
+    { id: 'azurerm', label: 'Azure' },
+    { id: 'aws', label: 'AWS' },
+  ];
+  let providerFilter = $state<string>('');
+
   // Step 1 – template selection
   let categories       = $state<TemplateCategory[]>([]);
   let activeCategory   = $state('');
@@ -93,6 +101,11 @@
     let templates = activeCategory
       ? (categories.find((c) => c.name === activeCategory)?.templates ?? [])
       : allTemplates();
+    if (providerFilter) {
+      templates = templates.filter((t) =>
+        t.metadata.providers?.includes(providerFilter),
+      );
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       templates = templates.filter((t) =>
@@ -199,8 +212,9 @@
       const namingConvention: NamingConvention | undefined = conventionEnabled
         ? { enabled: true, template: conventionTemplate, env: conventionEnv, region: conventionRegion || undefined, org: conventionOrg || undefined }
         : undefined;
+      const activeProviders = selectedTemplate?.metadata.providers as ProviderId[] | undefined;
       ui.setEdgeType(edgeStyle);
-      await createProject(projectName.trim(), folderPath, selectedTemplate!, namingConvention, layoutAlgorithm);
+      await createProject(projectName.trim(), folderPath, selectedTemplate!, namingConvention, layoutAlgorithm, activeProviders);
       invoke('set_last_project_location', { location: folderPath }).catch(() => {});
       resetWizard();
     } catch (e) {
@@ -213,6 +227,7 @@
   function resetWizard() {
     projectName = '';
     selectedTemplate = null;
+    providerFilter = '';
     searchQuery = '';
     conventionEnabled = false;
     conventionEnv = 'dev';
@@ -331,7 +346,7 @@
           </svg>
           <h1 class="app-title">TerraStudio</h1>
           <p class="app-subtitle">Visual infrastructure diagram builder</p>
-          <p class="app-desc">Design Azure architectures visually and generate Terraform configurations.</p>
+          <p class="app-desc">Design cloud architectures visually and generate Terraform configurations.</p>
         </div>
 
         <div class="action-buttons">
@@ -415,6 +430,16 @@
                   </svg>
                 </button>
               {/if}
+            </div>
+
+            <div class="provider-filters">
+              {#each PROVIDER_FILTERS as pf}
+                <button
+                  class="provider-filter-btn"
+                  class:active={providerFilter === pf.id}
+                  onclick={() => (providerFilter = pf.id)}
+                >{pf.label}</button>
+              {/each}
             </div>
 
             <div class="template-list">
@@ -1048,6 +1073,17 @@
   .path-hint code { font-size: 11px; color: var(--color-accent); word-break: break-all; }
 
   .field-error { padding: 7px 10px; border-radius: 4px; background: rgba(239,68,68,0.1); color: #ef4444; font-size: 12px; }
+
+  /* ── Provider filter pills ─────────────────────────────────────────── */
+  .provider-filters { display: flex; gap: 4px; padding: 4px 14px 2px; flex-shrink: 0; }
+  .provider-filter-btn {
+    padding: 3px 10px; font-size: 11px; font-weight: 500;
+    border: 1px solid var(--color-border); border-radius: 12px;
+    background: none; color: var(--color-text-muted); cursor: pointer; font-family: inherit;
+    transition: all 0.12s;
+  }
+  .provider-filter-btn:hover { border-color: var(--color-text-muted); color: var(--color-text); }
+  .provider-filter-btn.active { border-color: var(--color-accent); color: var(--color-accent); background: color-mix(in srgb, var(--color-accent) 8%, transparent); }
 
   /* ── Step 3: Configuration ──────────────────────────────────────────────── */
   .step3-layout {

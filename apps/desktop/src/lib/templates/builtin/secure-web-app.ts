@@ -8,6 +8,7 @@ export const secureWebAppTemplate: Template = {
     description: 'App Service + SQL Database + Key Vault with monitoring',
     categories: ['Web Applications', 'Security'],
     icon: 'security',
+    providers: ['azurerm'],
   },
   diagram: {
     nodes: [

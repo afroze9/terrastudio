@@ -1,0 +1,105 @@
+import type { ResourceSchema } from '@terrastudio/types';
+
+export const albSchema: ResourceSchema = {
+  typeId: 'aws/compute/alb',
+  provider: 'aws',
+  displayName: 'Application Load Balancer',
+  category: 'aws-loadbalancing',
+  description: 'AWS Application or Network Load Balancer',
+  terraformType: 'aws_lb',
+  supportsTags: true,
+  requiresResourceGroup: false,
+  canBeChildOf: ['aws/networking/vpc'],
+
+  properties: [
+    {
+      key: 'name',
+      label: 'Name',
+      type: 'string',
+      required: true,
+      placeholder: 'web-alb',
+      group: 'General',
+      order: 1,
+      validation: {
+        maxLength: 32,
+        pattern: '^[a-z0-9][a-z0-9-]*[a-z0-9]$',
+        patternMessage: 'Lowercase alphanumeric and hyphens, must start and end with alphanumeric',
+      },
+    },
+    {
+      key: 'internal',
+      label: 'Internal',
+      type: 'boolean',
+      required: false,
+      defaultValue: false,
+      group: 'General',
+      order: 2,
+    },
+    {
+      key: 'load_balancer_type',
+      label: 'Load Balancer Type',
+      type: 'select',
+      required: true,
+      defaultValue: 'application',
+      group: 'General',
+      order: 3,
+      options: [
+        { label: 'Application', value: 'application' },
+        { label: 'Network', value: 'network' },
+      ],
+    },
+    {
+      key: 'ip_address_type',
+      label: 'IP Address Type',
+      type: 'select',
+      required: false,
+      defaultValue: 'ipv4',
+      group: 'General',
+      order: 4,
+      options: [
+        { label: 'IPv4', value: 'ipv4' },
+        { label: 'Dual Stack', value: 'dualstack' },
+      ],
+    },
+    {
+      key: 'enable_deletion_protection',
+      label: 'Deletion Protection',
+      type: 'boolean',
+      required: false,
+      defaultValue: false,
+      group: 'Advanced',
+      order: 5,
+    },
+    {
+      key: 'sg_enabled',
+      label: 'Security Group',
+      type: 'boolean',
+      required: false,
+      defaultValue: false,
+      description: 'Associate a Security Group',
+      group: 'Security',
+      order: 6,
+    },
+    {
+      key: 'security_group_ids',
+      label: 'Security Group',
+      type: 'reference',
+      required: false,
+      referenceTargetTypes: ['aws/compute/security_group'],
+      group: 'Security',
+      order: 7,
+      visibleWhen: { field: 'sg_enabled', operator: 'truthy' },
+    },
+  ],
+
+  handles: [
+    { id: 'subnet-target', type: 'target', position: 'left', label: 'Subnets', acceptsTypes: ['aws/networking/subnet'] },
+  ],
+
+  outputs: [
+    { key: 'id', label: 'Load Balancer ID', terraformAttribute: 'id' },
+    { key: 'arn', label: 'ARN', terraformAttribute: 'arn' },
+    { key: 'dns_name', label: 'DNS Name', terraformAttribute: 'dns_name' },
+    { key: 'zone_id', label: 'Zone ID', terraformAttribute: 'zone_id' },
+  ],
+};

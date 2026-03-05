@@ -93,7 +93,7 @@
 
   const PROVIDER_OPTIONS: { id: string; label: string; available: boolean }[] = [
     { id: 'azurerm', label: 'Azure',       available: true  },
-    { id: 'aws',     label: 'AWS',         available: false },
+    { id: 'aws',     label: 'AWS',         available: true  },
     { id: 'google',  label: 'GCP',         available: false },
     { id: 'all',     label: 'Multi-Cloud', available: true  },
   ];

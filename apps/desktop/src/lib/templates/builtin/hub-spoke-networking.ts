@@ -9,6 +9,7 @@ export const hubSpokeNetworkingTemplate: Template = {
       'Hub VNet for shared services with a spoke VNet for workloads, each with dedicated subnets and NSGs',
     categories: ['Networking'],
     icon: 'network',
+    providers: ['azurerm'],
   },
   diagram: {
     nodes: [
