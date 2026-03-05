@@ -76,6 +76,9 @@ class UiStore {
   // --- Cost badges ---
   showCostBadges = $state(typeof localStorage !== 'undefined' ? localStorage.getItem('terrastudio-cost-badges') === 'true' : false);
 
+  // --- Compact nodes (icon-only view) ---
+  compactNodes = $state(typeof localStorage !== 'undefined' ? localStorage.getItem('terrastudio-compact-nodes') !== 'false' : true);
+
   // --- Log level ---
   logLevel = $state<LogLevel>((typeof localStorage !== 'undefined' && localStorage.getItem('terrastudio-log-level') as LogLevel) || 'info');
 
@@ -194,6 +197,13 @@ class UiStore {
     this.showCostBadges = show;
     localStorage.setItem('terrastudio-cost-badges', String(show));
     broadcastSetting('showCostBadges', show);
+  }
+
+  /** Toggle compact (icon-only) node view and persist */
+  setCompactNodes(compact: boolean) {
+    this.compactNodes = compact;
+    localStorage.setItem('terrastudio-compact-nodes', String(compact));
+    broadcastSetting('compactNodes', compact);
   }
 
   /** Set log level and persist */
