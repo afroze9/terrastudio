@@ -231,6 +231,122 @@
           {:else if prop.type === 'array'}
             {#if isVariable}
               <input type="text" placeholder="(using variable)" disabled class="is-variable-input" />
+            {:else if prop.itemSchema?.type === 'object' && prop.itemSchema.nestedSchema}
+              <div class="array-field">
+                {#each ((values[prop.key] as Record<string, unknown>[]) ?? []) as item, index}
+                  <div class="array-object-item">
+                    <div class="array-object-header">
+                      <span class="array-object-label">{prop.itemSchema.label ?? 'Item'} {index + 1}</span>
+                      <button
+                        class="remove-btn"
+                        onclick={() => handleArrayRemove(prop.key, index)}
+                        aria-label="Remove item"
+                      >&times;</button>
+                    </div>
+                    <div class="array-object-fields">
+                      {#each prop.itemSchema.nestedSchema as nestedProp}
+                        <div class="field nested-field">
+                          <label class="field-label">
+                            <span class="label-text">{nestedProp.label}</span>
+                            {#if nestedProp.type === 'select'}
+                              <select
+                                value={(item[nestedProp.key] as string) ?? ''}
+                                onchange={(e) => {
+                                  const updated = { ...item, [nestedProp.key]: (e.target as HTMLSelectElement).value };
+                                  handleArrayItemChange(prop.key, index, updated);
+                                }}
+                              >
+                                <option value="" disabled>Select...</option>
+                                {#each nestedProp.options ?? [] as opt}
+                                  <option value={opt.value}>{opt.label}</option>
+                                {/each}
+                              </select>
+                            {:else if nestedProp.type === 'number'}
+                              <input
+                                type="number"
+                                value={(item[nestedProp.key] as number) ?? ''}
+                                placeholder={nestedProp.placeholder}
+                                oninput={(e) => {
+                                  const val = (e.target as HTMLInputElement).value;
+                                  const updated = { ...item, [nestedProp.key]: val === '' ? undefined : Number(val) };
+                                  handleArrayItemChange(prop.key, index, updated);
+                                }}
+                              />
+                            {:else if nestedProp.type === 'boolean'}
+                              <label class="checkbox-label">
+                                <input
+                                  type="checkbox"
+                                  checked={(item[nestedProp.key] as boolean) ?? false}
+                                  onchange={(e) => {
+                                    const updated = { ...item, [nestedProp.key]: (e.target as HTMLInputElement).checked };
+                                    handleArrayItemChange(prop.key, index, updated);
+                                  }}
+                                />
+                                <span>{nestedProp.description ?? nestedProp.label}</span>
+                              </label>
+                            {:else if nestedProp.type === 'array'}
+                              <div class="array-field">
+                                {#each ((item[nestedProp.key] as unknown[]) ?? []) as nestedItem, nestedIndex}
+                                  <div class="array-item">
+                                    <input
+                                      type="text"
+                                      value={nestedItem as string}
+                                      placeholder={nestedProp.itemSchema?.placeholder}
+                                      oninput={(e) => {
+                                        const arr = [...((item[nestedProp.key] as unknown[]) ?? [])];
+                                        arr[nestedIndex] = (e.target as HTMLInputElement).value;
+                                        const updated = { ...item, [nestedProp.key]: arr };
+                                        handleArrayItemChange(prop.key, index, updated);
+                                      }}
+                                    />
+                                    <button
+                                      class="remove-btn"
+                                      onclick={() => {
+                                        const arr = ((item[nestedProp.key] as unknown[]) ?? []).filter((_, i) => i !== nestedIndex);
+                                        const updated = { ...item, [nestedProp.key]: arr };
+                                        handleArrayItemChange(prop.key, index, updated);
+                                      }}
+                                      aria-label="Remove item"
+                                    >&times;</button>
+                                  </div>
+                                {/each}
+                                <button
+                                  class="add-btn"
+                                  onclick={() => {
+                                    const arr = [...((item[nestedProp.key] as unknown[]) ?? []), nestedProp.itemSchema?.defaultValue ?? ''];
+                                    const updated = { ...item, [nestedProp.key]: arr };
+                                    handleArrayItemChange(prop.key, index, updated);
+                                  }}
+                                >+ Add</button>
+                              </div>
+                            {:else}
+                              <input
+                                type="text"
+                                value={(item[nestedProp.key] as string) ?? ''}
+                                placeholder={nestedProp.placeholder}
+                                oninput={(e) => {
+                                  const updated = { ...item, [nestedProp.key]: (e.target as HTMLInputElement).value };
+                                  handleArrayItemChange(prop.key, index, updated);
+                                }}
+                              />
+                            {/if}
+                          </label>
+                        </div>
+                      {/each}
+                    </div>
+                  </div>
+                {/each}
+                <button
+                  class="add-btn"
+                  onclick={() => {
+                    const defaults: Record<string, unknown> = {};
+                    for (const nested of prop.itemSchema!.nestedSchema!) {
+                      if (nested.defaultValue !== undefined) defaults[nested.key] = nested.defaultValue;
+                    }
+                    handleArrayAdd(prop.key, defaults);
+                  }}
+                >+ Add</button>
+              </div>
             {:else}
               <div class="array-field">
                 {#each ((values[prop.key] as unknown[]) ?? []) as item, index}
@@ -431,6 +547,35 @@
   .add-btn:hover {
     border-color: var(--color-accent);
     color: var(--color-accent);
+  }
+  .array-object-item {
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .array-object-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 8px;
+    background: var(--color-surface-hover);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .array-object-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .array-object-fields {
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .nested-field {
+    margin-bottom: 0;
   }
   .help-text {
     font-size: 11px;
