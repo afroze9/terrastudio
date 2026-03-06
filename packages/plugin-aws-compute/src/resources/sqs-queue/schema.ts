@@ -1,0 +1,105 @@
+import type { ResourceSchema } from '@terrastudio/types';
+
+export const sqsQueueSchema: ResourceSchema = {
+  typeId: 'aws/messaging/sqs_queue',
+  provider: 'aws',
+  displayName: 'SQS Queue',
+  category: 'aws-messaging',
+  description: 'AWS SQS message queue for decoupled async communication',
+  terraformType: 'aws_sqs_queue',
+  supportsTags: true,
+  requiresResourceGroup: false,
+
+  properties: [
+    {
+      key: 'name',
+      label: 'Queue Name',
+      type: 'string',
+      required: true,
+      placeholder: 'order-processing',
+      group: 'General',
+      order: 1,
+    },
+    {
+      key: 'fifo_queue',
+      label: 'FIFO Queue',
+      type: 'boolean',
+      required: false,
+      defaultValue: false,
+      group: 'General',
+      order: 2,
+      description: 'First-In-First-Out delivery. Name must end with .fifo',
+    },
+    {
+      key: 'visibility_timeout_seconds',
+      label: 'Visibility Timeout (s)',
+      type: 'number',
+      required: false,
+      defaultValue: 30,
+      group: 'Settings',
+      order: 3,
+      validation: { min: 0, max: 43200 },
+    },
+    {
+      key: 'message_retention_seconds',
+      label: 'Message Retention (s)',
+      type: 'select',
+      required: false,
+      defaultValue: '345600',
+      group: 'Settings',
+      order: 4,
+      options: [
+        { label: '1 minute', value: '60' },
+        { label: '1 hour', value: '3600' },
+        { label: '4 days (default)', value: '345600' },
+        { label: '14 days (max)', value: '1209600' },
+      ],
+    },
+    {
+      key: 'delay_seconds',
+      label: 'Delivery Delay (s)',
+      type: 'number',
+      required: false,
+      defaultValue: 0,
+      group: 'Settings',
+      order: 5,
+      validation: { min: 0, max: 900 },
+    },
+    {
+      key: 'max_message_size',
+      label: 'Max Message Size (bytes)',
+      type: 'number',
+      required: false,
+      defaultValue: 262144,
+      group: 'Settings',
+      order: 6,
+      validation: { min: 1024, max: 262144 },
+    },
+  ],
+
+  handles: [
+    { id: 'sqs-in', type: 'target', position: 'left', label: 'Producer' },
+    { id: 'sqs-out', type: 'source', position: 'right', label: 'Consumer' },
+  ],
+
+  outputs: [
+    { key: 'id', label: 'Queue ID', terraformAttribute: 'id' },
+    { key: 'arn', label: 'ARN', terraformAttribute: 'arn' },
+    { key: 'url', label: 'Queue URL', terraformAttribute: 'url' },
+  ],
+
+  costEstimation: {
+    serviceName: 'SQS',
+    usageInputs: [
+      {
+        key: '_cost_requests_millions',
+        label: 'Monthly Requests',
+        unit: 'million',
+        defaultValue: 1,
+        min: 0,
+        max: 1000000,
+        description: 'Standard: ~$0.40/million. FIFO: ~$0.50/million. First 1M free.',
+      },
+    ],
+  },
+};

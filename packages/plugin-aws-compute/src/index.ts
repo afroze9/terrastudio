@@ -4,6 +4,14 @@ import { ec2InstanceRegistration } from './resources/ec2-instance/index.js';
 import { eipRegistration } from './resources/eip/index.js';
 import { albRegistration } from './resources/alb/index.js';
 import { rdsInstanceRegistration } from './resources/rds-instance/index.js';
+import { s3BucketRegistration } from './resources/s3-bucket/index.js';
+import { iamRoleRegistration } from './resources/iam-role/index.js';
+import { cloudwatchLogGroupRegistration } from './resources/cloudwatch-log-group/index.js';
+import { lambdaFunctionRegistration } from './resources/lambda-function/index.js';
+import { apiGatewayRegistration } from './resources/api-gateway/index.js';
+import { dynamodbTableRegistration } from './resources/dynamodb-table/index.js';
+import { sqsQueueRegistration } from './resources/sqs-queue/index.js';
+import { snsTopicRegistration } from './resources/sns-topic/index.js';
 import { computeConnectionRules } from './connections/rules.js';
 
 const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
@@ -12,6 +20,14 @@ const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
   ['aws/compute/eip', eipRegistration],
   ['aws/compute/alb', albRegistration],
   ['aws/compute/rds_instance', rdsInstanceRegistration],
+  ['aws/storage/s3_bucket', s3BucketRegistration],
+  ['aws/security/iam_role', iamRoleRegistration],
+  ['aws/monitoring/cloudwatch_log_group', cloudwatchLogGroupRegistration],
+  ['aws/compute/lambda_function', lambdaFunctionRegistration],
+  ['aws/compute/api_gateway', apiGatewayRegistration],
+  ['aws/database/dynamodb_table', dynamodbTableRegistration],
+  ['aws/messaging/sqs_queue', sqsQueueRegistration],
+  ['aws/messaging/sns_topic', snsTopicRegistration],
 ]);
 
 const plugin: InfraPlugin = {
@@ -43,6 +59,21 @@ const plugin: InfraPlugin = {
       id: 'aws-database',
       label: 'Database',
       order: 140,
+    },
+    {
+      id: 'aws-storage',
+      label: 'Storage',
+      order: 135,
+    },
+    {
+      id: 'aws-monitoring',
+      label: 'Monitoring',
+      order: 145,
+    },
+    {
+      id: 'aws-messaging',
+      label: 'Messaging',
+      order: 150,
     },
   ],
 };

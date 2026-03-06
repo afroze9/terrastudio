@@ -49,6 +49,15 @@ import {
   eipCostCalculator,
   natGatewayCostCalculator as awsNatGatewayCostCalculator,
 } from './calculators/aws-compute';
+import {
+  s3BucketCostCalculator,
+  cloudwatchLogGroupCostCalculator,
+  lambdaFunctionCostCalculator,
+  apiGatewayCostCalculator,
+  dynamodbTableCostCalculator,
+  sqsQueueCostCalculator,
+  snsTopicCostCalculator,
+} from './calculators/aws-serverless';
 
 export interface CostResult {
   monthly: number | null;
@@ -118,6 +127,15 @@ const calculators = new Map<ResourceTypeId, CostCalculator>([
   ['aws/compute/alb', albCostCalculator],
   ['aws/compute/eip', eipCostCalculator],
   ['aws/networking/nat_gateway', awsNatGatewayCostCalculator],
+
+  // AWS — Serverless / Storage / Messaging
+  ['aws/storage/s3_bucket', s3BucketCostCalculator],
+  ['aws/monitoring/cloudwatch_log_group', cloudwatchLogGroupCostCalculator],
+  ['aws/compute/lambda_function', lambdaFunctionCostCalculator],
+  ['aws/compute/api_gateway', apiGatewayCostCalculator],
+  ['aws/database/dynamodb_table', dynamodbTableCostCalculator],
+  ['aws/messaging/sqs_queue', sqsQueueCostCalculator],
+  ['aws/messaging/sns_topic', snsTopicCostCalculator],
 ]);
 
 /**
@@ -185,6 +203,7 @@ const FREE_TYPE_IDS = new Set<ResourceTypeId>([
   'aws/networking/internet_gateway',
   'aws/networking/route_table',
   'aws/compute/security_group',
+  'aws/security/iam_role',
 ]);
 
 export async function calculateNodeCost(
