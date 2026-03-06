@@ -127,7 +127,7 @@
     {#each props as prop}
       {@const isVariable = showVariableToggle && supportsVariableToggle(prop.type) && getVariableMode(prop.key) === 'variable'}
       <div class="field">
-        <label class="field-label">
+        <div class="field-label">
           <span class="label-row">
             <span class="label-text">
               {prop.label}
@@ -138,7 +138,7 @@
                 type="button"
                 class="var-toggle"
                 class:is-variable={isVariable}
-                onclick={(e) => { e.preventDefault(); toggleVariableMode(prop.key); }}
+                onclick={() => { toggleVariableMode(prop.key); }}
                 title={isVariable ? 'Using variable (click to use literal value)' : 'Using literal value (click to make variable)'}
               >
                 {#if isVariable}
@@ -437,7 +437,7 @@
           {#if prop.description && prop.type !== 'boolean'}
             <span class="help-text">{prop.description}</span>
           {/if}
-        </label>
+        </div>
       </div>
     {/each}
     </fieldset>
