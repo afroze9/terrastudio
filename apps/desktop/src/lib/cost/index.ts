@@ -42,6 +42,13 @@ import {
   staticWebAppCostCalculator,
   signalrServiceCostCalculator,
 } from './calculators/azure-web';
+import {
+  ec2InstanceCostCalculator,
+  rdsInstanceCostCalculator,
+  albCostCalculator,
+  eipCostCalculator,
+  natGatewayCostCalculator as awsNatGatewayCostCalculator,
+} from './calculators/aws-compute';
 
 export interface CostResult {
   monthly: number | null;
@@ -104,6 +111,13 @@ const calculators = new Map<ResourceTypeId, CostCalculator>([
   ['azurerm/web/frontdoor_profile', frontdoorProfileCostCalculator],
   ['azurerm/web/static_web_app', staticWebAppCostCalculator],
   ['azurerm/web/signalr_service', signalrServiceCostCalculator],
+
+  // AWS — Compute
+  ['aws/compute/instance', ec2InstanceCostCalculator],
+  ['aws/compute/rds_instance', rdsInstanceCostCalculator],
+  ['aws/compute/alb', albCostCalculator],
+  ['aws/compute/eip', eipCostCalculator],
+  ['aws/networking/nat_gateway', awsNatGatewayCostCalculator],
 ]);
 
 /**
@@ -164,6 +178,13 @@ const FREE_TYPE_IDS = new Set<ResourceTypeId>([
   // Identity — no direct cost
   'azurerm/identity/role_assignment',
   'azurerm/identity/user_assigned_identity',
+
+  // AWS — free networking resources
+  'aws/networking/vpc',
+  'aws/networking/subnet',
+  'aws/networking/internet_gateway',
+  'aws/networking/route_table',
+  'aws/compute/security_group',
 ]);
 
 export async function calculateNodeCost(
