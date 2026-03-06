@@ -9,8 +9,7 @@
     "directory": "apps/desktop"
   },
   "private": true,
-  "version": "0.21.0",
->>>>>>> ec373d2 (feat: add AWS plugin support with template-driven provider selection and official icons (v0.21.0))
+  "version": "0.22.0",
   "type": "module",
   "scripts": {
     "dev": "vite dev",

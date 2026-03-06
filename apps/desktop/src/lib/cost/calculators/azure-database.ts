@@ -204,3 +204,53 @@ export const redisCacheCostCalculator: CostCalculator = async (properties) => {
     breakdown: [{ label: `Redis Cache (${key})`, cost: rate }],
   };
 };
+
+// MySQL Flexible Server compute rates (East US, pay-as-you-go, per-month)
+// Same tier structure as PostgreSQL Flexible Server
+const MYSQL_COMPUTE_RATES: Record<string, number> = {
+  // Burstable B-series
+  'B_Standard_B1s':    6.21,
+  'B_Standard_B1ms':   12.41,
+  'B_Standard_B2s':    24.82,
+  'B_Standard_B2ms':   36.50,
+  'B_Standard_B4ms':   73.00,
+  'B_Standard_B8ms':   146.00,
+  'B_Standard_B12ms':  219.00,
+  'B_Standard_B16ms':  292.00,
+  // General Purpose D-series
+  'GP_Standard_D2ds_v4':  130.0,
+  'GP_Standard_D4ds_v4':  260.0,
+  'GP_Standard_D8ds_v4':  520.0,
+  'GP_Standard_D16ds_v4': 1040.0,
+  'GP_Standard_D2ds_v5':  130.0,
+  'GP_Standard_D4ds_v5':  260.0,
+  'GP_Standard_D8ds_v5':  520.0,
+  'GP_Standard_D16ds_v5': 1040.0,
+  // Memory Optimized E-series
+  'MO_Standard_E2ds_v4':  184.0,
+  'MO_Standard_E4ds_v4':  368.0,
+  'MO_Standard_E8ds_v4':  736.0,
+  'MO_Standard_E16ds_v4': 1472.0,
+};
+
+const MYSQL_STORAGE_RATE_PER_GB = 0.115;
+
+export const mysqlFlexibleServerCostCalculator: CostCalculator = async (properties) => {
+  const skuName = (properties.sku_name as string | undefined) ?? 'GP_Standard_D2ds_v4';
+  const storageMb = Number(properties.storage_mb ?? 20480);
+  const storageGb = storageMb / 1024;
+
+  const computePrice = MYSQL_COMPUTE_RATES[skuName] ?? null;
+  if (computePrice === null) return { monthly: null, breakdown: [] };
+
+  const storageCost = Math.round(storageGb * MYSQL_STORAGE_RATE_PER_GB * 100) / 100;
+  const monthly = computePrice + storageCost;
+
+  return {
+    monthly,
+    breakdown: [
+      { label: `Compute (${skuName})`, cost: computePrice },
+      { label: `Storage (${storageGb} GB × $${MYSQL_STORAGE_RATE_PER_GB}/GB)`, cost: storageCost },
+    ],
+  };
+};

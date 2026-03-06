@@ -22,6 +22,26 @@ import {
   natGatewayCostCalculator,
   functionAppCostCalculator,
 } from './calculators/azure-monitoring';
+import {
+  loadBalancerCostCalculator,
+  dnsZoneCostCalculator,
+} from './calculators/azure-networking';
+import {
+  vmssCostCalculator,
+  aksCostCalculator,
+  aksNodePoolCostCalculator,
+  containerAppEnvironmentCostCalculator,
+  containerAppCostCalculator,
+  containerGroupCostCalculator,
+} from './calculators/azure-containers';
+import { mysqlFlexibleServerCostCalculator } from './calculators/azure-database';
+import {
+  eventhubNamespaceCostCalculator,
+  cdnProfileCostCalculator,
+  frontdoorProfileCostCalculator,
+  staticWebAppCostCalculator,
+  signalrServiceCostCalculator,
+} from './calculators/azure-web';
 
 export interface CostResult {
   monthly: number | null;
@@ -64,6 +84,26 @@ const calculators = new Map<ResourceTypeId, CostCalculator>([
   ['azurerm/networking/bastion_host', bastionCostCalculator],
   ['azurerm/networking/public_ip', publicIpCostCalculator],
   ['azurerm/networking/nat_gateway', natGatewayCostCalculator],
+  ['azurerm/networking/load_balancer', loadBalancerCostCalculator],
+  ['azurerm/dns/dns_zone', dnsZoneCostCalculator],
+
+  // Containers
+  ['azurerm/compute/virtual_machine_scale_set', vmssCostCalculator],
+  ['azurerm/containers/kubernetes_cluster', aksCostCalculator],
+  ['azurerm/containers/kubernetes_cluster_node_pool', aksNodePoolCostCalculator],
+  ['azurerm/containers/container_app_environment', containerAppEnvironmentCostCalculator],
+  ['azurerm/containers/container_app', containerAppCostCalculator],
+  ['azurerm/containers/container_group', containerGroupCostCalculator],
+
+  // Database
+  ['azurerm/database/mysql_flexible_server', mysqlFlexibleServerCostCalculator],
+
+  // Web / Messaging
+  ['azurerm/messaging/eventhub_namespace', eventhubNamespaceCostCalculator],
+  ['azurerm/web/cdn_profile', cdnProfileCostCalculator],
+  ['azurerm/web/frontdoor_profile', frontdoorProfileCostCalculator],
+  ['azurerm/web/static_web_app', staticWebAppCostCalculator],
+  ['azurerm/web/signalr_service', signalrServiceCostCalculator],
 ]);
 
 /**
@@ -100,10 +140,26 @@ const FREE_TYPE_IDS = new Set<ResourceTypeId>([
 
   // Compute children — billed via App Service Plan
   'azurerm/compute/app_service',
+  'azurerm/compute/availability_set',              // no direct cost
+
+  // Security children — billed via Key Vault
+  'azurerm/security/key_vault_secret',
+  'azurerm/security/key_vault_key',
 
   // Messaging children — billed via namespace
   'azurerm/messaging/servicebus_queue',
   'azurerm/messaging/servicebus_topic',
+  'azurerm/messaging/eventhub',                    // billed via namespace
+
+  // Database children
+  'azurerm/database/mysql_flexible_server_database', // billed via server
+
+  // DNS children — billed via zone
+  'azurerm/dns/dns_a_record',
+  'azurerm/dns/dns_cname_record',
+
+  // Web children — billed via profile
+  'azurerm/web/cdn_endpoint',                      // billed via CDN profile
 
   // Identity — no direct cost
   'azurerm/identity/role_assignment',

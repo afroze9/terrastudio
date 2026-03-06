@@ -238,10 +238,15 @@
   // CIDR subtitle: show address_space (VNet) or address_prefixes (Subnet) in the header
   let cidrSubtitle = $derived.by(() => {
     const props = data.properties;
+    // Azure VNet
     const addressSpace = props?.address_space as string[] | undefined;
     if (addressSpace?.length) return addressSpace[0];
+    // Azure Subnet
     const addressPrefixes = props?.address_prefixes as string[] | undefined;
     if (addressPrefixes?.length) return addressPrefixes[0];
+    // AWS VPC / Subnet
+    const cidrBlock = props?.cidr_block as string | undefined;
+    if (cidrBlock) return cidrBlock;
     return null;
   });
 

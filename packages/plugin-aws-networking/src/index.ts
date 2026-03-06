@@ -5,6 +5,7 @@ import { subnetRegistration } from './resources/subnet/index.js';
 import { internetGatewayRegistration } from './resources/internet-gateway/index.js';
 import { natGatewayRegistration } from './resources/nat-gateway/index.js';
 import { routeTableRegistration } from './resources/route-table/index.js';
+import { awsNetworkingConnectionRules } from './connections/rules.js';
 
 const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
   ['aws/networking/vpc', vpcRegistration],
@@ -21,7 +22,7 @@ const plugin: InfraPlugin = {
   providerId: 'aws',
   providerConfig: awsProviderConfig,
   resourceTypes,
-  connectionRules: [],
+  connectionRules: awsNetworkingConnectionRules,
   paletteCategories: [
     {
       id: 'aws-networking',

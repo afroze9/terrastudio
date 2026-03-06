@@ -9,13 +9,24 @@ export const eipHclGenerator: HclGenerator = {
 
     const domainExpr = context.getPropertyExpression(resource, 'domain', domain);
 
+    const dependsOn: string[] = [];
     const lines: string[] = [
       `resource "aws_eip" "${resource.terraformName}" {`,
       `  domain = ${domainExpr}`,
-      '',
-      '  tags = local.common_tags',
-      '}',
     ];
+
+    // EC2 instance association via edge
+    const instanceRef = resource.references['instance_id'];
+    if (instanceRef) {
+      const instanceIdExpr = context.getAttributeReference(instanceRef, 'id');
+      lines.push(`  instance = ${instanceIdExpr}`);
+      const addr = context.getTerraformAddress(instanceRef);
+      if (addr) dependsOn.push(addr);
+    }
+
+    lines.push('');
+    lines.push('  tags = local.common_tags');
+    lines.push('}');
 
     return [
       {
@@ -23,6 +34,7 @@ export const eipHclGenerator: HclGenerator = {
         terraformType: 'aws_eip',
         name: resource.terraformName,
         content: lines.join('\n'),
+        dependsOn,
       },
     ];
   },

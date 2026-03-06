@@ -4,6 +4,7 @@ import { ec2InstanceRegistration } from './resources/ec2-instance/index.js';
 import { eipRegistration } from './resources/eip/index.js';
 import { albRegistration } from './resources/alb/index.js';
 import { rdsInstanceRegistration } from './resources/rds-instance/index.js';
+import { computeConnectionRules } from './connections/rules.js';
 
 const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
   ['aws/compute/security_group', securityGroupRegistration],
@@ -20,7 +21,7 @@ const plugin: InfraPlugin = {
   providerId: 'aws',
 
   resourceTypes,
-  connectionRules: [],
+  connectionRules: computeConnectionRules,
 
   paletteCategories: [
     {

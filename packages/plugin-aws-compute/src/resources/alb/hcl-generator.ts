@@ -36,10 +36,10 @@ export const albHclGenerator: HclGenerator = {
       if (sgAddr) dependsOn.push(sgAddr);
     }
 
-    // Collect subnet references from edges
+    // Collect subnet references from edges (connection rule sets subnet_ids / subnet_ids_N)
     const subnetRefs: string[] = [];
     for (const [key, ref] of Object.entries(resource.references)) {
-      if (key.startsWith('subnet') || key === 'subnet_target') {
+      if (key === 'subnet_ids' || key.startsWith('subnet_ids_')) {
         const subnetIdExpr = context.getAttributeReference(ref, 'id');
         subnetRefs.push(subnetIdExpr);
         const subnetAddr = context.getTerraformAddress(ref);

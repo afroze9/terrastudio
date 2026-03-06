@@ -234,7 +234,7 @@
   bind:this={nodeEl}
 >
   {#if ui.compactNodes}
-    <!-- Compact: Visio-style icon with label below -->
+    <!-- Compact: icon-only box, label floats outside bounding box -->
     <div class="compact-icon-wrap">
       {#if icon?.type === 'svg' && icon.svg}
         <span class="compact-icon">{@html icon.svg}</span>
@@ -432,16 +432,20 @@
   }
 
   /* ---- Compact (Visio-style) mode ---- */
+  /* Node dimensions are based ONLY on the icon (56x56 = 48px icon + 4px padding each side).
+     The label is positioned absolutely so it doesn't affect the bounding box,
+     giving correct alignment/snapping behavior like draw.io or Visio. */
   .resource-node.compact {
-    width: auto;
+    width: 56px;
+    height: 56px;
     background: transparent;
     border: none;
     padding: 4px;
     box-shadow: none;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 4px;
+    justify-content: center;
+    overflow: visible;
   }
   .resource-node.compact.selected {
     border: none;
@@ -514,6 +518,11 @@
     cursor: help;
   }
   .compact-label {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 2px;
     font-size: 11px;
     font-weight: 600;
     color: #1a1a2e;
@@ -526,6 +535,7 @@
     paint-order: stroke fill;
     -webkit-text-stroke: 3px rgba(255, 255, 255, 0.85);
     text-shadow: none;
+    pointer-events: none;
   }
 
   /* Reference edge handles — subtle dot, non-interactive */
