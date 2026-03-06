@@ -58,6 +58,14 @@ import {
   sqsQueueCostCalculator,
   snsTopicCostCalculator,
 } from './calculators/aws-serverless';
+import {
+  secretsManagerCostCalculator,
+  ecrCostCalculator,
+  efsCostCalculator,
+  elasticacheCostCalculator,
+  eksCostCalculator,
+  ecsCostCalculator,
+} from './calculators/aws-services';
 
 export interface CostResult {
   monthly: number | null;
@@ -136,6 +144,14 @@ const calculators = new Map<ResourceTypeId, CostCalculator>([
   ['aws/database/dynamodb_table', dynamodbTableCostCalculator],
   ['aws/messaging/sqs_queue', sqsQueueCostCalculator],
   ['aws/messaging/sns_topic', snsTopicCostCalculator],
+
+  // AWS — Services
+  ['aws/security/secrets_manager', secretsManagerCostCalculator],
+  ['aws/containers/ecr', ecrCostCalculator],
+  ['aws/storage/efs', efsCostCalculator],
+  ['aws/database/elasticache', elasticacheCostCalculator],
+  ['aws/containers/eks_cluster', eksCostCalculator],
+  ['aws/containers/ecs_cluster', ecsCostCalculator],
 ]);
 
 /**

@@ -12,6 +12,12 @@ import { apiGatewayRegistration } from './resources/api-gateway/index.js';
 import { dynamodbTableRegistration } from './resources/dynamodb-table/index.js';
 import { sqsQueueRegistration } from './resources/sqs-queue/index.js';
 import { snsTopicRegistration } from './resources/sns-topic/index.js';
+import { secretsManagerRegistration } from './resources/secrets-manager/index.js';
+import { ecrRegistration } from './resources/ecr/index.js';
+import { efsRegistration } from './resources/efs/index.js';
+import { elasticacheRegistration } from './resources/elasticache/index.js';
+import { eksClusterRegistration } from './resources/eks-cluster/index.js';
+import { ecsClusterRegistration } from './resources/ecs-cluster/index.js';
 import { computeConnectionRules } from './connections/rules.js';
 
 const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
@@ -28,6 +34,12 @@ const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
   ['aws/database/dynamodb_table', dynamodbTableRegistration],
   ['aws/messaging/sqs_queue', sqsQueueRegistration],
   ['aws/messaging/sns_topic', snsTopicRegistration],
+  ['aws/security/secrets_manager', secretsManagerRegistration],
+  ['aws/containers/ecr', ecrRegistration],
+  ['aws/storage/efs', efsRegistration],
+  ['aws/database/elasticache', elasticacheRegistration],
+  ['aws/containers/eks_cluster', eksClusterRegistration],
+  ['aws/containers/ecs_cluster', ecsClusterRegistration],
 ]);
 
 const plugin: InfraPlugin = {
@@ -74,6 +86,11 @@ const plugin: InfraPlugin = {
       id: 'aws-messaging',
       label: 'Messaging',
       order: 150,
+    },
+    {
+      id: 'aws-containers',
+      label: 'Containers',
+      order: 155,
     },
   ],
 };
