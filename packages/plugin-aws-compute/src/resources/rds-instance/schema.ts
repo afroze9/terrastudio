@@ -175,4 +175,9 @@ export const rdsInstanceSchema: ResourceSchema = {
     { key: 'address', label: 'Address', terraformAttribute: 'address' },
     { key: 'port', label: 'Port', terraformAttribute: 'port' },
   ],
+
+  costEstimation: {
+    serviceName: 'RDS',
+    skuProperty: 'instance_class',
+  },
 };

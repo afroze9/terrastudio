@@ -51,4 +51,20 @@ export const frontdoorProfileSchema: ResourceSchema = {
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
     { key: 'resource_guid', label: 'Resource GUID', terraformAttribute: 'resource_guid' },
   ],
+
+  costEstimation: {
+    serviceName: 'Front Door',
+    skuProperty: 'sku_name',
+    usageInputs: [
+      {
+        key: '_cost_data_gb',
+        label: 'Data Transfer',
+        unit: 'GB/mo',
+        defaultValue: 100,
+        min: 0,
+        max: 1000000,
+        description: 'Monthly data routed and transferred (~$0.018–$0.024/GB routing + $0.009–$0.012/GB transfer)',
+      },
+    ],
+  },
 };

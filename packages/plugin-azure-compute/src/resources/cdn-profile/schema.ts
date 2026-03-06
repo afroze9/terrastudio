@@ -55,4 +55,20 @@ export const cdnProfileSchema: ResourceSchema = {
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
   ],
+
+  costEstimation: {
+    serviceName: 'CDN',
+    skuProperty: 'sku',
+    usageInputs: [
+      {
+        key: '_cost_data_gb',
+        label: 'Data Transfer',
+        unit: 'GB/mo',
+        defaultValue: 100,
+        min: 0,
+        max: 1000000,
+        description: 'Monthly data transferred through CDN (~$0.081–$0.135/GB depending on SKU)',
+      },
+    ],
+  },
 };

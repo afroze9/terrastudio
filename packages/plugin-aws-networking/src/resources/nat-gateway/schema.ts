@@ -79,4 +79,19 @@ export const natGatewaySchema: ResourceSchema = {
     { key: 'allocation_id', label: 'Allocation ID', terraformAttribute: 'allocation_id' },
     { key: 'public_ip', label: 'Public IP', terraformAttribute: 'public_ip' },
   ],
+
+  costEstimation: {
+    serviceName: 'VPC',
+    usageInputs: [
+      {
+        key: '_cost_data_gb',
+        label: 'Processed Data',
+        unit: 'GB/mo',
+        defaultValue: 100,
+        min: 0,
+        max: 1000000,
+        description: 'Data processed through the NAT Gateway (~$0.045/GB)',
+      },
+    ],
+  },
 };

@@ -45,4 +45,9 @@ export const eipSchema: ResourceSchema = {
     { key: 'public_ip', label: 'Public IP', terraformAttribute: 'public_ip' },
     { key: 'allocation_id', label: 'Allocation ID', terraformAttribute: 'allocation_id' },
   ],
+
+  costEstimation: {
+    serviceName: 'EC2',
+    staticMonthlyCost: 3.65,
+  },
 };

@@ -52,4 +52,19 @@ export const dnsZoneSchema: ResourceSchema = {
       terraformAttribute: 'number_of_record_sets',
     },
   ],
+
+  costEstimation: {
+    serviceName: 'DNS',
+    usageInputs: [
+      {
+        key: '_cost_query_millions',
+        label: 'DNS Queries',
+        unit: 'million/mo',
+        defaultValue: 1,
+        min: 0,
+        max: 10000,
+        description: 'Monthly DNS query volume (~$0.40/million queries)',
+      },
+    ],
+  },
 };

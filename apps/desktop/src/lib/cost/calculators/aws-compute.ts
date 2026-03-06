@@ -104,8 +104,7 @@ export const albCostCalculator: CostCalculator = async (properties) => {
 
   const base = isNlb ? NLB_BASE : ALB_BASE;
   const lcuRate = isNlb ? NLB_NLCU_RATE : ALB_LCU_RATE;
-  // Estimate 1 LCU for a baseline deployment
-  const estimatedLcus = 1;
+  const estimatedLcus = typeof properties._cost_lcus === 'number' ? properties._cost_lcus : 1;
   const lcuCost = Math.round(estimatedLcus * lcuRate * 100) / 100;
   const monthly = base + lcuCost;
 

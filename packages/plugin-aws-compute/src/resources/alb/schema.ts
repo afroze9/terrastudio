@@ -102,4 +102,20 @@ export const albSchema: ResourceSchema = {
     { key: 'dns_name', label: 'DNS Name', terraformAttribute: 'dns_name' },
     { key: 'zone_id', label: 'Zone ID', terraformAttribute: 'zone_id' },
   ],
+
+  costEstimation: {
+    serviceName: 'Elastic Load Balancing',
+    skuProperty: 'load_balancer_type',
+    usageInputs: [
+      {
+        key: '_cost_lcus',
+        label: 'Estimated LCUs',
+        unit: 'LCU',
+        defaultValue: 1,
+        min: 0,
+        max: 1000,
+        description: 'Load Balancer Capacity Units — depends on new connections, active connections, bandwidth, and rule evaluations',
+      },
+    ],
+  },
 };

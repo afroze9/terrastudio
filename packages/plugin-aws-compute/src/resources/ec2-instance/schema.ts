@@ -131,4 +131,9 @@ export const ec2InstanceSchema: ResourceSchema = {
     { key: 'public_dns', label: 'Public DNS', terraformAttribute: 'public_dns' },
     { key: 'private_dns', label: 'Private DNS', terraformAttribute: 'private_dns' },
   ],
+
+  costEstimation: {
+    serviceName: 'EC2',
+    skuProperty: 'instance_type',
+  },
 };

@@ -29,4 +29,29 @@ export const loadBalancerSchema: ResourceSchema = {
     { key: 'private_ip_address', label: 'Private IP Address', terraformAttribute: 'private_ip_address' },
     { key: 'frontend_ip_configuration_id', label: 'Frontend IP Config ID', terraformAttribute: 'frontend_ip_configuration[0].id' },
   ],
+
+  costEstimation: {
+    serviceName: 'Load Balancer',
+    skuProperty: 'sku',
+    usageInputs: [
+      {
+        key: '_cost_rules',
+        label: 'Load Balancing Rules',
+        unit: 'rules',
+        defaultValue: 5,
+        min: 1,
+        max: 300,
+        description: 'Number of load balancing and NAT rules (~$3.65/rule/month)',
+      },
+      {
+        key: '_cost_data_gb',
+        label: 'Processed Data',
+        unit: 'GB/mo',
+        defaultValue: 100,
+        min: 0,
+        max: 1000000,
+        description: 'Data processed through the load balancer (~$0.005/GB)',
+      },
+    ],
+  },
 };
