@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.20.2](https://github.com/afroze9/terrastudio/compare/v0.20.1...v0.20.2) (2026-03-06)
+
+
+### Features
+
+* add 6 new AWS resources with official icons and cost calculators (v0.24.0) ([90fba48](https://github.com/afroze9/terrastudio/commit/90fba4889b93478dc1cc56200046a44f4a565bef))
+* add 8 new AWS resources — S3, IAM, CloudWatch, Lambda, API GW, DynamoDB, SQS, SNS (v0.23.0) ([8df798c](https://github.com/afroze9/terrastudio/commit/8df798c2e90df5eea49fd5b70d001f5fda5722d9))
+* add AWS cost estimation for EC2, RDS, ALB, EIP, and NAT Gateway ([4f142fa](https://github.com/afroze9/terrastudio/commit/4f142fa9ab821aa07bc97d9d04624b41673ee700))
+* add AWS plugin support with template-driven provider selection and official icons (v0.21.0) ([07e9c58](https://github.com/afroze9/terrastudio/commit/07e9c58dbd03f7c98b3fd51eea21b51e7fc06347))
+* add costEstimation schema blocks for AWS resources and Azure gaps ([2a46b38](https://github.com/afroze9/terrastudio/commit/2a46b38c0ba1c41377e5f9e642238cf92836a372))
+* complete Azure cost estimation coverage, fix AWS connection rules and compact mode (v0.22.0) ([c01b46c](https://github.com/afroze9/terrastudio/commit/c01b46c36d99062c4ba8b43222b78b7b411dd4a2))
+* make EKS/ECS clusters containers, add child resources (v0.25.0) ([a29bce7](https://github.com/afroze9/terrastudio/commit/a29bce76f0012441ce7959389b6d7f38732318bc))
+* replace AWS icons with official AWS Architecture icons (v0.23.0) ([f02ca21](https://github.com/afroze9/terrastudio/commit/f02ca2114174ba883feb9a64677c0ef334703b75))
+
+
+### Bug Fixes
+
+* render nested object arrays in sidebar instead of [object Object] ([3c032fc](https://github.com/afroze9/terrastudio/commit/3c032fc2b3ee7965b7376e38636a69052495b768))
+* restrict variable toggle to button click only ([fd39749](https://github.com/afroze9/terrastudio/commit/fd39749e2d98660a4e98de8f68f1f74fbdc5cd3e))
+
 ## [0.20.1](https://github.com/afroze9/terrastudio/compare/v0.20.0...v0.20.1) (2026-03-05)
 
 
