@@ -73,6 +73,37 @@ export const elasticacheCostCalculator: CostCalculator = async (properties) => {
   };
 };
 
+// EKS Node Group: EC2 instance pricing × node count
+const EKS_NODE_RATES: Record<string, number> = {
+  't3.small':   15.18,
+  't3.medium':  30.37,
+  't3.large':   60.74,
+  't3.xlarge':  121.47,
+  'm5.large':   70.08,
+  'm5.xlarge':  140.16,
+  'c5.large':   62.05,
+  'c5.xlarge':  124.10,
+  'r5.large':   91.98,
+  'r5.xlarge':  183.96,
+};
+
+export const eksNodeGroupCostCalculator: CostCalculator = async (properties) => {
+  const instanceType = (properties.instance_types as string | undefined) ?? 't3.medium';
+  const desiredSize = Number(properties.desired_size ?? 2);
+
+  const rate = EKS_NODE_RATES[instanceType];
+  if (rate === undefined) return { monthly: null, breakdown: [] };
+
+  const monthly = Math.round(rate * desiredSize * 100) / 100;
+
+  return {
+    monthly,
+    breakdown: [
+      { label: `${desiredSize}× ${instanceType}`, cost: monthly },
+    ],
+  };
+};
+
 // EKS: $73/month flat for control plane
 const EKS_MONTHLY = 73;
 

@@ -17,4 +17,12 @@ export const computeConnectionRules: ConnectionRule[] = [
     label: 'EC2 Instance',
     createsReference: { side: 'target', propertyKey: 'instance_id' },
   },
+  {
+    sourceType: 'aws/containers/ecs_task_definition',
+    sourceHandle: 'taskdef-out',
+    targetType: 'aws/containers/ecs_service',
+    targetHandle: 'service-taskdef',
+    label: 'Task Definition',
+    createsReference: { side: 'target', propertyKey: 'task_definition' },
+  },
 ];

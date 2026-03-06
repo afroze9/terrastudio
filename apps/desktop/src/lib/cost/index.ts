@@ -63,6 +63,7 @@ import {
   ecrCostCalculator,
   efsCostCalculator,
   elasticacheCostCalculator,
+  eksNodeGroupCostCalculator,
   eksCostCalculator,
   ecsCostCalculator,
 } from './calculators/aws-services';
@@ -152,6 +153,7 @@ const calculators = new Map<ResourceTypeId, CostCalculator>([
   ['aws/database/elasticache', elasticacheCostCalculator],
   ['aws/containers/eks_cluster', eksCostCalculator],
   ['aws/containers/ecs_cluster', ecsCostCalculator],
+  ['aws/containers/eks_node_group', eksNodeGroupCostCalculator],
 ]);
 
 /**
@@ -220,6 +222,10 @@ const FREE_TYPE_IDS = new Set<ResourceTypeId>([
   'aws/networking/route_table',
   'aws/compute/security_group',
   'aws/security/iam_role',
+
+  // AWS — container children (billed via cluster/Fargate)
+  'aws/containers/ecs_task_definition',
+  'aws/containers/ecs_service',
 ]);
 
 export async function calculateNodeCost(

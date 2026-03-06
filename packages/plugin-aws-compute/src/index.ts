@@ -18,6 +18,9 @@ import { efsRegistration } from './resources/efs/index.js';
 import { elasticacheRegistration } from './resources/elasticache/index.js';
 import { eksClusterRegistration } from './resources/eks-cluster/index.js';
 import { ecsClusterRegistration } from './resources/ecs-cluster/index.js';
+import { eksNodeGroupRegistration } from './resources/eks-node-group/index.js';
+import { ecsTaskDefinitionRegistration } from './resources/ecs-task-definition/index.js';
+import { ecsServiceRegistration } from './resources/ecs-service/index.js';
 import { computeConnectionRules } from './connections/rules.js';
 
 const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
@@ -40,6 +43,9 @@ const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
   ['aws/database/elasticache', elasticacheRegistration],
   ['aws/containers/eks_cluster', eksClusterRegistration],
   ['aws/containers/ecs_cluster', ecsClusterRegistration],
+  ['aws/containers/eks_node_group', eksNodeGroupRegistration],
+  ['aws/containers/ecs_task_definition', ecsTaskDefinitionRegistration],
+  ['aws/containers/ecs_service', ecsServiceRegistration],
 ]);
 
 const plugin: InfraPlugin = {

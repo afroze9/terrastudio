@@ -9,6 +9,20 @@ export const ecsClusterSchema: ResourceSchema = {
   terraformType: 'aws_ecs_cluster',
   supportsTags: true,
   requiresResourceGroup: false,
+  isContainer: true,
+  canBeChildOf: [],
+  containerStyle: {
+    borderColor: '#ED7100',
+    borderStyle: 'solid',
+    backgroundColor: '#ffffff',
+    headerColor: '#232F3E',
+    borderRadius: 0,
+    borderWidth: 3,
+    hideHeaderBorder: true,
+    iconSize: 28,
+    labelSize: 16,
+  },
+  minSize: { width: 350, height: 250 },
 
   properties: [
     {
