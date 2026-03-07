@@ -439,7 +439,7 @@
 
   .toolbar-dropdown-item:hover {
     background: var(--color-accent);
-    color: white;
+    color: var(--color-accent-text);
   }
 
   .toolbar-dropdown-item.selected {
@@ -458,12 +458,12 @@
   }
 
   .toolbar-dropdown-item:hover .check {
-    color: white;
+    color: var(--color-accent-text);
   }
 
   .toolbar-btn.snap-active {
     background: var(--color-accent);
-    color: white;
+    color: var(--color-accent-text);
   }
 
   .toolbar-btn.snap-active:hover {

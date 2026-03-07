@@ -541,7 +541,7 @@
     border: none;
     border-radius: 6px;
     background: var(--color-accent);
-    color: #fff;
+    color: var(--color-accent-text);
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;

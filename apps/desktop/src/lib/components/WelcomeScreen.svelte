@@ -823,7 +823,7 @@
     cursor: pointer; transition: all 0.15s; font-family: inherit;
   }
   .action-btn:hover { background: var(--color-surface-hover); border-color: var(--color-accent); }
-  .action-btn-primary { background: var(--color-accent); border-color: var(--color-accent); color: white; }
+  .action-btn-primary { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-text); }
   .action-btn-primary:hover { background: var(--color-accent-hover); border-color: var(--color-accent-hover); }
   .error-msg { padding: 10px 14px; border-radius: 6px; background: rgba(239,68,68,0.1); color: #ef4444; font-size: 12px; }
 
@@ -858,7 +858,7 @@
     transition: all 0.15s;
   }
   .step.active .step-circle { border-color: var(--color-accent); color: var(--color-accent); background: color-mix(in srgb, var(--color-accent) 12%, transparent); }
-  .step.done .step-circle { border-color: var(--color-accent); background: var(--color-accent); color: white; }
+  .step.done .step-circle { border-color: var(--color-accent); background: var(--color-accent); color: var(--color-accent-text); }
 
   .step-label { font-size: 13px; color: var(--color-text-muted); white-space: nowrap; }
   .step.active .step-label, .step.done .step-label { color: var(--color-text); font-weight: 500; }
@@ -1204,6 +1204,6 @@
   .wizard-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .wizard-btn-secondary { background: var(--color-surface); border-color: var(--color-border); color: var(--color-text-muted); }
   .wizard-btn-secondary:hover:not(:disabled) { background: var(--color-surface-hover); }
-  .wizard-btn-primary { background: var(--color-accent); color: white; }
+  .wizard-btn-primary { background: var(--color-accent); color: var(--color-accent-text); }
   .wizard-btn-primary:hover:not(:disabled) { background: var(--color-accent-hover); }
 </style>

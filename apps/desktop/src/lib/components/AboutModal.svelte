@@ -201,7 +201,7 @@
     width: 100%;
     padding: 8px;
     background: var(--color-accent);
-    color: white;
+    color: var(--color-accent-text);
     border: none;
     border-radius: 5px;
     font-size: 13px;

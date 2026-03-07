@@ -7,6 +7,7 @@ export interface ThemeVariables {
   'color-text-muted': string;
   'color-accent': string;
   'color-accent-hover': string;
+  'color-accent-text': string;
   'color-shadow': string;
   'scrollbar-thumb': string;
   'scrollbar-thumb-hover': string;
@@ -28,7 +29,8 @@ export type BuiltinPaletteId =
   | 'rose-signal'
   | 'cyan-circuit'
   | 'violet-dusk'
-  | 'slate-mono';
+  | 'slate-mono'
+  | 'high-contrast';
 
 export type PaletteId = BuiltinPaletteId | `custom-${string}`;
 
@@ -47,6 +49,7 @@ export const THEME_VARIABLE_KEYS: (keyof ThemeVariables)[] = [
   'color-text-muted',
   'color-accent',
   'color-accent-hover',
+  'color-accent-text',
   'color-shadow',
   'scrollbar-thumb',
   'scrollbar-thumb-hover',

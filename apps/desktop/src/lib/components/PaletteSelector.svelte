@@ -119,13 +119,13 @@
   }
   .palette-item:hover {
     background: var(--color-accent);
-    color: white;
+    color: var(--color-accent-text);
   }
   .palette-item.active {
     color: var(--color-text);
   }
   .palette-item:hover .check {
-    color: white;
+    color: var(--color-accent-text);
   }
   .swatch {
     width: 10px;

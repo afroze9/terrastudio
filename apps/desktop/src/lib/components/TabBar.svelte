@@ -235,7 +235,7 @@
   }
   .ctx-item:hover:not(:disabled) {
     background: var(--color-accent);
-    color: white;
+    color: var(--color-accent-text);
   }
   .ctx-item:disabled {
     opacity: 0.35;

@@ -249,7 +249,7 @@
     font-size: 11px;
     font-weight: 500;
     background: var(--color-accent);
-    color: #fff;
+    color: var(--color-accent-text);
     border: none;
     border-radius: 4px;
     cursor: pointer;
@@ -320,7 +320,7 @@
   }
   .region-option:hover, .region-option.active {
     background: var(--color-accent);
-    color: #fff;
+    color: var(--color-accent-text);
   }
 
   /* Empty state */

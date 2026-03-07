@@ -630,7 +630,7 @@
   }
   .add-btn:hover:not(:disabled) {
     background: var(--color-accent);
-    color: white;
+    color: var(--color-accent-text);
   }
   .add-btn:disabled {
     opacity: 0.4;

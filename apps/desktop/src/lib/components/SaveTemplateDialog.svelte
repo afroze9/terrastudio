@@ -391,7 +391,7 @@
   .btn-secondary:hover:not(:disabled) { color: var(--color-text); }
   .btn-primary {
     background: var(--color-accent);
-    color: white;
+    color: var(--color-accent-text);
   }
   .btn-primary:hover:not(:disabled) { background: var(--color-accent-hover); }
 </style>

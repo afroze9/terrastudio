@@ -398,7 +398,7 @@
 
   .toggle-btn.active {
     background: var(--color-accent);
-    color: white;
+    color: var(--color-accent-text);
   }
 
   .toggle-btn:not(.active):hover {
@@ -533,7 +533,7 @@
 
   .select-btn.active {
     background: var(--color-accent);
-    color: white;
+    color: var(--color-accent-text);
     border-color: var(--color-accent);
   }
 

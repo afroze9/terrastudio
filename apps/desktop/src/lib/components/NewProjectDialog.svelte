@@ -570,7 +570,7 @@
   .step.done .step-circle {
     border-color: var(--color-accent);
     background: var(--color-accent);
-    color: white;
+    color: var(--color-accent-text);
   }
 
   .step-label {
@@ -1054,7 +1054,7 @@
 
   .btn-primary {
     background: var(--color-accent);
-    color: white;
+    color: var(--color-accent-text);
   }
 
   .btn-primary:hover:not(:disabled) { background: var(--color-accent-hover); }

@@ -379,7 +379,7 @@
   }
   .dropdown-item:hover:not(:disabled) {
     background: var(--color-accent);
-    color: white;
+    color: var(--color-accent-text);
   }
   .dropdown-item:disabled {
     opacity: 0.4;
@@ -411,7 +411,7 @@
     margin-right: 2px;
   }
   .dropdown-item:hover .check-mark {
-    color: white;
+    color: var(--color-accent-text);
   }
   .submenu-trigger {
     position: relative;

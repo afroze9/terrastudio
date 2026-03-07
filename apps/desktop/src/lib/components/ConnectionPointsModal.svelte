@@ -406,7 +406,7 @@
   .pos-btn.active {
     background: var(--color-accent);
     border-color: var(--color-accent);
-    color: #fff;
+    color: var(--color-accent-text);
   }
 
   /* Node Preview */
@@ -566,7 +566,7 @@
 
   .btn-primary {
     background: var(--color-accent);
-    color: #fff;
+    color: var(--color-accent-text);
   }
 
   .btn-primary:hover {

@@ -372,7 +372,7 @@
 
   .action-link:hover {
     background: var(--color-accent);
-    color: #fff;
+    color: var(--color-accent-text);
   }
 
   .spinner {
