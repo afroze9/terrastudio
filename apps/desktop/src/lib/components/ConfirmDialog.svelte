@@ -1,5 +1,6 @@
 <script lang="ts">
   import { ui } from '$lib/stores/ui.svelte';
+  import { t } from '$lib/i18n';
 
   function handleConfirm() {
     ui.resolveConfirm(true);
@@ -25,13 +26,13 @@
       <p class="dialog-message">{ui.confirmDialog.message}</p>
       <div class="dialog-actions">
         <button class="btn btn-secondary" onclick={handleCancel}>
-          {ui.confirmDialog.cancelLabel ?? 'Cancel'}
+          {ui.confirmDialog.cancelLabel ?? t('dialog.confirm.cancel')}
         </button>
         <button
           class="btn {ui.confirmDialog.danger ? 'btn-danger' : 'btn-primary'}"
           onclick={handleConfirm}
         >
-          {ui.confirmDialog.confirmLabel ?? 'Confirm'}
+          {ui.confirmDialog.confirmLabel ?? t('dialog.confirm.confirm')}
         </button>
       </div>
     </div>

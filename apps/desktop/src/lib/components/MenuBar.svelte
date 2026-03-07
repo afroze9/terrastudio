@@ -7,6 +7,7 @@
   import { openProject, saveDiagram, guardUnsavedChanges } from '$lib/services/project-service';
   import { exportPNG, exportSVG, copyDiagramToClipboard, exportDocumentation } from '$lib/services/export-service';
   import { autoLayout, type LayoutDirection } from '$lib/services/layout-service';
+  import { t } from '$lib/i18n';
   import ShortcutsModal from './ShortcutsModal.svelte';
   import AboutModal from './AboutModal.svelte';
   import SaveTemplateDialog from './SaveTemplateDialog.svelte';
@@ -86,48 +87,48 @@
       class:open={openMenu === 'file'}
       onclick={() => toggle('file')}
       onmouseenter={() => { if (openMenu) openMenu = 'file'; }}
-    >File</button>
+    >{t('menu.file.label')}</button>
     {#if openMenu === 'file'}
       <div class="dropdown">
         <button class="dropdown-item" onclick={() => { close(); onNewProject(); }}>
-          <span>New Project</span>
+          <span>{t('menu.file.new')}</span>
           <span class="shortcut">Ctrl+N</span>
         </button>
         <button class="dropdown-item" onclick={() => { close(); invoke('create_project_window', {}); }}>
-          <span>New Window</span>
+          <span>{t('menu.file.newWindow')}</span>
           <span class="shortcut">Ctrl+⇧N</span>
         </button>
         <button class="dropdown-item" onclick={handleOpen}>
-          <span>Open Project</span>
+          <span>{t('menu.file.open')}</span>
           <span class="shortcut">Ctrl+O</span>
         </button>
         {#if project.isOpen}
           <button class="dropdown-item" onclick={handleSave}>
-            <span>Save</span>
+            <span>{t('menu.file.save')}</span>
             <span class="shortcut">Ctrl+S</span>
           </button>
           <button class="dropdown-item" onclick={handleClose}>
-            <span>Close Project</span>
+            <span>{t('menu.file.close')}</span>
             <span class="shortcut">Ctrl+⇧W</span>
           </button>
         {/if}
         {#if canExport}
           <div class="dropdown-separator"></div>
           <button class="dropdown-item" onclick={() => { close(); exportPNG(); }}>
-            <span>Export as PNG</span>
+            <span>{t('menu.file.exportPng')}</span>
           </button>
           <button class="dropdown-item" onclick={() => { close(); exportSVG(); }}>
-            <span>Export as SVG</span>
+            <span>{t('menu.file.exportSvg')}</span>
           </button>
           <button class="dropdown-item" onclick={() => { close(); copyDiagramToClipboard(); }}>
-            <span>Copy to Clipboard</span>
+            <span>{t('menu.file.copyClipboard')}</span>
           </button>
           <button class="dropdown-item" onclick={() => { close(); exportDocumentation(); }}>
-            <span>Export Docs (.md)</span>
+            <span>{t('menu.file.exportDocs')}</span>
           </button>
           <div class="dropdown-separator"></div>
           <button class="dropdown-item" onclick={() => { close(); showSaveTemplateDialog = true; }}>
-            <span>Save as Template...</span>
+            <span>{t('menu.file.saveAsTemplate')}</span>
           </button>
         {/if}
       </div>
@@ -141,15 +142,15 @@
       class:open={openMenu === 'edit'}
       onclick={() => toggle('edit')}
       onmouseenter={() => { if (openMenu) openMenu = 'edit'; }}
-    >Edit</button>
+    >{t('menu.edit.label')}</button>
     {#if openMenu === 'edit'}
       <div class="dropdown">
         <button class="dropdown-item" disabled={!diagram.canUndo} onclick={() => { close(); diagram.undo(); }}>
-          <span>Undo</span>
+          <span>{t('menu.edit.undo')}</span>
           <span class="shortcut">Ctrl+Z</span>
         </button>
         <button class="dropdown-item" disabled={!diagram.canRedo} onclick={() => { close(); diagram.redo(); }}>
-          <span>Redo</span>
+          <span>{t('menu.edit.redo')}</span>
           <span class="shortcut">Ctrl+Y</span>
         </button>
         <div class="dropdown-separator"></div>
@@ -160,27 +161,27 @@
           onmouseenter={() => { showLayoutSub = true; }}
           onmouseleave={() => { showLayoutSub = false; }}
         >
-          <span>Auto Layout</span>
+          <span>{t('menu.edit.autoLayout')}</span>
           <span class="submenu-arrow">&#9656;</span>
           {#if showLayoutSub && diagram.nodes.length > 0}
             <div class="submenu">
               <button class="dropdown-item" onclick={() => handleAutoLayout('TB')}>
-                <span>Top to Bottom</span>
+                <span>{t('menu.edit.topToBottom')}</span>
               </button>
               <button class="dropdown-item" onclick={() => handleAutoLayout('LR')}>
-                <span>Left to Right</span>
+                <span>{t('menu.edit.leftToRight')}</span>
               </button>
               <button class="dropdown-item" onclick={() => handleAutoLayout('BT')}>
-                <span>Bottom to Top</span>
+                <span>{t('menu.edit.bottomToTop')}</span>
               </button>
               <button class="dropdown-item" onclick={() => handleAutoLayout('RL')}>
-                <span>Right to Left</span>
+                <span>{t('menu.edit.rightToLeft')}</span>
               </button>
             </div>
           {/if}
         </div>
         <button class="dropdown-item" onclick={() => { close(); diagram.selectAll(); }}>
-          <span>Select All</span>
+          <span>{t('menu.edit.selectAll')}</span>
           <span class="shortcut">Ctrl+A</span>
         </button>
       </div>
@@ -194,29 +195,29 @@
       class:open={openMenu === 'view'}
       onclick={() => toggle('view')}
       onmouseenter={() => { if (openMenu) openMenu = 'view'; }}
-    >View</button>
+    >{t('menu.view.label')}</button>
     {#if openMenu === 'view'}
       <div class="dropdown">
         <button class="dropdown-item" onclick={() => { close(); ui.showSidePanel = !ui.showSidePanel; }}>
-          <span>{ui.showSidePanel ? 'Hide' : 'Show'} Side Panel</span>
+          <span>{ui.showSidePanel ? t('menu.view.hideSidePanel') : t('menu.view.showSidePanel')}</span>
           <span class="shortcut">Ctrl+B</span>
         </button>
         <button class="dropdown-item" onclick={() => { close(); ui.showPropertiesPanel = !ui.showPropertiesPanel; }}>
-          <span>{ui.showPropertiesPanel ? 'Hide' : 'Show'} Properties</span>
+          <span>{ui.showPropertiesPanel ? t('menu.view.hideProperties') : t('menu.view.showProperties')}</span>
         </button>
         <button class="dropdown-item" onclick={() => { close(); ui.toggleBottomPanel('terminal'); }}>
-          <span>{ui.showBottomPanel ? 'Hide' : 'Show'} Panel</span>
+          <span>{ui.showBottomPanel ? t('menu.view.hidePanel') : t('menu.view.showPanel')}</span>
           <span class="shortcut">Ctrl+J</span>
         </button>
         {#if project.isOpen}
           <button class="dropdown-item" onclick={() => { close(); ui.fitView?.(); }}>
-            <span>Fit View</span>
+            <span>{t('menu.view.fitView')}</span>
             <span class="shortcut">Ctrl+0</span>
           </button>
         {/if}
         <div class="dropdown-separator"></div>
         <button class="dropdown-item" onclick={() => { close(); ui.toggleTheme(); }}>
-          <span>{ui.theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+          <span>{ui.theme === 'dark' ? t('menu.view.lightMode') : t('menu.view.darkMode')}</span>
         </button>
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
@@ -224,7 +225,7 @@
           onmouseenter={() => { showPaletteSub = true; }}
           onmouseleave={() => { showPaletteSub = false; }}
         >
-          <span>Color Palette</span>
+          <span>{t('menu.view.colorPalette')}</span>
           <span class="submenu-arrow">&#9656;</span>
           {#if showPaletteSub}
             <div class="submenu">
@@ -246,18 +247,18 @@
           onmouseenter={() => { showEdgeStyleSub = true; }}
           onmouseleave={() => { showEdgeStyleSub = false; }}
         >
-          <span>Edge Style</span>
+          <span>{t('menu.view.edgeStyle')}</span>
           <span class="submenu-arrow">&#9656;</span>
           {#if showEdgeStyleSub}
             <div class="submenu">
               {#each [
-                { value: 'default', label: 'Bezier' },
-                { value: 'smoothstep', label: 'Smooth Step' },
-                { value: 'step', label: 'Step' },
-                { value: 'straight', label: 'Straight' },
+                { value: 'default', key: 'edgeStyle.bezier' },
+                { value: 'smoothstep', key: 'edgeStyle.smoothStep' },
+                { value: 'step', key: 'edgeStyle.step' },
+                { value: 'straight', key: 'edgeStyle.straight' },
               ] as option (option.value)}
                 <button class="dropdown-item" onclick={() => { close(); ui.edgeType = option.value as EdgeStyle; }}>
-                  <span>{option.label}</span>
+                  <span>{t(option.key)}</span>
                   {#if ui.edgeType === option.value}
                     <span class="check-mark">&#10003;</span>
                   {/if}
@@ -268,28 +269,28 @@
         </div>
         <div class="dropdown-separator"></div>
         <button class="dropdown-item" onclick={() => { close(); ui.setActiveView('explorer'); }}>
-          <span>Resources</span>
+          <span>{t('menu.view.resources')}</span>
           <span class="shortcut">Alt+1</span>
         </button>
         <button class="dropdown-item" onclick={() => { close(); ui.setActiveView('terraform'); }}>
-          <span>Terraform</span>
+          <span>{t('menu.view.terraform')}</span>
           <span class="shortcut">Alt+2</span>
         </button>
         <button class="dropdown-item" onclick={() => { close(); ui.setActiveView('settings'); }}>
-          <span>Project</span>
+          <span>{t('menu.view.project')}</span>
           <span class="shortcut">Alt+3</span>
         </button>
         <button class="dropdown-item" onclick={() => { close(); ui.setActiveView('cost'); }}>
-          <span>Cost</span>
+          <span>{t('menu.view.cost')}</span>
           <span class="shortcut">Alt+4</span>
         </button>
         <button class="dropdown-item" onclick={() => { close(); ui.setActiveView('search'); }}>
-          <span>Search</span>
+          <span>{t('menu.view.search')}</span>
           <span class="shortcut">Alt+5</span>
         </button>
         <div class="dropdown-separator"></div>
         <button class="dropdown-item" onclick={() => { close(); ui.setActiveView('app-settings'); }}>
-          <span>Settings</span>
+          <span>{t('menu.view.settings')}</span>
           <span class="shortcut">Ctrl+,</span>
         </button>
       </div>
@@ -303,16 +304,16 @@
       class:open={openMenu === 'help'}
       onclick={() => toggle('help')}
       onmouseenter={() => { if (openMenu) openMenu = 'help'; }}
-    >Help</button>
+    >{t('menu.help.label')}</button>
     {#if openMenu === 'help'}
       <div class="dropdown">
         <button class="dropdown-item" onclick={() => { close(); showShortcutsModal = true; }}>
-          <span>Keyboard Shortcuts</span>
+          <span>{t('menu.help.shortcuts')}</span>
           <span class="shortcut">?</span>
         </button>
         <div class="dropdown-separator"></div>
         <button class="dropdown-item" onclick={() => { close(); showAboutModal = true; }}>
-          <span>About TerraStudio</span>
+          <span>{t('menu.help.about')}</span>
         </button>
       </div>
     {/if}

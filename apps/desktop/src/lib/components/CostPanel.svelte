@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$lib/i18n';
   import { cost, AZURE_REGIONS } from '$lib/stores/cost.svelte';
   import { diagram } from '$lib/stores/diagram.svelte';
   import { project } from '$lib/stores/project.svelte';
@@ -32,13 +33,13 @@
 
   function formatCost(value: number | null): string {
     if (value === null) return '—';
-    if (value === 0) return 'Free';
-    return `~$${value.toFixed(2)}/mo`;
+    if (value === 0) return t('cost.panel.free');
+    return `~$${value.toFixed(2)}${t('cost.panel.perMonth')}`;
   }
 
   function formatCostShort(value: number | null): string {
     if (value === null) return '—';
-    if (value === 0) return 'Free';
+    if (value === 0) return t('cost.panel.free');
     if (value < 10) return `~$${value.toFixed(2)}`;
     return `~$${Math.round(value)}`;
   }
@@ -86,18 +87,18 @@
       class="fetch-btn"
       onclick={handleFetch}
       disabled={cost.loading || !nodes.length}
-      title={!nodes.length ? 'Add resources to the canvas first' : 'Fetch pricing from Azure Retail Prices API'}
+      title={!nodes.length ? t('cost.panel.addResourcesFirst') : 'Fetch pricing from Azure Retail Prices API'}
     >
       {#if cost.loading}
         <svg class="spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round"/>
         </svg>
-        Fetching…
+        {t('cost.panel.fetching')}
       {:else}
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
         </svg>
-        Fetch Prices
+        {t('cost.panel.fetchPrices')}
       {/if}
     </button>
     <div class="region-wrapper">
@@ -106,7 +107,7 @@
       <div
         class="region-chip"
         onclick={() => { showRegionPicker = !showRegionPicker; }}
-        title="Fallback region — used when a resource has no location set on it or its Resource Group"
+        title={t('cost.panel.fallbackRegionHint')}
       >
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
@@ -140,7 +141,7 @@
         <line x1="12" y1="9" x2="12" y2="13"/>
         <line x1="12" y1="17" x2="12.01" y2="17"/>
       </svg>
-      Diagram changed — prices may be outdated.
+      {t('cost.panel.diagramChanged')}
     </div>
   {/if}
 
@@ -154,20 +155,20 @@
     </div>
   {:else}
     <!-- Summary section -->
-    <CollapsibleSection id="cost-summary" label="Summary">
+    <CollapsibleSection id="cost-summary" label={t('cost.panel.summary')}>
       <div class="summary-grid">
-        <span class="summary-label">Est. monthly</span>
+        <span class="summary-label">{t('cost.panel.estMonthly')}</span>
         <span class="summary-value highlight">
-          {cost.totalMonthly !== null ? `~$${cost.totalMonthly.toFixed(2)}/mo` : '—'}
+          {cost.totalMonthly !== null ? `~$${cost.totalMonthly.toFixed(2)}${t('cost.panel.perMonth')}` : '—'}
         </span>
-        <span class="summary-label">Resources priced</span>
+        <span class="summary-label">{t('cost.panel.resourcesPriced')}</span>
         <span class="summary-value">{cost.pricedCount} / {estimateList.length}</span>
         {#if usageBasedCount > 0}
-          <span class="summary-label">Usage-based</span>
-          <span class="summary-value muted">{usageBasedCount} resource{usageBasedCount !== 1 ? 's' : ''}</span>
+          <span class="summary-label">{t('cost.panel.usageBased')}</span>
+          <span class="summary-value muted">{usageBasedCount} {usageBasedCount !== 1 ? t('cost.panel.resources') : t('cost.panel.resource')}</span>
         {/if}
         {#if cost.lastFetched}
-          <span class="summary-label">Last updated</span>
+          <span class="summary-label">{t('cost.panel.lastUpdated')}</span>
           <span class="summary-value muted">{cost.formatRelativeTime()}</span>
         {/if}
       </div>
@@ -175,12 +176,12 @@
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
         </svg>
-        Export CSV
+        {t('cost.panel.exportCsv')}
       </button>
     </CollapsibleSection>
 
     <!-- By resource type -->
-    <CollapsibleSection id="cost-by-type" label="By Resource Type" count={groupedEstimates.length}>
+    <CollapsibleSection id="cost-by-type" label={t('cost.panel.byResourceType')} count={groupedEstimates.length}>
       <div class="breakdown-list">
         {#each groupedEstimates as group}
           {@const groupTotal = group.items.reduce((s, i) => s + (i.monthlyCost ?? 0), 0)}
@@ -208,15 +209,15 @@
     </CollapsibleSection>
 
     <!-- Notes -->
-    <CollapsibleSection id="cost-notes" label="Notes">
+    <CollapsibleSection id="cost-notes" label={t('cost.panel.notes')}>
       <ul class="notes-list">
-        <li>Estimates use pay-as-you-go retail pricing.</li>
-        <li>Each resource uses its own <strong>location</strong> property, or inherits from its parent Resource Group.</li>
-        <li>The globe icon sets a fallback region for resources with no location configured.</li>
-        <li>Excludes egress, support plans, and reserved instance discounts.</li>
-        <li>Usage-based resources (Consumption plan, CosmosDB) cannot be estimated.</li>
-        <li>Storage assumes ~100 GB for calculation.</li>
-        <li>Prices cached locally for 24 hours.</li>
+        <li>{t('cost.panel.notePayAsYouGo')}</li>
+        <li>{t('cost.panel.noteLocation')}</li>
+        <li>{t('cost.panel.noteFallbackRegion')}</li>
+        <li>{t('cost.panel.noteExcludes')}</li>
+        <li>{t('cost.panel.noteUsageBased')}</li>
+        <li>{t('cost.panel.noteStorage')}</li>
+        <li>{t('cost.panel.noteCached')}</li>
       </ul>
     </CollapsibleSection>
   {/if}

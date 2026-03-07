@@ -1,6 +1,7 @@
 <script lang="ts">
   import { ui, type BottomPanelTab } from '$lib/stores/ui.svelte';
   import { connectionWizard } from '$lib/stores/connection-wizard.svelte';
+  import { t } from '$lib/i18n';
   import TerminalTab from './bottom-panel/TerminalTab.svelte';
   import ProblemsTab from './bottom-panel/ProblemsTab.svelte';
   import AnnotationsTab from './bottom-panel/AnnotationsTab.svelte';
@@ -8,11 +9,11 @@
 
   let isResizing = $state(false);
 
-  const tabs: { id: BottomPanelTab; label: string }[] = [
-    { id: 'terminal', label: 'Terminal' },
-    { id: 'problems', label: 'Problems' },
-    { id: 'annotations', label: 'Annotations' },
-    { id: 'connection-wizard', label: 'Connection' },
+  const tabs: { id: BottomPanelTab; labelKey: string }[] = [
+    { id: 'terminal', labelKey: 'bottomPanel.terminal' },
+    { id: 'problems', labelKey: 'bottomPanel.problems' },
+    { id: 'annotations', labelKey: 'bottomPanel.annotations' },
+    { id: 'connection-wizard', labelKey: 'bottomPanel.connection' },
   ];
 
   function onResizeMouseDown(e: MouseEvent) {
@@ -54,14 +55,14 @@
             class:active={ui.activeBottomTab === tab.id}
             onclick={() => ui.openBottomPanel(tab.id)}
           >
-            {tab.label}
+            {t(tab.labelKey)}
             {#if tab.id === 'connection-wizard' && connectionWizard.hasNewEntry && ui.activeBottomTab !== 'connection-wizard'}
               <span class="tab-badge"></span>
             {/if}
           </button>
         {/each}
       </div>
-      <button class="panel-btn" onclick={() => { ui.showBottomPanel = false; }}>Hide</button>
+      <button class="panel-btn" onclick={() => { ui.showBottomPanel = false; }}>{t('bottomPanel.hide')}</button>
     </div>
     <div class="panel-content">
       {#if ui.activeBottomTab === 'terminal'}

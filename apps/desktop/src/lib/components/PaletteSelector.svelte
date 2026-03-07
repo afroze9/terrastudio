@@ -4,6 +4,7 @@
   import type { PaletteId, CustomThemeFile } from '$lib/themes/types';
   import { open as openDialog } from '@tauri-apps/plugin-dialog';
   import { readTextFile } from '@tauri-apps/plugin-fs';
+  import { t } from '$lib/i18n';
 
   let { onclose }: { onclose?: () => void } = $props();
 
@@ -29,7 +30,7 @@
       try {
         parsed = JSON.parse(content);
       } catch {
-        importError = 'File is not valid JSON';
+        importError = t('paletteSelector.invalidJson');
         return;
       }
 
@@ -49,7 +50,7 @@
 </script>
 
 <div class="palette-selector">
-  <div class="palette-header">Color Palette</div>
+  <div class="palette-header">{t('paletteSelector.title')}</div>
   <div class="palette-list">
     {#each palettes as palette (palette.id)}
       <button
@@ -71,7 +72,7 @@
         <path d="M8 3v10" />
         <path d="M3 8h10" />
       </svg>
-      Import Theme...
+      {t('paletteSelector.importTheme')}
     </button>
     {#if importError}
       <div class="import-error">{importError}</div>

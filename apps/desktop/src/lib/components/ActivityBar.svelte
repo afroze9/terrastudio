@@ -1,30 +1,31 @@
 <script lang="ts">
   import { ui, type SidebarView } from '$lib/stores/ui.svelte';
+  import { t } from '$lib/i18n';
 
-  const views: { id: SidebarView; label: string; icon: string }[] = [
+  const views: { id: SidebarView; labelKey: string; icon: string }[] = [
     {
       id: 'explorer',
-      label: 'Resources',
+      labelKey: 'activityBar.resources',
       icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`,
     },
     {
       id: 'terraform',
-      label: 'Terraform',
+      labelKey: 'activityBar.terraform',
       icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>`,
     },
     {
       id: 'settings',
-      label: 'Project',
+      labelKey: 'activityBar.project',
       icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>`,
     },
     {
       id: 'cost',
-      label: 'Cost Estimates',
+      labelKey: 'activityBar.cost',
       icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
     },
     {
       id: 'search',
-      label: 'Search',
+      labelKey: 'activityBar.search',
       icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
     },
   ];
@@ -37,8 +38,8 @@
         class="activity-btn"
         class:active={ui.activeView === view.id && ui.showSidePanel}
         onclick={() => ui.setActiveView(view.id)}
-        title={view.label}
-        aria-label={view.label}
+        title={t(view.labelKey)}
+        aria-label={t(view.labelKey)}
       >
         {@html view.icon}
       </button>
@@ -49,8 +50,8 @@
       class="activity-btn"
       class:active={ui.activeView === 'app-settings' && ui.showSidePanel}
       onclick={() => ui.setActiveView('app-settings')}
-      title="Settings"
-      aria-label="Settings"
+      title={t('activityBar.settings')}
+      aria-label={t('activityBar.settings')}
     >
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="3"/>

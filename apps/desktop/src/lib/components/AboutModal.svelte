@@ -1,5 +1,6 @@
 <script lang="ts">
   import { openUrl } from '@tauri-apps/plugin-opener';
+  import { t } from '$lib/i18n';
 
   let { open, onclose }: { open: boolean; onclose: () => void } = $props();
 </script>
@@ -54,32 +55,32 @@
         </svg>
       </div>
 
-      <h2 class="app-name">TerraStudio</h2>
-      <p class="version">Version {__APP_VERSION__}</p>
-      <p class="tagline">Visual infrastructure diagram builder<br>that generates and executes Terraform.</p>
+      <h2 class="app-name">{t('app.name')}</h2>
+      <p class="version">{t('dialog.about.version', { version: __APP_VERSION__ })}</p>
+      <p class="tagline">{t('dialog.about.description')}</p>
 
       <div class="divider"></div>
 
       <div class="meta">
         <div class="meta-row">
-          <span class="meta-label">Author</span>
+          <span class="meta-label">{t('dialog.about.author')}</span>
           <span class="meta-value">Afroze Amjad (<button class="link" onclick={() => openUrl('https://github.com/afroze9')}>afroze9</button>)</span>
         </div>
         <div class="meta-row">
-          <span class="meta-label">Built with</span>
-          <span class="meta-value">Tauri 2 · Svelte 5 · @xyflow/svelte</span>
+          <span class="meta-label">{t('dialog.about.builtWith')}</span>
+          <span class="meta-value">{t('dialog.about.techStack')}</span>
         </div>
         <div class="meta-row">
-          <span class="meta-label">License</span>
+          <span class="meta-label">{t('dialog.about.license')}</span>
           <span class="meta-value">AGPL-3.0</span>
         </div>
         <div class="meta-row">
-          <span class="meta-label">Source</span>
-          <span class="meta-value"><button class="link" onclick={() => openUrl('https://github.com/afroze9/terrastudio')}>GitHub</button></span>
+          <span class="meta-label">{t('dialog.about.source')}</span>
+          <span class="meta-value"><button class="link" onclick={() => openUrl('https://github.com/afroze9/terrastudio')}>{t('dialog.about.github')}</button></span>
         </div>
       </div>
 
-      <button class="ok-btn" onclick={onclose}>OK</button>
+      <button class="ok-btn" onclick={onclose}>{t('dialog.confirm.ok')}</button>
     </div>
   </div>
 {/if}

@@ -40,6 +40,14 @@ export class PluginRegistry implements PluginRegistryReader {
   // Track which plugins have already had onAllPluginsRegistered fired
   private notifiedPlugins = new Set<InfraPlugin>();
 
+  // Optional callback invoked after each plugin loads (used by i18n)
+  private _onPluginLoaded: ((plugin: InfraPlugin) => void) | null = null;
+
+  /** Register a callback to be invoked after each plugin fully loads */
+  setPluginLoadedCallback(cb: (plugin: InfraPlugin) => void): void {
+    this._onPluginLoaded = cb;
+  }
+
   registerPlugin(plugin: InfraPlugin): void {
     // Register provider config (first one wins)
     if (plugin.providerConfig && !this.providers.has(plugin.providerId)) {
@@ -70,6 +78,9 @@ export class PluginRegistry implements PluginRegistryReader {
     }
 
     this.plugins.push(plugin);
+
+    // Notify i18n (or other listeners) about the newly loaded plugin
+    this._onPluginLoaded?.(plugin);
   }
 
   /**

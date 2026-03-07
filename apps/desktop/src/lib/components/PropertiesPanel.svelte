@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$lib/i18n';
   import { diagram } from '$lib/stores/diagram.svelte';
   import { project } from '$lib/stores/project.svelte';
   import { ui } from '$lib/stores/ui.svelte';
@@ -248,8 +249,8 @@
       return `${schema.displayName} (Template)`;
     }
     if (diagram.selectedNode && schema) return schema.displayName;
-    if (diagram.selectedEdge) return 'Connection';
-    return 'Properties';
+    if (diagram.selectedEdge) return t('properties.connection');
+    return t('properties.title');
   });
 
   let hasCostInputs = $derived(!!(schema?.costEstimation?.usageInputs?.length));
@@ -350,7 +351,7 @@
     {#if selectedInstance && instanceTemplate}
       <div class="tf-name-field">
         <label class="field-label">
-          <span class="label-text">Instance Name</span>
+          <span class="label-text">{t('properties.instanceName')}</span>
           <input
             type="text"
             value={selectedInstance.name}
@@ -365,14 +366,14 @@
       </div>
 
       <div class="instance-template-info">
-        <span class="endpoint-label">Template</span>
+        <span class="endpoint-label">{t('properties.template')}</span>
         <span class="endpoint-value">{instanceTemplate.name}</span>
       </div>
 
       {#if selectedInstance.description !== undefined}
         <div class="tf-name-field">
           <label class="field-label">
-            <span class="label-text">Description</span>
+            <span class="label-text">{t('properties.description')}</span>
             <input
               type="text"
               value={selectedInstance.description ?? ''}
@@ -381,20 +382,20 @@
                   diagram.updateModuleInstance(selectedInstance.id, { description: (e.target as HTMLInputElement).value || undefined });
                 }
               }}
-              placeholder="Optional description..."
+              placeholder={t('properties.descriptionPlaceholder')}
             />
           </label>
         </div>
       {/if}
 
       <div class="instance-readonly-hint">
-        Instance resources are read-only. Edit variables below to customize this instance.
+        {t('properties.instanceReadOnly')}
       </div>
 
       {#if templateVariables.length > 0}
         <CollapsiblePanelSection
           id="instance-variables"
-          label="Variable Values"
+          label={t('properties.variableValues')}
           count={templateVariables.length}
         >
           {#each templateVariables as variable (variable.name)}
@@ -423,7 +424,7 @@
         </CollapsiblePanelSection>
       {:else}
         <div class="empty-state">
-          <p class="empty-hint">No variables defined. Toggle properties to "variable" mode on template nodes.</p>
+          <p class="empty-hint">{t('properties.noVariables')}</p>
         </div>
       {/if}
 
@@ -436,19 +437,19 @@
           }
         }}
       >
-        Delete Instance
+        {t('properties.deleteInstance')}
       </button>
 
     {:else if diagram.selectedNode && schema}
       {#if isTemplateMember}
         <div class="instance-readonly-hint">
-          This resource belongs to a template module. Properties are read-only. Toggle properties to "variable" mode to make them configurable per-instance.
+          {t('properties.templateReadOnly')}
         </div>
       {/if}
 
       <div class="tf-name-field">
         <label class="field-label">
-          <span class="label-text">Terraform Name</span>
+          <span class="label-text">{t('properties.terraformName')}</span>
           <input
             type="text"
             value={diagram.selectedNode.data.terraformName}
@@ -468,12 +469,12 @@
         <div class="convention-name-field">
           <label class="field-label">
             <span class="label-row-conv">
-              <span class="label-text">Service Name <span class="required">*</span></span>
-              <span class="convention-badge">convention</span>
+              <span class="label-text">{t('properties.serviceName')} <span class="required">*</span></span>
+              <span class="convention-badge">{t('properties.convention')}</span>
             </span>
             <input
               type="text"
-              placeholder="e.g. backendapi"
+              placeholder={t('properties.serviceNamePlaceholder')}
               disabled={isTemplateMember}
               bind:value={localSlugValue}
               oninput={(e) => onConventionNameChange((e.target as HTMLInputElement).value)}
@@ -519,7 +520,7 @@
       {/if}
 
       {#if hasCostInputs}
-        <CollapsiblePanelSection id="props-cost-estimation" label="Cost Estimation" count={schema.costEstimation!.usageInputs!.length}>
+        <CollapsiblePanelSection id="props-cost-estimation" label={t('properties.costEstimation')} count={schema.costEstimation!.usageInputs!.length}>
           <p class="cost-inputs-hint">Usage inputs for cost estimates. These are not deployed to Azure.</p>
           {#each schema.costEstimation!.usageInputs! as input}
             <label class="cost-input-row">
@@ -549,7 +550,7 @@
       {/if}
 
       {#if schema.outputs && schema.outputs.length > 0}
-        <CollapsiblePanelSection id="props-outputs" label="Outputs" count={schema.outputs.length}>
+        <CollapsiblePanelSection id="props-outputs" label={t('properties.outputs')} count={schema.outputs.length}>
           {#each schema.outputs as output}
             <label class="output-toggle">
               <input
@@ -559,7 +560,7 @@
               />
               <span class="output-label">{output.label}</span>
               {#if output.sensitive}
-                <span class="sensitive-badge">sensitive</span>
+                <span class="sensitive-badge">{t('properties.sensitive')}</span>
               {/if}
             </label>
           {/each}
@@ -567,9 +568,9 @@
       {/if}
 
       {#if showPepConfig && pepConfig}
-        <CollapsiblePanelSection id="props-private-endpoint" label="Private Endpoint" count={pepConfig.subresources.length}>
+        <CollapsiblePanelSection id="props-private-endpoint" label={t('properties.privateEndpoint')} count={pepConfig.subresources.length}>
           <div class="pep-section">
-            <p class="pep-hint">This resource is connected to the subnet via Private Endpoint. Select subresource(s) to expose:</p>
+            <p class="pep-hint">{t('properties.privateEndpointHint')}</p>
             {#each pepConfig.subresources as sub (sub.key)}
               {@const currentSubs = (diagram.selectedNode?.data.properties?.['pep_subresources'] as string[] | undefined) ?? [pepConfig.defaultSubresource]}
               <label class="output-toggle">
@@ -587,14 +588,14 @@
                 checked={!!diagram.selectedNode?.data.properties?.['pep_dns_zone_enabled']}
                 onchange={togglePepDnsZone}
               />
-              <span class="output-label">Private DNS Zone Integration</span>
+              <span class="output-label">{t('properties.privateDnsZone')}</span>
             </label>
           </div>
         </CollapsiblePanelSection>
       {/if}
 
       {#if connectedBindings.length > 0}
-        <CollapsiblePanelSection id="props-connected-secrets" label="Connected Secrets" count={connectedBindings.length}>
+        <CollapsiblePanelSection id="props-connected-secrets" label={t('properties.connectedSecrets')} count={connectedBindings.length}>
           {#each connectedBindings as binding (binding.edgeId)}
             <div class="binding-item">
               <div class="binding-info">
@@ -603,7 +604,7 @@
               </div>
               <div class="binding-actions">
                 {#if binding.sensitive}
-                  <span class="sensitive-badge">sensitive</span>
+                  <span class="sensitive-badge">{t('properties.sensitive')}</span>
                 {/if}
                 <button
                   class="disconnect-btn"
@@ -620,19 +621,19 @@
     {:else if diagram.selectedEdge}
       <div class="edge-endpoints">
         <div class="edge-endpoint">
-          <span class="endpoint-label">From</span>
+          <span class="endpoint-label">{t('properties.from')}</span>
           <span class="endpoint-value">{sourceNode?.data.label || 'Unknown'}</span>
         </div>
         <div class="edge-arrow">&#8595;</div>
         <div class="edge-endpoint">
-          <span class="endpoint-label">To</span>
+          <span class="endpoint-label">{t('properties.to')}</span>
           <span class="endpoint-value">{targetNode?.data.label || 'Unknown'}</span>
         </div>
       </div>
 
       <div class="tf-name-field">
         <label class="field-label">
-          <span class="label-text">Label</span>
+          <span class="label-text">{t('properties.label')}</span>
           <input
             type="text"
             value={typeof diagram.selectedEdge.data?.label === 'string' ? diagram.selectedEdge.data.label : ''}
@@ -641,13 +642,13 @@
                 diagram.updateEdgeLabel(diagram.selectedEdge.id, (e.target as HTMLInputElement).value);
               }
             }}
-            placeholder="Connection label..."
+            placeholder={t('properties.connectionLabelPlaceholder')}
           />
         </label>
       </div>
 
       <div class="edge-category-info">
-        <span class="category-label">Category</span>
+        <span class="category-label">{t('properties.category')}</span>
         <span class="category-value">{diagram.selectedEdge.data?.category ?? 'structural'}</span>
       </div>
 
@@ -674,17 +675,17 @@
             }
           }}
         >
-          Delete Connection
+          {t('properties.deleteConnection')}
         </button>
       {:else}
         <div class="edge-info-hint">
-          This connection is auto-generated from a reference property and cannot be deleted.
+          {t('properties.autoGeneratedHint')}
         </div>
       {/if}
 
     {:else}
       <div class="empty-state">
-        <p class="empty-hint">Select a node or connection to view its properties.</p>
+        <p class="empty-hint">{t('properties.noSelection')}</p>
       </div>
     {/if}
   </div>

@@ -10,6 +10,7 @@
   import type { TerraformCommand } from '$lib/stores/terraform.svelte';
   import { registry } from '$lib/bootstrap';
   import type { ResourceTypeId, TerraformVariable, PropertySchema } from '@terrastudio/types';
+  import { t } from '$lib/i18n';
   import CollapsibleSection from './CollapsibleSection.svelte';
   import SearchBox from './SearchBox.svelte';
 
@@ -291,16 +292,16 @@
 </script>
 
 <div class="tf-sidebar">
-  <SearchBox bind:value={searchQuery} placeholder="Search files, variables..." />
+  <SearchBox bind:value={searchQuery} placeholder={t('terraform.panel.searchPlaceholder')} />
 
   <!-- Generated Files (top, scrollable) -->
   {#if !searchQuery || filteredFiles.length > 0}
     <div class="files-wrapper">
-      <CollapsibleSection id="tf-files" label="FILES" count={filteredFiles.length} forceExpand={!!searchQuery}>
+      <CollapsibleSection id="tf-files" label={t('terraform.panel.files')} count={filteredFiles.length} forceExpand={!!searchQuery}>
         {#if ui.generatedFiles.length === 0}
-          <p class="empty-hint">No terraform files yet. Add resources and generate.</p>
+          <p class="empty-hint">{t('terraform.panel.noFiles')}</p>
         {:else if filteredFiles.length === 0}
-          <p class="empty-hint">No files match "{searchQuery}".</p>
+          <p class="empty-hint">{t('terraform.panel.noFilesMatch')} "{searchQuery}".</p>
         {:else}
           <div class="file-list">
             {#snippet fileTreeNodes(nodes: FileTreeNode[], depth: number)}
@@ -345,7 +346,7 @@
   <!-- Variables Section -->
   {#if displayVariables.length > 0 && (!searchQuery || filteredVariables.length > 0)}
     <div class="variables-wrapper">
-      <CollapsibleSection id="tf-variables" label="VARIABLES" count={filteredVariables.length} forceExpand={!!searchQuery}>
+      <CollapsibleSection id="tf-variables" label={t('terraform.panel.variables')} count={filteredVariables.length} forceExpand={!!searchQuery}>
         {#each filteredVariables as v (v.name)}
           {@const isList = v.type.startsWith('list(')}
           {@const rawValue = project.projectConfig.variableValues[v.name]}
@@ -359,7 +360,7 @@
               <span class="var-type-badge">{v.type}</span>
             </div>
             {#if hasDefault}
-              <span class="var-default">default: {Array.isArray(v.defaultValue) ? v.defaultValue.join(', ') : v.defaultValue}</span>
+              <span class="var-default">{t('terraform.panel.default')} {Array.isArray(v.defaultValue) ? v.defaultValue.join(', ') : v.defaultValue}</span>
             {/if}
             {#if isList}
               {@const items = Array.isArray(currentValue) ? currentValue as string[] : []}
@@ -388,13 +389,13 @@
                 <button
                   class="var-list-add"
                   onclick={() => onVariableValueChange(v.name, [...items, ''])}
-                >+ Add</button>
+                >{t('terraform.panel.add')}</button>
               </div>
             {:else}
               <input
                 type={v.sensitive ? 'password' : 'text'}
                 class="var-input"
-                placeholder={hasDefault ? String(v.defaultValue) : 'required'}
+                placeholder={hasDefault ? String(v.defaultValue) : t('terraform.panel.required')}
                 value={currentValue}
                 oninput={(e) => onVariableValueChange(v.name, (e.target as HTMLInputElement).value)}
               />
@@ -410,11 +411,11 @@
 
   {#if showVarWarning}
     <div class="var-warning">
-      <span>Missing {missingRequiredVars.length} required variable{missingRequiredVars.length > 1 ? 's' : ''}:</span>
+      <span>{t('terraform.panel.missing')} {missingRequiredVars.length} {missingRequiredVars.length > 1 ? t('terraform.panel.requiredVariables') : t('terraform.panel.requiredVariable')}:</span>
       <span class="var-names">{missingRequiredVars.map(v => v.name).join(', ')}</span>
       <div class="var-warning-actions">
-        <button class="warn-btn" onclick={forceApply}>Apply Anyway</button>
-        <button class="warn-btn" onclick={() => (showVarWarning = false)}>Dismiss</button>
+        <button class="warn-btn" onclick={forceApply}>{t('terraform.panel.applyAnyway')}</button>
+        <button class="warn-btn" onclick={() => (showVarWarning = false)}>{t('terraform.panel.dismiss')}</button>
       </div>
     </div>
   {/if}
@@ -426,41 +427,41 @@
         <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
         <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
       </svg>
-      <span>Diagram changed - regenerate before running</span>
+      <span>{t('terraform.panel.diagramChanged')}</span>
     </div>
   {/if}
 
   <!-- Commands (bottom, no border below last section) -->
   <div class="commands-wrapper">
-    <CollapsibleSection id="tf-commands" label="COMMANDS">
+    <CollapsibleSection id="tf-commands" label={t('terraform.panel.commands')}>
       <div class="cmd-buttons">
         <div class="generate-row">
           <button class="cmd-btn cmd-btn-accent generate-btn" class:cmd-btn-stale={terraform.filesStale && ui.generatedFiles.length > 0} disabled={!canGenerate} onclick={handleGenerate}>
             {#if terraform.filesStale && ui.generatedFiles.length > 0}
-              Regenerate
+              {t('terraform.panel.regenerate')}
             {:else}
-              Generate
+              {t('terraform.panel.generate')}
             {/if}
           </button>
-          <label class="auto-toggle" title="Auto-regenerate when diagram changes">
+          <label class="auto-toggle" title={t('terraform.panel.autoRegenerate')}>
             <input
               type="checkbox"
               checked={terraform.autoRegenerate}
               onchange={(e) => terraform.setAutoRegenerate((e.target as HTMLInputElement).checked)}
             />
-            <span class="auto-label">Auto</span>
+            <span class="auto-label">{t('terraform.panel.auto')}</span>
           </label>
         </div>
         <div class="cmd-row">
-          <button class="cmd-btn" disabled={!canRunCommand} onclick={() => handleCommand('init')}>Init</button>
-          <button class="cmd-btn" disabled={!canRunCommand} onclick={() => handleCommand('validate')}>Validate</button>
+          <button class="cmd-btn" disabled={!canRunCommand} onclick={() => handleCommand('init')}>{t('terraform.panel.init')}</button>
+          <button class="cmd-btn" disabled={!canRunCommand} onclick={() => handleCommand('validate')}>{t('terraform.panel.validate')}</button>
         </div>
         <div class="cmd-row">
-          <button class="cmd-btn" disabled={!canRunCommand} onclick={() => handleCommand('plan')}>Plan</button>
-          <button class="cmd-btn cmd-btn-primary" disabled={!canRunCommand} onclick={() => handleCommand('apply')}>Apply</button>
+          <button class="cmd-btn" disabled={!canRunCommand} onclick={() => handleCommand('plan')}>{t('terraform.panel.plan')}</button>
+          <button class="cmd-btn cmd-btn-primary" disabled={!canRunCommand} onclick={() => handleCommand('apply')}>{t('terraform.panel.apply')}</button>
         </div>
         <button class="cmd-btn cmd-btn-danger" disabled={!canRunCommand} onclick={() => handleCommand('destroy')}>
-          Destroy
+          {t('terraform.panel.destroy')}
         </button>
         <button
           class="cmd-btn"
@@ -471,7 +472,7 @@
             terraform.appendInfo('Status refreshed.');
           }}
         >
-          Refresh Status
+          {t('terraform.panel.refreshStatus')}
         </button>
       </div>
     </CollapsibleSection>
@@ -485,11 +486,11 @@
     <div class="ctx-menu" style="left: {contextMenu.x}px; top: {contextMenu.y}px;">
       <button class="ctx-item" onclick={() => { openFile(contextMenu!.filename); closeContextMenu(); }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        Open
+        {t('terraform.panel.open')}
       </button>
       <button class="ctx-item" onclick={() => { revealFile(contextMenu!.filename); closeContextMenu(); }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
-        Reveal in File Explorer
+        {t('terraform.panel.revealInExplorer')}
       </button>
     </div>
   </div>

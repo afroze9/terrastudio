@@ -6,6 +6,7 @@ import ModuleInstanceNode from '$lib/components/ModuleInstanceNode.svelte';
 import { TerraStudioEdge } from '$lib/components/edges';
 import { checkTerraform } from '$lib/services/terraform-service';
 import { setLoggerLevel, type LogLevel } from '$lib/logger';
+import { i18n } from '$lib/i18n';
 import type { Component } from 'svelte';
 import type { EdgeTypes } from '@xyflow/svelte';
 import type { ProviderId } from '@terrastudio/types';
@@ -26,6 +27,16 @@ let declared = false;
 export function declarePlugins(): void {
   if (declared) return;
   declared = true;
+
+  // Wire up i18n plugin locale registration
+  pluginRegistry.inner.setPluginLoadedCallback((plugin) => {
+    if (plugin.locales) {
+      i18n.registerPluginLocales({
+        namespace: `plugin.${plugin.id}`,
+        locales: plugin.locales,
+      });
+    }
+  });
 
   pluginRegistry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-networking'));
   pluginRegistry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-compute'));

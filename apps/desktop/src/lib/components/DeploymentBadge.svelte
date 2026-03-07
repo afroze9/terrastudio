@@ -1,13 +1,14 @@
 <script lang="ts">
   import type { DeploymentStatus } from '@terrastudio/types';
+  import { t } from '$lib/i18n';
 
   let { status, errorMessage }: { status?: DeploymentStatus; errorMessage?: string } = $props();
 
   let tooltipText = $derived.by(() => {
     if (status === 'failed' && errorMessage) {
-      return `Failed: ${errorMessage}`;
+      return `${t('deployment.failed')} ${errorMessage}`;
     }
-    return status ?? 'pending';
+    return status ?? t('deployment.pending');
   });
 </script>
 

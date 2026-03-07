@@ -5,6 +5,7 @@
   import { project } from '$lib/stores/project.svelte';
   import { diagram } from '$lib/stores/diagram.svelte';
   import type { PaletteCategory, ResourceTypeRegistration } from '@terrastudio/types';
+  import { t } from '$lib/i18n';
 
   let searchQuery = $state('');
 
@@ -60,7 +61,7 @@
 </script>
 
 <aside class="palette">
-  <div class="palette-header">Resources</div>
+  <div class="palette-header">{t('palette.title')}</div>
   <div class="search-box">
     <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -68,7 +69,7 @@
     <input
       type="text"
       class="search-input"
-      placeholder="Search resources..."
+      placeholder={t('palette.searchPlaceholder')}
       bind:value={searchQuery}
     />
     {#if searchQuery}
@@ -92,7 +93,7 @@
         >
           <path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
-        <span class="category-label module-category-label">Modules</span>
+        <span class="category-label module-category-label">{t('palette.modules')}</span>
         <span class="category-count">{templateModules.length}</span>
       </div>
       {#if !modulesCollapsed}
@@ -121,14 +122,13 @@
   {/if}
 
   {#if registry.isLoading}
-    <div class="palette-loading">Loading resources...</div>
+    <div class="palette-loading">{t('palette.loading')}</div>
   {:else if filteredCategories.length === 0 && templateModules.length === 0}
     <div class="palette-empty">
       {#if searchQuery}
-        No resources match your search.
+        {t('palette.noResults')}
       {:else}
-        No resources for the selected provider.<br />
-        Change in Project Settings &rarr; Cloud Provider.
+        {t('palette.noResourcesForProvider')}
       {/if}
     </div>
   {:else}

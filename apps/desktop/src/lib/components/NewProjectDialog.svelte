@@ -9,6 +9,7 @@
   import type { LayoutAlgorithm } from '@terrastudio/core';
   import { applyNamingTemplate, buildTokens } from '@terrastudio/core';
   import { ui, type EdgeStyle } from '$lib/stores/ui.svelte';
+  import { t } from '$lib/i18n';
 
   let {
     open = false,
@@ -29,9 +30,9 @@
 
   // Provider filter for template gallery
   const PROVIDER_FILTERS = [
-    { id: '', label: 'All' },
-    { id: 'azurerm', label: 'Azure' },
-    { id: 'aws', label: 'AWS' },
+    { id: '', label: t('dialog.newProject.all') },
+    { id: 'azurerm', label: t('search.azure') },
+    { id: 'aws', label: t('search.aws') },
   ];
   let providerFilter = $state<string>('');
 
@@ -70,9 +71,9 @@
 
   // Naming convention
   const CONV_PRESETS = [
-    { label: 'CAF Standard', template: '{type}-{env}-{name}' },
-    { label: 'CAF + Region', template: '{type}-{env}-{region}-{name}' },
-    { label: 'Org Prefix',   template: '{org}-{type}-{env}-{name}' },
+    { label: t('dialog.newProject.cafStandard'), template: '{type}-{env}-{name}' },
+    { label: t('dialog.newProject.cafRegion'), template: '{type}-{env}-{region}-{name}' },
+    { label: t('dialog.newProject.orgPrefix'),   template: '{org}-{type}-{env}-{name}' },
   ];
   let conventionEnabled = $state(false);
   let conventionTemplate = $state('{type}-{env}-{name}');
@@ -221,26 +222,26 @@
   const EDGE_STYLES: { value: EdgeStyle; label: string; desc: string; path: string }[] = [
     {
       value: 'default',
-      label: 'Bezier',
-      desc: 'Smooth curves',
+      label: t('edgeStyle.bezier'),
+      desc: t('dialog.newProject.smoothCurves'),
       path: 'M 6,24 C 20,24 28,8 42,8',
     },
     {
       value: 'smoothstep',
-      label: 'Smooth Step',
-      desc: 'Rounded corners',
+      label: t('edgeStyle.smoothStep'),
+      desc: t('dialog.newProject.roundedCorners'),
       path: 'M 6,24 L 16,24 Q 24,24 24,16 L 24,8 Q 24,8 32,8 L 42,8',
     },
     {
       value: 'step',
-      label: 'Step',
-      desc: 'Right angles',
+      label: t('edgeStyle.step'),
+      desc: t('dialog.newProject.rightAngles'),
       path: 'M 6,24 L 24,24 L 24,8 L 42,8',
     },
     {
       value: 'straight',
-      label: 'Straight',
-      desc: 'Direct line',
+      label: t('edgeStyle.straight'),
+      desc: t('dialog.newProject.directLine'),
       path: 'M 6,24 L 42,8',
     },
   ];
@@ -248,14 +249,14 @@
   const LAYOUT_OPTIONS: { value: LayoutAlgorithm; label: string; desc: string; icon: string }[] = [
     {
       value: 'dagre',
-      label: 'Dagre',
-      desc: 'Hierarchical layout based on connections',
+      label: t('dialog.newProject.dagre'),
+      desc: t('dialog.newProject.dagreDesc'),
       icon: `<circle cx="12" cy="4" r="2" fill="currentColor"/><circle cx="6" cy="14" r="2" fill="currentColor"/><circle cx="18" cy="14" r="2" fill="currentColor"/><circle cx="12" cy="22" r="2" fill="currentColor"/><path d="M12 6v6M10 8l-4 4M14 8l4 4M8 16l4 4M16 16l-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>`,
     },
     {
       value: 'hybrid',
-      label: 'Hybrid Grid',
-      desc: 'Grid layout with reference-aware clustering',
+      label: t('dialog.newProject.hybridGrid'),
+      desc: t('dialog.newProject.hybridGridDesc'),
       icon: `<rect x="2" y="2" width="8" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="14" y="2" width="8" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="14" width="8" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="14" y="14" width="8" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 6h4M6 10v4M18 10v4M10 18h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>`,
     },
   ];
@@ -272,12 +273,12 @@
       <div class="step-indicator">
         <div class="step" class:active={step === 1} class:done={step > 1}>
           <div class="step-circle">{step > 1 ? '✓' : '1'}</div>
-          <span class="step-label">Template & Details</span>
+          <span class="step-label">{t('dialog.newProject.stepTemplateDetails')}</span>
         </div>
         <div class="step-connector" class:done={step > 1}></div>
         <div class="step" class:active={step === 2}>
           <div class="step-circle">2</div>
-          <span class="step-label">Configuration</span>
+          <span class="step-label">{t('dialog.newProject.stepConfiguration')}</span>
         </div>
       </div>
 
@@ -286,18 +287,18 @@
         <div class="step-content">
           <!-- Template Gallery -->
           <div class="template-section">
-            <div class="section-label">Template</div>
+            <div class="section-label">{t('dialog.newProject.template')}</div>
             <div class="category-tabs">
-              <button class="tab" class:active={activeCategory === ''} onclick={() => (activeCategory = '')}>All</button>
+              <button class="tab" class:active={activeCategory === ''} onclick={() => (activeCategory = '')}>{t('dialog.newProject.all')}</button>
               {#each categories as cat}
                 <button class="tab" class:active={activeCategory === cat.name} onclick={() => (activeCategory = cat.name)}>{cat.name}</button>
               {/each}
               <div class="tab-spacer"></div>
-              <button class="tab tab-action" onclick={handleOpenTemplatesFolder} title="Open user templates folder">
+              <button class="tab tab-action" onclick={handleOpenTemplatesFolder} title={t('dialog.newProject.openUserTemplates')}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
                 </svg>
-                Import
+                {t('dialog.newProject.import')}
               </button>
             </div>
             <div class="provider-filters">
@@ -311,7 +312,7 @@
             </div>
             <div class="template-grid">
               {#if loadingTemplates}
-                <div class="loading">Loading templates...</div>
+                <div class="loading">{t('dialog.newProject.loadingTemplates')}</div>
               {:else}
                 {#each visibleTemplates as template}
                   <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -336,12 +337,12 @@
 
           <!-- Project Name -->
           <div class="field">
-            <label class="field-label" for="project-name">Project Name</label>
+            <label class="field-label" for="project-name">{t('dialog.newProject.nameLabel')}</label>
             <input
               id="project-name"
               type="text"
               class="field-input"
-              placeholder="my-infrastructure"
+              placeholder={t('dialog.newProject.namePlaceholder')}
               bind:value={projectName}
             />
           </div>
@@ -349,16 +350,16 @@
           <!-- Location -->
           <div class="field">
             <!-- svelte-ignore a11y_label_has_associated_control -->
-            <label class="field-label">Location</label>
+            <label class="field-label">{t('dialog.newProject.locationLabel')}</label>
             <div class="folder-picker">
-              <span class="folder-path">{folderPath || 'No folder selected'}</span>
-              <button class="browse-btn" onclick={handlePickFolder}>Browse</button>
+              <span class="folder-path">{folderPath || t('dialog.newProject.noFolderSelected')}</span>
+              <button class="browse-btn" onclick={handlePickFolder}>{t('dialog.newProject.browse')}</button>
             </div>
           </div>
 
           {#if folderPath && projectName}
             <div class="path-preview">
-              Will create: <code>{folderPath}{folderPath.includes('\\') ? '\\' : '/'}{projectName.trim()}</code>
+              {t('dialog.newProject.willCreate')} <code>{folderPath}{folderPath.includes('\\') ? '\\' : '/'}{projectName.trim()}</code>
             </div>
           {/if}
         </div>
@@ -371,15 +372,15 @@
           <!-- Naming Convention -->
           <div class="config-section">
             <div class="config-section-header">
-              <div class="config-section-title">Naming Convention</div>
+              <div class="config-section-title">{t('dialog.newProject.namingConvention')}</div>
               <label class="toggle-inline">
                 <input type="checkbox" bind:checked={conventionEnabled} />
-                <span class="toggle-text">{conventionEnabled ? 'Enabled' : 'Disabled'}</span>
+                <span class="toggle-text">{conventionEnabled ? t('dialog.newProject.enabled') : t('dialog.newProject.disabled')}</span>
               </label>
             </div>
 
             {#if !conventionEnabled}
-              <p class="section-hint">Enable to auto-generate names like <code>asp-dev-myapi</code> from a configurable template.</p>
+              <p class="section-hint">{@html t('dialog.newProject.namingHint')}</p>
             {:else}
               <div class="preset-row">
                 {#each CONV_PRESETS as preset}
@@ -393,15 +394,15 @@
 
               <div class="conv-tokens">
                 <div class="conv-field">
-                  <span class="conv-label">Environment <span class="required">*</span></span>
+                  <span class="conv-label">{t('dialog.newProject.environment')} <span class="required">*</span></span>
                   <input type="text" class="conv-input" placeholder="dev" bind:value={conventionEnv} />
                 </div>
                 <div class="conv-field">
-                  <span class="conv-label">Region <span class="optional">(optional)</span></span>
+                  <span class="conv-label">{t('dialog.newProject.region')} <span class="optional">({t('dialog.newProject.optional')})</span></span>
                   <input type="text" class="conv-input" placeholder="eus2" bind:value={conventionRegion} />
                 </div>
                 <div class="conv-field">
-                  <span class="conv-label">Org <span class="optional">(optional)</span></span>
+                  <span class="conv-label">{t('dialog.newProject.org')} <span class="optional">({t('dialog.newProject.optional')})</span></span>
                   <input type="text" class="conv-input" placeholder="contoso" bind:value={conventionOrg} />
                 </div>
               </div>
@@ -421,7 +422,7 @@
 
           <!-- Layout Algorithm -->
           <div class="config-section">
-            <div class="config-section-title">Auto Layout</div>
+            <div class="config-section-title">{t('dialog.newProject.autoLayout')}</div>
             <div class="option-grid cols-2">
               {#each LAYOUT_OPTIONS as opt}
                 <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -445,7 +446,7 @@
 
           <!-- Connection Style -->
           <div class="config-section">
-            <div class="config-section-title">Connection Style</div>
+            <div class="config-section-title">{t('dialog.newProject.connectionStyle')}</div>
             <div class="option-grid cols-4">
               {#each EDGE_STYLES as style}
                 <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -478,13 +479,13 @@
       <!-- Actions -->
       <div class="dialog-actions">
         {#if step === 1}
-          <button class="btn btn-secondary" onclick={handleCancel}>Cancel</button>
+          <button class="btn btn-secondary" onclick={handleCancel}>{t('dialog.confirm.cancel')}</button>
           <button
             class="btn btn-primary"
             onclick={goNext}
             disabled={!projectName.trim() || !folderPath || !selectedTemplate}
           >
-            Next
+            {t('dialog.newProject.next')}
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M9 18l6-6-6-6"/>
             </svg>
@@ -494,10 +495,10 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M15 18l-6-6 6-6"/>
             </svg>
-            Back
+            {t('dialog.newProject.back')}
           </button>
           <button class="btn btn-primary" onclick={handleCreate} disabled={creating}>
-            {creating ? 'Creating...' : 'Create Project'}
+            {creating ? t('dialog.newProject.creating') : t('dialog.newProject.createProject')}
           </button>
         {/if}
       </div>

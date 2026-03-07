@@ -4,6 +4,7 @@
   import { project } from '$lib/stores/project.svelte';
   import { generateThumbnailPng } from '$lib/services/export-service';
   import type { Template } from '$lib/templates/types';
+  import { t } from '$lib/i18n';
 
   let { open, onclose, onsaved }: {
     open: boolean;
@@ -15,30 +16,30 @@
   let name        = $state(project.name || '');
   let id          = $state('');
   let description = $state('');
-  let category    = $state('My Templates');
+  let category    = $state(t('dialog.saveTemplate.suggestedCategories.myTemplates'));
   let icon        = $state('blank');
   let saving      = $state(false);
   let error       = $state('');
   let idTouched   = $state(false);
 
   const SUGGESTED_CATEGORIES = [
-    'Getting Started',
-    'Web Applications',
-    'Networking',
-    'Compute',
-    'Security',
-    'Databases',
-    'Serverless',
-    'My Templates',
+    t('dialog.saveTemplate.suggestedCategories.gettingStarted'),
+    t('dialog.saveTemplate.suggestedCategories.webApplications'),
+    t('dialog.saveTemplate.suggestedCategories.networking'),
+    t('dialog.saveTemplate.suggestedCategories.compute'),
+    t('dialog.saveTemplate.suggestedCategories.security'),
+    t('dialog.saveTemplate.suggestedCategories.databases'),
+    t('dialog.saveTemplate.suggestedCategories.serverless'),
+    t('dialog.saveTemplate.suggestedCategories.myTemplates'),
   ];
 
   const ICONS = [
-    { value: 'blank',    label: 'Blank'     },
-    { value: 'web',      label: 'Web'       },
-    { value: 'network',  label: 'Network'   },
-    { value: 'database', label: 'Database'  },
-    { value: 'security', label: 'Security'  },
-    { value: 'compute',  label: 'Compute'   },
+    { value: 'blank',    label: t('dialog.saveTemplate.iconOptions.blank')     },
+    { value: 'web',      label: t('dialog.saveTemplate.iconOptions.web')       },
+    { value: 'network',  label: t('dialog.saveTemplate.iconOptions.network')   },
+    { value: 'database', label: t('dialog.saveTemplate.iconOptions.database')  },
+    { value: 'security', label: t('dialog.saveTemplate.iconOptions.security')  },
+    { value: 'compute',  label: t('dialog.saveTemplate.iconOptions.compute')   },
   ];
 
   // Auto-generate id from name (unless user has edited it manually)
@@ -55,7 +56,7 @@
       id          = '';
       idTouched   = false;
       description = '';
-      category    = 'My Templates';
+      category    = t('dialog.saveTemplate.suggestedCategories.myTemplates');
       icon        = 'blank';
       saving      = false;
       error       = '';
@@ -147,7 +148,7 @@
   <div class="dialog-backdrop" onclick={handleBackdropClick} onkeydown={handleKeydown}>
     <div class="dialog" role="dialog" aria-modal="true" aria-label="Save as Template">
       <div class="dialog-header">
-        <h2 class="dialog-title">Save as Template</h2>
+        <h2 class="dialog-title">{t('dialog.saveTemplate.title')}</h2>
         <button class="close-btn" onclick={onclose} aria-label="Close">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -158,12 +159,12 @@
       <div class="dialog-body">
         <!-- Name -->
         <div class="field">
-          <label class="field-label" for="tmpl-name">Template Name <span class="required">*</span></label>
+          <label class="field-label" for="tmpl-name">{t('dialog.saveTemplate.nameLabel')} <span class="required">*</span></label>
           <input
             id="tmpl-name"
             type="text"
             class="field-input"
-            placeholder="e.g. Three-Tier Web App"
+            placeholder={t('dialog.saveTemplate.namePlaceholder')}
             bind:value={name}
           />
         </div>
@@ -171,14 +172,14 @@
         <!-- ID -->
         <div class="field">
           <label class="field-label" for="tmpl-id">
-            ID <span class="required">*</span>
-            <span class="field-hint">used as filename — lowercase, hyphens only</span>
+            {t('dialog.saveTemplate.idLabel')} <span class="required">*</span>
+            <span class="field-hint">{t('dialog.saveTemplate.idHint')}</span>
           </label>
           <input
             id="tmpl-id"
             type="text"
             class="field-input"
-            placeholder="e.g. three-tier-web-app"
+            placeholder={t('dialog.saveTemplate.idPlaceholder')}
             bind:value={id}
             oninput={() => (idTouched = true)}
           />
@@ -186,11 +187,11 @@
 
         <!-- Description -->
         <div class="field">
-          <label class="field-label" for="tmpl-desc">Description</label>
+          <label class="field-label" for="tmpl-desc">{t('dialog.saveTemplate.descriptionLabel')}</label>
           <textarea
             id="tmpl-desc"
             class="field-textarea"
-            placeholder="What does this template do?"
+            placeholder={t('dialog.saveTemplate.descriptionPlaceholder')}
             rows="2"
             bind:value={description}
           ></textarea>
@@ -199,13 +200,13 @@
         <!-- Category + Icon side by side -->
         <div class="row-fields">
           <div class="field flex2">
-            <label class="field-label" for="tmpl-cat">Category <span class="required">*</span></label>
+            <label class="field-label" for="tmpl-cat">{t('dialog.saveTemplate.categoryLabel')} <span class="required">*</span></label>
             <input
               id="tmpl-cat"
               type="text"
               class="field-input"
               list="category-suggestions"
-              placeholder="e.g. Web Applications"
+              placeholder={t('dialog.saveTemplate.categoryPlaceholder')}
               bind:value={category}
             />
             <datalist id="category-suggestions">
@@ -216,7 +217,7 @@
           </div>
 
           <div class="field flex1">
-            <label class="field-label" for="tmpl-icon">Icon</label>
+            <label class="field-label" for="tmpl-icon">{t('dialog.saveTemplate.iconLabel')}</label>
             <select id="tmpl-icon" class="field-select" bind:value={icon}>
               {#each ICONS as ic}
                 <option value={ic.value}>{ic.label}</option>
@@ -231,9 +232,9 @@
       </div>
 
       <div class="dialog-footer">
-        <button class="btn btn-secondary" onclick={onclose} disabled={saving}>Cancel</button>
+        <button class="btn btn-secondary" onclick={onclose} disabled={saving}>{t('dialog.confirm.cancel')}</button>
         <button class="btn btn-primary" onclick={handleSave} disabled={saving || !name.trim() || !id.trim()}>
-          {saving ? 'Saving...' : 'Save Template'}
+          {saving ? t('dialog.saveTemplate.saving') : t('dialog.saveTemplate.save')}
         </button>
       </div>
     </div>

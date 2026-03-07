@@ -12,9 +12,10 @@ import { cost } from './cost.svelte';
 import { terraform } from './terraform.svelte';
 import { applyPalette } from '$lib/themes/theme-engine';
 import { initLogging } from '$lib/bootstrap';
+import { i18n } from '$lib/i18n';
 import type { PaletteId } from '$lib/themes/types';
 import type { LogLevel } from '$lib/logger';
-import type { EdgeCategoryId } from '@terrastudio/types';
+import type { LocaleCode } from '@terrastudio/types';
 import type { EdgeCategoryVisibility } from './ui.svelte';
 import type { UnlistenFn } from '@tauri-apps/api/event';
 
@@ -133,6 +134,10 @@ function applySettingLocally(key: string, value: unknown): void {
     case 'autoRegenerate':
       terraform.autoRegenerate = value as boolean;
       localStorage.setItem('terrastudio-auto-regen', String(value));
+      break;
+
+    case 'locale':
+      i18n.setLocale(value as LocaleCode).catch(console.warn);
       break;
   }
 }

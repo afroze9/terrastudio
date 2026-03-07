@@ -1,48 +1,50 @@
 <script lang="ts">
+  import { t } from '$lib/i18n';
+
   let { open, onclose }: { open: boolean; onclose: () => void } = $props();
 
   const groups = [
     {
-      label: 'File',
+      label: t('dialog.shortcuts.file'),
       icon: `<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>`,
       shortcuts: [
-        { label: 'New Project',    keys: ['Ctrl', 'N'] },
-        { label: 'Open Project',   keys: ['Ctrl', 'O'] },
-        { label: 'Save',           keys: ['Ctrl', 'S'] },
-        { label: 'Close Tab',      keys: ['Ctrl', 'W'] },
-        { label: 'Close Project',  keys: ['Ctrl', '⇧', 'W'] },
+        { label: t('dialog.shortcuts.newProject'),    keys: ['Ctrl', 'N'] },
+        { label: t('dialog.shortcuts.openProject'),   keys: ['Ctrl', 'O'] },
+        { label: t('dialog.shortcuts.save'),           keys: ['Ctrl', 'S'] },
+        { label: t('dialog.shortcuts.closeTab'),      keys: ['Ctrl', 'W'] },
+        { label: t('dialog.shortcuts.closeProject'),  keys: ['Ctrl', '⇧', 'W'] },
       ],
     },
     {
-      label: 'Canvas',
+      label: t('dialog.shortcuts.canvas'),
       icon: `<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>`,
       shortcuts: [
-        { label: 'Undo',           keys: ['Ctrl', 'Z'] },
-        { label: 'Redo',           keys: ['Ctrl', 'Y'] },
-        { label: 'Select All',     keys: ['Ctrl', 'A'] },
-        { label: 'Copy',           keys: ['Ctrl', 'C'] },
-        { label: 'Paste',          keys: ['Ctrl', 'V'] },
-        { label: 'Duplicate',      keys: ['Ctrl', 'D'] },
-        { label: 'Delete Selected', keys: ['Del'] },
-        { label: 'Fit View',       keys: ['Ctrl', '0'] },
+        { label: t('dialog.shortcuts.undo'),           keys: ['Ctrl', 'Z'] },
+        { label: t('dialog.shortcuts.redo'),           keys: ['Ctrl', 'Y'] },
+        { label: t('dialog.shortcuts.selectAll'),     keys: ['Ctrl', 'A'] },
+        { label: t('dialog.shortcuts.copy'),           keys: ['Ctrl', 'C'] },
+        { label: t('dialog.shortcuts.paste'),          keys: ['Ctrl', 'V'] },
+        { label: t('dialog.shortcuts.duplicate'),      keys: ['Ctrl', 'D'] },
+        { label: t('dialog.shortcuts.deleteSelected'), keys: ['Del'] },
+        { label: t('dialog.shortcuts.fitView'),       keys: ['Ctrl', '0'] },
       ],
     },
     {
-      label: 'View',
+      label: t('dialog.shortcuts.view'),
       icon: `<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>`,
       shortcuts: [
-        { label: 'Toggle Side Panel', keys: ['Ctrl', 'B'] },
-        { label: 'Toggle Panel',      keys: ['Ctrl', 'J'] },
-        { label: 'Terminal',          keys: ['Ctrl', '`'] },
-        { label: 'Problems',          keys: ['Ctrl', '⇧', 'M'] },
-        { label: 'Canvas Search',     keys: ['Ctrl', '⇧', 'F'] },
-        { label: 'Focus Search',      keys: ['Ctrl', 'F'] },
-        { label: 'Resources',         keys: ['Alt', '1'] },
-        { label: 'Terraform',         keys: ['Alt', '2'] },
-        { label: 'Project Settings',  keys: ['Alt', '3'] },
-        { label: 'Cost Estimates',    keys: ['Alt', '4'] },
-        { label: 'Search',            keys: ['Alt', '5'] },
-        { label: 'App Settings',      keys: ['Ctrl', ','] },
+        { label: t('dialog.shortcuts.toggleSidePanel'), keys: ['Ctrl', 'B'] },
+        { label: t('dialog.shortcuts.togglePanel'),      keys: ['Ctrl', 'J'] },
+        { label: t('dialog.shortcuts.terminal'),          keys: ['Ctrl', '`'] },
+        { label: t('dialog.shortcuts.problems'),          keys: ['Ctrl', '⇧', 'M'] },
+        { label: t('dialog.shortcuts.canvasSearch'),     keys: ['Ctrl', '⇧', 'F'] },
+        { label: t('dialog.shortcuts.focusSearch'),      keys: ['Ctrl', 'F'] },
+        { label: t('dialog.shortcuts.resources'),         keys: ['Alt', '1'] },
+        { label: t('dialog.shortcuts.terraform'),         keys: ['Alt', '2'] },
+        { label: t('dialog.shortcuts.projectSettings'),  keys: ['Alt', '3'] },
+        { label: t('dialog.shortcuts.costEstimates'),    keys: ['Alt', '4'] },
+        { label: t('dialog.shortcuts.search'),            keys: ['Alt', '5'] },
+        { label: t('dialog.shortcuts.appSettings'),      keys: ['Ctrl', ','] },
       ],
     },
   ];
@@ -56,7 +58,7 @@
   <div class="backdrop" onclick={onclose}>
     <div class="modal" onclick={(e) => e.stopPropagation()}>
       <div class="modal-header">
-        <span class="modal-title">Keyboard Shortcuts</span>
+        <span class="modal-title">{t('dialog.shortcuts.title')}</span>
         <button class="close-btn" onclick={onclose} aria-label="Close">&#215;</button>
       </div>
       <div class="columns">

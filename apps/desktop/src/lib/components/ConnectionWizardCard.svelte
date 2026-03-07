@@ -2,6 +2,7 @@
   import { connectionWizard, ConnectionWizardStore } from '$lib/stores/connection-wizard.svelte';
   import { ui } from '$lib/stores/ui.svelte';
   import type { ConnectionWizardEntry } from '$lib/stores/connection-wizard.svelte';
+  import { t } from '$lib/i18n';
 
   let { entry, compact = false }: { entry: ConnectionWizardEntry; compact?: boolean } = $props();
 
@@ -21,8 +22,8 @@
   }
 
   const kindLabel = $derived(
-    entry.kind === 'binding' ? 'BINDING' :
-    entry.kind === 'containment' ? 'CONTAINMENT' : 'REFERENCE'
+    entry.kind === 'binding' ? t('connectionWizard.binding') :
+    entry.kind === 'containment' ? t('connectionWizard.containment') : t('connectionWizard.reference')
   );
 
   const kindColor = $derived(
@@ -59,13 +60,13 @@
   <!-- Auto-filled properties -->
   {#if entry.autoFilledProperties.length > 0}
     <div class="auto-filled">
-      <span class="section-label">Auto-filled:</span>
+      <span class="section-label">{t('connectionWizard.autoFilled')}</span>
       {#each entry.autoFilledProperties as prop}
         <div class="prop-row">
           <code class="prop-key">{prop.propertyKey}</code>
           <span class="prop-arrow">←</span>
           <code class="prop-value">{prop.value}</code>
-          <span class="prop-side">on {prop.side}</span>
+          <span class="prop-side">{t('connectionWizard.on')} {prop.side}</span>
         </div>
       {/each}
     </div>
@@ -74,7 +75,7 @@
   <!-- Binding resource -->
   {#if entry.kind === 'binding' && entry.bindingResourceType}
     <div class="binding-info">
-      <span class="generates-label">Generates:</span>
+      <span class="generates-label">{t('connectionWizard.generates')}</span>
       <code class="binding-type">{entry.bindingResourceType}</code>
     </div>
   {/if}
@@ -82,7 +83,7 @@
   <!-- Containment details -->
   {#if entry.kind === 'containment' && entry.parentPropertyKey}
     <div class="containment-info">
-      <code>{entry.parentPropertyKey}</code> derived from parent {entry.parentContainerLabel || 'container'}
+      <code>{entry.parentPropertyKey}</code> {t('connectionWizard.derivedFromParent')} {entry.parentContainerLabel || 'container'}
     </div>
   {/if}
 
@@ -91,7 +92,7 @@
     <div class="card-footer">
       <label class="dismiss-toggle">
         <input type="checkbox" checked={isDismissed} onchange={toggleDismiss} />
-        <span>Don't show again for this type</span>
+        <span>{t('connectionWizard.dontShowAgain')}</span>
       </label>
     </div>
   {/if}

@@ -3,6 +3,7 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { getCurrentWindow } from '@tauri-apps/api/window';
 	import { declarePlugins, initializeTerraformCheck, initLogging } from '$lib/bootstrap';
+	import { i18n } from '$lib/i18n';
 	import Titlebar from '$lib/components/Titlebar.svelte';
 	import ActivityBar from '$lib/components/ActivityBar.svelte';
 	import SidePanel from '$lib/components/SidePanel.svelte';
@@ -47,6 +48,7 @@
 	declarePlugins();
 
 	onMount(() => {
+		i18n.init().catch(console.warn);
 		ui.applyTheme();
 		const appWindow = getCurrentWindow();
 		initLogging(ui.logLevel);

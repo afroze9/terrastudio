@@ -5,6 +5,7 @@
   import { registry } from '$lib/bootstrap';
   import { saveDiagram } from '$lib/services/project-service';
   import { autoLayout, type LayoutDirection } from '$lib/services/layout-service';
+  import { t } from '$lib/i18n';
   import type { EdgeCategoryId } from '@terrastudio/types';
 
   let showLayoutMenu = $state(false);
@@ -12,27 +13,27 @@
   let showGridMenu = $state(false);
   let showEdgeVisibilityMenu = $state(false);
 
-  const edgeCategoryOptions: { id: EdgeCategoryId; label: string; desc: string }[] = [
-    { id: 'structural', label: 'Structural', desc: 'Dependencies' },
-    { id: 'binding', label: 'Binding', desc: 'Data flow' },
-    { id: 'reference', label: 'Reference', desc: 'Property refs' },
-    { id: 'annotation', label: 'Annotation', desc: 'Notes' },
+  const edgeCategoryOptions: { id: EdgeCategoryId; labelKey: string; descKey: string }[] = [
+    { id: 'structural', labelKey: 'canvas.edgeCategories.structural', descKey: 'canvas.edgeCategories.structuralDesc' },
+    { id: 'binding', labelKey: 'canvas.edgeCategories.binding', descKey: 'canvas.edgeCategories.bindingDesc' },
+    { id: 'reference', labelKey: 'canvas.edgeCategories.reference', descKey: 'canvas.edgeCategories.referenceDesc' },
+    { id: 'annotation', labelKey: 'canvas.edgeCategories.annotation', descKey: 'canvas.edgeCategories.annotationDesc' },
   ];
 
   const gridSizes = [10, 15, 20, 25, 30, 40, 50];
 
-  const layoutOptions: { value: LayoutDirection; label: string; icon: string }[] = [
-    { value: 'TB', label: 'Top to Bottom', icon: '↓' },
-    { value: 'LR', label: 'Left to Right', icon: '→' },
-    { value: 'BT', label: 'Bottom to Top', icon: '↑' },
-    { value: 'RL', label: 'Right to Left', icon: '←' },
+  const layoutOptions: { value: LayoutDirection; labelKey: string; icon: string }[] = [
+    { value: 'TB', labelKey: 'canvas.toolbar.topToBottom', icon: '↓' },
+    { value: 'LR', labelKey: 'canvas.toolbar.leftToRight', icon: '→' },
+    { value: 'BT', labelKey: 'canvas.toolbar.bottomToTop', icon: '↑' },
+    { value: 'RL', labelKey: 'canvas.toolbar.rightToLeft', icon: '←' },
   ];
 
-  const edgeOptions: { value: EdgeStyle; label: string }[] = [
-    { value: 'default', label: 'Bezier' },
-    { value: 'smoothstep', label: 'Smooth Step' },
-    { value: 'step', label: 'Step' },
-    { value: 'straight', label: 'Straight' },
+  const edgeOptions: { value: EdgeStyle; labelKey: string }[] = [
+    { value: 'default', labelKey: 'edgeStyle.bezier' },
+    { value: 'smoothstep', labelKey: 'edgeStyle.smoothStep' },
+    { value: 'step', labelKey: 'edgeStyle.step' },
+    { value: 'straight', labelKey: 'edgeStyle.straight' },
   ];
 
   function handleLayout(direction: LayoutDirection) {
@@ -79,7 +80,7 @@
   <!-- Save -->
   <button
     class="toolbar-btn"
-    title="Save (Ctrl+S)"
+    title={t('canvas.toolbar.save')}
     disabled={!project.isOpen}
     onclick={handleSave}
   >
@@ -95,7 +96,7 @@
   <!-- Undo -->
   <button
     class="toolbar-btn"
-    title="Undo (Ctrl+Z)"
+    title={t('canvas.toolbar.undo')}
     disabled={!diagram.canUndo}
     onclick={() => diagram.undo()}
   >
@@ -108,7 +109,7 @@
   <!-- Redo -->
   <button
     class="toolbar-btn"
-    title="Redo (Ctrl+Y)"
+    title={t('canvas.toolbar.redo')}
     disabled={!diagram.canRedo}
     onclick={() => diagram.redo()}
   >
@@ -125,7 +126,7 @@
     <button
       class="toolbar-btn"
       class:active={showLayoutMenu}
-      title="Auto Layout"
+      title={t('canvas.toolbar.autoLayout')}
       disabled={diagram.nodes.length === 0}
       onclick={(e) => { e.stopPropagation(); showEdgeMenu = false; showLayoutMenu = !showLayoutMenu; }}
     >
@@ -143,7 +144,7 @@
         {#each layoutOptions as opt (opt.value)}
           <button class="toolbar-dropdown-item" onclick={() => handleLayout(opt.value)}>
             <span class="layout-icon">{opt.icon}</span>
-            <span>{opt.label}</span>
+            <span>{t(opt.labelKey)}</span>
           </button>
         {/each}
       </div>
@@ -153,7 +154,7 @@
   <!-- Fit View -->
   <button
     class="toolbar-btn"
-    title="Fit View"
+    title={t('canvas.toolbar.fitView')}
     onclick={handleFitView}
   >
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -172,7 +173,7 @@
     <button
       class="toolbar-btn"
       class:active={showEdgeMenu}
-      title="Edge Style"
+      title={t('canvas.toolbar.edgeStyle')}
       onclick={(e) => { e.stopPropagation(); showLayoutMenu = false; showEdgeMenu = !showEdgeMenu; }}
     >
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -189,7 +190,7 @@
             class:selected={ui.edgeType === opt.value}
             onclick={() => handleEdgeStyle(opt.value)}
           >
-            <span>{opt.label}</span>
+            <span>{t(opt.labelKey)}</span>
             {#if ui.edgeType === opt.value}
               <span class="check">&#10003;</span>
             {/if}
@@ -205,7 +206,7 @@
   <button
     class="toolbar-btn"
     class:snap-active={ui.snapToGrid}
-    title={ui.snapToGrid ? `Snap to Grid (${ui.gridSize}px) — Click to disable` : 'Snap to Grid — Click to enable'}
+    title={ui.snapToGrid ? `${t('canvas.toolbar.snapToGrid')} (${ui.gridSize}${t('canvas.toolbar.px')}) — ${t('canvas.toolbar.clickToDisable')}` : `${t('canvas.toolbar.snapToGrid')} — ${t('canvas.toolbar.clickToEnable')}`}
     onclick={() => { ui.setSnapToGrid(!ui.snapToGrid); }}
   >
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -223,7 +224,7 @@
     <button
       class="toolbar-btn"
       class:active={showGridMenu}
-      title="Grid Size"
+      title={t('canvas.toolbar.gridSize')}
       onclick={(e) => { e.stopPropagation(); showLayoutMenu = false; showEdgeMenu = false; showGridMenu = !showGridMenu; showEdgeVisibilityMenu = false; }}
     >
       <span class="grid-size-label">{ui.gridSize}</span>
@@ -236,7 +237,7 @@
             class:selected={ui.gridSize === size}
             onclick={() => { ui.setGridSize(size); showGridMenu = false; }}
           >
-            <span>{size}px</span>
+            <span>{size}{t('canvas.toolbar.px')}</span>
             {#if ui.gridSize === size}
               <span class="check">&#10003;</span>
             {/if}
@@ -254,7 +255,7 @@
       class="toolbar-btn"
       class:active={showEdgeVisibilityMenu}
       class:has-hidden={hiddenEdgeCount > 0}
-      title="Edge Visibility"
+      title={t('canvas.toolbar.edgeVisibility')}
       onclick={(e) => { e.stopPropagation(); showLayoutMenu = false; showEdgeMenu = false; showGridMenu = false; showEdgeVisibilityMenu = !showEdgeVisibilityMenu; }}
     >
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -274,11 +275,11 @@
     </button>
     {#if showEdgeVisibilityMenu}
       <div class="toolbar-dropdown edge-visibility-dropdown">
-        <div class="dropdown-header">Show Edges</div>
+        <div class="dropdown-header">{t('canvas.toolbar.showEdges')}</div>
         <!-- All toggle -->
         <label class="visibility-toggle-item all-toggle">
           <span class="toggle-label">
-            <span class="toggle-name">All</span>
+            <span class="toggle-name">{t('canvas.toolbar.all')}</span>
           </span>
           <button
             class="toggle-switch"
@@ -286,7 +287,7 @@
             onclick={(e) => { e.preventDefault(); ui.setAllEdgeVisibility(hiddenEdgeCount > 0); }}
             role="switch"
             aria-checked={hiddenEdgeCount === 0}
-            aria-label="Toggle all edge categories"
+            aria-label={t('canvas.toolbar.toggleAllEdges')}
           >
             <span class="toggle-knob"></span>
           </button>
@@ -295,8 +296,8 @@
         {#each edgeCategoryOptions as cat (cat.id)}
           <label class="visibility-toggle-item">
             <span class="toggle-label">
-              <span class="toggle-name">{cat.label}</span>
-              <span class="toggle-desc">{cat.desc}</span>
+              <span class="toggle-name">{t(cat.labelKey)}</span>
+              <span class="toggle-desc">{t(cat.descKey)}</span>
             </span>
             <button
               class="toggle-switch"
@@ -304,7 +305,7 @@
               onclick={(e) => { e.preventDefault(); ui.toggleEdgeVisibility(cat.id); }}
               role="switch"
               aria-checked={ui.edgeVisibility[cat.id]}
-              aria-label={`Toggle ${cat.label} edges`}
+              aria-label={`Toggle ${t(cat.labelKey)} edges`}
             >
               <span class="toggle-knob"></span>
             </button>
@@ -313,8 +314,8 @@
         <div class="toggle-divider"></div>
         <label class="visibility-toggle-item">
           <span class="toggle-label">
-            <span class="toggle-name">Cost Badges</span>
-            <span class="toggle-desc">Node estimates</span>
+            <span class="toggle-name">{t('canvas.toolbar.costBadges')}</span>
+            <span class="toggle-desc">{t('canvas.toolbar.nodeEstimates')}</span>
           </span>
           <button
             class="toggle-switch"
@@ -322,15 +323,15 @@
             onclick={(e) => { e.preventDefault(); ui.setShowCostBadges(!ui.showCostBadges); }}
             role="switch"
             aria-checked={ui.showCostBadges}
-            aria-label="Toggle cost badges on nodes"
+            aria-label={t('canvas.toolbar.toggleCostBadges')}
           >
             <span class="toggle-knob"></span>
           </button>
         </label>
         <label class="visibility-toggle-item">
           <span class="toggle-label">
-            <span class="toggle-name">Compact Nodes</span>
-            <span class="toggle-desc">Icon-only view</span>
+            <span class="toggle-name">{t('canvas.toolbar.compactNodes')}</span>
+            <span class="toggle-desc">{t('canvas.toolbar.iconOnlyView')}</span>
           </span>
           <button
             class="toggle-switch"
@@ -338,7 +339,7 @@
             onclick={(e) => { e.preventDefault(); ui.setCompactNodes(!ui.compactNodes); }}
             role="switch"
             aria-checked={ui.compactNodes}
-            aria-label="Toggle compact icon-only node view"
+            aria-label={t('canvas.toolbar.toggleCompactNodes')}
           >
             <span class="toggle-knob"></span>
           </button>

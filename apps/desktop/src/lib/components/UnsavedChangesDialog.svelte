@@ -1,5 +1,6 @@
 <script lang="ts">
   import { ui } from '$lib/stores/ui.svelte';
+  import { t } from '$lib/i18n';
 
   function handleSave() {
     ui.resolveUnsaved('save');
@@ -25,13 +26,13 @@
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <div class="dialog" onclick={(e) => e.stopPropagation()}>
-      <h2 class="dialog-title">Unsaved Changes</h2>
-      <p class="dialog-message">You have unsaved changes. Do you want to save before closing?</p>
+      <h2 class="dialog-title">{t('dialog.unsavedChanges.title')}</h2>
+      <p class="dialog-message">{t('dialog.unsavedChanges.message')}</p>
       <div class="dialog-actions">
-        <button class="btn btn-secondary btn-discard" onclick={handleDiscard}>Don't Save</button>
+        <button class="btn btn-secondary btn-discard" onclick={handleDiscard}>{t('dialog.unsavedChanges.dontSave')}</button>
         <div class="spacer"></div>
-        <button class="btn btn-secondary" onclick={handleCancel}>Cancel</button>
-        <button class="btn btn-primary" onclick={handleSave}>Save</button>
+        <button class="btn btn-secondary" onclick={handleCancel}>{t('dialog.confirm.cancel')}</button>
+        <button class="btn btn-primary" onclick={handleSave}>{t('dialog.confirm.save')}</button>
       </div>
     </div>
   </div>

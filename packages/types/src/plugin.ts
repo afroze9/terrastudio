@@ -3,6 +3,7 @@ import type { ResourceTypeId, ResourceSchema } from './resource-schema.js';
 import type { ResourceNodeComponent, PropertyEditorComponent } from './node.js';
 import type { HclGenerator, BindingHclGenerator } from './hcl.js';
 import type { ConnectionRule } from './connection.js';
+import type { LocaleCode, TranslationDict } from './i18n.js';
 
 export interface IconDefinition {
   readonly type: 'svg' | 'component';
@@ -45,6 +46,12 @@ export interface InfraPlugin {
   readonly paletteCategories: ReadonlyArray<PaletteCategory>;
 
   readonly bindingGenerators?: ReadonlyArray<BindingHclGenerator>;
+
+  /**
+   * Optional locale bundles contributed by this plugin.
+   * Keys live under the plugin-specific namespace "plugin.{plugin.id}".
+   */
+  readonly locales?: Partial<Record<LocaleCode, TranslationDict>>;
 
   onAllPluginsRegistered?(registry: PluginRegistryReader): void;
 }

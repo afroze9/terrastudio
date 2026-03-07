@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { ModuleDefinition } from '@terrastudio/types';
   import { diagram, type DiagramNode } from '$lib/stores/diagram.svelte';
+  import { t } from '$lib/i18n';
 
   let {
     module,
@@ -217,7 +218,7 @@
     >
       <button
         class="collapse-btn"
-        title="Collapse module"
+        title={t('module.collapseModule')}
         onclick={(e) => { e.stopPropagation(); ontogglecollapse(module.id); }}
       >
         <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -225,7 +226,7 @@
         </svg>
       </button>
       {#if isTemplate}
-        <span class="template-badge">TEMPLATE</span>
+        <span class="template-badge">{t('module.templateBadge')}</span>
       {/if}
       <span class="module-name">{module.name}</span>
       <span class="module-badge">{memberCount}</span>
@@ -233,7 +234,7 @@
         <span class="instance-count" title="{instanceCount} instance{instanceCount !== 1 ? 's' : ''}">{instanceCount}</span>
         <button
           class="create-instance-btn"
-          title="Create instance"
+          title={t('module.createInstance')}
           onclick={(e) => { e.stopPropagation(); oncreateinstance?.(module.id); }}
         >
           <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

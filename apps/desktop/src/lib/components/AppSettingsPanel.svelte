@@ -11,6 +11,8 @@
   import CollapsibleSection from './CollapsibleSection.svelte';
   import SearchBox from './SearchBox.svelte';
   import { connectionWizard } from '$lib/stores/connection-wizard.svelte';
+  import { i18n, t } from '$lib/i18n';
+  import type { LocaleCode } from '@terrastudio/types';
 
   let searchQuery = $state('');
   let mcpStatus: any = $state({ statusColor: '#6b7280', statusLabel: 'MCP', ipcPort: null, ssePort: null, error: null });
@@ -28,12 +30,27 @@
   let palettes = $derived(getAllPalettes());
   let importError = $state('');
 
-  const edgeOptions: { value: EdgeStyle; label: string }[] = [
-    { value: 'default', label: 'Bezier' },
-    { value: 'smoothstep', label: 'Smooth Step' },
-    { value: 'step', label: 'Step' },
-    { value: 'straight', label: 'Straight' },
+  const edgeOptions: { value: EdgeStyle; labelKey: string }[] = [
+    { value: 'default', labelKey: 'edgeStyle.bezier' },
+    { value: 'smoothstep', labelKey: 'edgeStyle.smoothStep' },
+    { value: 'step', labelKey: 'edgeStyle.step' },
+    { value: 'straight', labelKey: 'edgeStyle.straight' },
   ];
+
+  const LOCALE_LABELS: Record<LocaleCode, string> = {
+    'en': 'English',
+    'es': 'Español',
+    'fr': 'Français',
+    'de': 'Deutsch',
+    'ja': '日本語',
+    'zh-CN': '中文（简体）',
+  };
+
+  const locales = Object.entries(LOCALE_LABELS) as [LocaleCode, string][];
+
+  async function handleLocaleChange(code: LocaleCode) {
+    await i18n.setLocale(code);
+  }
 
   const gridSizes = [10, 15, 20, 25, 30, 40, 50];
 
@@ -87,13 +104,13 @@
 </script>
 
 <div class="settings-panel">
-  <SearchBox bind:value={searchQuery} placeholder="Search settings..." />
+  <SearchBox bind:value={searchQuery} placeholder={t('settings.search')} />
 
   <!-- Appearance -->
-  {#if sectionVisible('Appearance')}
-  <CollapsibleSection id="app-appearance" label="Appearance" forceExpand={!!searchQuery}>
+  {#if sectionVisible(t('settings.appearance.label'))}
+  <CollapsibleSection id="app-appearance" label={t('settings.appearance.label')} forceExpand={!!searchQuery}>
     <div class="setting-row">
-      <span class="setting-label">Mode</span>
+      <span class="setting-label">{t('settings.appearance.mode')}</span>
       <div class="toggle-group">
         <button
           class="toggle-btn"
@@ -103,7 +120,7 @@
           <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M13.5 8.5C13.5 11.81 10.81 14.5 7.5 14.5C4.19 14.5 1.5 11.81 1.5 8.5C1.5 5.19 4.19 2.5 7.5 2.5C7.5 2.5 6.5 5 8 7C9.5 9 12 8.5 12 8.5C12 8.5 13.5 8.17 13.5 8.5Z" />
           </svg>
-          Dark
+          {t('settings.appearance.dark')}
         </button>
         <button
           class="toggle-btn"
@@ -121,13 +138,13 @@
             <path d="M3.4 12.6L4.45 11.55" />
             <path d="M11.55 4.45L12.6 3.4" />
           </svg>
-          Light
+          {t('settings.appearance.light')}
         </button>
       </div>
     </div>
 
     <div class="setting-row palette-row">
-      <span class="setting-label">Color Palette</span>
+      <span class="setting-label">{t('settings.appearance.colorPalette')}</span>
       <div class="palette-grid">
         {#each palettes as palette (palette.id)}
           <button
@@ -146,7 +163,7 @@
           <path d="M8 3v10" />
           <path d="M3 8h10" />
         </svg>
-        Import custom theme...
+        {t('settings.appearance.importCustomTheme')}
       </button>
       {#if importError}
         <div class="error-msg">{importError}</div>
@@ -156,16 +173,16 @@
   {/if}
 
   <!-- Canvas -->
-  {#if sectionVisible('Canvas')}
-  <CollapsibleSection id="app-canvas" label="Canvas" forceExpand={!!searchQuery}>
+  {#if sectionVisible(t('settings.canvas.label'))}
+  <CollapsibleSection id="app-canvas" label={t('settings.canvas.label')} forceExpand={!!searchQuery}>
     <div class="setting-row">
-      <span class="setting-label">Snap to Grid</span>
+      <span class="setting-label">{t('settings.canvas.snapToGrid')}</span>
       <button
         class="switch"
         class:on={ui.snapToGrid}
         onclick={() => ui.setSnapToGrid(!ui.snapToGrid)}
         role="switch"
-        aria-label="Toggle snap to grid"
+        aria-label={t('settings.canvas.toggleSnap')}
         aria-checked={ui.snapToGrid}
       >
         <span class="switch-thumb"></span>
@@ -173,7 +190,7 @@
     </div>
 
     <div class="setting-row">
-      <span class="setting-label">Grid Size</span>
+      <span class="setting-label">{t('settings.canvas.gridSize')}</span>
       <div class="select-group">
         {#each gridSizes as size (size)}
           <button
@@ -188,7 +205,7 @@
     </div>
 
     <div class="setting-row">
-      <span class="setting-label">Edge Style</span>
+      <span class="setting-label">{t('settings.canvas.edgeStyle')}</span>
       <div class="select-group">
         {#each edgeOptions as opt (opt.value)}
           <button
@@ -196,7 +213,7 @@
             class:active={ui.edgeType === opt.value}
             onclick={() => ui.setEdgeType(opt.value)}
           >
-            {opt.label}
+            {t(opt.labelKey)}
           </button>
         {/each}
       </div>
@@ -205,16 +222,16 @@
   {/if}
 
   <!-- Cost -->
-  {#if sectionVisible('Cost')}
-  <CollapsibleSection id="app-cost" label="Cost Estimates" forceExpand={!!searchQuery}>
+  {#if sectionVisible(t('settings.cost.label'))}
+  <CollapsibleSection id="app-cost" label={t('settings.cost.label')} forceExpand={!!searchQuery}>
     <div class="setting-row">
-      <span class="setting-label">Show cost badges on nodes</span>
+      <span class="setting-label">{t('settings.cost.showBadges')}</span>
       <button
         class="switch"
         class:on={ui.showCostBadges}
         onclick={() => ui.setShowCostBadges(!ui.showCostBadges)}
         role="switch"
-        aria-label="Toggle cost badges on nodes"
+        aria-label={t('settings.cost.toggleBadges')}
         aria-checked={ui.showCostBadges}
       >
         <span class="switch-thumb"></span>
@@ -224,10 +241,10 @@
   {/if}
 
   <!-- Logging -->
-  {#if sectionVisible('Logging')}
-  <CollapsibleSection id="app-logging" label="Logging" forceExpand={!!searchQuery}>
+  {#if sectionVisible(t('settings.logging.label'))}
+  <CollapsibleSection id="app-logging" label={t('settings.logging.label')} forceExpand={!!searchQuery}>
     <div class="setting-row">
-      <span class="setting-label">Log Level</span>
+      <span class="setting-label">{t('settings.logging.logLevel')}</span>
       <div class="select-group">
         {#each logLevels as opt (opt.value)}
           <button
@@ -241,59 +258,80 @@
       </div>
     </div>
     <div class="setting-row">
-      <span class="setting-label">Log files</span>
+      <span class="setting-label">{t('settings.logging.logFiles')}</span>
       <button class="open-folder-btn" onclick={handleOpenLogFolder}>
         <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M2 4h4l2 2h6v7H2V4z" />
         </svg>
-        Open folder
+        {t('settings.logging.openFolder')}
       </button>
     </div>
     <div class="mcp-hint">
-      Logs are written to date-stamped files. Higher levels include less detail.
+      {t('settings.logging.hint')}
     </div>
   </CollapsibleSection>
   {/if}
 
   <!-- Connection Wizard -->
-  {#if sectionVisible('Connection Wizard')}
-  <CollapsibleSection id="app-wizard" label="Connection Wizard" forceExpand={!!searchQuery}>
+  {#if sectionVisible(t('settings.connectionWizard.label'))}
+  <CollapsibleSection id="app-wizard" label={t('settings.connectionWizard.label')} forceExpand={!!searchQuery}>
     <div class="setting-row">
-      <span class="setting-label">Dismissed types</span>
-      <span class="mcp-value">{connectionWizard.dismissedTypes.size} dismissed</span>
+      <span class="setting-label">{t('settings.connectionWizard.dismissedTypes')}</span>
+      <span class="mcp-value">{connectionWizard.dismissedTypes.size} {t('settings.connectionWizard.dismissed')}</span>
     </div>
     <div class="setting-row">
-      <span class="setting-label">Reset all</span>
+      <span class="setting-label">{t('settings.connectionWizard.resetAll')}</span>
       <button
         class="open-folder-btn"
         onclick={() => connectionWizard.undismissAll()}
         disabled={connectionWizard.dismissedTypes.size === 0}
       >
-        Reset dismissed types
+        {t('settings.connectionWizard.resetDismissed')}
       </button>
     </div>
     <div class="mcp-hint">
-      When you check "Don't show again" on a connection type, the wizard won't auto-open for that type. Reset here to re-enable all.
+      {t('settings.connectionWizard.hint')}
+    </div>
+  </CollapsibleSection>
+  {/if}
+
+  <!-- Language -->
+  {#if sectionVisible(t('settings.language.label'))}
+  <CollapsibleSection id="app-language" label={t('settings.language.label')} forceExpand={!!searchQuery}>
+    <div class="setting-row">
+      <span class="setting-label">{t('settings.language.description')}</span>
+    </div>
+    <div class="select-group" style="flex-direction: column; align-items: stretch;">
+      {#each locales as [code, label] (code)}
+        <button
+          class="select-btn"
+          class:active={i18n.locale === code}
+          onclick={() => handleLocaleChange(code)}
+          style="text-align: left;"
+        >
+          {label}
+        </button>
+      {/each}
     </div>
   </CollapsibleSection>
   {/if}
 
   <!-- MCP Server -->
-  {#if sectionVisible('MCP Server')}
-  <CollapsibleSection id="app-mcp" label="MCP Server" forceExpand={!!searchQuery}>
+  {#if sectionVisible(t('settings.mcp.label'))}
+  <CollapsibleSection id="app-mcp" label={t('settings.mcp.label')} forceExpand={!!searchQuery}>
     <div class="setting-row">
-      <span class="setting-label">Status</span>
+      <span class="setting-label">{t('settings.mcp.status')}</span>
       <span class="mcp-status" style="color: {mcpStatus.statusColor}">{mcpStatus.statusLabel}</span>
     </div>
     {#if mcpStatus.ipcPort}
     <div class="setting-row">
-      <span class="setting-label">IPC Port</span>
+      <span class="setting-label">{t('settings.mcp.ipcPort')}</span>
       <span class="mcp-value">{mcpStatus.ipcPort}</span>
     </div>
     {/if}
     {#if mcpStatus.ssePort}
     <div class="setting-row">
-      <span class="setting-label">HTTP Port</span>
+      <span class="setting-label">{t('settings.mcp.httpPort')}</span>
       <span class="mcp-value">{mcpStatus.ssePort}</span>
     </div>
     {/if}
@@ -301,7 +339,7 @@
     <div class="mcp-error">{mcpStatus.error}</div>
     {/if}
     <div class="mcp-hint">
-      The MCP server allows AI assistants (Claude Desktop, VS Code Cline, Cursor) to interact with TerraStudio programmatically.
+      {t('settings.mcp.hint')}
     </div>
   </CollapsibleSection>
   {/if}

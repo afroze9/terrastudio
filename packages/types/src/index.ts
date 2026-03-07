@@ -75,6 +75,9 @@ export type { ModuleDefinition, ModuleInstance } from './module.js';
 // Naming convention types
 export type { NamingConvention } from './naming.js';
 
+// i18n types
+export type { LocaleCode, TranslationDict, PluginLocaleBundle, InterpolationVars } from './i18n.js';
+
 // Access control types
 export type { AccessModel, IdentityType, AccessGrant } from './access-control.js';
 export {

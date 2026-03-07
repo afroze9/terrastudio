@@ -1,5 +1,6 @@
 <script lang="ts">
   import { ui } from '$lib/stores/ui.svelte';
+  import { t } from '$lib/i18n';
   import { registry } from '$lib/bootstrap';
   import type { PaletteCategory } from '@terrastudio/types';
   import ResourcePalette from './ResourcePalette.svelte';
@@ -24,12 +25,12 @@
 
   const viewTitle = $derived.by(() => {
     switch (ui.activeView) {
-      case 'explorer': return 'RESOURCES';
-      case 'terraform': return 'TERRAFORM';
-      case 'settings': return 'PROJECT';
-      case 'app-settings': return 'SETTINGS';
-      case 'cost': return 'COST ESTIMATES';
-      case 'search': return 'SEARCH';
+      case 'explorer': return t('sidebar.resources');
+      case 'terraform': return t('sidebar.terraform');
+      case 'settings': return t('sidebar.project');
+      case 'app-settings': return t('sidebar.settings');
+      case 'cost': return t('sidebar.cost');
+      case 'search': return t('sidebar.search');
       default: return '';
     }
   });
@@ -67,8 +68,8 @@
       <button
         class="header-action"
         onclick={() => ui.toggleAllCategories(activeCategoryIds)}
-        title={allCollapsed ? 'Expand All' : 'Collapse All'}
-        aria-label={allCollapsed ? 'Expand all categories' : 'Collapse all categories'}
+        title={allCollapsed ? t('sidebar.expandAll') : t('sidebar.collapseAll')}
+        aria-label={allCollapsed ? t('sidebar.expandAllCategories') : t('sidebar.collapseAllCategories')}
       >
         {#if allCollapsed}
           <!-- ^ v  — chevrons pointing apart (expand) -->

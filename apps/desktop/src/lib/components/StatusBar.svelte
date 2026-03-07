@@ -4,6 +4,7 @@
   import { ui, type BottomPanelTab } from '$lib/stores/ui.svelte';
   import { connectionWizard } from '$lib/stores/connection-wizard.svelte';
   import PaletteSelector from './PaletteSelector.svelte';
+  import { t } from '$lib/i18n';
 
   let showPaletteSelector = $state(false);
   let McpStatusPill = $state<Component | null>(null);
@@ -13,25 +14,25 @@
   });
   let currentAccent = $derived(ui.palette?.previewAccent ?? '#818cf8');
 
-  const panelButtons: { id: BottomPanelTab; label: string; icon: string }[] = [
+  const panelButtons: { id: BottomPanelTab; labelKey: string; icon: string }[] = [
     {
       id: 'terminal',
-      label: 'Terminal',
+      labelKey: 'status.terminal',
       icon: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6L7 8.5L4 11" /><path d="M8.5 11H12" /></svg>',
     },
     {
       id: 'problems',
-      label: 'Problems',
+      labelKey: 'status.problems',
       icon: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.5L14.5 13H1.5L8 1.5z" /><path d="M8 6.5v3" /><circle cx="8" cy="11.5" r="0.5" fill="currentColor" /></svg>',
     },
     {
       id: 'annotations',
-      label: 'Annotations',
+      labelKey: 'status.annotations',
       icon: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h10v8H7L3 14V3z" /></svg>',
     },
     {
       id: 'connection-wizard',
-      label: 'Connection',
+      labelKey: 'status.connection',
       icon: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3v6a2 2 0 0 1-2 2H5" /><polyline points="8 8 5 11 8 14" /></svg>',
     },
   ];
@@ -39,19 +40,19 @@
   const statusLabel = $derived.by(() => {
     switch (terraform.status) {
       case 'idle':
-        return 'Ready';
+        return t('status.ready');
       case 'generating':
-        return 'Generating HCL...';
+        return t('status.generatingHcl');
       case 'writing':
-        return 'Writing files...';
+        return t('status.writingFiles');
       case 'running':
-        return `Running terraform ${terraform.currentCommand ?? ''}...`;
+        return t('status.running', { command: terraform.currentCommand ?? '' });
       case 'success':
-        return 'Success';
+        return t('status.success');
       case 'error':
-        return 'Error';
+        return t('status.error');
       default:
-        return 'Ready';
+        return t('status.ready');
     }
   });
 
@@ -80,11 +81,11 @@
       <button
         class="panel-toggle"
         class:active={ui.showBottomPanel && ui.activeBottomTab === btn.id}
-        title={btn.label}
+        title={t(btn.labelKey)}
         onclick={() => ui.toggleBottomPanel(btn.id)}
       >
         {@html btn.icon}
-        <span class="panel-toggle-label">{btn.label}</span>
+        <span class="panel-toggle-label">{t(btn.labelKey)}</span>
         {#if btn.id === 'connection-wizard' && connectionWizard.hasNewEntry && ui.activeBottomTab !== 'connection-wizard'}
           <span class="status-badge"></span>
         {/if}
@@ -99,10 +100,10 @@
     ></span>
     <span class="status-label">{statusLabel}</span>
     {#if terraform.terraformVersion}
-      <span class="version-badge">Terraform v{terraform.terraformVersion}</span>
+      <span class="version-badge">{t('status.terraformFound', { version: terraform.terraformVersion })}</span>
     {/if}
     {#if terraform.terraformInstalled === false}
-      <span class="warning-badge">Terraform not found</span>
+      <span class="warning-badge">{t('status.terraformMissing')}</span>
     {/if}
     <span class="separator"></span>
     {#if McpStatusPill}
@@ -112,7 +113,7 @@
     <div class="palette-btn-wrapper">
       <button
         class="status-btn icon-btn"
-        title="Color Palette"
+        title={t('status.colorPalette')}
         onclick={(e: MouseEvent) => { e.stopPropagation(); showPaletteSelector = !showPaletteSelector; }}
       >
         <span class="palette-dot" style="background: {currentAccent}"></span>
@@ -125,7 +126,7 @@
     </div>
     <button
       class="status-btn icon-btn"
-      title={ui.theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+      title={ui.theme === 'dark' ? t('status.switchToLight') : t('status.switchToDark')}
       onclick={() => ui.toggleTheme()}
     >
       {#if ui.theme === 'dark'}

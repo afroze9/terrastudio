@@ -9,6 +9,7 @@
   import type { LayoutAlgorithm } from '@terrastudio/core';
   import { applyNamingTemplate, buildTokens } from '@terrastudio/core';
   import { ui, type EdgeStyle } from '$lib/stores/ui.svelte';
+  import { t } from '$lib/i18n';
   import WindowControls from './WindowControls.svelte';
 
   // ── View state ─────────────────────────────────────────────────────────────
@@ -299,12 +300,12 @@
   {#if view === 'home'}
     <div class="welcome-inner">
       <div class="recent-section">
-        <h2 class="section-title">Recent Projects</h2>
+        <h2 class="section-title">{t('welcome.recentProjects')}</h2>
         {#if recentLoading}
           <div class="empty-state">Loading...</div>
         {:else if recentProjects.length === 0}
           <div class="empty-state">
-            <p class="empty-title">No recent projects</p>
+            <p class="empty-title">{t('welcome.noRecentProjects')}</p>
             <p class="empty-sub">Create a new project or open an existing one to get started.</p>
           </div>
         {:else}
@@ -323,7 +324,7 @@
                   <span class="project-path">{proj.path}</span>
                   <span class="project-time">{formatRelativeTime(proj.opened_at)}</span>
                 </div>
-                <button class="remove-btn" onclick={(e) => handleRemoveRecent(e, proj.path)} title="Remove from recents">
+                <button class="remove-btn" onclick={(e) => handleRemoveRecent(e, proj.path)} title={t('welcome.removeRecent')}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                   </svg>
@@ -345,7 +346,7 @@
             <polygon points="384,290 424,313 424,367 384,390 344,367 344,313" fill="#9333ea" stroke="#9333ea" stroke-width="14" stroke-linejoin="round"/>
           </svg>
           <h1 class="app-title">TerraStudio</h1>
-          <p class="app-subtitle">Visual infrastructure diagram builder</p>
+          <p class="app-subtitle">{t('welcome.subtitle')}</p>
           <p class="app-desc">Design cloud architectures visually and generate Terraform configurations.</p>
         </div>
 
@@ -354,13 +355,13 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
-            New Project
+            {t('welcome.newProject')}
           </button>
           <button class="action-btn" onclick={handleOpenProject}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
             </svg>
-            Open Project
+            {t('welcome.openProject')}
           </button>
         </div>
 

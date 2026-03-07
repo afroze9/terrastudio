@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { ModuleInstance } from '@terrastudio/types';
   import { diagram, type DiagramNode } from '$lib/stores/diagram.svelte';
+  import { t } from '$lib/i18n';
 
   let {
     instance,
@@ -205,23 +206,23 @@
     >
       <button
         class="collapse-btn"
-        title="Collapse instance"
+        title={t('module.collapseInstance')}
         onclick={(e) => { e.stopPropagation(); oncollapse(instance.id); }}
       >
         <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M4 6l4 4 4-4" />
         </svg>
       </button>
-      <span class="instance-badge-tag">INSTANCE</span>
+      <span class="instance-badge-tag">{t('module.instanceBadge')}</span>
       <span class="instance-name">{instance.name}</span>
       <span class="member-badge">{memberCount}</span>
       {#if varCount > 0}
-        <span class="var-badge">{varCount} var{varCount !== 1 ? 's' : ''}</span>
+        <span class="var-badge">{varCount} {varCount !== 1 ? t('module.vars') : t('module.var')}</span>
       {/if}
     </div>
 
     <!-- Read-only overlay hint -->
-    <div class="readonly-hint">read-only</div>
+    <div class="readonly-hint">{t('module.readOnly')}</div>
   </div>
 {/if}
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$lib/i18n';
   import { project } from '$lib/stores/project.svelte';
   import { registry, loadPluginsForProject } from '$lib/bootstrap';
   import { applyNamingTemplate, buildTokens } from '@terrastudio/core';
@@ -19,8 +20,8 @@
   let newTagValue = $state('');
 
   const layoutOptions: { value: LayoutAlgorithm; label: string; desc: string }[] = [
-    { value: 'dagre', label: 'Dagre', desc: 'Hierarchical layout based on edges' },
-    { value: 'hybrid', label: 'Hybrid Grid', desc: 'Grid layout with reference-aware clustering' },
+    { value: 'dagre', label: 'Dagre', desc: t('projectConfig.dagreDesc') },
+    { value: 'hybrid', label: 'Hybrid Grid', desc: t('projectConfig.hybridGridDesc') },
   ];
 
   // ─── Naming convention ───────────────────────────────────────────────────
@@ -92,10 +93,10 @@
   // ─── Cloud Provider ──────────────────────────────────────────────────────
 
   const PROVIDER_OPTIONS: { id: string; label: string; available: boolean }[] = [
-    { id: 'azurerm', label: 'Azure',       available: true  },
-    { id: 'aws',     label: 'AWS',         available: true  },
-    { id: 'google',  label: 'GCP',         available: false },
-    { id: 'all',     label: 'Multi-Cloud', available: true  },
+    { id: 'azurerm', label: t('projectConfig.azure'),       available: true  },
+    { id: 'aws',     label: t('projectConfig.aws'),         available: true  },
+    { id: 'google',  label: t('projectConfig.gcp'),         available: false },
+    { id: 'all',     label: t('projectConfig.multiCloud'), available: true  },
   ];
 
   let activeProviderKey = $derived.by(() => {
@@ -149,12 +150,12 @@
 </script>
 
 <div class="config-panel">
-  <SearchBox bind:value={searchQuery} placeholder="Search settings..." />
+  <SearchBox bind:value={searchQuery} placeholder={t('projectConfig.search')} />
 
   <!-- Cloud Provider -->
   {#if sectionVisible('Cloud Provider')}
-  <CollapsibleSection id="project-provider" label="Cloud Provider" forceExpand={!!searchQuery}>
-    <p class="section-hint">Resources shown in the palette are filtered by the selected provider.</p>
+  <CollapsibleSection id="project-provider" label={t('projectConfig.cloudProvider')} forceExpand={!!searchQuery}>
+    <p class="section-hint">{t('projectConfig.cloudProviderHint')}</p>
     <div class="provider-options">
       {#each PROVIDER_OPTIONS as opt (opt.id)}
         <button
@@ -166,7 +167,7 @@
         >
           <span class="provider-option-label">{opt.label}</span>
           {#if !opt.available}
-            <span class="provider-option-soon">Soon</span>
+            <span class="provider-option-soon">{t('projectConfig.soon')}</span>
           {/if}
         </button>
       {/each}
@@ -176,14 +177,14 @@
 
   <!-- Naming Convention -->
   {#if sectionVisible('Naming Convention')}
-  <CollapsibleSection id="project-naming" label="Naming Convention" forceExpand={!!searchQuery}>
+  <CollapsibleSection id="project-naming" label={t('projectConfig.namingConvention')} forceExpand={!!searchQuery}>
     <label class="toggle-row">
       <input
         type="checkbox"
         checked={convention?.enabled ?? false}
         onchange={(e) => setConventionEnabled((e.target as HTMLInputElement).checked)}
       />
-      <span class="toggle-label">Enable naming convention</span>
+      <span class="toggle-label">{t('projectConfig.enableNaming')}</span>
     </label>
 
     {#if convention?.enabled}
@@ -205,7 +206,7 @@
 
       <!-- Template input -->
       <div class="conv-field">
-        <span class="conv-label">Template</span>
+        <span class="conv-label">{t('projectConfig.templateField')}</span>
         <input
           type="text"
           class="conv-input"
@@ -213,13 +214,13 @@
           oninput={(e) => setConventionField('template', (e.target as HTMLInputElement).value)}
           placeholder={'{type}-{env}-{name}'}
         />
-        <span class="conv-hint">Tokens: <code>{'{type}'}</code> <code>{'{env}'}</code> <code>{'{name}'}</code> <code>{'{region}'}</code> <code>{'{org}'}</code></span>
+        <span class="conv-hint">{t('projectConfig.tokens')} <code>{'{type}'}</code> <code>{'{env}'}</code> <code>{'{name}'}</code> <code>{'{region}'}</code> <code>{'{org}'}</code></span>
       </div>
 
       <!-- Token inputs -->
       <div class="conv-tokens">
         <div class="conv-field half">
-          <span class="conv-label">Environment <span class="required">*</span></span>
+          <span class="conv-label">{t('projectConfig.environment')} <span class="required">*</span></span>
           <input
             type="text"
             class="conv-input"
@@ -229,7 +230,7 @@
           />
         </div>
         <div class="conv-field half">
-          <span class="conv-label">Region <span class="optional">(optional)</span></span>
+          <span class="conv-label">{t('projectConfig.region')} <span class="optional">(optional)</span></span>
           <input
             type="text"
             class="conv-input"
@@ -239,7 +240,7 @@
           />
         </div>
         <div class="conv-field half">
-          <span class="conv-label">Org prefix <span class="optional">(optional)</span></span>
+          <span class="conv-label">{t('projectConfig.orgPrefix')} <span class="optional">(optional)</span></span>
           <input
             type="text"
             class="conv-input"
@@ -253,7 +254,7 @@
       <!-- Live preview -->
       {#if previews.length > 0}
         <div class="preview-block">
-          <span class="preview-title">Preview</span>
+          <span class="preview-title">{t('projectConfig.preview')}</span>
           {#each previews as p}
             <div class="preview-row">
               <span class="preview-resource">{p.label}</span>
@@ -263,15 +264,15 @@
         </div>
       {/if}
 
-      <p class="section-hint" style="margin-top: 6px;">Applied to new resources on drop. Existing resources are not renamed.</p>
+      <p class="section-hint" style="margin-top: 6px;">{t('projectConfig.namingAppliedHint')}</p>
     {/if}
   </CollapsibleSection>
   {/if}
 
   <!-- Layout Algorithm -->
   {#if sectionVisible('Layout')}
-  <CollapsibleSection id="project-layout" label="Layout" forceExpand={!!searchQuery}>
-    <p class="section-hint">Algorithm used by Auto Layout.</p>
+  <CollapsibleSection id="project-layout" label={t('projectConfig.layout')} forceExpand={!!searchQuery}>
+    <p class="section-hint">{t('projectConfig.layoutHint')}</p>
     <div class="layout-options">
       {#each layoutOptions as opt (opt.value)}
         <button
@@ -294,8 +295,8 @@
 
   <!-- Common Tags Section -->
   {#if sectionVisible('Common Tags')}
-  <CollapsibleSection id="project-tags" label="Common Tags" forceExpand={!!searchQuery}>
-    <p class="section-hint">Applied to all resources that support tags.</p>
+  <CollapsibleSection id="project-tags" label={t('projectConfig.commonTags')} forceExpand={!!searchQuery}>
+    <p class="section-hint">{t('projectConfig.commonTagsHint')}</p>
 
     {#each tagEntries as [key, value] (key)}
       <div class="tag-row">
@@ -313,14 +314,14 @@
       <input
         type="text"
         class="tag-input"
-        placeholder="key"
+        placeholder={t('projectConfig.key')}
         bind:value={newTagKey}
         onkeydown={(e) => { if (e.key === 'Enter') addTag(); }}
       />
       <input
         type="text"
         class="tag-input"
-        placeholder="value"
+        placeholder={t('projectConfig.value')}
         bind:value={newTagValue}
         onkeydown={(e) => { if (e.key === 'Enter') addTag(); }}
       />

@@ -2,6 +2,7 @@
   import { connectionWizard } from '$lib/stores/connection-wizard.svelte';
   import ConnectionWizardCard from '../ConnectionWizardCard.svelte';
   import ConnectionWizardHistoryItem from '../ConnectionWizardHistoryItem.svelte';
+  import { t } from '$lib/i18n';
 
   // Clear badge when this tab is visible
   $effect(() => {
@@ -14,8 +15,8 @@
   {#if connectionWizard.activeEntry}
     <div class="active-section">
       <div class="active-header">
-        <span class="active-label">Latest Connection</span>
-        <button class="dismiss-btn" onclick={() => connectionWizard.clearActive()}>Dismiss</button>
+        <span class="active-label">{t('bottomPanel.latestConnection')}</span>
+        <button class="dismiss-btn" onclick={() => connectionWizard.clearActive()}>{t('bottomPanel.dismiss')}</button>
       </div>
       <ConnectionWizardCard entry={connectionWizard.activeEntry} />
     </div>
@@ -28,7 +29,7 @@
           <line x1="10" y1="14" x2="21" y2="3" />
         </svg>
       </div>
-      <span class="placeholder-text">Make a connection on the canvas to see it explained here</span>
+      <span class="placeholder-text">{t('bottomPanel.connectionPlaceholder')}</span>
     </div>
   {/if}
 
@@ -36,8 +37,8 @@
   {#if connectionWizard.history.length > 0}
     <div class="history-section">
       <div class="history-header">
-        <span class="history-label">Connection History</span>
-        <button class="clear-btn" onclick={() => connectionWizard.clearHistory()}>Clear</button>
+        <span class="history-label">{t('bottomPanel.connectionHistory')}</span>
+        <button class="clear-btn" onclick={() => connectionWizard.clearHistory()}>{t('bottomPanel.clear')}</button>
       </div>
       <div class="history-list">
         {#each connectionWizard.history as entry (entry.id)}

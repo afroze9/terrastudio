@@ -4,6 +4,7 @@
   import { diagram } from '$lib/stores/diagram.svelte';
   import { registry } from '$lib/bootstrap';
   import { searchNodes, type SearchResult } from '$lib/services/search-service';
+  import { t } from '$lib/i18n';
 
   let results = $state<SearchResult[]>([]);
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -133,7 +134,7 @@
         bind:value={ui.searchQuery}
         oninput={onInput}
         type="text"
-        placeholder="Search resources..."
+        placeholder={t('search.placeholder')}
         class="search-input"
         spellcheck="false"
       />
@@ -147,38 +148,38 @@
     <label class="filter-group">
       <span class="filter-label">Mode</span>
       <select bind:value={ui.searchMode} onchange={onFilterChange}>
-        <option value="all">All Fields</option>
-        <option value="name">Name</option>
-        <option value="type">Type</option>
-        <option value="terraform-name">Terraform Name</option>
-        <option value="property">Property</option>
+        <option value="all">{t('search.allFields')}</option>
+        <option value="name">{t('search.name')}</option>
+        <option value="type">{t('search.type')}</option>
+        <option value="terraform-name">{t('search.terraformName')}</option>
+        <option value="property">{t('search.property')}</option>
       </select>
     </label>
     <label class="filter-group">
       <span class="filter-label">Provider</span>
       <select bind:value={ui.searchProviderFilter} onchange={onFilterChange}>
-        <option value="">All</option>
-        <option value="azurerm">Azure</option>
-        <option value="aws">AWS</option>
+        <option value="">{t('search.all')}</option>
+        <option value="azurerm">{t('search.azure')}</option>
+        <option value="aws">{t('search.aws')}</option>
       </select>
     </label>
     <label class="filter-group">
       <span class="filter-label">Status</span>
       <select bind:value={ui.searchStatusFilter} onchange={onFilterChange}>
-        <option value="">All</option>
-        <option value="created">Created</option>
-        <option value="failed">Failed</option>
-        <option value="pending">Pending</option>
-        <option value="creating">Creating</option>
-        <option value="updating">Updating</option>
-        <option value="destroyed">Destroyed</option>
+        <option value="">{t('search.all')}</option>
+        <option value="created">{t('search.created')}</option>
+        <option value="failed">{t('search.failed')}</option>
+        <option value="pending">{t('search.pending')}</option>
+        <option value="creating">{t('search.creating')}</option>
+        <option value="updating">{t('search.updating')}</option>
+        <option value="destroyed">{t('search.destroyed')}</option>
       </select>
     </label>
   </div>
 
   {#if results.length > 0}
     <div class="result-count-bar">
-      {results.length} result{results.length === 1 ? '' : 's'}
+      {results.length} {results.length === 1 ? t('search.result') : t('search.results')}
     </div>
   {/if}
 
@@ -189,7 +190,7 @@
           <circle cx="11" cy="11" r="8" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
-        <span>No results for &ldquo;{ui.searchQuery}&rdquo;</span>
+        <span>{t('search.noResults')} &ldquo;{ui.searchQuery}&rdquo;</span>
       </div>
     {:else if ui.searchQuery.length === 0}
       <div class="empty-state">
@@ -197,11 +198,11 @@
           <circle cx="11" cy="11" r="8" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
-        <span>Search resources on canvas</span>
+        <span>{t('search.searchHint')}</span>
       </div>
     {:else if ui.searchQuery.length < 2}
       <div class="empty-state">
-        <span>Type at least 2 characters</span>
+        <span>{t('search.minChars')}</span>
       </div>
     {:else}
       {#each results as result, i (result.nodeId)}
