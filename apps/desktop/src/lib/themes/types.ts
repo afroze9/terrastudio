@@ -30,7 +30,14 @@ export type BuiltinPaletteId =
   | 'cyan-circuit'
   | 'violet-dusk'
   | 'slate-mono'
-  | 'high-contrast';
+  | 'high-contrast'
+  | 'solarized'
+  | 'nord'
+  | 'monokai'
+  | 'github'
+  | 'colorblind-deuteranopia'
+  | 'colorblind-protanopia'
+  | 'colorblind-tritanopia';
 
 export type PaletteId = BuiltinPaletteId | `custom-${string}`;
 

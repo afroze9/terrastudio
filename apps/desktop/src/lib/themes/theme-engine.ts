@@ -31,7 +31,9 @@ export function getPalette(id: PaletteId): ThemePalette | undefined {
 }
 
 export function getAllPalettes(): ThemePalette[] {
-  return [...builtinPalettes.values(), ...customPalettes.values()];
+  const builtin = [...builtinPalettes.values()].sort((a, b) => a.name.localeCompare(b.name));
+  const custom = [...customPalettes.values()].sort((a, b) => a.name.localeCompare(b.name));
+  return [...builtin, ...custom];
 }
 
 export function applyPalette(paletteId: PaletteId, mode: Theme): void {
