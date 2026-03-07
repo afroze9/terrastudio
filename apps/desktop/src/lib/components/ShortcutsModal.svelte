@@ -32,7 +32,10 @@
       icon: `<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>`,
       shortcuts: [
         { label: 'Toggle Side Panel', keys: ['Ctrl', 'B'] },
-        { label: 'Toggle Terminal',   keys: ['Ctrl', '`'] },
+        { label: 'Toggle Panel',      keys: ['Ctrl', 'J'] },
+        { label: 'Terminal',          keys: ['Ctrl', '`'] },
+        { label: 'Problems',          keys: ['Ctrl', '⇧', 'M'] },
+        { label: 'Canvas Search',     keys: ['Ctrl', '⇧', 'F'] },
         { label: 'Focus Search',      keys: ['Ctrl', 'F'] },
         { label: 'Resources',         keys: ['Alt', '1'] },
         { label: 'Terraform',         keys: ['Alt', '2'] },

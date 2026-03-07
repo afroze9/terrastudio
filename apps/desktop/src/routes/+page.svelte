@@ -104,7 +104,22 @@
 			}
 			if (e.ctrlKey && e.key === '`') {
 				e.preventDefault();
-				ui.toggleTerminal();
+				ui.toggleBottomPanel('terminal');
+				return;
+			}
+			if (e.ctrlKey && !e.shiftKey && e.key === 'j' && !inInput) {
+				e.preventDefault();
+				ui.showBottomPanel = !ui.showBottomPanel;
+				return;
+			}
+			if (e.ctrlKey && e.shiftKey && e.key === 'M' && !inInput) {
+				e.preventDefault();
+				ui.toggleBottomPanel('problems');
+				return;
+			}
+			if (e.ctrlKey && e.shiftKey && e.key === 'F' && !inInput) {
+				e.preventDefault();
+				ui.toggleBottomPanel('search');
 				return;
 			}
 			if (e.ctrlKey && e.shiftKey && e.key === 'N' && !inInput) {

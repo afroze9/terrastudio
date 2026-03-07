@@ -3,7 +3,7 @@
   import TabBar from './TabBar.svelte';
   import Canvas from './Canvas.svelte';
   import FilePreview from './FilePreview.svelte';
-  import TerminalPanel from './TerminalPanel.svelte';
+  import BottomPanel from './BottomPanel.svelte';
 
   const activeTab = $derived(ui.tabs.find((t) => t.id === ui.activeTabId));
 </script>
@@ -17,7 +17,7 @@
       <FilePreview filename={activeTab.id} />
     {/if}
   </div>
-  <TerminalPanel />
+  <BottomPanel />
 </div>
 
 <style>

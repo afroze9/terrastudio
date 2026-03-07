@@ -204,9 +204,9 @@
         <button class="dropdown-item" onclick={() => { close(); ui.showPropertiesPanel = !ui.showPropertiesPanel; }}>
           <span>{ui.showPropertiesPanel ? 'Hide' : 'Show'} Properties</span>
         </button>
-        <button class="dropdown-item" onclick={() => { close(); ui.toggleTerminal(); }}>
-          <span>{ui.showTerminal ? 'Hide' : 'Show'} Terminal</span>
-          <span class="shortcut">Ctrl+`</span>
+        <button class="dropdown-item" onclick={() => { close(); ui.toggleBottomPanel('terminal'); }}>
+          <span>{ui.showBottomPanel ? 'Hide' : 'Show'} Panel</span>
+          <span class="shortcut">Ctrl+J</span>
         </button>
         {#if project.isOpen}
           <button class="dropdown-item" onclick={() => { close(); ui.fitView?.(); }}>

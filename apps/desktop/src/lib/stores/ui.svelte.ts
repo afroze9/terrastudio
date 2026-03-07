@@ -18,6 +18,7 @@ const DEFAULT_EDGE_VISIBILITY: EdgeCategoryVisibility = {
 export type SidebarView = 'explorer' | 'terraform' | 'settings' | 'cost' | 'app-settings';
 export type EdgeStyle = 'default' | 'smoothstep' | 'step' | 'straight';
 export type Theme = 'dark' | 'light';
+export type BottomPanelTab = 'terminal' | 'problems' | 'search' | 'annotations';
 
 export interface DragFeedback {
   /** The resource type being dragged */
@@ -47,9 +48,20 @@ class UiStore {
   // --- Properties Panel (right) ---
   showPropertiesPanel = $state(true);
 
-  // --- Terminal ---
-  showTerminal = $state(false);
-  terminalPanelHeight = $state(200);
+  // --- Bottom Panel (replaces standalone terminal) ---
+  showBottomPanel = $state(false);
+  activeBottomTab = $state<BottomPanelTab>((typeof localStorage !== 'undefined' && localStorage.getItem('terrastudio-bottom-tab') as BottomPanelTab) || 'terminal');
+  bottomPanelHeight = $state(typeof localStorage !== 'undefined' && localStorage.getItem('terrastudio-bottom-panel-height') ? Number(localStorage.getItem('terrastudio-bottom-panel-height')) : 200);
+
+  // --- Legacy aliases for backwards compatibility ---
+  get showTerminal() { return this.showBottomPanel && this.activeBottomTab === 'terminal'; }
+  set showTerminal(v: boolean) {
+    if (v) {
+      this.openBottomPanel('terminal');
+    } else {
+      this.showBottomPanel = false;
+    }
+  }
 
   // --- Palette categories ---
   collapsedCategories = $state<Set<string>>(new Set());
@@ -166,9 +178,33 @@ class UiStore {
     }
   }
 
-  /** Toggle terminal visibility */
+  /** Open bottom panel to a specific tab */
+  openBottomPanel(tab: BottomPanelTab) {
+    this.activeBottomTab = tab;
+    this.showBottomPanel = true;
+    localStorage.setItem('terrastudio-bottom-tab', tab);
+  }
+
+  /** Toggle bottom panel; if already showing the clicked tab, hide it */
+  toggleBottomPanel(tab: BottomPanelTab) {
+    if (this.showBottomPanel && this.activeBottomTab === tab) {
+      this.showBottomPanel = false;
+    } else {
+      this.activeBottomTab = tab;
+      this.showBottomPanel = true;
+      localStorage.setItem('terrastudio-bottom-tab', tab);
+    }
+  }
+
+  /** Toggle terminal tab (legacy shortcut) */
   toggleTerminal() {
-    this.showTerminal = !this.showTerminal;
+    this.toggleBottomPanel('terminal');
+  }
+
+  /** Set bottom panel height and persist */
+  setBottomPanelHeight(height: number) {
+    this.bottomPanelHeight = height;
+    localStorage.setItem('terrastudio-bottom-panel-height', String(height));
   }
 
   /** Set snap to grid and persist */

@@ -72,9 +72,9 @@
   <div class="status-right">
     <button
       class="status-btn icon-btn"
-      class:active={ui.showTerminal}
-      title="Toggle Terminal (Ctrl+J)"
-      onclick={() => ui.toggleTerminal()}
+      class:active={ui.showBottomPanel}
+      title="Toggle Panel (Ctrl+J)"
+      onclick={() => ui.toggleBottomPanel('terminal')}
     >
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <rect x="1" y="2" width="14" height="12" rx="1.5" />
