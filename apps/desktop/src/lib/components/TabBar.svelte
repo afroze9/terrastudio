@@ -25,7 +25,7 @@
   }
 
   // Count non-canvas tabs to know if "Close Others" makes sense
-  let nonCanvasTabs = $derived(ui.tabs.filter((t) => t.id !== 'canvas'));
+  let nonCanvasTabs = $derived(ui.tabs.filter((t) => t.id !== 'canvas' && t.id !== 'dep-graph'));
 </script>
 
 <svelte:window onclick={closeContextMenu} />
@@ -40,6 +40,8 @@
     >
       {#if tab.type === 'canvas'}
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+      {:else if tab.type === 'dep-graph'}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M12 7.5V12M12 12L6 16.5M12 12l6 4.5"/></svg>
       {:else}
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       {/if}
@@ -47,7 +49,7 @@
       {#if tab.type === 'canvas' && project.isDirty}
         <span class="dirty-dot"></span>
       {/if}
-      {#if tab.type !== 'canvas'}
+      {#if tab.type !== 'canvas' && tab.type !== 'dep-graph'}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <span
@@ -88,7 +90,7 @@
     onclick={(e) => e.stopPropagation()}
     oncontextmenu={(e) => e.stopPropagation()}
   >
-    {#if contextMenu.tabId !== 'canvas'}
+    {#if contextMenu.tabId !== 'canvas' && contextMenu.tabId !== 'dep-graph'}
       <button class="ctx-item" onclick={() => handleClose(contextMenu!.tabId)}>
         Close
       </button>

@@ -3,6 +3,7 @@
   import TabBar from './TabBar.svelte';
   import Canvas from './Canvas.svelte';
   import FilePreview from './FilePreview.svelte';
+  import DependencyGraphView from './DependencyGraphView.svelte';
   import BottomPanel from './BottomPanel.svelte';
 
   const activeTab = $derived(ui.tabs.find((t) => t.id === ui.activeTabId));
@@ -15,6 +16,8 @@
       <Canvas />
     {:else if activeTab?.type === 'file'}
       <FilePreview filename={activeTab.id} />
+    {:else if activeTab?.type === 'dep-graph'}
+      <DependencyGraphView />
     {/if}
   </div>
   <BottomPanel />

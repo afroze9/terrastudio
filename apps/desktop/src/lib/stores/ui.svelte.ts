@@ -53,7 +53,7 @@ export interface DragFeedback {
 export interface EditorTab {
   id: string;        // 'canvas' or filename
   label: string;     // 'Canvas' or 'main.tf'
-  type: 'canvas' | 'file';
+  type: 'canvas' | 'file' | 'dep-graph';
 }
 
 class UiStore {
@@ -63,7 +63,10 @@ class UiStore {
   sidePanelWidth = $state(280);
 
   // --- Editor Tabs ---
-  tabs = $state<EditorTab[]>([{ id: 'canvas', label: 'Canvas', type: 'canvas' }]);
+  tabs = $state<EditorTab[]>([
+    { id: 'canvas', label: 'Canvas', type: 'canvas' },
+    { id: 'dep-graph', label: 'Dependencies', type: 'dep-graph' },
+  ]);
   activeTabId = $state('canvas');
 
   // --- Properties Panel (right) ---
@@ -201,7 +204,7 @@ class UiStore {
 
   /** Close a file tab */
   closeTab(tabId: string) {
-    if (tabId === 'canvas') return;
+    if (tabId === 'canvas' || tabId === 'dep-graph') return;
     this.tabs = this.tabs.filter((t) => t.id !== tabId);
     if (this.activeTabId === tabId) {
       this.activeTabId = 'canvas';
@@ -210,13 +213,16 @@ class UiStore {
 
   /** Close all file tabs, returning to just the canvas tab. */
   closeAllFileTabs() {
-    this.tabs = [{ id: 'canvas', label: 'Canvas', type: 'canvas' as const }];
+    this.tabs = [
+      { id: 'canvas', label: 'Canvas', type: 'canvas' as const },
+      { id: 'dep-graph', label: 'Dependencies', type: 'dep-graph' as const },
+    ];
     this.activeTabId = 'canvas';
   }
 
   /** Close all file tabs except the given one (canvas is always kept) */
   closeOtherTabs(keepTabId: string) {
-    this.tabs = this.tabs.filter((t) => t.id === 'canvas' || t.id === keepTabId);
+    this.tabs = this.tabs.filter((t) => t.id === 'canvas' || t.id === 'dep-graph' || t.id === keepTabId);
     if (this.activeTabId !== 'canvas' && this.activeTabId !== keepTabId) {
       this.activeTabId = keepTabId !== 'canvas' ? keepTabId : 'canvas';
     }

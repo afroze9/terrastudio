@@ -78,6 +78,9 @@ export type { NamingConvention } from './naming.js';
 // i18n types
 export type { LocaleCode, TranslationDict, PluginLocaleBundle, InterpolationVars } from './i18n.js';
 
+// Dependency graph types
+export type { DepGraphNode, DepGraphEdge, DepGraphCluster, DepGraphData } from './dep-graph.js';
+
 // Access control types
 export type { AccessModel, IdentityType, AccessGrant } from './access-control.js';
 export {
