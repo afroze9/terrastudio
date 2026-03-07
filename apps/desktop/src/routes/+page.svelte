@@ -119,7 +119,7 @@
 			}
 			if (e.ctrlKey && e.shiftKey && e.key === 'F' && !inInput) {
 				e.preventDefault();
-				ui.toggleBottomPanel('search');
+				ui.setActiveView('search');
 				return;
 			}
 			if (e.ctrlKey && e.shiftKey && e.key === 'N' && !inInput) {
@@ -197,6 +197,11 @@
 			if (e.altKey && e.key === '4' && !inInput) {
 				e.preventDefault();
 				ui.setActiveView('cost');
+				return;
+			}
+			if (e.altKey && e.key === '5' && !inInput) {
+				e.preventDefault();
+				ui.setActiveView('search');
 				return;
 			}
 			if (e.ctrlKey && e.key === ',' && !inInput) {

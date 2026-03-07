@@ -134,3 +134,13 @@ html, body {
 .svelte-flow__node.draggable.dragging {
   cursor: grabbing;
 }
+
+/* Canvas search — flash animation when navigating to a node */
+@keyframes search-node-flash {
+  0%   { box-shadow: 0 0 0 0px var(--color-accent); }
+  30%  { box-shadow: 0 0 0 6px var(--color-accent); }
+  100% { box-shadow: 0 0 0 0px var(--color-accent); }
+}
+.search-highlight-flash {
+  animation: search-node-flash 1.2s ease-out forwards;
+}

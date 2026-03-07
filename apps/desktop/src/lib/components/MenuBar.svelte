@@ -283,6 +283,10 @@
           <span>Cost</span>
           <span class="shortcut">Alt+4</span>
         </button>
+        <button class="dropdown-item" onclick={() => { close(); ui.setActiveView('search'); }}>
+          <span>Search</span>
+          <span class="shortcut">Alt+5</span>
+        </button>
         <div class="dropdown-separator"></div>
         <button class="dropdown-item" onclick={() => { close(); ui.setActiveView('app-settings'); }}>
           <span>Settings</span>

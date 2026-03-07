@@ -2,7 +2,6 @@
   import { ui, type BottomPanelTab } from '$lib/stores/ui.svelte';
   import TerminalTab from './bottom-panel/TerminalTab.svelte';
   import ProblemsTab from './bottom-panel/ProblemsTab.svelte';
-  import SearchTab from './bottom-panel/SearchTab.svelte';
   import AnnotationsTab from './bottom-panel/AnnotationsTab.svelte';
 
   let isResizing = $state(false);
@@ -10,7 +9,6 @@
   const tabs: { id: BottomPanelTab; label: string }[] = [
     { id: 'terminal', label: 'Terminal' },
     { id: 'problems', label: 'Problems' },
-    { id: 'search', label: 'Search' },
     { id: 'annotations', label: 'Annotations' },
   ];
 
@@ -64,8 +62,6 @@
         <TerminalTab />
       {:else if ui.activeBottomTab === 'problems'}
         <ProblemsTab />
-      {:else if ui.activeBottomTab === 'search'}
-        <SearchTab />
       {:else if ui.activeBottomTab === 'annotations'}
         <AnnotationsTab />
       {/if}

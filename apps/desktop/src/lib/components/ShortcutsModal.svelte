@@ -41,6 +41,7 @@
         { label: 'Terraform',         keys: ['Alt', '2'] },
         { label: 'Project Settings',  keys: ['Alt', '3'] },
         { label: 'Cost Estimates',    keys: ['Alt', '4'] },
+        { label: 'Search',            keys: ['Alt', '5'] },
         { label: 'App Settings',      keys: ['Ctrl', ','] },
       ],
     },

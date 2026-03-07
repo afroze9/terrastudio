@@ -15,10 +15,10 @@ const DEFAULT_EDGE_VISIBILITY: EdgeCategoryVisibility = {
   annotation: true,
 };
 
-export type SidebarView = 'explorer' | 'terraform' | 'settings' | 'cost' | 'app-settings';
+export type SidebarView = 'explorer' | 'terraform' | 'settings' | 'cost' | 'app-settings' | 'search';
 export type EdgeStyle = 'default' | 'smoothstep' | 'step' | 'straight';
 export type Theme = 'dark' | 'light';
-export type BottomPanelTab = 'terminal' | 'problems' | 'search' | 'annotations';
+export type BottomPanelTab = 'terminal' | 'problems' | 'annotations';
 
 export interface DragFeedback {
   /** The resource type being dragged */
@@ -71,6 +71,22 @@ class UiStore {
 
   // --- SvelteFlow fitView (assigned by DnDFlow) ---
   fitView: (() => void) | null = $state(null);
+
+  // --- Canvas Search navigation hook (assigned by DnDFlow) ---
+  navigateFn: ((nodeId: string) => void) | null = $state(null);
+
+  // --- Canvas Search state (persists across view switches) ---
+  searchQuery = $state('');
+  searchMode = $state<'all' | 'name' | 'type' | 'terraform-name' | 'property'>('all');
+  searchProviderFilter = $state('');
+  searchStatusFilter = $state('');
+  searchResultCount = $state(0);
+  searchActiveIndex = $state(-1);
+
+  /** Navigate the canvas to a specific node, select it, and trigger highlight. */
+  navigateToNode(nodeId: string): void {
+    this.navigateFn?.(nodeId);
+  }
 
   // --- Edge style ---
   edgeType = $state<EdgeStyle>((typeof localStorage !== 'undefined' && localStorage.getItem('terrastudio-edge-type') as EdgeStyle) || 'default');

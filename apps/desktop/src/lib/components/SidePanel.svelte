@@ -7,6 +7,7 @@
   import ProjectConfigPanel from './ProjectConfigPanel.svelte';
   import AppSettingsPanel from './AppSettingsPanel.svelte';
   import CostPanel from './CostPanel.svelte';
+  import SearchPanel from './SearchPanel.svelte';
 
   const categoryIds = registry.paletteCategories.map((c: PaletteCategory) => c.id);
 
@@ -28,6 +29,7 @@
       case 'settings': return 'PROJECT';
       case 'app-settings': return 'SETTINGS';
       case 'cost': return 'COST ESTIMATES';
+      case 'search': return 'SEARCH';
       default: return '';
     }
   });
@@ -95,6 +97,8 @@
       <AppSettingsPanel />
     {:else if ui.activeView === 'cost'}
       <CostPanel />
+    {:else if ui.activeView === 'search'}
+      <SearchPanel />
     {/if}
   </div>
   <!-- svelte-ignore a11y_no_static_element_interactions -->

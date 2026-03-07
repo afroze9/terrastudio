@@ -24,7 +24,7 @@
   import { project } from '$lib/stores/project.svelte';
   import type { ResourceNodeComponent, ResourceTypeId, EdgeCategoryId, TerraStudioEdgeData } from '@terrastudio/types';
   import type { Action } from 'svelte/action';
-  import { untrack } from 'svelte';
+  import { tick, untrack } from 'svelte';
   import { EdgeMarkers } from './edges';
   import { autofitContainer } from '$lib/services/layout-service';
   import ConnectionPointsModal from './ConnectionPointsModal.svelte';
@@ -34,12 +34,35 @@
 
   let { nodeTypes }: { nodeTypes: Record<string, ResourceNodeComponent> } = $props();
 
-  const { screenToFlowPosition, fitView } = useSvelteFlow();
+  const { screenToFlowPosition, fitView, setCenter, getNode } = useSvelteFlow();
 
   // Expose fitView globally so toolbar / menu bar can trigger it
   $effect(() => {
     ui.fitView = () => fitView();
     return () => { ui.fitView = null; };
+  });
+
+  // Expose navigateFn for canvas search
+  $effect(() => {
+    ui.navigateFn = (nodeId: string) => {
+      const node = getNode(nodeId);
+      if (!node) return;
+
+      const abs = getAbsolutePosition(nodeId);
+      const x = abs.x + (node.measured?.width ?? 160) / 2;
+      const y = abs.y + (node.measured?.height ?? 60) / 2;
+      setCenter(x, y, { zoom: 1.2, duration: 400 });
+
+      diagram.nodes = diagram.nodes.map((n) => ({ ...n, selected: n.id === nodeId }));
+      diagram.selectedNodeId = nodeId;
+
+      tick().then(() => {
+        const el = document.querySelector(`[data-id="${nodeId}"]`);
+        el?.classList.add('search-highlight-flash');
+        setTimeout(() => el?.classList.remove('search-highlight-flash'), 1200);
+      });
+    };
+    return () => { ui.navigateFn = null; };
   });
 
   // When edge type changes, update all existing edges
