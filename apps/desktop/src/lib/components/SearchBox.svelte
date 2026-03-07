@@ -47,7 +47,7 @@
     border: none;
     background: transparent;
     color: var(--color-text);
-    font-size: 12px;
+    font-size: var(--font-12);
     outline: none;
     min-width: 0;
   }
@@ -59,7 +59,7 @@
     background: none;
     border: none;
     color: var(--color-text-muted);
-    font-size: 14px;
+    font-size: var(--font-14);
     cursor: pointer;
     padding: 0 2px;
     line-height: 1;

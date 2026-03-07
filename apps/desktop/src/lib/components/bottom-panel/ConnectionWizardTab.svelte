@@ -71,7 +71,7 @@
   }
 
   .active-label {
-    font-size: 10px;
+    font-size: var(--font-10);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -82,7 +82,7 @@
     background: none;
     border: none;
     color: var(--color-text-muted);
-    font-size: 10px;
+    font-size: var(--font-10);
     cursor: pointer;
     padding: 2px 6px;
     border-radius: 3px;
@@ -110,7 +110,7 @@
   }
 
   .placeholder-text {
-    font-size: 12px;
+    font-size: var(--font-12);
     text-align: center;
   }
 
@@ -130,7 +130,7 @@
   }
 
   .history-label {
-    font-size: 10px;
+    font-size: var(--font-10);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -141,7 +141,7 @@
     background: none;
     border: none;
     color: var(--color-text-muted);
-    font-size: 10px;
+    font-size: var(--font-10);
     cursor: pointer;
     padding: 2px 6px;
     border-radius: 3px;

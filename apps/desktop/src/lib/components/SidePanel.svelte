@@ -131,7 +131,7 @@
     border-bottom: 1px solid var(--color-border);
   }
   .panel-title {
-    font-size: 11px;
+    font-size: var(--font-11);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;

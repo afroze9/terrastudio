@@ -107,7 +107,7 @@
 
 <style>
   :global(.edge-label) {
-    font-size: 11px;
+    font-size: var(--font-11);
     font-weight: 500;
     padding: 2px 6px;
     border-radius: 4px;

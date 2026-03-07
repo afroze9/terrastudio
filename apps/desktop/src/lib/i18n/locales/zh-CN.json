@@ -15,7 +15,8 @@
     "logging": { "label": "日志", "logLevel": "日志级别", "logFiles": "日志文件", "openFolder": "打开文件夹", "hint": "日志会写入按日期命名的文件。级别越高，记录的细节越少。" },
     "language": { "label": "语言", "description": "选择 TerraStudio 的显示语言" },
     "connectionWizard": { "label": "连接向导", "dismissedTypes": "已忽略的类型", "dismissed": "已忽略", "resetAll": "全部重置", "resetDismissed": "重置已忽略的类型", "hint": "当您对某个连接类型勾选\"不再显示\"后，该类型将不会自动打开向导。在此重置可重新启用所有类型。" },
-    "mcp": { "label": "MCP 服务器", "status": "状态", "ipcPort": "IPC 端口", "httpPort": "HTTP 端口", "hint": "MCP 服务器允许 AI 助手（Claude Desktop、VS Code Cline、Cursor）以编程方式与 TerraStudio 交互。" }
+    "mcp": { "label": "MCP 服务器", "status": "状态", "ipcPort": "IPC 端口", "httpPort": "HTTP 端口", "hint": "MCP 服务器允许 AI 助手（Claude Desktop、VS Code Cline、Cursor）以编程方式与 TerraStudio 交互。" },
+    "accessibility": { "label": "无障碍", "fontScale": "字体缩放", "reducedMotion": "减少动画", "system": "跟随系统", "reduce": "减少", "noPreference": "无偏好", "hint": "字体缩放调整整个应用的基础字体大小。减少动画会禁用动画和过渡效果。" }
   },
   "sidebar": { "resources": "资源", "terraform": "TERRAFORM", "project": "项目", "settings": "设置", "cost": "成本估算", "search": "搜索", "expandAll": "全部展开", "collapseAll": "全部折叠", "expandAllCategories": "展开所有分类", "collapseAllCategories": "折叠所有分类" },
   "activityBar": { "resources": "资源", "terraform": "Terraform", "project": "项目", "cost": "成本估算", "search": "搜索", "settings": "设置" },

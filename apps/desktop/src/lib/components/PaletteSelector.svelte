@@ -51,11 +51,13 @@
 
 <div class="palette-selector">
   <div class="palette-header">{t('paletteSelector.title')}</div>
-  <div class="palette-list">
+  <div class="palette-list" role="radiogroup" aria-label={t('paletteSelector.title')}>
     {#each palettes as palette (palette.id)}
       <button
         class="palette-item"
         class:active={ui.paletteId === palette.id}
+        role="radio"
+        aria-checked={ui.paletteId === palette.id}
         onclick={() => selectPalette(palette.id)}
       >
         <span class="swatch" style="background: {palette.previewAccent}"></span>
@@ -91,7 +93,7 @@
   }
   .palette-header {
     padding: 6px 12px;
-    font-size: 10px;
+    font-size: var(--font-10);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -113,7 +115,7 @@
     border-radius: 4px;
     background: transparent;
     color: var(--color-text-muted);
-    font-size: 12px;
+    font-size: var(--font-12);
     cursor: pointer;
     text-align: left;
   }
@@ -137,7 +139,7 @@
     flex: 1;
   }
   .check {
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-accent);
   }
   .palette-footer {
@@ -154,7 +156,7 @@
     border-radius: 4px;
     background: transparent;
     color: var(--color-text-muted);
-    font-size: 12px;
+    font-size: var(--font-12);
     cursor: pointer;
   }
   .import-btn:hover {
@@ -163,7 +165,7 @@
   }
   .import-error {
     padding: 4px 8px;
-    font-size: 10px;
+    font-size: var(--font-10);
     color: #ef4444;
   }
 </style>

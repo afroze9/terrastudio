@@ -58,13 +58,13 @@
   }
   .dialog-title {
     margin: 0 0 12px;
-    font-size: 15px;
+    font-size: var(--font-15);
     font-weight: 600;
     color: var(--color-text);
   }
   .dialog-message {
     margin: 0 0 20px;
-    font-size: 13px;
+    font-size: var(--font-13);
     color: var(--color-text-muted);
     line-height: 1.5;
   }
@@ -79,7 +79,7 @@
   .btn {
     padding: 8px 20px;
     border-radius: 4px;
-    font-size: 13px;
+    font-size: var(--font-13);
     cursor: pointer;
     border: 1px solid transparent;
   }

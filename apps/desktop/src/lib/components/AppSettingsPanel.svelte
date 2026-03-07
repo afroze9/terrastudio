@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ui, type EdgeStyle } from '$lib/stores/ui.svelte';
+  import { ui, type EdgeStyle, type FontScale, type ReducedMotionPref } from '$lib/stores/ui.svelte';
   import { getAllPalettes, validateCustomTheme, importCustomTheme } from '$lib/themes/theme-engine';
   import type { PaletteId, CustomThemeFile } from '$lib/themes/types';
   import { initLogging } from '$lib/bootstrap';
@@ -51,6 +51,14 @@
   async function handleLocaleChange(code: LocaleCode) {
     await i18n.setLocale(code);
   }
+
+  const fontScales: FontScale[] = [75, 85, 100, 115, 130, 150];
+
+  const reducedMotionOptions: { value: ReducedMotionPref; labelKey: string }[] = [
+    { value: 'system', labelKey: 'settings.accessibility.system' },
+    { value: 'reduce', labelKey: 'settings.accessibility.reduce' },
+    { value: 'no-preference', labelKey: 'settings.accessibility.noPreference' },
+  ];
 
   const gridSizes = [10, 15, 20, 25, 30, 40, 50];
 
@@ -168,6 +176,45 @@
       {#if importError}
         <div class="error-msg">{importError}</div>
       {/if}
+    </div>
+  </CollapsibleSection>
+  {/if}
+
+  <!-- Accessibility -->
+  {#if sectionVisible(t('settings.accessibility.label'))}
+  <CollapsibleSection id="app-accessibility" label={t('settings.accessibility.label')} forceExpand={!!searchQuery}>
+    <div class="setting-row">
+      <span class="setting-label">{t('settings.accessibility.fontScale')}</span>
+      <div class="select-group">
+        {#each fontScales as scale (scale)}
+          <button
+            class="select-btn"
+            class:active={ui.fontScale === scale}
+            onclick={() => ui.setFontScale(scale)}
+          >
+            {scale}%
+          </button>
+        {/each}
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <span class="setting-label">{t('settings.accessibility.reducedMotion')}</span>
+      <div class="select-group">
+        {#each reducedMotionOptions as opt (opt.value)}
+          <button
+            class="select-btn"
+            class:active={ui.reducedMotion === opt.value}
+            onclick={() => ui.setReducedMotion(opt.value)}
+          >
+            {t(opt.labelKey)}
+          </button>
+        {/each}
+      </div>
+    </div>
+
+    <div class="mcp-hint">
+      {t('settings.accessibility.hint')}
     </div>
   </CollapsibleSection>
   {/if}
@@ -365,7 +412,7 @@
   }
 
   .setting-label {
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text);
     white-space: nowrap;
     flex-shrink: 0;
@@ -387,7 +434,7 @@
     border: none;
     background: transparent;
     color: var(--color-text-muted);
-    font-size: 11px;
+    font-size: var(--font-11);
     cursor: pointer;
     transition: background 0.1s, color 0.1s;
   }
@@ -422,7 +469,7 @@
     border-radius: 4px;
     background: transparent;
     color: var(--color-text-muted);
-    font-size: 12px;
+    font-size: var(--font-12);
     cursor: pointer;
     text-align: left;
     transition: background 0.1s, border-color 0.1s;
@@ -459,7 +506,7 @@
     border-radius: 4px;
     background: transparent;
     color: var(--color-text-muted);
-    font-size: 11px;
+    font-size: var(--font-11);
     cursor: pointer;
   }
 
@@ -469,7 +516,7 @@
   }
 
   .error-msg {
-    font-size: 10px;
+    font-size: var(--font-10);
     color: #ef4444;
     padding: 2px 8px;
   }
@@ -521,7 +568,7 @@
     border-radius: 3px;
     background: transparent;
     color: var(--color-text-muted);
-    font-size: 10px;
+    font-size: var(--font-10);
     cursor: pointer;
     transition: background 0.1s, color 0.1s, border-color 0.1s;
   }
@@ -547,7 +594,7 @@
     border-radius: 3px;
     background: transparent;
     color: var(--color-text-muted);
-    font-size: 11px;
+    font-size: var(--font-11);
     cursor: pointer;
     transition: background 0.1s, color 0.1s;
   }
@@ -558,22 +605,22 @@
 
   /* MCP section */
   .mcp-status {
-    font-size: 11px;
+    font-size: var(--font-11);
     font-weight: 500;
   }
   .mcp-value {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
     font-family: monospace;
   }
   .mcp-error {
-    font-size: 10px;
+    font-size: var(--font-10);
     color: #ef4444;
     padding: 4px 0;
     margin-bottom: 6px;
   }
   .mcp-hint {
-    font-size: 10px;
+    font-size: var(--font-10);
     color: var(--color-text-muted);
     line-height: 1.4;
     opacity: 0.7;

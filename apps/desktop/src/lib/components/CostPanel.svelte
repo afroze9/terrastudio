@@ -246,7 +246,7 @@
     align-items: center;
     gap: 5px;
     padding: 4px 10px;
-    font-size: 11px;
+    font-size: var(--font-11);
     font-weight: 500;
     background: var(--color-accent);
     color: var(--color-accent-text);
@@ -275,7 +275,7 @@
     align-items: center;
     gap: 4px;
     padding: 3px 7px;
-    font-size: 10px;
+    font-size: var(--font-10);
     color: var(--color-text-muted);
     border: 1px solid var(--color-border);
     border-radius: 4px;
@@ -310,7 +310,7 @@
     width: 100%;
     text-align: left;
     padding: 5px 8px;
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
     background: none;
     border: none;
@@ -332,23 +332,23 @@
     gap: 10px;
     padding: 32px 20px;
     color: var(--color-text-muted);
-    font-size: 12px;
+    font-size: var(--font-12);
     line-height: 1.5;
   }
   .empty-state strong { color: var(--color-text); }
-  .empty-state .note { font-size: 10px; opacity: 0.6; }
+  .empty-state .note { font-size: var(--font-10); opacity: 0.6; }
 
   /* Summary grid */
   .summary-grid {
     display: grid;
     grid-template-columns: auto 1fr;
     gap: 4px 12px;
-    font-size: 11px;
+    font-size: var(--font-11);
     margin-bottom: 10px;
   }
   .summary-label { color: var(--color-text-muted); }
   .summary-value { color: var(--color-text); font-weight: 500; }
-  .summary-value.highlight { color: var(--color-accent); font-size: 13px; font-weight: 600; }
+  .summary-value.highlight { color: var(--color-accent); font-size: var(--font-13); font-weight: 600; }
   .summary-value.muted { color: var(--color-text-muted); font-weight: 400; }
 
   .export-btn {
@@ -356,7 +356,7 @@
     align-items: center;
     gap: 5px;
     padding: 4px 10px;
-    font-size: 11px;
+    font-size: var(--font-11);
     background: transparent;
     color: var(--color-text-muted);
     border: 1px solid var(--color-border);
@@ -388,18 +388,18 @@
   .group-header-row:first-child { border-top: none; margin-top: 0; }
   .group-label {
     flex: 1;
-    font-size: 11px;
+    font-size: var(--font-11);
     font-weight: 600;
     color: var(--color-text);
   }
   .group-pct {
-    font-size: 10px;
+    font-size: var(--font-10);
     color: var(--color-text-muted);
     min-width: 28px;
     text-align: right;
   }
   .group-cost {
-    font-size: 11px;
+    font-size: var(--font-11);
     font-weight: 600;
     color: var(--color-accent);
     min-width: 64px;
@@ -416,7 +416,7 @@
 
   .resource-name {
     flex: 1;
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -425,7 +425,7 @@
   }
 
   .resource-cost {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text);
     min-width: 64px;
     text-align: right;
@@ -439,7 +439,7 @@
   .notes-list {
     margin: 0;
     padding-left: 16px;
-    font-size: 10px;
+    font-size: var(--font-10);
     color: var(--color-text-muted);
     line-height: 1.7;
     opacity: 0.8;
@@ -451,7 +451,7 @@
     align-items: center;
     gap: 6px;
     padding: 6px 10px;
-    font-size: 11px;
+    font-size: var(--font-11);
     color: #92400e;
     background: #fef3c7;
     border-bottom: 1px solid #fcd34d;

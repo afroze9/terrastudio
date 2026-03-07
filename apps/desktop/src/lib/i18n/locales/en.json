@@ -121,6 +121,15 @@
       "ipcPort": "IPC Port",
       "httpPort": "HTTP Port",
       "hint": "The MCP server allows AI assistants (Claude Desktop, VS Code Cline, Cursor) to interact with TerraStudio programmatically."
+    },
+    "accessibility": {
+      "label": "Accessibility",
+      "fontScale": "Font Scale",
+      "reducedMotion": "Reduced Motion",
+      "system": "System",
+      "reduce": "Reduce",
+      "noPreference": "No Preference",
+      "hint": "Font scale adjusts the base font size across the app. Reduced motion disables animations and transitions."
     }
   },
   "sidebar": {

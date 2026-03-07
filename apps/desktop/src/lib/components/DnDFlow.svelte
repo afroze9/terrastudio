@@ -1185,7 +1185,7 @@
     border: none;
     background: none;
     color: var(--color-text);
-    font-size: 12px;
+    font-size: var(--font-12);
     cursor: pointer;
     text-align: left;
   }
@@ -1214,7 +1214,7 @@
     color: inherit;
   }
   .ctx-shortcut {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
     margin-left: 24px;
   }
@@ -1244,24 +1244,24 @@
   }
   .module-dialog-title {
     margin: 0 0 4px;
-    font-size: 14px;
+    font-size: var(--font-14);
     font-weight: 600;
     color: var(--color-text);
   }
   .module-dialog-desc {
     margin: 0 0 12px;
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text-muted);
   }
   .module-dialog-error {
     margin: 4px 0 0;
-    font-size: 11px;
+    font-size: var(--font-11);
     color: #f87171;
   }
   .module-dialog-input {
     width: 100%;
     padding: 6px 10px;
-    font-size: 13px;
+    font-size: var(--font-13);
     border: 1px solid var(--color-border);
     border-radius: 4px;
     background: var(--color-surface);
@@ -1280,7 +1280,7 @@
   }
   .module-dialog-btn {
     padding: 5px 14px;
-    font-size: 12px;
+    font-size: var(--font-12);
     border-radius: 4px;
     border: 1px solid var(--color-border);
     cursor: pointer;

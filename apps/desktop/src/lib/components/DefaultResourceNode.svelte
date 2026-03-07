@@ -229,6 +229,8 @@
   class:selected
   class:compact={ui.compactNodes}
   class:has-validation-errors={hasValidationErrors}
+  role="group"
+  aria-label={`${data.label || schema?.displayName || 'Resource'} (${schema?.terraformType ?? data.typeId})`}
   onmouseenter={onMouseEnter}
   onmouseleave={onMouseLeave}
   bind:this={nodeEl}
@@ -369,7 +371,7 @@
     gap: 2px;
   }
   .node-label {
-    font-size: 13px;
+    font-size: var(--font-13);
     font-weight: 600;
     color: #e1e4ed;
     white-space: nowrap;
@@ -377,7 +379,7 @@
     text-overflow: ellipsis;
   }
   .node-type {
-    font-size: 10px;
+    font-size: var(--font-10);
     color: #8b90a0;
     white-space: nowrap;
     overflow: hidden;
@@ -412,7 +414,7 @@
     border-radius: 50%;
     background: #ef4444;
     color: #fff;
-    font-size: 10px;
+    font-size: var(--font-10);
     font-weight: 700;
     line-height: 1;
     display: flex;
@@ -423,7 +425,7 @@
   }
 
   .cost-badge {
-    font-size: 9px;
+    font-size: var(--font-9);
     color: #8b90a0;
     text-align: center;
     margin-top: 3px;
@@ -509,7 +511,7 @@
     border-radius: 50%;
     background: #ef4444;
     color: #fff;
-    font-size: 8px;
+    font-size: var(--font-8);
     font-weight: 700;
     line-height: 1;
     display: flex;
@@ -523,7 +525,7 @@
     left: 50%;
     transform: translateX(-50%);
     margin-top: 2px;
-    font-size: 11px;
+    font-size: var(--font-11);
     font-weight: 600;
     color: #1a1a2e;
     text-align: center;

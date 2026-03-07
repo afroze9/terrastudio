@@ -343,7 +343,7 @@
     overflow-y: auto;
   }
   .section-hint {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
     margin: 0 0 8px;
   }
@@ -360,7 +360,7 @@
     accent-color: var(--color-accent);
   }
   .toggle-label {
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text);
   }
   .preset-row {
@@ -375,7 +375,7 @@
     border-radius: 4px;
     background: transparent;
     color: var(--color-text-muted);
-    font-size: 11px;
+    font-size: var(--font-11);
     cursor: pointer;
     transition: all 0.1s;
   }
@@ -400,7 +400,7 @@
     gap: 6px;
   }
   .conv-label {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
     font-weight: 500;
   }
@@ -410,7 +410,7 @@
     border-radius: 4px;
     background: var(--color-bg);
     color: var(--color-text);
-    font-size: 12px;
+    font-size: var(--font-12);
     outline: none;
     width: 100%;
     box-sizing: border-box;
@@ -420,7 +420,7 @@
     border-color: var(--color-accent);
   }
   .conv-hint {
-    font-size: 10px;
+    font-size: var(--font-10);
     color: var(--color-text-muted);
     opacity: 0.7;
   }
@@ -445,7 +445,7 @@
     margin-top: 4px;
   }
   .preview-title {
-    font-size: 10px;
+    font-size: var(--font-10);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -461,12 +461,12 @@
     gap: 8px;
   }
   .preview-resource {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
     flex-shrink: 0;
   }
   .preview-name {
-    font-size: 11px;
+    font-size: var(--font-11);
     font-weight: 500;
     color: var(--color-text);
     font-family: 'Cascadia Code', 'Fira Code', monospace;
@@ -508,11 +508,11 @@
     cursor: not-allowed;
   }
   .provider-option-label {
-    font-size: 12px;
+    font-size: var(--font-12);
     font-weight: 500;
   }
   .provider-option-soon {
-    font-size: 9px;
+    font-size: var(--font-9);
     font-weight: 600;
     color: var(--color-text-muted);
     background: var(--color-surface-hover);
@@ -551,11 +551,11 @@
     background: var(--color-surface-hover);
   }
   .layout-option-label {
-    font-size: 12px;
+    font-size: var(--font-12);
     font-weight: 500;
   }
   .layout-option-desc {
-    font-size: 10px;
+    font-size: var(--font-10);
     color: var(--color-text-muted);
     margin-top: 2px;
   }
@@ -572,14 +572,14 @@
     border-bottom: none;
   }
   .tag-key {
-    font-size: 12px;
+    font-size: var(--font-12);
     font-weight: 500;
     font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
     color: var(--color-text);
   }
   .tag-value {
     flex: 1;
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text-muted);
     text-align: right;
     overflow: hidden;
@@ -590,7 +590,7 @@
     background: none;
     border: none;
     color: var(--color-text-muted);
-    font-size: 14px;
+    font-size: var(--font-14);
     cursor: pointer;
     padding: 0 2px;
     line-height: 1;
@@ -611,7 +611,7 @@
     border-radius: 4px;
     background: var(--color-bg);
     color: var(--color-text);
-    font-size: 11px;
+    font-size: var(--font-11);
     outline: none;
     min-width: 0;
   }
@@ -624,7 +624,7 @@
     border-radius: 4px;
     background: transparent;
     color: var(--color-accent);
-    font-size: 13px;
+    font-size: var(--font-13);
     cursor: pointer;
     flex-shrink: 0;
   }

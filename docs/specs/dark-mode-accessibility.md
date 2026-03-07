@@ -1,6 +1,6 @@
 # Dark Mode Refinement & Accessibility Specification
 
-**Spec ID**: SPEC-004
+**Spec ID**: SPEC-002
 **Status**: Draft
 **Created**: 2026-03-07
 **PRD Source**: Product requirement — Dark Mode Refinement & Accessibility feature brief

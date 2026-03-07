@@ -318,7 +318,7 @@
   }
 
   .module-name {
-    font-size: 12px;
+    font-size: var(--font-12);
     font-weight: 600;
     color: white;
     white-space: nowrap;
@@ -328,7 +328,7 @@
   }
 
   .module-badge {
-    font-size: 10px;
+    font-size: var(--font-10);
     font-weight: 600;
     color: var(--module-color);
     background: white;
@@ -359,7 +359,7 @@
   }
 
   .template-badge {
-    font-size: 9px;
+    font-size: var(--font-9);
     font-weight: 700;
     letter-spacing: 0.5px;
     color: var(--module-color);
@@ -370,7 +370,7 @@
   }
 
   .instance-count {
-    font-size: 10px;
+    font-size: var(--font-10);
     font-weight: 600;
     color: white;
     opacity: 0.7;

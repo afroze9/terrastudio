@@ -104,7 +104,7 @@
     border: 1px solid var(--color-border);
     border-radius: 6px;
     padding: 10px 12px;
-    font-size: 12px;
+    font-size: var(--font-12);
   }
 
   .wizard-card.compact {
@@ -137,7 +137,7 @@
     border-radius: 3px;
     cursor: pointer;
     color: var(--color-text);
-    font-size: 11px;
+    font-size: var(--font-11);
     font-weight: 600;
     text-align: left;
     min-width: 0;
@@ -149,7 +149,7 @@
 
   .node-name {
     font-weight: 400;
-    font-size: 10px;
+    font-size: var(--font-10);
     color: var(--color-text-muted);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -158,12 +158,12 @@
 
   .arrow {
     color: var(--color-text-muted);
-    font-size: 14px;
+    font-size: var(--font-14);
     flex-shrink: 0;
   }
 
   .kind-badge {
-    font-size: 9px;
+    font-size: var(--font-9);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -176,7 +176,7 @@
 
   .description {
     color: var(--color-text-muted);
-    font-size: 11px;
+    font-size: var(--font-11);
     line-height: 1.5;
     margin-bottom: 8px;
   }
@@ -187,7 +187,7 @@
     border-radius: 4px;
     padding: 8px 10px;
     font-family: 'Cascadia Code', 'Fira Code', monospace;
-    font-size: 11px;
+    font-size: var(--font-11);
     line-height: 1.5;
     color: var(--color-text);
     overflow-x: auto;
@@ -200,7 +200,7 @@
   }
 
   .section-label {
-    font-size: 10px;
+    font-size: var(--font-10);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -217,22 +217,22 @@
   }
 
   .prop-key {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-accent);
   }
 
   .prop-arrow {
     color: var(--color-text-muted);
-    font-size: 10px;
+    font-size: var(--font-10);
   }
 
   .prop-value {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text);
   }
 
   .prop-side {
-    font-size: 10px;
+    font-size: var(--font-10);
     color: var(--color-text-muted);
     font-style: italic;
   }
@@ -249,19 +249,19 @@
   }
 
   .generates-label {
-    font-size: 10px;
+    font-size: var(--font-10);
     font-weight: 600;
     text-transform: uppercase;
     color: var(--color-warning, #f59e0b);
   }
 
   .binding-type {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text);
   }
 
   .containment-info {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
     padding: 4px 8px;
     background: color-mix(in srgb, var(--color-info, #3b82f6) 10%, transparent);
@@ -285,7 +285,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 10px;
+    font-size: var(--font-10);
     color: var(--color-text-muted);
     cursor: pointer;
   }

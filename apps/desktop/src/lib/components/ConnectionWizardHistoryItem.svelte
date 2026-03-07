@@ -53,7 +53,7 @@
     border: none;
     cursor: pointer;
     color: var(--color-text);
-    font-size: 11px;
+    font-size: var(--font-11);
     text-align: left;
   }
 
@@ -62,7 +62,7 @@
   }
 
   .kind-icon {
-    font-size: 12px;
+    font-size: var(--font-12);
     flex-shrink: 0;
     width: 16px;
     text-align: center;
@@ -83,7 +83,7 @@
   }
 
   .connection-badge {
-    font-size: 9px;
+    font-size: var(--font-9);
     padding: 1px 5px;
     border-radius: 3px;
     background: var(--color-surface-hover);
@@ -96,13 +96,13 @@
   }
 
   .timestamp {
-    font-size: 10px;
+    font-size: var(--font-10);
     color: var(--color-text-muted);
     flex-shrink: 0;
   }
 
   .chevron {
-    font-size: 14px;
+    font-size: var(--font-14);
     color: var(--color-text-muted);
     flex-shrink: 0;
     transition: transform 0.15s;

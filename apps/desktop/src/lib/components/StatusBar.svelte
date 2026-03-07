@@ -175,7 +175,7 @@
     background: var(--color-surface);
     border-top: 1px solid var(--color-border);
     flex-shrink: 0;
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
   }
   .status-left, .status-right {
@@ -200,17 +200,17 @@
     50% { opacity: 0.4; }
   }
   .status-label {
-    font-size: 11px;
+    font-size: var(--font-11);
   }
   .version-badge {
     padding: 0 4px;
-    font-size: 10px;
+    font-size: var(--font-10);
     color: var(--color-text-muted);
     opacity: 0.7;
   }
   .warning-badge {
     padding: 0 4px;
-    font-size: 10px;
+    font-size: var(--font-10);
     color: #ef4444;
   }
   .separator {
@@ -226,7 +226,7 @@
     background: none;
     border: none;
     color: var(--color-text-muted);
-    font-size: 11px;
+    font-size: var(--font-11);
     cursor: pointer;
     padding: 2px 8px;
     height: 24px;
@@ -242,7 +242,7 @@
     background: var(--color-surface-hover);
   }
   .panel-toggle-label {
-    font-size: 11px;
+    font-size: var(--font-11);
   }
   .problems-counts {
     display: flex;
@@ -251,12 +251,12 @@
   }
   .status-count-error {
     color: #ef4444;
-    font-size: 11px;
+    font-size: var(--font-11);
     font-weight: 600;
   }
   .status-count-warning {
     color: #f59e0b;
-    font-size: 11px;
+    font-size: var(--font-11);
     font-weight: 600;
   }
   .status-badge {
@@ -270,7 +270,7 @@
     background: none;
     border: none;
     color: var(--color-text-muted);
-    font-size: 11px;
+    font-size: var(--font-11);
     cursor: pointer;
     padding: 0 6px;
     height: 28px;

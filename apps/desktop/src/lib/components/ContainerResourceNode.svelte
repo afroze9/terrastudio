@@ -196,7 +196,7 @@
   let borderWidth = $derived(cs.borderWidth ?? 1.5);
   let hideHeaderBorder = $derived(cs.hideHeaderBorder ?? false);
   let iconSize = $derived(cs.iconSize ?? 18);
-  let labelSize = $derived(cs.labelSize ?? 12);
+  let labelSize = $derived(Math.round((cs.labelSize ?? 12) * (ui.fontScale / 100)));
   let dashArray = $derived(cs.dashArray);
   let useSvgBorder = $derived(!!dashArray);
 
@@ -333,6 +333,8 @@
   class:drop-valid={isValidDropTarget}
   class:drop-invalid={isInvalidDropTarget}
   class:has-validation-errors={hasValidationErrors && !isInvalidDropTarget && !isValidDropTarget}
+  role="group"
+  aria-label={`${data.label || schema?.displayName || 'Container'} (${schema?.terraformType ?? data.typeId})`}
   style="border-color: {isInvalidDropTarget ? '#ef4444' : isValidDropTarget ? '#22c55e' : hasValidationErrors ? '#ef4444' : selected ? '#3b82f6' : borderColor}; border-style: {useSvgBorder && !isInvalidDropTarget && !isValidDropTarget && !hasValidationErrors ? 'none' : isInvalidDropTarget || isValidDropTarget || hasValidationErrors ? 'solid' : borderStyle}; background: {isInvalidDropTarget ? 'rgba(239, 68, 68, 0.06)' : isValidDropTarget ? 'rgba(34, 197, 94, 0.06)' : hasValidationErrors ? 'rgba(239, 68, 68, 0.04)' : bg}; border-radius: {radius}px; border-width: {useSvgBorder && !isInvalidDropTarget && !isValidDropTarget && !hasValidationErrors ? 0 : isInvalidDropTarget || isValidDropTarget ? 2.5 : hasValidationErrors ? 2 : borderWidth}px;"
   onmouseenter={onMouseEnter}
   onmouseleave={onMouseLeave}
@@ -485,14 +487,14 @@
     height: 100%;
   }
   .node-label {
-    font-size: 12px;
+    font-size: var(--font-12);
     font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .cidr-subtitle {
-    font-size: 10px;
+    font-size: var(--font-10);
     font-weight: 400;
     color: #8b90a0;
     opacity: 0.7;
@@ -506,7 +508,7 @@
     padding: 8px;
   }
   .cost-chip {
-    font-size: 9px;
+    font-size: var(--font-9);
     color: #8b90a0;
     opacity: 0.8;
     white-space: nowrap;
@@ -544,7 +546,7 @@
     border-radius: 50%;
     background: #ef4444;
     color: #fff;
-    font-size: 10px;
+    font-size: var(--font-10);
     font-weight: 700;
     line-height: 1;
     display: flex;

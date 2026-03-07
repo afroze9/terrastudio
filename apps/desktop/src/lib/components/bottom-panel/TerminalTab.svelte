@@ -43,7 +43,7 @@
     background: none;
     border: none;
     color: var(--color-text-muted);
-    font-size: 10px;
+    font-size: var(--font-10);
     cursor: pointer;
     padding: 2px 6px;
     border-radius: 3px;
@@ -58,7 +58,7 @@
     padding: 4px 12px;
     margin: 0;
     font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-    font-size: 12px;
+    font-size: var(--font-12);
     line-height: 1.5;
     white-space: pre-wrap;
     word-break: break-all;

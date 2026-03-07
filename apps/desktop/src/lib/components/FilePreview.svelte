@@ -77,7 +77,7 @@
     margin: 0;
     padding: 12px 16px;
     font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-    font-size: 13px;
+    font-size: var(--font-13);
     line-height: 1.6;
     color: var(--color-text);
     white-space: pre;
@@ -130,11 +130,11 @@
   .preview-error {
     padding: 16px;
     color: #ef4444;
-    font-size: 12px;
+    font-size: var(--font-12);
   }
   .preview-loading {
     padding: 16px;
     color: var(--color-text-muted);
-    font-size: 12px;
+    font-size: var(--font-12);
   }
 </style>

@@ -229,7 +229,7 @@
     border-radius: 3px;
     background: none;
     color: var(--color-text-muted);
-    font-size: 11px;
+    font-size: var(--font-11);
     cursor: pointer;
     white-space: nowrap;
   }
@@ -249,7 +249,7 @@
     color: #f59e0b;
   }
   .count-badge {
-    font-size: 10px;
+    font-size: var(--font-10);
     padding: 0 4px;
     border-radius: 8px;
     background: var(--color-border);
@@ -265,7 +265,7 @@
     border-radius: 3px;
     background: var(--color-bg);
     color: var(--color-text);
-    font-size: 11px;
+    font-size: var(--font-11);
     outline: none;
     min-width: 80px;
   }
@@ -292,12 +292,12 @@
     opacity: 0.3;
   }
   .empty-title {
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text-muted);
     font-weight: 500;
   }
   .empty-text {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
     opacity: 0.6;
   }
@@ -313,7 +313,7 @@
     background: var(--color-surface);
     border: none;
     color: var(--color-text);
-    font-size: 12px;
+    font-size: var(--font-12);
     font-weight: 500;
     cursor: pointer;
     text-align: left;
@@ -349,7 +349,7 @@
     flex-shrink: 0;
   }
   .count-error {
-    font-size: 10px;
+    font-size: var(--font-10);
     padding: 0 5px;
     border-radius: 8px;
     background: rgba(239, 68, 68, 0.15);
@@ -357,7 +357,7 @@
     font-weight: 600;
   }
   .count-warning {
-    font-size: 10px;
+    font-size: var(--font-10);
     padding: 0 5px;
     border-radius: 8px;
     background: rgba(245, 158, 11, 0.15);
@@ -376,7 +376,7 @@
     border: none;
     background: none;
     color: var(--color-text);
-    font-size: 12px;
+    font-size: var(--font-12);
     cursor: pointer;
     text-align: left;
   }
@@ -393,7 +393,7 @@
   }
   .problem-key {
     color: var(--color-accent);
-    font-size: 11px;
+    font-size: var(--font-11);
     font-family: 'Cascadia Code', 'Fira Code', monospace;
     flex-shrink: 0;
   }
@@ -403,7 +403,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--color-text-muted);
-    font-size: 11px;
+    font-size: var(--font-11);
   }
   .quick-fix-btn {
     padding: 1px 6px;
@@ -411,7 +411,7 @@
     border-radius: 3px;
     background: none;
     color: var(--color-accent);
-    font-size: 10px;
+    font-size: var(--font-10);
     cursor: pointer;
     flex-shrink: 0;
     opacity: 0;

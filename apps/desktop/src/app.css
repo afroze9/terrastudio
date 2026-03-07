@@ -16,6 +16,19 @@
   --scrollbar-thumb: rgba(129, 140, 248, 0.15);
   --scrollbar-thumb-hover: rgba(129, 140, 248, 0.3);
 
+  /* Font scale — defaults at 100%, overridden by UiStore.applyFontScale() */
+  --font-8: 8px;
+  --font-9: 9px;
+  --font-10: 10px;
+  --font-11: 11px;
+  --font-12: 12px;
+  --font-13: 13px;
+  --font-14: 14px;
+  --font-15: 15px;
+  --font-16: 16px;
+  --font-18: 18px;
+  --font-28: 28px;
+
   /* Edge category colors - muted, industry-standard palette */
   --edge-structural: #6b7280;  /* neutral gray - dependencies */
   --edge-binding: #7c9eb8;     /* muted steel blue - data flow */
@@ -70,6 +83,38 @@ textarea:focus-visible {
   outline-offset: -1px;
 }
 
+/* Screen-reader-only utility — visually hidden but accessible */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Reduced motion — respect system preference or user override */
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-reduced-motion="no-preference"]) *,
+  :root:not([data-reduced-motion="no-preference"]) *::before,
+  :root:not([data-reduced-motion="no-preference"]) *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+/* User explicitly chose "reduce" regardless of system setting */
+:root[data-reduced-motion="reduce"] *,
+:root[data-reduced-motion="reduce"] *::before,
+:root[data-reduced-motion="reduce"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
 /* Selection box — improve contrast in both themes */
 .svelte-flow.dark {
   --xy-selection-background-color: rgba(99, 102, 241, 0.1);
@@ -82,7 +127,7 @@ textarea:focus-visible {
 
 /* Edge label styling */
 .svelte-flow__edge-text {
-  font-size: 10px;
+  font-size: var(--font-10);
   fill: var(--color-text-muted);
 }
 

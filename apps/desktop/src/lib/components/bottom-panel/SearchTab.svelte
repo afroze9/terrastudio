@@ -16,6 +16,6 @@
     opacity: 0.5;
   }
   .placeholder-text {
-    font-size: 12px;
+    font-size: var(--font-12);
   }
 </style>

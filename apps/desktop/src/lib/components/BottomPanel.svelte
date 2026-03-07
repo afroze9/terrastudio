@@ -133,7 +133,7 @@
     border: none;
     border-bottom: 2px solid transparent;
     color: var(--color-text-muted);
-    font-size: 11px;
+    font-size: var(--font-11);
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -155,7 +155,7 @@
     background: none;
     border: none;
     color: var(--color-text-muted);
-    font-size: 10px;
+    font-size: var(--font-10);
     cursor: pointer;
     padding: 2px 6px;
   }
@@ -177,7 +177,7 @@
     margin-left: 4px;
   }
   .badge-error {
-    font-size: 9px;
+    font-size: var(--font-9);
     padding: 0 4px;
     border-radius: 8px;
     background: rgba(239, 68, 68, 0.2);
@@ -186,7 +186,7 @@
     line-height: 14px;
   }
   .badge-warning {
-    font-size: 9px;
+    font-size: var(--font-9);
     padding: 0 4px;
     border-radius: 8px;
     background: rgba(245, 158, 11, 0.2);

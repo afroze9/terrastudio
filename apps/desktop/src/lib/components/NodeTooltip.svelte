@@ -111,7 +111,7 @@
     z-index: 9999;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     pointer-events: none;
-    font-size: 11px;
+    font-size: var(--font-11);
   }
   .tooltip-header {
     display: flex;
@@ -125,7 +125,7 @@
     color: #e1e4ed;
   }
   .tooltip-status {
-    font-size: 10px;
+    font-size: var(--font-10);
     padding: 1px 6px;
     border-radius: 3px;
     background: rgba(107, 114, 128, 0.2);
@@ -136,7 +136,7 @@
     color: #22c55e;
   }
   .tooltip-tf {
-    font-size: 10px;
+    font-size: var(--font-10);
     color: #8b90a0;
     font-family: monospace;
     margin-bottom: 4px;

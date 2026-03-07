@@ -65,14 +65,14 @@
   }
   .section-label {
     flex: 1;
-    font-size: 11px;
+    font-size: var(--font-11);
     font-weight: 600;
     color: var(--color-accent);
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
   .section-count {
-    font-size: 10px;
+    font-size: var(--font-10);
     color: var(--color-text-muted);
     background: var(--color-bg);
     padding: 1px 6px;

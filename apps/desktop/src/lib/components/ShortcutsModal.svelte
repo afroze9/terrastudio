@@ -119,7 +119,7 @@
   }
 
   .modal-title {
-    font-size: 13px;
+    font-size: var(--font-13);
     font-weight: 600;
     color: var(--color-text);
     letter-spacing: 0.02em;
@@ -129,7 +129,7 @@
     background: none;
     border: none;
     color: var(--color-text-muted);
-    font-size: 18px;
+    font-size: var(--font-18);
     line-height: 1;
     cursor: pointer;
     padding: 2px 6px;
@@ -161,7 +161,7 @@
     display: flex;
     align-items: center;
     gap: 7px;
-    font-size: 11px;
+    font-size: var(--font-11);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -191,7 +191,7 @@
   }
 
   .shortcut-label {
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text-muted);
     flex: 1;
   }
@@ -204,7 +204,7 @@
   }
 
   .key-plus {
-    font-size: 10px;
+    font-size: var(--font-10);
     color: var(--color-text-muted);
     opacity: 0.5;
     margin: 0 1px;
@@ -218,7 +218,7 @@
     height: 20px;
     padding: 0 5px;
     font-family: inherit;
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text);
     background: var(--color-bg);
     border: 1px solid var(--color-border);

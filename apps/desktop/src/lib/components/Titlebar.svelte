@@ -46,7 +46,7 @@
   }
   .app-logo {
     font-weight: 700;
-    font-size: 12px;
+    font-size: var(--font-12);
     letter-spacing: -0.02em;
     color: var(--color-accent);
     margin-right: 12px;
@@ -57,7 +57,7 @@
     height: 100%;
   }
   .project-name {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
     margin-right: 8px;
     flex-shrink: 0;

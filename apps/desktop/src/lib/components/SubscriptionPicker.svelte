@@ -178,7 +178,7 @@
   }
 
   .sub-name {
-    font-size: 13px;
+    font-size: var(--font-13);
     font-weight: 500;
     color: var(--color-text);
     white-space: nowrap;
@@ -187,7 +187,7 @@
   }
 
   .sub-id {
-    font-size: 10px;
+    font-size: var(--font-10);
     color: var(--color-text-muted);
     font-family: 'Cascadia Code', 'Fira Code', monospace;
     white-space: nowrap;
@@ -196,7 +196,7 @@
   }
 
   .placeholder {
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text-muted);
     opacity: 0.6;
   }
@@ -207,7 +207,7 @@
     border-radius: 6px;
     background: var(--color-bg);
     color: var(--color-text);
-    font-size: 12px;
+    font-size: var(--font-12);
     cursor: pointer;
     text-align: left;
     display: flex;
@@ -245,7 +245,7 @@
     border-bottom: 1px solid var(--color-border);
     background: var(--color-surface);
     color: var(--color-text);
-    font-size: 12px;
+    font-size: var(--font-12);
     outline: none;
     box-sizing: border-box;
   }
@@ -266,7 +266,7 @@
     border: none;
     background: transparent;
     color: var(--color-text);
-    font-size: 12px;
+    font-size: var(--font-12);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -304,14 +304,14 @@
 
   .sub-row-id {
     font-family: 'Cascadia Code', 'Fira Code', monospace;
-    font-size: 10px;
+    font-size: var(--font-10);
     color: var(--color-text-muted);
     flex-shrink: 0;
   }
 
   .no-results {
     padding: 10px;
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text-muted);
     text-align: center;
     opacity: 0.6;
@@ -324,7 +324,7 @@
     padding: 8px 10px;
     border: 1px solid var(--color-border);
     border-radius: 6px;
-    font-size: 12px;
+    font-size: var(--font-12);
     flex-wrap: wrap;
   }
 
@@ -336,7 +336,7 @@
 
   .status-panel code {
     font-family: 'Cascadia Code', 'Fira Code', monospace;
-    font-size: 10px;
+    font-size: var(--font-10);
     background: rgba(255, 255, 255, 0.06);
     padding: 1px 4px;
     border-radius: 3px;
@@ -348,7 +348,7 @@
   }
 
   .status-icon {
-    font-size: 13px;
+    font-size: var(--font-13);
     opacity: 0.8;
     flex-shrink: 0;
   }
@@ -364,7 +364,7 @@
     border: 1px solid var(--color-accent);
     border-radius: 4px;
     color: var(--color-accent);
-    font-size: 11px;
+    font-size: var(--font-11);
     text-decoration: none;
     flex-shrink: 0;
     transition: background 0.15s, color 0.15s;

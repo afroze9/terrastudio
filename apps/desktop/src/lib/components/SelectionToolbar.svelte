@@ -60,22 +60,22 @@
   >
     <!-- Align horizontal -->
     <div class="btn-group">
-      <button class="tb-btn" title={t('canvas.selectionToolbar.alignLeft')} onclick={alignLeft}>
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+      <button class="tb-btn" title={t('canvas.selectionToolbar.alignLeft')} aria-label={t('canvas.selectionToolbar.alignLeft')} onclick={alignLeft}>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
           <rect x="1" y="0" width="2" height="16" rx="0.5" />
           <rect x="5" y="2" width="8" height="4" rx="1" opacity="0.7" />
           <rect x="5" y="10" width="5" height="4" rx="1" opacity="0.7" />
         </svg>
       </button>
-      <button class="tb-btn" title={t('canvas.selectionToolbar.alignCenterH')} onclick={alignCenterH}>
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+      <button class="tb-btn" title={t('canvas.selectionToolbar.alignCenterH')} aria-label={t('canvas.selectionToolbar.alignCenterH')} onclick={alignCenterH}>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
           <rect x="7" y="0" width="2" height="16" rx="0.5" opacity="0.4" />
           <rect x="3" y="2" width="10" height="4" rx="1" opacity="0.7" />
           <rect x="5" y="10" width="6" height="4" rx="1" opacity="0.7" />
         </svg>
       </button>
-      <button class="tb-btn" title={t('canvas.selectionToolbar.alignRight')} onclick={alignRight}>
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+      <button class="tb-btn" title={t('canvas.selectionToolbar.alignRight')} aria-label={t('canvas.selectionToolbar.alignRight')} onclick={alignRight}>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
           <rect x="13" y="0" width="2" height="16" rx="0.5" />
           <rect x="3" y="2" width="8" height="4" rx="1" opacity="0.7" />
           <rect x="6" y="10" width="5" height="4" rx="1" opacity="0.7" />
@@ -87,22 +87,22 @@
 
     <!-- Align vertical -->
     <div class="btn-group">
-      <button class="tb-btn" title={t('canvas.selectionToolbar.alignTop')} onclick={alignTop}>
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+      <button class="tb-btn" title={t('canvas.selectionToolbar.alignTop')} aria-label={t('canvas.selectionToolbar.alignTop')} onclick={alignTop}>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
           <rect x="0" y="1" width="16" height="2" rx="0.5" />
           <rect x="2" y="5" width="4" height="8" rx="1" opacity="0.7" />
           <rect x="10" y="5" width="4" height="5" rx="1" opacity="0.7" />
         </svg>
       </button>
-      <button class="tb-btn" title={t('canvas.selectionToolbar.alignMiddleV')} onclick={alignMiddleV}>
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+      <button class="tb-btn" title={t('canvas.selectionToolbar.alignMiddleV')} aria-label={t('canvas.selectionToolbar.alignMiddleV')} onclick={alignMiddleV}>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
           <rect x="0" y="7" width="16" height="2" rx="0.5" opacity="0.4" />
           <rect x="2" y="2" width="4" height="12" rx="1" opacity="0.7" />
           <rect x="10" y="4" width="4" height="8" rx="1" opacity="0.7" />
         </svg>
       </button>
-      <button class="tb-btn" title={t('canvas.selectionToolbar.alignBottom')} onclick={alignBottom}>
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+      <button class="tb-btn" title={t('canvas.selectionToolbar.alignBottom')} aria-label={t('canvas.selectionToolbar.alignBottom')} onclick={alignBottom}>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
           <rect x="0" y="13" width="16" height="2" rx="0.5" />
           <rect x="2" y="3" width="4" height="8" rx="1" opacity="0.7" />
           <rect x="10" y="6" width="4" height="5" rx="1" opacity="0.7" />
@@ -114,16 +114,16 @@
 
     <!-- Distribute -->
     <div class="btn-group">
-      <button class="tb-btn" title={t('canvas.selectionToolbar.distributeH')} onclick={distributeHorizontal} disabled={count < 3}>
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+      <button class="tb-btn" title={t('canvas.selectionToolbar.distributeH')} aria-label={t('canvas.selectionToolbar.distributeH')} onclick={distributeHorizontal} disabled={count < 3}>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
           <rect x="0" y="0" width="1.5" height="16" rx="0.5" opacity="0.4" />
           <rect x="14.5" y="0" width="1.5" height="16" rx="0.5" opacity="0.4" />
           <rect x="3" y="3" width="4" height="10" rx="1" opacity="0.7" />
           <rect x="9" y="3" width="4" height="10" rx="1" opacity="0.7" />
         </svg>
       </button>
-      <button class="tb-btn" title={t('canvas.selectionToolbar.distributeV')} onclick={distributeVertical} disabled={count < 3}>
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+      <button class="tb-btn" title={t('canvas.selectionToolbar.distributeV')} aria-label={t('canvas.selectionToolbar.distributeV')} onclick={distributeVertical} disabled={count < 3}>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
           <rect x="0" y="0" width="16" height="1.5" rx="0.5" opacity="0.4" />
           <rect x="0" y="14.5" width="16" height="1.5" rx="0.5" opacity="0.4" />
           <rect x="3" y="3" width="10" height="4" rx="1" opacity="0.7" />

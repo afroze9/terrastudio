@@ -553,7 +553,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 11px;
+    font-size: var(--font-11);
     font-weight: 600;
     border: 1.5px solid var(--color-border);
     color: var(--color-text-muted);
@@ -574,7 +574,7 @@
   }
 
   .step-label {
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text-muted);
     white-space: nowrap;
   }
@@ -612,7 +612,7 @@
   /* ── Provider Filter Pills ─────────────────────────────────── */
   .provider-filters { display: flex; gap: 4px; padding: 6px 0 2px; }
   .provider-filter-btn {
-    padding: 3px 10px; font-size: 11px; font-weight: 500;
+    padding: 3px 10px; font-size: var(--font-11); font-weight: 500;
     border: 1px solid var(--color-border); border-radius: 12px;
     background: none; color: var(--color-text-muted); cursor: pointer; font-family: inherit;
     transition: all 0.12s;
@@ -628,7 +628,7 @@
   }
 
   .section-label {
-    font-size: 11px;
+    font-size: var(--font-11);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -646,7 +646,7 @@
 
   .tab {
     padding: 5px 12px;
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text-muted);
     background: none;
     border: none;
@@ -669,7 +669,7 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    font-size: 11px;
+    font-size: var(--font-11);
   }
 
   .tab-action:hover { color: var(--color-accent); }
@@ -688,7 +688,7 @@
     text-align: center;
     padding: 24px;
     color: var(--color-text-muted);
-    font-size: 13px;
+    font-size: var(--font-13);
   }
 
   .template-card {
@@ -722,13 +722,13 @@
   .template-card.selected .template-icon { color: var(--color-accent); }
 
   .template-name {
-    font-size: 12px;
+    font-size: var(--font-12);
     font-weight: 500;
     color: var(--color-text);
   }
 
   .template-desc {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
     line-height: 1.4;
     display: -webkit-box;
@@ -741,7 +741,7 @@
   .field { display: flex; flex-direction: column; gap: 6px; }
 
   .field-label {
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text-muted);
   }
 
@@ -752,7 +752,7 @@
     border-radius: 4px;
     background: var(--color-bg);
     color: var(--color-text);
-    font-size: 13px;
+    font-size: var(--font-13);
     outline: none;
     box-sizing: border-box;
   }
@@ -768,7 +768,7 @@
     border-radius: 4px;
     background: var(--color-bg);
     color: var(--color-text-muted);
-    font-size: 12px;
+    font-size: var(--font-12);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -780,7 +780,7 @@
     border-radius: 4px;
     background: var(--color-bg);
     color: var(--color-text);
-    font-size: 12px;
+    font-size: var(--font-12);
     cursor: pointer;
     flex-shrink: 0;
   }
@@ -791,7 +791,7 @@
     padding: 7px 10px;
     border-radius: 4px;
     background: var(--color-bg);
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
     border: 1px solid var(--color-border);
   }
@@ -816,7 +816,7 @@
   }
 
   .config-section-title {
-    font-size: 12px;
+    font-size: var(--font-12);
     font-weight: 600;
     color: var(--color-text);
   }
@@ -826,20 +826,20 @@
     align-items: center;
     gap: 6px;
     cursor: pointer;
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
     user-select: none;
   }
 
   .section-hint {
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text-muted);
     margin: 0;
     line-height: 1.5;
   }
 
   .section-hint code {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-accent);
     background: color-mix(in srgb, var(--color-accent) 10%, transparent);
     padding: 1px 4px;
@@ -855,7 +855,7 @@
 
   .preset-btn {
     padding: 4px 10px;
-    font-size: 11px;
+    font-size: var(--font-11);
     border: 1px solid var(--color-border);
     border-radius: 4px;
     background: var(--color-surface);
@@ -884,7 +884,7 @@
   }
 
   .conv-label {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
   }
 
@@ -898,7 +898,7 @@
     border-radius: 4px;
     background: var(--color-surface);
     color: var(--color-text);
-    font-size: 12px;
+    font-size: var(--font-12);
     outline: none;
     width: 100%;
     box-sizing: border-box;
@@ -924,12 +924,12 @@
   }
 
   .conv-preview-label {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
   }
 
   .conv-preview-result {
-    font-size: 11px;
+    font-size: var(--font-11);
     font-family: monospace;
     color: var(--color-accent);
   }
@@ -985,13 +985,13 @@
   .option-info { display: flex; flex-direction: column; gap: 2px; }
 
   .option-label {
-    font-size: 12px;
+    font-size: var(--font-12);
     font-weight: 500;
     color: var(--color-text);
   }
 
   .option-desc {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
     line-height: 1.3;
   }
@@ -1006,9 +1006,9 @@
 
   .edge-card.selected .edge-preview { color: var(--color-accent); }
 
-  .edge-card .option-label { font-size: 11px; font-weight: 500; }
+  .edge-card .option-label { font-size: var(--font-11); font-weight: 500; }
 
-  .edge-card .option-desc { font-size: 10px; }
+  .edge-card .option-desc { font-size: var(--font-10); }
 
   /* ── Error ──────────────────────────────────────────────────── */
   .error {
@@ -1017,7 +1017,7 @@
     border-radius: 4px;
     background: rgba(239, 68, 68, 0.1);
     color: #ef4444;
-    font-size: 12px;
+    font-size: var(--font-12);
   }
 
   /* ── Actions ────────────────────────────────────────────────── */
@@ -1036,7 +1036,7 @@
     gap: 6px;
     padding: 8px 18px;
     border-radius: 5px;
-    font-size: 13px;
+    font-size: var(--font-13);
     cursor: pointer;
     border: 1px solid transparent;
     font-weight: 500;

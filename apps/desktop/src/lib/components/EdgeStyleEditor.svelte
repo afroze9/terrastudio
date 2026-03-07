@@ -217,14 +217,14 @@
     margin-bottom: 10px;
   }
   .editor-title {
-    font-size: 11px;
+    font-size: var(--font-11);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--color-text-muted);
   }
   .reset-btn {
-    font-size: 10px;
+    font-size: var(--font-10);
     padding: 2px 6px;
     border: 1px solid var(--color-border);
     border-radius: 3px;
@@ -251,7 +251,7 @@
     gap: 3px;
   }
   .field-label {
-    font-size: 10px;
+    font-size: var(--font-10);
     color: var(--color-text-muted);
     font-weight: 500;
   }
@@ -263,7 +263,7 @@
     border-radius: 4px;
     background: var(--color-surface);
     color: var(--color-text);
-    font-size: 11px;
+    font-size: var(--font-11);
     outline: none;
     width: 100%;
     box-sizing: border-box;
@@ -298,7 +298,7 @@
     background: none;
     border: none;
     color: var(--color-text-muted);
-    font-size: 14px;
+    font-size: var(--font-14);
     cursor: pointer;
     padding: 0 4px;
     line-height: 1;

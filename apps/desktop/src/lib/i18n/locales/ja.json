@@ -15,7 +15,8 @@
     "logging": { "label": "ログ", "logLevel": "ログレベル", "logFiles": "ログファイル", "openFolder": "フォルダーを開く", "hint": "ログは日付付きファイルに書き込まれます。レベルが高いほど詳細が少なくなります。" },
     "language": { "label": "言語", "description": "TerraStudioの表示言語を選択してください" },
     "connectionWizard": { "label": "接続ウィザード", "dismissedTypes": "非表示にしたタイプ", "dismissed": "非表示", "resetAll": "すべてリセット", "resetDismissed": "非表示タイプをリセット", "hint": "接続タイプで「今後表示しない」にチェックを入れると、そのタイプではウィザードが自動的に開かなくなります。ここでリセットするとすべて再度有効になります。" },
-    "mcp": { "label": "MCPサーバー", "status": "ステータス", "ipcPort": "IPCポート", "httpPort": "HTTPポート", "hint": "MCPサーバーにより、AIアシスタント（Claude Desktop、VS Code Cline、Cursor）がTerraStudioとプログラム的にやり取りできます。" }
+    "mcp": { "label": "MCPサーバー", "status": "ステータス", "ipcPort": "IPCポート", "httpPort": "HTTPポート", "hint": "MCPサーバーにより、AIアシスタント（Claude Desktop、VS Code Cline、Cursor）がTerraStudioとプログラム的にやり取りできます。" },
+    "accessibility": { "label": "アクセシビリティ", "fontScale": "フォントスケール", "reducedMotion": "モーション軽減", "system": "システム", "reduce": "軽減", "noPreference": "設定なし", "hint": "フォントスケールはアプリ全体の基本フォントサイズを調整します。モーション軽減はアニメーションとトランジションを無効にします。" }
   },
   "sidebar": { "resources": "リソース", "terraform": "TERRAFORM", "project": "プロジェクト", "settings": "設定", "cost": "コスト見積もり", "search": "検索", "expandAll": "すべて展開", "collapseAll": "すべて折りたたむ", "expandAllCategories": "すべてのカテゴリを展開", "collapseAllCategories": "すべてのカテゴリを折りたたむ" },
   "activityBar": { "resources": "リソース", "terraform": "Terraform", "project": "プロジェクト", "cost": "コスト見積もり", "search": "検索", "settings": "設定" },

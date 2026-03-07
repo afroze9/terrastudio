@@ -87,6 +87,8 @@
 <div
   class="instance-node"
   class:selected
+  role="group"
+  aria-label={`Module instance: ${instance?.name ?? 'Instance'}`}
   style:--instance-color={borderColor}
   style:min-height="{nodeMinHeight}px"
   onclick={handleClick}
@@ -153,7 +155,7 @@
   }
 
   .instance-name {
-    font-size: 12px;
+    font-size: var(--font-12);
     font-weight: 600;
     color: #cdd6f4;
     white-space: nowrap;
@@ -162,7 +164,7 @@
   }
 
   .instance-badge {
-    font-size: 10px;
+    font-size: var(--font-10);
     font-weight: 600;
     color: white;
     background: var(--instance-color);
@@ -175,7 +177,7 @@
   }
 
   .instance-template-ref {
-    font-size: 10px;
+    font-size: var(--font-10);
     color: #6c7086;
     margin-top: 4px;
     font-style: italic;

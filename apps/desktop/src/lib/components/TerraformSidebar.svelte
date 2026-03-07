@@ -562,7 +562,7 @@
     background: rgba(96, 165, 250, 0.08);
   }
   .auto-label {
-    font-size: 10px;
+    font-size: var(--font-10);
     color: var(--color-text-muted);
     white-space: nowrap;
   }
@@ -582,7 +582,7 @@
     border-radius: 4px;
     background: var(--color-bg);
     color: var(--color-text-muted);
-    font-size: 12px;
+    font-size: var(--font-12);
     cursor: pointer;
     transition: all 0.15s;
     width: 100%;
@@ -628,7 +628,7 @@
     background: rgba(245, 158, 11, 0.1);
     border: 1px solid rgba(245, 158, 11, 0.3);
     border-radius: 4px;
-    font-size: 11px;
+    font-size: var(--font-11);
     color: #f59e0b;
     margin-bottom: 8px;
     flex-shrink: 0;
@@ -636,7 +636,7 @@
   .var-names {
     display: block;
     font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-    font-size: 10px;
+    font-size: var(--font-10);
     margin: 4px 0;
   }
   .var-warning-actions {
@@ -650,14 +650,14 @@
     border-radius: 3px;
     background: transparent;
     color: #f59e0b;
-    font-size: 10px;
+    font-size: var(--font-10);
     cursor: pointer;
   }
   .warn-btn:hover {
     background: rgba(245, 158, 11, 0.15);
   }
   .empty-hint {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
     margin: 4px 0;
     opacity: 0.7;
@@ -676,7 +676,7 @@
     border-radius: 4px;
     background: transparent;
     color: var(--color-text-muted);
-    font-size: 12px;
+    font-size: var(--font-12);
     cursor: pointer;
     text-align: left;
     width: 100%;
@@ -696,7 +696,7 @@
     padding: 4px 8px;
     border-radius: 4px;
     color: var(--color-text-muted);
-    font-size: 12px;
+    font-size: var(--font-12);
     font-weight: 500;
     cursor: pointer;
     user-select: none;
@@ -740,7 +740,7 @@
     border-radius: 4px;
     background: transparent;
     color: var(--color-text-muted);
-    font-size: 12px;
+    font-size: var(--font-12);
     cursor: pointer;
     text-align: left;
   }
@@ -760,7 +760,7 @@
     background: rgba(245, 158, 11, 0.1);
     border: 1px solid rgba(245, 158, 11, 0.25);
     border-radius: 4px;
-    font-size: 10px;
+    font-size: var(--font-10);
     color: #f59e0b;
     margin-bottom: 8px;
     flex-shrink: 0;
@@ -800,7 +800,7 @@
     min-width: 0;
   }
   .var-name {
-    font-size: 11px;
+    font-size: var(--font-11);
     font-weight: 500;
     font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
     color: var(--color-text);
@@ -810,7 +810,7 @@
     min-width: 0;
   }
   .var-type-badge {
-    font-size: 8px;
+    font-size: var(--font-8);
     padding: 1px 4px;
     border-radius: 3px;
     background: rgba(59, 130, 246, 0.12);
@@ -819,7 +819,7 @@
   }
   .var-default {
     display: block;
-    font-size: 9px;
+    font-size: var(--font-9);
     color: var(--color-text-muted);
     font-style: italic;
     margin-bottom: 3px;
@@ -831,7 +831,7 @@
     border-radius: 4px;
     background: var(--color-bg);
     color: var(--color-text);
-    font-size: 11px;
+    font-size: var(--font-11);
     outline: none;
     box-sizing: border-box;
   }
@@ -856,7 +856,7 @@
     border: none;
     color: var(--color-text-muted);
     cursor: pointer;
-    font-size: 14px;
+    font-size: var(--font-14);
     padding: 0 2px;
     line-height: 1;
   }
@@ -869,7 +869,7 @@
     border-radius: 4px;
     color: var(--color-text-muted);
     cursor: pointer;
-    font-size: 10px;
+    font-size: var(--font-10);
     padding: 2px 6px;
     margin-top: 2px;
   }

@@ -140,6 +140,7 @@
                 class:is-variable={isVariable}
                 onclick={() => { toggleVariableMode(prop.key); }}
                 title={isVariable ? 'Using variable (click to use literal value)' : 'Using literal value (click to make variable)'}
+                aria-label={`Toggle variable mode for ${prop.label}`}
               >
                 {#if isVariable}
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -165,6 +166,7 @@
               oninput={(e) => handleStringInput(prop.key, e)}
               disabled={isVariable}
               class:is-variable-input={isVariable}
+              aria-label={prop.label}
             />
 
           {:else if prop.type === 'number'}
@@ -177,6 +179,7 @@
               oninput={(e) => handleNumberInput(prop.key, e)}
               disabled={isVariable}
               class:is-variable-input={isVariable}
+              aria-label={prop.label}
             />
 
           {:else if prop.type === 'boolean'}
@@ -200,6 +203,7 @@
               <select
                 value={(values[prop.key] as string) ?? ''}
                 onchange={(e) => handleSelectInput(prop.key, e)}
+                aria-label={prop.label}
               >
                 <option value="" disabled>Select...</option>
                 {#each prop.options ?? [] as opt}
@@ -457,7 +461,7 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text-muted);
   }
   .label-text {
@@ -475,7 +479,7 @@
     border-radius: 6px;
     background: var(--color-bg);
     color: var(--color-text);
-    font-size: 13px;
+    font-size: var(--font-13);
     outline: none;
     transition: border-color 0.15s;
     width: 100%;
@@ -492,7 +496,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text);
     cursor: pointer;
   }
@@ -524,7 +528,7 @@
     background: none;
     border: none;
     color: #ef4444;
-    font-size: 16px;
+    font-size: var(--font-16);
     cursor: pointer;
     padding: 2px 6px;
     border-radius: 4px;
@@ -540,7 +544,7 @@
     color: var(--color-text-muted);
     padding: 4px 8px;
     border-radius: 4px;
-    font-size: 12px;
+    font-size: var(--font-12);
     cursor: pointer;
     transition: all 0.15s;
   }
@@ -562,7 +566,7 @@
     border-bottom: 1px solid var(--color-border);
   }
   .array-object-label {
-    font-size: 11px;
+    font-size: var(--font-11);
     font-weight: 600;
     color: var(--color-text-muted);
     text-transform: uppercase;
@@ -578,7 +582,7 @@
     margin-bottom: 0;
   }
   .help-text {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
   }
   .label-row {
@@ -596,7 +600,7 @@
     border-radius: 4px;
     background: transparent;
     color: var(--color-text-muted);
-    font-size: 10px;
+    font-size: var(--font-10);
     cursor: pointer;
     transition: all 0.15s;
     flex-shrink: 0;

@@ -733,7 +733,7 @@
   }
   .panel-header h3 {
     margin: 0;
-    font-size: 11px;
+    font-size: var(--font-11);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -773,7 +773,7 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text-muted);
   }
   .label-text {
@@ -785,7 +785,7 @@
     gap: 6px;
   }
   .convention-badge {
-    font-size: 9px;
+    font-size: var(--font-9);
     padding: 1px 5px;
     border-radius: 3px;
     background: rgba(59, 130, 246, 0.12);
@@ -794,7 +794,7 @@
     letter-spacing: 0.03em;
   }
   .name-preview {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
     font-family: 'Cascadia Code', 'Fira Code', monospace;
     opacity: 0.8;
@@ -808,7 +808,7 @@
     border-radius: 6px;
     background: var(--color-bg);
     color: var(--color-text);
-    font-size: 13px;
+    font-size: var(--font-13);
     outline: none;
     transition: border-color 0.15s;
     width: 100%;
@@ -835,18 +835,18 @@
     width: 100%;
   }
   .endpoint-label {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
     min-width: 32px;
   }
   .endpoint-value {
-    font-size: 13px;
+    font-size: var(--font-13);
     font-weight: 500;
     color: var(--color-text);
   }
   .edge-arrow {
     color: var(--color-text-muted);
-    font-size: 14px;
+    font-size: var(--font-14);
   }
   .edge-category-info {
     display: flex;
@@ -858,12 +858,12 @@
     margin-bottom: 8px;
   }
   .category-label {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
     font-weight: 500;
   }
   .category-value {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text);
     text-transform: capitalize;
   }
@@ -875,7 +875,7 @@
     border-radius: 6px;
     background: transparent;
     color: #ef4444;
-    font-size: 12px;
+    font-size: var(--font-12);
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
   }
@@ -889,7 +889,7 @@
     gap: 2px;
   }
   .pep-hint {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
     margin: 0 0 4px 0;
     line-height: 1.4;
@@ -898,7 +898,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text);
     cursor: pointer;
     padding: 4px 0;
@@ -910,7 +910,7 @@
     flex: 1;
   }
   .sensitive-badge {
-    font-size: 9px;
+    font-size: var(--font-9);
     padding: 1px 5px;
     border-radius: 3px;
     background: rgba(239, 68, 68, 0.15);
@@ -934,7 +934,7 @@
     min-width: 0;
   }
   .binding-source {
-    font-size: 12px;
+    font-size: var(--font-12);
     font-weight: 500;
     color: var(--color-text);
     overflow: hidden;
@@ -942,7 +942,7 @@
     white-space: nowrap;
   }
   .binding-attr {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
   }
   .binding-actions {
@@ -956,7 +956,7 @@
     border: 1px solid var(--color-border);
     border-radius: 4px;
     color: var(--color-text-muted);
-    font-size: 14px;
+    font-size: var(--font-14);
     cursor: pointer;
     padding: 0 5px;
     line-height: 1.4;
@@ -974,7 +974,7 @@
     padding: 24px;
   }
   .empty-hint {
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text-muted);
     opacity: 0.5;
     text-align: center;
@@ -983,7 +983,7 @@
   .edge-info-hint {
     margin-top: 16px;
     padding: 10px 12px;
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
     background: var(--color-bg);
     border: 1px solid var(--color-border);
@@ -991,7 +991,7 @@
     line-height: 1.4;
   }
   .cost-inputs-hint {
-    font-size: 10px;
+    font-size: var(--font-10);
     color: var(--color-text-muted);
     opacity: 0.7;
     margin: 0 0 8px;
@@ -1007,7 +1007,7 @@
     margin-bottom: 0;
   }
   .cost-input-label {
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text-muted);
     font-weight: 500;
     display: flex;
@@ -1023,7 +1023,7 @@
     border-radius: 50%;
     background: var(--color-border);
     color: var(--color-text-muted);
-    font-size: 9px;
+    font-size: var(--font-9);
     font-weight: 700;
     cursor: help;
     flex-shrink: 0;
@@ -1040,7 +1040,7 @@
     border-radius: 6px;
     background: var(--color-bg);
     color: var(--color-text);
-    font-size: 13px;
+    font-size: var(--font-13);
     outline: none;
     transition: border-color 0.15s;
     min-width: 0;
@@ -1050,7 +1050,7 @@
     border-color: var(--color-accent);
   }
   .cost-input-unit {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
     white-space: nowrap;
     flex-shrink: 0;
@@ -1058,7 +1058,7 @@
 
   /* Module instance panel */
   .instance-readonly-hint {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
     opacity: 0.7;
     line-height: 1.4;

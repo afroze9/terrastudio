@@ -79,12 +79,15 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <svelte:window onclick={handleWindowClick} />
 
-<nav class="menu-bar">
+<nav class="menu-bar" role="menubar">
   <!-- File -->
-  <div class="menu-item">
+  <div class="menu-item" role="none">
     <button
       class="menu-trigger"
       class:open={openMenu === 'file'}
+      role="menuitem"
+      aria-haspopup="true"
+      aria-expanded={openMenu === 'file'}
       onclick={() => toggle('file')}
       onmouseenter={() => { if (openMenu) openMenu = 'file'; }}
     >{t('menu.file.label')}</button>
@@ -136,10 +139,13 @@
   </div>
 
   <!-- Edit -->
-  <div class="menu-item">
+  <div class="menu-item" role="none">
     <button
       class="menu-trigger"
       class:open={openMenu === 'edit'}
+      role="menuitem"
+      aria-haspopup="true"
+      aria-expanded={openMenu === 'edit'}
       onclick={() => toggle('edit')}
       onmouseenter={() => { if (openMenu) openMenu = 'edit'; }}
     >{t('menu.edit.label')}</button>
@@ -189,10 +195,13 @@
   </div>
 
   <!-- View -->
-  <div class="menu-item">
+  <div class="menu-item" role="none">
     <button
       class="menu-trigger"
       class:open={openMenu === 'view'}
+      role="menuitem"
+      aria-haspopup="true"
+      aria-expanded={openMenu === 'view'}
       onclick={() => toggle('view')}
       onmouseenter={() => { if (openMenu) openMenu = 'view'; }}
     >{t('menu.view.label')}</button>
@@ -298,10 +307,13 @@
   </div>
 
   <!-- Help -->
-  <div class="menu-item">
+  <div class="menu-item" role="none">
     <button
       class="menu-trigger"
       class:open={openMenu === 'help'}
+      role="menuitem"
+      aria-haspopup="true"
+      aria-expanded={openMenu === 'help'}
       onclick={() => toggle('help')}
       onmouseenter={() => { if (openMenu) openMenu = 'help'; }}
     >{t('menu.help.label')}</button>
@@ -341,7 +353,7 @@
     background: none;
     border: none;
     color: var(--color-text-muted);
-    font-size: 12px;
+    font-size: var(--font-12);
     cursor: pointer;
     padding: 0 8px;
     height: 100%;
@@ -373,7 +385,7 @@
     border-radius: 3px;
     background: transparent;
     color: var(--color-text-muted);
-    font-size: 12px;
+    font-size: var(--font-12);
     cursor: pointer;
     text-align: left;
   }
@@ -386,7 +398,7 @@
     cursor: default;
   }
   .shortcut {
-    font-size: 11px;
+    font-size: var(--font-11);
     opacity: 0.6;
     margin-left: 24px;
   }
@@ -399,7 +411,7 @@
     margin: 4px 0;
   }
   .check-mark {
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-accent);
     margin-left: 12px;
   }
@@ -422,7 +434,7 @@
     pointer-events: none;
   }
   .submenu-arrow {
-    font-size: 10px;
+    font-size: var(--font-10);
     opacity: 0.6;
     margin-left: 24px;
   }

@@ -129,7 +129,7 @@
     border-right: 1px solid var(--color-border);
     background: var(--color-bg);
     color: var(--color-text-muted);
-    font-size: 12px;
+    font-size: var(--font-12);
     cursor: pointer;
     white-space: nowrap;
     flex-shrink: 0;
@@ -169,7 +169,7 @@
     align-items: center;
     justify-content: center;
     color: var(--color-text-muted);
-    font-size: 14px;
+    font-size: var(--font-14);
     cursor: pointer;
     padding: 2px;
     line-height: 1;
@@ -228,7 +228,7 @@
     border-radius: 3px;
     background: transparent;
     color: var(--color-text-muted);
-    font-size: 12px;
+    font-size: var(--font-12);
     text-align: left;
     cursor: pointer;
     transition: background 0.1s, color 0.1s;

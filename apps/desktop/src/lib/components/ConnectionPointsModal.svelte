@@ -276,7 +276,7 @@
 
   .modal-header h3 {
     margin: 0;
-    font-size: 16px;
+    font-size: var(--font-16);
     font-weight: 600;
     color: var(--color-text);
   }
@@ -306,7 +306,7 @@
 
   .node-name {
     margin: 0 0 16px 0;
-    font-size: 13px;
+    font-size: var(--font-13);
     font-weight: 500;
     color: var(--color-text);
   }
@@ -321,14 +321,14 @@
 
   .section-title {
     margin: 0 0 4px 0;
-    font-size: 13px;
+    font-size: var(--font-13);
     font-weight: 600;
     color: var(--color-text);
   }
 
   .section-desc {
     margin: 0 0 12px 0;
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
     line-height: 1.4;
   }
@@ -357,13 +357,13 @@
   }
 
   .handle-label {
-    font-size: 12px;
+    font-size: var(--font-12);
     font-weight: 500;
     color: var(--color-text);
   }
 
   .handle-type {
-    font-size: 9px;
+    font-size: var(--font-9);
     font-weight: 500;
     text-transform: uppercase;
     padding: 2px 5px;
@@ -392,7 +392,7 @@
     background: var(--color-surface);
     color: var(--color-text-muted);
     border-radius: 4px;
-    font-size: 10px;
+    font-size: var(--font-10);
     font-weight: 600;
     cursor: pointer;
     transition: all 0.15s;
@@ -474,7 +474,7 @@
   }
 
   .preview-label {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
   }
 
@@ -492,7 +492,7 @@
   }
 
   .control-label {
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text);
   }
 
@@ -509,7 +509,7 @@
     background: var(--color-surface-hover);
     color: var(--color-text);
     border-radius: 6px;
-    font-size: 14px;
+    font-size: var(--font-14);
     font-weight: 500;
     cursor: pointer;
     display: flex;
@@ -530,7 +530,7 @@
   .counter-value {
     width: 24px;
     text-align: center;
-    font-size: 13px;
+    font-size: var(--font-13);
     font-weight: 500;
     color: var(--color-text);
   }
@@ -548,7 +548,7 @@
   .btn {
     padding: 8px 16px;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: var(--font-13);
     font-weight: 500;
     cursor: pointer;
     border: 1px solid transparent;

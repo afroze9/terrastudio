@@ -81,6 +81,7 @@
   <button
     class="toolbar-btn"
     title={t('canvas.toolbar.save')}
+    aria-label={t('canvas.toolbar.save')}
     disabled={!project.isOpen}
     onclick={handleSave}
   >
@@ -97,6 +98,7 @@
   <button
     class="toolbar-btn"
     title={t('canvas.toolbar.undo')}
+    aria-label={t('canvas.toolbar.undo')}
     disabled={!diagram.canUndo}
     onclick={() => diagram.undo()}
   >
@@ -110,6 +112,7 @@
   <button
     class="toolbar-btn"
     title={t('canvas.toolbar.redo')}
+    aria-label={t('canvas.toolbar.redo')}
     disabled={!diagram.canRedo}
     onclick={() => diagram.redo()}
   >
@@ -127,6 +130,9 @@
       class="toolbar-btn"
       class:active={showLayoutMenu}
       title={t('canvas.toolbar.autoLayout')}
+      aria-label={t('canvas.toolbar.autoLayout')}
+      aria-haspopup="true"
+      aria-expanded={showLayoutMenu}
       disabled={diagram.nodes.length === 0}
       onclick={(e) => { e.stopPropagation(); showEdgeMenu = false; showLayoutMenu = !showLayoutMenu; }}
     >
@@ -155,6 +161,7 @@
   <button
     class="toolbar-btn"
     title={t('canvas.toolbar.fitView')}
+    aria-label={t('canvas.toolbar.fitView')}
     onclick={handleFitView}
   >
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -174,6 +181,9 @@
       class="toolbar-btn"
       class:active={showEdgeMenu}
       title={t('canvas.toolbar.edgeStyle')}
+      aria-label={t('canvas.toolbar.edgeStyle')}
+      aria-haspopup="true"
+      aria-expanded={showEdgeMenu}
       onclick={(e) => { e.stopPropagation(); showLayoutMenu = false; showEdgeMenu = !showEdgeMenu; }}
     >
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -207,6 +217,8 @@
     class="toolbar-btn"
     class:snap-active={ui.snapToGrid}
     title={ui.snapToGrid ? `${t('canvas.toolbar.snapToGrid')} (${ui.gridSize}${t('canvas.toolbar.px')}) — ${t('canvas.toolbar.clickToDisable')}` : `${t('canvas.toolbar.snapToGrid')} — ${t('canvas.toolbar.clickToEnable')}`}
+    aria-label={t('canvas.toolbar.snapToGrid')}
+    aria-pressed={ui.snapToGrid}
     onclick={() => { ui.setSnapToGrid(!ui.snapToGrid); }}
   >
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -225,6 +237,9 @@
       class="toolbar-btn"
       class:active={showGridMenu}
       title={t('canvas.toolbar.gridSize')}
+      aria-label={t('canvas.toolbar.gridSize')}
+      aria-haspopup="true"
+      aria-expanded={showGridMenu}
       onclick={(e) => { e.stopPropagation(); showLayoutMenu = false; showEdgeMenu = false; showGridMenu = !showGridMenu; showEdgeVisibilityMenu = false; }}
     >
       <span class="grid-size-label">{ui.gridSize}</span>
@@ -256,6 +271,9 @@
       class:active={showEdgeVisibilityMenu}
       class:has-hidden={hiddenEdgeCount > 0}
       title={t('canvas.toolbar.edgeVisibility')}
+      aria-label={t('canvas.toolbar.edgeVisibility')}
+      aria-haspopup="true"
+      aria-expanded={showEdgeVisibilityMenu}
       onclick={(e) => { e.stopPropagation(); showLayoutMenu = false; showEdgeMenu = false; showGridMenu = false; showEdgeVisibilityMenu = !showEdgeVisibilityMenu; }}
     >
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -431,7 +449,7 @@
     border-radius: 3px;
     background: transparent;
     color: var(--color-text-muted);
-    font-size: 12px;
+    font-size: var(--font-12);
     cursor: pointer;
     text-align: left;
     gap: 8px;
@@ -447,13 +465,13 @@
   }
 
   .layout-icon {
-    font-size: 12px;
+    font-size: var(--font-12);
     width: 16px;
     text-align: center;
   }
 
   .check {
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-accent);
   }
 
@@ -471,7 +489,7 @@
   }
 
   .grid-size-label {
-    font-size: 10px;
+    font-size: var(--font-10);
     font-weight: 600;
     min-width: 16px;
     text-align: center;
@@ -485,7 +503,7 @@
     position: absolute;
     top: 2px;
     right: 2px;
-    font-size: 8px;
+    font-size: var(--font-8);
     font-weight: 700;
     background: var(--color-warning, #f59e0b);
     color: white;
@@ -506,7 +524,7 @@
   }
 
   .dropdown-header {
-    font-size: 10px;
+    font-size: var(--font-10);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -548,12 +566,12 @@
   }
 
   .toggle-name {
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text);
   }
 
   .toggle-desc {
-    font-size: 10px;
+    font-size: var(--font-10);
     color: var(--color-text-muted);
   }
 

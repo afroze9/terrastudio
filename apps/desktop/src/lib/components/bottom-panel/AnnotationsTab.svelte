@@ -26,6 +26,6 @@
     opacity: 0.4;
   }
   .placeholder-text {
-    font-size: 12px;
+    font-size: var(--font-12);
   }
 </style>

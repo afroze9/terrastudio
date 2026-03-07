@@ -8,6 +8,7 @@ import { cost } from '$lib/stores/cost.svelte';
 import { ui } from '$lib/stores/ui.svelte';
 import { terraform } from '$lib/stores/terraform.svelte';
 import { registry, loadPluginsForProject } from '$lib/bootstrap';
+import { logger } from '$lib/logger';
 import { applyTemplate } from '$lib/templates/service';
 import type { Template } from '$lib/templates/types';
 import type { NamingConvention, EdgeCategoryId } from '@terrastudio/types';
@@ -58,11 +59,35 @@ interface ProjectData {
 
 /**
  * Resolve which provider IDs to load for a given project config.
- * Defaults to ['azurerm'] for backward compatibility with projects that
- * don't have activeProviders set.
+ * If activeProviders is set, use it. Otherwise infer from diagram node types
+ * (e.g. 'aws/networking/vpc' → 'aws'). Falls back to ['azurerm'].
  */
-function resolveActiveProviders(config: ProjectConfig): ProviderId[] {
-  return (config.activeProviders?.length ? config.activeProviders : ['azurerm']) as ProviderId[];
+function resolveActiveProviders(config: ProjectConfig, diagramNodes?: unknown[]): ProviderId[] {
+  if (config.activeProviders?.length) {
+    logger.info(`[project] activeProviders from config: [${config.activeProviders.join(', ')}]`);
+    return config.activeProviders as ProviderId[];
+  }
+
+  logger.warn('[project] No activeProviders in project config, inferring from diagram nodes');
+
+  // Infer providers from diagram node types (format: '{provider}/...')
+  if (diagramNodes?.length) {
+    const providers = new Set<string>();
+    for (const node of diagramNodes) {
+      const type = (node as any)?.type as string | undefined;
+      if (type && type.includes('/') && !type.startsWith('_')) {
+        providers.add(type.split('/')[0]);
+      }
+    }
+    if (providers.size > 0) {
+      const inferred = [...providers] as ProviderId[];
+      logger.info(`[project] Inferred providers from ${diagramNodes.length} nodes: [${inferred.join(', ')}]`);
+      return inferred;
+    }
+  }
+
+  logger.info('[project] No providers inferred, defaulting to [azurerm]');
+  return ['azurerm' as ProviderId];
 }
 
 /**
@@ -160,7 +185,11 @@ export async function loadProjectByPath(path: string): Promise<void> {
   });
 
   // Load plugins before opening project in store
-  await loadPluginsForProject(resolveActiveProviders(data.metadata.projectConfig));
+  const diagramNodes = (data.diagram as any)?.nodes as unknown[] | undefined;
+  logger.info(`[project] Loading project "${data.metadata.name}" — diagram has ${diagramNodes?.length ?? 0} nodes`);
+  const providers = resolveActiveProviders(data.metadata.projectConfig, diagramNodes);
+  logger.info(`[project] Loading plugins for providers: [${providers.join(', ')}]`);
+  await loadPluginsForProject(providers);
 
   diagram.clear();
   terraform.clear();

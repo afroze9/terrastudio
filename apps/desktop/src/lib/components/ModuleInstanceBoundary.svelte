@@ -282,7 +282,7 @@
   }
 
   .instance-name {
-    font-size: 12px;
+    font-size: var(--font-12);
     font-weight: 600;
     color: white;
     white-space: nowrap;
@@ -292,7 +292,7 @@
   }
 
   .member-badge {
-    font-size: 10px;
+    font-size: var(--font-10);
     font-weight: 600;
     color: var(--instance-color);
     background: white;
@@ -304,7 +304,7 @@
   }
 
   .instance-badge-tag {
-    font-size: 9px;
+    font-size: var(--font-9);
     font-weight: 700;
     letter-spacing: 0.5px;
     color: var(--instance-color);
@@ -315,7 +315,7 @@
   }
 
   .var-badge {
-    font-size: 10px;
+    font-size: var(--font-10);
     font-weight: 600;
     color: white;
     opacity: 0.7;
@@ -346,7 +346,7 @@
     position: absolute;
     bottom: 4px;
     right: 8px;
-    font-size: 10px;
+    font-size: var(--font-10);
     color: var(--instance-color);
     opacity: 0.5;
     pointer-events: none;

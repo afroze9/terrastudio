@@ -324,7 +324,7 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text-muted);
   }
 
@@ -339,7 +339,7 @@
     border-radius: 6px;
     background: var(--color-bg);
     color: var(--color-text);
-    font-size: 13px;
+    font-size: var(--font-13);
     outline: none;
     transition: border-color 0.15s;
     width: 100%;
@@ -375,7 +375,7 @@
   }
 
   .grant-identity {
-    font-size: 12px;
+    font-size: var(--font-12);
     font-weight: 500;
     color: var(--color-text);
     overflow: hidden;
@@ -384,7 +384,7 @@
   }
 
   .grant-permissions {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
   }
 
@@ -416,7 +416,7 @@
   }
 
   .delete-btn {
-    font-size: 14px;
+    font-size: var(--font-14);
   }
 
   .delete-btn:hover {
@@ -431,7 +431,7 @@
     border-radius: 6px;
     background: transparent;
     color: var(--color-text-muted);
-    font-size: 12px;
+    font-size: var(--font-12);
     cursor: pointer;
     transition: all 0.15s;
   }
@@ -453,7 +453,7 @@
     align-items: center;
     justify-content: space-between;
     margin-bottom: 12px;
-    font-size: 12px;
+    font-size: var(--font-12);
     font-weight: 500;
     color: var(--color-text);
   }
@@ -462,7 +462,7 @@
     background: none;
     border: none;
     color: var(--color-text-muted);
-    font-size: 16px;
+    font-size: var(--font-16);
     cursor: pointer;
     padding: 0 4px;
     line-height: 1;
@@ -498,7 +498,7 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text);
     cursor: pointer;
     padding: 2px 6px;
@@ -525,7 +525,7 @@
   }
 
   .no-identities-hint {
-    font-size: 11px;
+    font-size: var(--font-11);
     color: var(--color-text-muted);
     font-style: italic;
     padding: 8px;
@@ -542,7 +542,7 @@
     border-radius: 6px;
     background: var(--color-accent);
     color: var(--color-accent-text);
-    font-size: 12px;
+    font-size: var(--font-12);
     font-weight: 500;
     cursor: pointer;
     transition: opacity 0.15s;

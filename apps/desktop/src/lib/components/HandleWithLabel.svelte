@@ -69,7 +69,7 @@
 <style>
   .handle-label {
     position: absolute;
-    font-size: 9px;
+    font-size: var(--font-9);
     color: #8b90a0;
     pointer-events: none;
     white-space: nowrap;

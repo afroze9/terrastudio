@@ -274,7 +274,7 @@
   }
 
   .dialog-title {
-    font-size: 14px;
+    font-size: var(--font-14);
     font-weight: 600;
     color: var(--color-text);
     margin: 0;
@@ -316,7 +316,7 @@
   }
 
   .field-label {
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text-muted);
     display: flex;
     align-items: baseline;
@@ -326,7 +326,7 @@
   .required { color: #ef4444; }
 
   .field-hint {
-    font-size: 10px;
+    font-size: var(--font-10);
     color: var(--color-text-muted);
     opacity: 0.6;
     font-style: italic;
@@ -340,7 +340,7 @@
     border-radius: 5px;
     background: var(--color-bg);
     color: var(--color-text);
-    font-size: 12px;
+    font-size: var(--font-12);
     font-family: inherit;
     outline: none;
     width: 100%;
@@ -362,7 +362,7 @@
     border-radius: 5px;
     background: rgba(239, 68, 68, 0.1);
     color: #ef4444;
-    font-size: 12px;
+    font-size: var(--font-12);
   }
 
   .dialog-footer {
@@ -376,7 +376,7 @@
   .btn {
     padding: 7px 18px;
     border-radius: 5px;
-    font-size: 12px;
+    font-size: var(--font-12);
     font-weight: 500;
     cursor: pointer;
     border: 1px solid transparent;

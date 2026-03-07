@@ -5,6 +5,25 @@ import type { ResourceTypeId, EdgeCategoryId } from '@terrastudio/types';
 import type { LogLevel } from '$lib/logger';
 import { broadcastSetting } from './settings-sync';
 
+/** Apply font scale to document root as CSS custom properties */
+const FONT_SIZES = [8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 28] as const;
+
+function applyFontScale(scale: FontScale): void {
+  if (typeof document === 'undefined') return;
+  const factor = scale / 100;
+  const root = document.documentElement;
+  for (const size of FONT_SIZES) {
+    root.style.setProperty(`--font-${size}`, `${Math.round(size * factor)}px`);
+  }
+  root.dataset.fontScale = String(scale);
+}
+
+/** Apply reduced motion preference as a data attribute on documentElement */
+function applyReducedMotion(pref: ReducedMotionPref): void {
+  if (typeof document === 'undefined') return;
+  document.documentElement.dataset.reducedMotion = pref;
+}
+
 /** Which edge categories are currently visible on canvas */
 export type EdgeCategoryVisibility = Record<EdgeCategoryId, boolean>;
 
@@ -19,6 +38,8 @@ export type SidebarView = 'explorer' | 'terraform' | 'settings' | 'cost' | 'app-
 export type EdgeStyle = 'default' | 'smoothstep' | 'step' | 'straight';
 export type Theme = 'dark' | 'light';
 export type BottomPanelTab = 'terminal' | 'problems' | 'annotations' | 'connection-wizard';
+export type ReducedMotionPref = 'system' | 'reduce' | 'no-preference';
+export type FontScale = 75 | 85 | 100 | 115 | 130 | 150;
 
 export interface DragFeedback {
   /** The resource type being dragged */
@@ -112,6 +133,10 @@ class UiStore {
 
   // --- Log level ---
   logLevel = $state<LogLevel>((typeof localStorage !== 'undefined' && localStorage.getItem('terrastudio-log-level') as LogLevel) || 'info');
+
+  // --- Accessibility ---
+  fontScale = $state<FontScale>((typeof localStorage !== 'undefined' && Number(localStorage.getItem('terrastudio-font-scale')) as FontScale) || 100);
+  reducedMotion = $state<ReducedMotionPref>((typeof localStorage !== 'undefined' && localStorage.getItem('terrastudio-reduced-motion') as ReducedMotionPref) || 'system');
 
   // --- Theme ---
   theme = $state<Theme>((typeof localStorage !== 'undefined' && localStorage.getItem('terrastudio-theme') as Theme) || 'dark');
@@ -268,6 +293,22 @@ class UiStore {
     broadcastSetting('logLevel', level);
   }
 
+  /** Set font scale and apply to DOM */
+  setFontScale(scale: FontScale) {
+    this.fontScale = scale;
+    localStorage.setItem('terrastudio-font-scale', String(scale));
+    applyFontScale(scale);
+    broadcastSetting('fontScale', scale);
+  }
+
+  /** Set reduced motion preference and apply to DOM */
+  setReducedMotion(pref: ReducedMotionPref) {
+    this.reducedMotion = pref;
+    localStorage.setItem('terrastudio-reduced-motion', pref);
+    applyReducedMotion(pref);
+    broadcastSetting('reducedMotion', pref);
+  }
+
   /** Set edge type and persist */
   setEdgeType(type: EdgeStyle) {
     this.edgeType = type;
@@ -340,9 +381,11 @@ class UiStore {
     broadcastSetting('paletteId', id);
   }
 
-  /** Apply saved theme + palette to DOM (call once on startup) */
+  /** Apply saved theme + palette + accessibility prefs to DOM (call once on startup) */
   applyTheme() {
     applyPalette(this.paletteId, this.theme);
+    applyFontScale(this.fontScale);
+    applyReducedMotion(this.reducedMotion);
   }
 
   // --- Confirm dialog ---

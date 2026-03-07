@@ -39,6 +39,6 @@
     50% { opacity: 0.4; }
   }
   .mcp-label {
-    font-size: 10px;
+    font-size: var(--font-10);
   }
 </style>

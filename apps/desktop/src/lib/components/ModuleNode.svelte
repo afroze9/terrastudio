@@ -71,6 +71,8 @@
 <div
   class="module-node"
   class:selected
+  role="group"
+  aria-label={`Module: ${mod?.name ?? 'Module'}`}
   style:--module-color={borderColor}
   style:min-height="{nodeMinHeight}px"
   ondblclick={handleExpand}
@@ -136,7 +138,7 @@
   }
 
   .module-node-name {
-    font-size: 12px;
+    font-size: var(--font-12);
     font-weight: 600;
     color: #cdd6f4;
     white-space: nowrap;
@@ -145,7 +147,7 @@
   }
 
   .module-node-badge {
-    font-size: 10px;
+    font-size: var(--font-10);
     font-weight: 600;
     color: white;
     background: var(--module-color);
@@ -157,7 +159,7 @@
   }
 
   .module-node-hint {
-    font-size: 10px;
+    font-size: var(--font-10);
     color: #6c7086;
     margin-top: 4px;
   }

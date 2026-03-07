@@ -114,7 +114,7 @@
     background: none;
     border: none;
     color: var(--color-text-muted);
-    font-size: 18px;
+    font-size: var(--font-18);
     line-height: 1;
     cursor: pointer;
     padding: 2px 6px;
@@ -133,7 +133,7 @@
   }
 
   .app-name {
-    font-size: 18px;
+    font-size: var(--font-18);
     font-weight: 700;
     color: var(--color-text);
     margin: 0 0 4px;
@@ -141,13 +141,13 @@
   }
 
   .version {
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text-muted);
     margin: 0 0 12px;
   }
 
   .tagline {
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text-muted);
     line-height: 1.6;
     margin: 0;
@@ -170,7 +170,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 12px;
+    font-size: var(--font-12);
   }
 
   .meta-label {
@@ -204,7 +204,7 @@
     color: var(--color-accent-text);
     border: none;
     border-radius: 5px;
-    font-size: 13px;
+    font-size: var(--font-13);
     font-weight: 500;
     cursor: pointer;
     transition: opacity 0.1s;

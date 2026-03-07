@@ -211,7 +211,7 @@
     border: none;
     background: transparent;
     color: var(--color-text);
-    font-size: 12px;
+    font-size: var(--font-12);
     outline: none;
     min-width: 0;
   }
@@ -223,7 +223,7 @@
     background: none;
     border: none;
     color: var(--color-text-muted);
-    font-size: 14px;
+    font-size: var(--font-14);
     cursor: pointer;
     padding: 0 2px;
     line-height: 1;
@@ -233,13 +233,13 @@
   }
   .palette-loading {
     padding: 16px 12px;
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text-muted);
     text-align: center;
   }
   .palette-empty {
     padding: 16px 12px;
-    font-size: 12px;
+    font-size: var(--font-12);
     color: var(--color-text-muted);
     text-align: center;
     line-height: 1.5;
@@ -270,14 +270,14 @@
   }
   .category-label {
     flex: 1;
-    font-size: 11px;
+    font-size: var(--font-11);
     font-weight: 600;
     color: var(--color-accent);
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
   .category-count {
-    font-size: 10px;
+    font-size: var(--font-10);
     color: var(--color-text-muted);
     opacity: 0.6;
   }
@@ -297,7 +297,7 @@
     color: var(--color-text);
     cursor: grab;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: var(--font-13);
     text-align: left;
     transition: background 0.15s;
   }
@@ -334,7 +334,7 @@
     color: var(--module-tpl-color, #6366f1);
   }
   .module-instance-count {
-    font-size: 10px;
+    font-size: var(--font-10);
     color: var(--color-text-muted);
     opacity: 0.6;
     margin-left: auto;
