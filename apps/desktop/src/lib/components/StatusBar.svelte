@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount, type Component } from 'svelte';
   import { terraform } from '$lib/stores/terraform.svelte';
-  import { ui } from '$lib/stores/ui.svelte';
+  import { ui, type BottomPanelTab } from '$lib/stores/ui.svelte';
+  import { connectionWizard } from '$lib/stores/connection-wizard.svelte';
   import PaletteSelector from './PaletteSelector.svelte';
 
   let showPaletteSelector = $state(false);
@@ -11,6 +12,29 @@
     import('./McpStatusPill.svelte').then((m) => { McpStatusPill = m.default; });
   });
   let currentAccent = $derived(ui.palette?.previewAccent ?? '#818cf8');
+
+  const panelButtons: { id: BottomPanelTab; label: string; icon: string }[] = [
+    {
+      id: 'terminal',
+      label: 'Terminal',
+      icon: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6L7 8.5L4 11" /><path d="M8.5 11H12" /></svg>',
+    },
+    {
+      id: 'problems',
+      label: 'Problems',
+      icon: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.5L14.5 13H1.5L8 1.5z" /><path d="M8 6.5v3" /><circle cx="8" cy="11.5" r="0.5" fill="currentColor" /></svg>',
+    },
+    {
+      id: 'annotations',
+      label: 'Annotations',
+      icon: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h10v8H7L3 14V3z" /></svg>',
+    },
+    {
+      id: 'connection-wizard',
+      label: 'Connection',
+      icon: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3v6a2 2 0 0 1-2 2H5" /><polyline points="8 8 5 11 8 14" /></svg>',
+    },
+  ];
 
   const statusLabel = $derived.by(() => {
     switch (terraform.status) {
@@ -52,6 +76,22 @@
 
 <footer class="status-bar">
   <div class="status-left">
+    {#each panelButtons as btn (btn.id)}
+      <button
+        class="panel-toggle"
+        class:active={ui.showBottomPanel && ui.activeBottomTab === btn.id}
+        title={btn.label}
+        onclick={() => ui.toggleBottomPanel(btn.id)}
+      >
+        {@html btn.icon}
+        <span class="panel-toggle-label">{btn.label}</span>
+        {#if btn.id === 'connection-wizard' && connectionWizard.hasNewEntry && ui.activeBottomTab !== 'connection-wizard'}
+          <span class="status-badge"></span>
+        {/if}
+      </button>
+    {/each}
+  </div>
+  <div class="status-right">
     <span
       class="status-dot"
       class:pulse={terraform.isRunning}
@@ -68,20 +108,7 @@
     {#if McpStatusPill}
       <McpStatusPill />
     {/if}
-  </div>
-  <div class="status-right">
-    <button
-      class="status-btn icon-btn"
-      class:active={ui.showBottomPanel}
-      title="Toggle Panel (Ctrl+J)"
-      onclick={() => ui.toggleBottomPanel('terminal')}
-    >
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="1" y="2" width="14" height="12" rx="1.5" />
-        <path d="M4 6L7 8.5L4 11" />
-        <path d="M8.5 11H12" />
-      </svg>
-    </button>
+    <span class="separator"></span>
     <div class="palette-btn-wrapper">
       <button
         class="status-btn icon-btn"
@@ -127,7 +154,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 22px;
+    height: 28px;
     padding: 0 8px;
     background: var(--color-surface);
     border-top: 1px solid var(--color-border);
@@ -138,6 +165,9 @@
   .status-left, .status-right {
     display: flex;
     align-items: center;
+    gap: 2px;
+  }
+  .status-right {
     gap: 6px;
   }
   .status-dot {
@@ -173,6 +203,38 @@
     background: var(--color-border);
     opacity: 0.5;
   }
+  .panel-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    font-size: 11px;
+    cursor: pointer;
+    padding: 2px 8px;
+    height: 24px;
+    border-radius: 3px;
+    position: relative;
+  }
+  .panel-toggle:hover {
+    color: var(--color-text);
+    background: var(--color-surface-hover);
+  }
+  .panel-toggle.active {
+    color: var(--color-text);
+    background: var(--color-surface-hover);
+  }
+  .panel-toggle-label {
+    font-size: 11px;
+  }
+  .status-badge {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    flex-shrink: 0;
+  }
   .status-btn {
     background: none;
     border: none;
@@ -180,8 +242,8 @@
     font-size: 11px;
     cursor: pointer;
     padding: 0 6px;
-    height: 22px;
-    line-height: 22px;
+    height: 28px;
+    line-height: 28px;
   }
   .status-btn.icon-btn {
     display: flex;
@@ -189,7 +251,7 @@
     justify-content: center;
     padding: 0 4px;
   }
-  .status-btn:hover, .status-btn.active {
+  .status-btn:hover {
     color: var(--color-text);
     background: var(--color-surface-hover);
   }

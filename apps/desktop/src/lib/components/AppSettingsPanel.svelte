@@ -10,6 +10,7 @@
   import { onMount } from 'svelte';
   import CollapsibleSection from './CollapsibleSection.svelte';
   import SearchBox from './SearchBox.svelte';
+  import { connectionWizard } from '$lib/stores/connection-wizard.svelte';
 
   let searchQuery = $state('');
   let mcpStatus: any = $state({ statusColor: '#6b7280', statusLabel: 'MCP', ipcPort: null, ssePort: null, error: null });
@@ -250,6 +251,29 @@
     </div>
     <div class="mcp-hint">
       Logs are written to date-stamped files. Higher levels include less detail.
+    </div>
+  </CollapsibleSection>
+  {/if}
+
+  <!-- Connection Wizard -->
+  {#if sectionVisible('Connection Wizard')}
+  <CollapsibleSection id="app-wizard" label="Connection Wizard" forceExpand={!!searchQuery}>
+    <div class="setting-row">
+      <span class="setting-label">Dismissed types</span>
+      <span class="mcp-value">{connectionWizard.dismissedTypes.size} dismissed</span>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Reset all</span>
+      <button
+        class="open-folder-btn"
+        onclick={() => connectionWizard.undismissAll()}
+        disabled={connectionWizard.dismissedTypes.size === 0}
+      >
+        Reset dismissed types
+      </button>
+    </div>
+    <div class="mcp-hint">
+      When you check "Don't show again" on a connection type, the wizard won't auto-open for that type. Reset here to re-enable all.
     </div>
   </CollapsibleSection>
   {/if}

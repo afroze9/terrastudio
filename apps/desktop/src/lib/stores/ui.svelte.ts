@@ -18,7 +18,7 @@ const DEFAULT_EDGE_VISIBILITY: EdgeCategoryVisibility = {
 export type SidebarView = 'explorer' | 'terraform' | 'settings' | 'cost' | 'app-settings' | 'search';
 export type EdgeStyle = 'default' | 'smoothstep' | 'step' | 'straight';
 export type Theme = 'dark' | 'light';
-export type BottomPanelTab = 'terminal' | 'problems' | 'annotations';
+export type BottomPanelTab = 'terminal' | 'problems' | 'annotations' | 'connection-wizard';
 
 export interface DragFeedback {
   /** The resource type being dragged */

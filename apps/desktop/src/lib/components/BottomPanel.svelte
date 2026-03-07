@@ -1,8 +1,10 @@
 <script lang="ts">
   import { ui, type BottomPanelTab } from '$lib/stores/ui.svelte';
+  import { connectionWizard } from '$lib/stores/connection-wizard.svelte';
   import TerminalTab from './bottom-panel/TerminalTab.svelte';
   import ProblemsTab from './bottom-panel/ProblemsTab.svelte';
   import AnnotationsTab from './bottom-panel/AnnotationsTab.svelte';
+  import ConnectionWizardTab from './bottom-panel/ConnectionWizardTab.svelte';
 
   let isResizing = $state(false);
 
@@ -10,6 +12,7 @@
     { id: 'terminal', label: 'Terminal' },
     { id: 'problems', label: 'Problems' },
     { id: 'annotations', label: 'Annotations' },
+    { id: 'connection-wizard', label: 'Connection' },
   ];
 
   function onResizeMouseDown(e: MouseEvent) {
@@ -52,6 +55,9 @@
             onclick={() => ui.openBottomPanel(tab.id)}
           >
             {tab.label}
+            {#if tab.id === 'connection-wizard' && connectionWizard.hasNewEntry && ui.activeBottomTab !== 'connection-wizard'}
+              <span class="tab-badge"></span>
+            {/if}
           </button>
         {/each}
       </div>
@@ -64,6 +70,8 @@
         <ProblemsTab />
       {:else if ui.activeBottomTab === 'annotations'}
         <AnnotationsTab />
+      {:else if ui.activeBottomTab === 'connection-wizard'}
+        <ConnectionWizardTab />
       {/if}
     </div>
   </div>
@@ -141,6 +149,15 @@
   }
   .panel-btn:hover {
     color: var(--color-text);
+  }
+  .tab-badge {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    display: inline-block;
+    margin-left: 4px;
+    flex-shrink: 0;
   }
   .panel-content {
     flex: 1;

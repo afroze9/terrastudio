@@ -27,6 +27,8 @@
   import { tick, untrack } from 'svelte';
   import { EdgeMarkers } from './edges';
   import { autofitContainer } from '$lib/services/layout-service';
+  import { connectionWizard } from '$lib/stores/connection-wizard.svelte';
+  import { buildEdgeWizardEntry, buildContainmentWizardEntry } from '$lib/services/connection-wizard-builder';
   import ConnectionPointsModal from './ConnectionPointsModal.svelte';
   import ModuleBoundary from './ModuleBoundary.svelte';
   import ModuleInstanceBoundary from './ModuleInstanceBoundary.svelte';
@@ -755,6 +757,24 @@
         ruleMatch,
       },
     });
+
+    // Notify connection wizard
+    if (sourceNode && targetNode && !isConnectionPointEdge && ruleMatch) {
+      const wizardRule = registry.edgeValidator.validate(
+        sourceNode.type as ResourceTypeId,
+        connection.sourceHandle ?? '',
+        targetNode.type as ResourceTypeId,
+        connection.targetHandle ?? '',
+      );
+      const wizardEntry = buildEdgeWizardEntry({
+        edgeId,
+        sourceNode,
+        targetNode,
+        rule: wizardRule.valid ? wizardRule.rule : undefined,
+        registry,
+      });
+      if (wizardEntry) connectionWizard.notifyEdgeConnection(wizardEntry);
+    }
   };
 
   const isValidConnection: IsValidConnection = (connection) => {
@@ -885,6 +905,17 @@
     });
 
     bringToFront(draggedNode.id);
+
+    // Notify connection wizard about containment change
+    if (newParentId) {
+      const containmentEntry = buildContainmentWizardEntry({
+        childNode: draggedNode,
+        parentNodeId: newParentId,
+        registry,
+        diagram,
+      });
+      if (containmentEntry) connectionWizard.notifyContainment(containmentEntry);
+    }
   }
 
   /**
