@@ -501,6 +501,21 @@
     "connectionHistory": "Connection History",
     "clear": "Clear"
   },
+  "problems": {
+    "noProblems": "No problems detected",
+    "noProblemsHint": "Your diagram has no validation errors or warnings.",
+    "noMatch": "No problems match the current filter.",
+    "all": "All",
+    "errors": "Errors",
+    "warnings": "Warnings",
+    "searchPlaceholder": "Filter problems...",
+    "error": "error",
+    "errorPlural": "errors",
+    "warning": "warning",
+    "warningPlural": "warnings",
+    "fix": "Fix",
+    "validating": "Validating..."
+  },
   "search": {
     "placeholder": "Search resources...",
     "noResults": "No results for",

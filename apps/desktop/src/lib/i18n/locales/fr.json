@@ -501,6 +501,21 @@
     "connectionHistory": "Historique des connexions",
     "clear": "Effacer"
   },
+  "problems": {
+    "noProblems": "Aucun problème détecté",
+    "noProblemsHint": "Votre diagramme ne contient aucune erreur ni avertissement de validation.",
+    "noMatch": "Aucun problème ne correspond au filtre actuel.",
+    "all": "Tout",
+    "errors": "Erreurs",
+    "warnings": "Avertissements",
+    "searchPlaceholder": "Filtrer les problèmes...",
+    "error": "erreur",
+    "errorPlural": "erreurs",
+    "warning": "avertissement",
+    "warningPlural": "avertissements",
+    "fix": "Corriger",
+    "validating": "Validation en cours..."
+  },
   "search": {
     "placeholder": "Rechercher des ressources...",
     "noResults": "Aucun résultat pour",

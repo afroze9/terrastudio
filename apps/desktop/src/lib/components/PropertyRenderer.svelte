@@ -126,7 +126,7 @@
     <fieldset class="props-fieldset" disabled={isReadonly}>
     {#each props as prop}
       {@const isVariable = showVariableToggle && supportsVariableToggle(prop.type) && getVariableMode(prop.key) === 'variable'}
-      <div class="field">
+      <div class="field" data-property-key={prop.key}>
         <div class="field-label">
           <span class="label-row">
             <span class="label-text">

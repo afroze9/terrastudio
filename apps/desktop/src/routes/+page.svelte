@@ -2,7 +2,7 @@
 	import { onMount, tick } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
 	import { getCurrentWindow } from '@tauri-apps/api/window';
-	import { declarePlugins, initializeTerraformCheck, initLogging } from '$lib/bootstrap';
+	import { declarePlugins, initializeTerraformCheck, initLogging, initValidation } from '$lib/bootstrap';
 	import { i18n } from '$lib/i18n';
 	import Titlebar from '$lib/components/Titlebar.svelte';
 	import ActivityBar from '$lib/components/ActivityBar.svelte';
@@ -53,6 +53,7 @@
 		const appWindow = getCurrentWindow();
 		initLogging(ui.logLevel);
 		initializeTerraformCheck();
+		initValidation();
 		initWindowProject();
 		initFileAssociationHandler();
 		initSettingsSync();

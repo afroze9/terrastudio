@@ -48,6 +48,9 @@ class UiStore {
   // --- Properties Panel (right) ---
   showPropertiesPanel = $state(true);
 
+  /** When set, PropertiesPanel scrolls to and highlights this property field. Cleared after one render. */
+  highlightedPropertyKey = $state<string | null>(null);
+
   // --- Bottom Panel (replaces standalone terminal) ---
   showBottomPanel = $state(false);
   activeBottomTab = $state<BottomPanelTab>((typeof localStorage !== 'undefined' && localStorage.getItem('terrastudio-bottom-tab') as BottomPanelTab) || 'terminal');

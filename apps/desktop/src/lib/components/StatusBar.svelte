@@ -3,6 +3,7 @@
   import { terraform } from '$lib/stores/terraform.svelte';
   import { ui, type BottomPanelTab } from '$lib/stores/ui.svelte';
   import { connectionWizard } from '$lib/stores/connection-wizard.svelte';
+  import { validation } from '$lib/stores/validation.svelte';
   import PaletteSelector from './PaletteSelector.svelte';
   import { t } from '$lib/i18n';
 
@@ -85,7 +86,21 @@
         onclick={() => ui.toggleBottomPanel(btn.id)}
       >
         {@html btn.icon}
-        <span class="panel-toggle-label">{t(btn.labelKey)}</span>
+        {#if btn.id === 'problems'}
+          <span class="panel-toggle-label problems-counts">
+            {#if validation.errorCount > 0}
+              <span class="status-count-error">{validation.errorCount}</span>
+            {/if}
+            {#if validation.warningCount > 0}
+              <span class="status-count-warning">{validation.warningCount}</span>
+            {/if}
+            {#if validation.errorCount === 0 && validation.warningCount === 0}
+              <span>{t(btn.labelKey)}</span>
+            {/if}
+          </span>
+        {:else}
+          <span class="panel-toggle-label">{t(btn.labelKey)}</span>
+        {/if}
         {#if btn.id === 'connection-wizard' && connectionWizard.hasNewEntry && ui.activeBottomTab !== 'connection-wizard'}
           <span class="status-badge"></span>
         {/if}
@@ -228,6 +243,21 @@
   }
   .panel-toggle-label {
     font-size: 11px;
+  }
+  .problems-counts {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .status-count-error {
+    color: #ef4444;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .status-count-warning {
+    color: #f59e0b;
+    font-size: 11px;
+    font-weight: 600;
   }
   .status-badge {
     width: 6px;

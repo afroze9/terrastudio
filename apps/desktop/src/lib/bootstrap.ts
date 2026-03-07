@@ -7,6 +7,7 @@ import { TerraStudioEdge } from '$lib/components/edges';
 import { checkTerraform } from '$lib/services/terraform-service';
 import { setLoggerLevel, type LogLevel } from '$lib/logger';
 import { i18n } from '$lib/i18n';
+import { validation } from '$lib/stores/validation.svelte';
 import type { Component } from 'svelte';
 import type { EdgeTypes } from '@xyflow/svelte';
 import type { ProviderId } from '@terrastudio/types';
@@ -94,6 +95,11 @@ export function initLogging(level: LogLevel): void {
 
 export function initializeTerraformCheck(): void {
   checkTerraform();
+}
+
+/** Start background validation (reactive watcher on diagram changes). */
+export function initValidation(): void {
+  validation.init();
 }
 
 /**

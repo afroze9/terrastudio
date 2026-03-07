@@ -1,6 +1,7 @@
 <script lang="ts">
   import { ui, type BottomPanelTab } from '$lib/stores/ui.svelte';
   import { connectionWizard } from '$lib/stores/connection-wizard.svelte';
+  import { validation } from '$lib/stores/validation.svelte';
   import { t } from '$lib/i18n';
   import TerminalTab from './bottom-panel/TerminalTab.svelte';
   import ProblemsTab from './bottom-panel/ProblemsTab.svelte';
@@ -56,6 +57,16 @@
             onclick={() => ui.openBottomPanel(tab.id)}
           >
             {t(tab.labelKey)}
+            {#if tab.id === 'problems' && (validation.errorCount > 0 || validation.warningCount > 0)}
+              <span class="problems-badge">
+                {#if validation.errorCount > 0}
+                  <span class="badge-error">{validation.errorCount}</span>
+                {/if}
+                {#if validation.warningCount > 0}
+                  <span class="badge-warning">{validation.warningCount}</span>
+                {/if}
+              </span>
+            {/if}
             {#if tab.id === 'connection-wizard' && connectionWizard.hasNewEntry && ui.activeBottomTab !== 'connection-wizard'}
               <span class="tab-badge"></span>
             {/if}
@@ -159,6 +170,29 @@
     display: inline-block;
     margin-left: 4px;
     flex-shrink: 0;
+  }
+  .problems-badge {
+    display: inline-flex;
+    gap: 3px;
+    margin-left: 4px;
+  }
+  .badge-error {
+    font-size: 9px;
+    padding: 0 4px;
+    border-radius: 8px;
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    font-weight: 600;
+    line-height: 14px;
+  }
+  .badge-warning {
+    font-size: 9px;
+    padding: 0 4px;
+    border-radius: 8px;
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+    font-weight: 600;
+    line-height: 14px;
   }
   .panel-content {
     flex: 1;

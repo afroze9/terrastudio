@@ -319,6 +319,26 @@
   });
 
   let allCollapsed = $derived(propsSectionIds.length > 0 && propsSectionIds.every((id) => ui.isCategoryCollapsed(id)));
+
+  // Scroll to and highlight the targeted property field when navigating from the Problems tab
+  $effect(() => {
+    const key = ui.highlightedPropertyKey;
+    if (!key) return;
+
+    // Clear the flag after one tick so it doesn't re-trigger
+    requestAnimationFrame(() => {
+      ui.highlightedPropertyKey = null;
+    });
+
+    // Wait for DOM to settle, then find + scroll + highlight
+    setTimeout(() => {
+      const el = document.querySelector(`.properties-panel [data-property-key="${CSS.escape(key)}"]`) as HTMLElement | null;
+      if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('highlight-flash');
+      setTimeout(() => el.classList.remove('highlight-flash'), 1500);
+    }, 100);
+  });
 </script>
 
 <aside class="properties-panel">
@@ -1059,5 +1079,14 @@
   }
   .instance-var-field {
     margin-bottom: 4px;
+  }
+
+  /* highlight-flash is applied globally via JS classList */
+  :global(.highlight-flash) {
+    animation: highlight-pulse 1.5s ease-out;
+  }
+  @keyframes highlight-pulse {
+    0% { background: rgba(59, 130, 246, 0.25); }
+    100% { background: transparent; }
   }
 </style>
