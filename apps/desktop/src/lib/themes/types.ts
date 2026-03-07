@@ -11,6 +11,17 @@ export interface ThemeVariables {
   'color-shadow': string;
   'scrollbar-thumb': string;
   'scrollbar-thumb-hover': string;
+
+  // Optional accessibility fields — CSS fallbacks in app.css when absent
+  'color-status-success'?: string;
+  'color-status-error'?: string;
+  'color-status-warning'?: string;
+  'color-status-neutral'?: string;
+  'color-focus-ring'?: string;
+  'edge-structural'?: string;
+  'edge-binding'?: string;
+  'edge-reference'?: string;
+  'edge-annotation'?: string;
 }
 
 export interface ThemePalette {
@@ -47,7 +58,7 @@ export interface CustomThemeFile {
   light: ThemeVariables;
 }
 
-export const THEME_VARIABLE_KEYS: (keyof ThemeVariables)[] = [
+export const THEME_REQUIRED_KEYS: (keyof ThemeVariables)[] = [
   'color-bg',
   'color-surface',
   'color-surface-hover',
@@ -60,4 +71,21 @@ export const THEME_VARIABLE_KEYS: (keyof ThemeVariables)[] = [
   'color-shadow',
   'scrollbar-thumb',
   'scrollbar-thumb-hover',
+];
+
+export const THEME_OPTIONAL_KEYS: (keyof ThemeVariables)[] = [
+  'color-status-success',
+  'color-status-error',
+  'color-status-warning',
+  'color-status-neutral',
+  'color-focus-ring',
+  'edge-structural',
+  'edge-binding',
+  'edge-reference',
+  'edge-annotation',
+];
+
+export const THEME_VARIABLE_KEYS: (keyof ThemeVariables)[] = [
+  ...THEME_REQUIRED_KEYS,
+  ...THEME_OPTIONAL_KEYS,
 ];
