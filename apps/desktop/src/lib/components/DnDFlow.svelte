@@ -178,6 +178,23 @@
 
   let defaultEdgeOptions = $derived({ type: ui.edgeType });
 
+  // ── Space-to-pan: disable node dragging while space is held ──────
+  let spaceHeld = $state(false);
+  $effect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.code === 'Space' && !e.repeat) spaceHeld = true;
+    }
+    function onKeyUp(e: KeyboardEvent) {
+      if (e.code === 'Space') spaceHeld = false;
+    }
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  });
+
   // ── Context menu state ───────────────────────────────────────────
   let contextMenu = $state<{
     x: number;
@@ -233,7 +250,29 @@
 
   function handleSaveHandleManager(connectionPoints: ConnectionPointConfig, handlePositions: HandlePositionOverrides) {
     if (!handleManagerModal) return;
-    diagram.updateNodeData(handleManagerModal.nodeId, { connectionPoints, handlePositions });
+    const nodeId = handleManagerModal.nodeId;
+    const oldConfig = handleManagerModal.initialConnectionPoints;
+
+    // Remove edges attached to annotation handles that were removed
+    const sides = ['top', 'bottom', 'left', 'right'] as const;
+    for (const side of sides) {
+      const oldCount = oldConfig[side] ?? 0;
+      const newCount = connectionPoints[side] ?? 0;
+      for (let i = newCount; i < oldCount; i++) {
+        const removedSource = `cp-${side}-${i}-source`;
+        const removedTarget = `cp-${side}-${i}-target`;
+        const edgesToRemove = diagram.edges.filter(
+          (e) =>
+            (e.source === nodeId && (e.sourceHandle === removedSource || e.sourceHandle === removedTarget)) ||
+            (e.target === nodeId && (e.targetHandle === removedSource || e.targetHandle === removedTarget))
+        );
+        for (const edge of edgesToRemove) {
+          diagram.removeEdge(edge.id);
+        }
+      }
+    }
+
+    diagram.updateNodeData(nodeId, { connectionPoints, handlePositions });
     handleManagerModal = null;
   }
 
@@ -933,9 +972,24 @@
    * Handle node drag stop: reparent nodes based on their final position.
    * Allows dragging nodes into, out of, and between containers.
    */
-  function handleNodeDragStop({ targetNode }: { targetNode: DiagramNode | null; nodes: DiagramNode[]; event: MouseEvent | TouchEvent }) {
+  function handleNodeDragStop({ targetNode, nodes: draggedNodes }: { targetNode: DiagramNode | null; nodes: DiagramNode[]; event: MouseEvent | TouchEvent }) {
     clearDragFeedback();
     if (!targetNode) return;
+
+    // Snap all dragged nodes to the nearest grid point (absolute position, not delta)
+    if (ui.snapToGrid && ui.gridSize > 0) {
+      const g = ui.gridSize;
+      for (const dn of draggedNodes) {
+        const node = diagram.nodes.find((n) => n.id === dn.id);
+        if (node) {
+          node.position = {
+            x: Math.round(node.position.x / g) * g,
+            y: Math.round(node.position.y / g) * g,
+          };
+        }
+      }
+    }
+
     const draggedNode = targetNode;
     const isAnnotation = draggedNode.type === '_annotation_';
     const schema = isAnnotation ? null : registry.getResourceSchema(draggedNode.type as ResourceTypeId);
@@ -1048,6 +1102,7 @@
     snapGrid={ui.snapToGrid ? [ui.gridSize, ui.gridSize] : undefined}
     selectionOnDrag
     panOnDrag={[1]}
+    nodesDraggable={!spaceHeld}
     panActivationKey=" "
     selectionMode={SelectionMode.Full}
     {isValidConnection}

@@ -35,16 +35,9 @@
       role="button"
       tabindex="-1"
     >
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        {#if direction === 'top'}
-          <polyline points="4,10 8,5 12,10"/>
-        {:else if direction === 'right'}
-          <polyline points="6,4 11,8 6,12"/>
-        {:else if direction === 'bottom'}
-          <polyline points="4,6 8,11 12,6"/>
-        {:else}
-          <polyline points="10,4 5,8 10,12"/>
-        {/if}
+      <svg width="14" height="20" viewBox="0 0 14 20" fill="currentColor" stroke="none">
+        <polygon points="7,0 14,8 0,8"/>
+        <rect x="5" y="8" width="4" height="12" rx="1"/>
       </svg>
     </div>
   {/each}
@@ -90,8 +83,8 @@
 
   .arrow {
     position: absolute;
-    width: 18px;
-    height: 18px;
+    width: 14px;
+    height: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -111,26 +104,26 @@
   }
 
   .arrow-top {
-    top: -24px;
+    top: -26px;
     left: 50%;
     transform: translateX(-50%);
   }
 
   .arrow-right {
-    right: -24px;
+    right: -26px;
     top: 50%;
-    transform: translateY(-50%);
+    transform: translateY(-50%) rotate(90deg);
   }
 
   .arrow-bottom {
-    bottom: -24px;
+    bottom: -26px;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(-50%) rotate(180deg);
   }
 
   .arrow-left {
-    left: -24px;
+    left: -26px;
     top: 50%;
-    transform: translateY(-50%);
+    transform: translateY(-50%) rotate(-90deg);
   }
 </style>

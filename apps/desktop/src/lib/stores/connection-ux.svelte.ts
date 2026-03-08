@@ -85,7 +85,7 @@ class ConnectionUxStore {
         this.state = 'showing-arrows';
       }
       this._hoverTimer = null;
-    }, 800);
+    }, 500);
   }
 
   /** Node hover ends */

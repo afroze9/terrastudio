@@ -167,6 +167,8 @@
     updateNodeInternals();
   });
 
+
+
   // Dynamic minimum size: max of schema minSize and the space children actually need
   let minW = $derived.by(() => {
     const schemaMin = schema?.minSize?.width ?? 200;
@@ -342,6 +344,46 @@
     });
   }
 
+  // Annotation count for the active arrow direction
+  let annotationCountForDirection = $derived.by(() => {
+    const dir = connectionUx.activeDirection;
+    if (!dir) return 0;
+    const config = (data.connectionPoints as { top: number; bottom: number; left: number; right: number }) ?? { top: 0, bottom: 0, left: 0, right: 0 };
+    return config[dir] ?? 0;
+  });
+
+  function onAddAnnotation() {
+    const dir = connectionUx.activeDirection;
+    if (!dir) return;
+    const config = { ...((data.connectionPoints as { top: number; bottom: number; left: number; right: number }) ?? { top: 0, bottom: 0, left: 0, right: 0 }) };
+    if (config[dir] < 5) {
+      config[dir]++;
+      diagram.updateNodeData(id, { connectionPoints: config });
+    }
+  }
+
+  function onRemoveAnnotation() {
+    const dir = connectionUx.activeDirection;
+    if (!dir) return;
+    const config = { ...((data.connectionPoints as { top: number; bottom: number; left: number; right: number }) ?? { top: 0, bottom: 0, left: 0, right: 0 }) };
+    if (config[dir] > 0) {
+      // Remove edges connected to the handle being deleted (last index on this side)
+      const removedIdx = config[dir] - 1;
+      const removedSource = `cp-${dir}-${removedIdx}-source`;
+      const removedTarget = `cp-${dir}-${removedIdx}-target`;
+      const edgesToRemove = diagram.edges.filter(
+        (e) =>
+          (e.source === id && (e.sourceHandle === removedSource || e.sourceHandle === removedTarget)) ||
+          (e.target === id && (e.targetHandle === removedSource || e.targetHandle === removedTarget))
+      );
+      for (const edge of edgesToRemove) {
+        diagram.removeEdge(edge.id);
+      }
+      config[dir]--;
+      diagram.updateNodeData(id, { connectionPoints: config });
+    }
+  }
+
   function onMouseEnter() {
     isHovered = true;
     hoverTimer = setTimeout(() => { showTooltip = true; }, 300);
@@ -357,8 +399,32 @@
     connectionUx.unhoverNode(id);
   }
 
+  /** Snap resize to grid during drag — mutates the params so SvelteFlow applies snapped dimensions. */
+  function handleResize(_event: unknown, params: { x: number; y: number; width: number; height: number }) {
+    if (ui.snapToGrid && ui.gridSize > 0) {
+      const g = ui.gridSize;
+      params.width = Math.round(params.width / g) * g;
+      params.height = Math.round(params.height / g) * g;
+      params.x = Math.round(params.x / g) * g;
+      params.y = Math.round(params.y / g) * g;
+    }
+  }
+
   /** After this container is resized, expand any parent that is now too small. */
   function handleResizeEnd(_event: unknown, params: { x: number; y: number; width: number; height: number }) {
+    // Final snap (in case onResize didn't catch the last frame)
+    if (ui.snapToGrid && ui.gridSize > 0) {
+      const g = ui.gridSize;
+      params.width = Math.round(params.width / g) * g;
+      params.height = Math.round(params.height / g) * g;
+      params.x = Math.round(params.x / g) * g;
+      params.y = Math.round(params.y / g) * g;
+      diagram.nodes = diagram.nodes.map((n) =>
+        n.id === id
+          ? { ...n, width: params.width, height: params.height, position: { x: params.x, y: params.y }, style: `width: ${params.width}px; height: ${params.height}px;` }
+          : n
+      );
+    }
     const PADDING = 20;
     // Walk up the parent chain
     let currentNodeId: string | undefined = id;
@@ -406,7 +472,7 @@
   }
 </script>
 
-<NodeResizer minWidth={minW} minHeight={minH} isVisible={selected ?? false} onResizeEnd={handleResizeEnd} />
+<NodeResizer minWidth={minW} minHeight={minH} isVisible={selected ?? false} onResize={handleResize} onResizeEnd={handleResizeEnd} />
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
@@ -480,7 +546,11 @@
       handles={connectionUx.menuHandles}
       direction={connectionUx.activeDirection}
       pinnedIds={visibleHandleIds}
+      annotationCount={annotationCountForDirection}
+      anchorEl={nodeEl}
       onToggle={onHandleMenuToggle}
+      {onAddAnnotation}
+      {onRemoveAnnotation}
       onClose={() => connectionUx.closeMenu()}
     />
   {/if}
@@ -668,17 +738,28 @@
     opacity: 0.6 !important;
   }
 
-  /* Connection point handles for annotation edges */
+  /* Connection point handles for annotation edges.
+     Each annotation point has a source + target handle stacked at the same spot.
+     The target sits behind the source; only the source shows the visible dot. */
   :global(.connection-point-handle) {
     width: 8px !important;
     height: 8px !important;
-    background: var(--edge-annotation, #f59e0b) !important;
-    border: 2px solid #1a1d27 !important;
     border-radius: 50% !important;
   }
-  :global(.connection-point-handle:hover) {
+  :global(.connection-point-handle[data-handleid$="-source"]) {
+    background: var(--edge-annotation, #f59e0b) !important;
+    border: 2px solid #1a1d27 !important;
+    z-index: 2;
+  }
+  :global(.connection-point-handle[data-handleid$="-target"]) {
+    background: transparent !important;
+    border-color: transparent !important;
+    z-index: 1;
+  }
+  :global(.connection-point-handle[data-handleid$="-source"]:hover) {
     background: #3b82f6 !important;
-    transform: scale(1.3);
+    /* Must preserve SvelteFlow's translate so the handle stays centered on the edge */
+    scale: 1.3;
   }
 
   /* Plan review mode highlights (box-shadow doesn't conflict with inline border-color) */

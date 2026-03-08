@@ -172,6 +172,7 @@
     updateNodeInternals();
   });
 
+
   let hasNsg = $derived(!!data.references?.['nsg_id']);
   let nsgIcon = $derived(hasNsg ? registry.getIcon('azurerm/networking/network_security_group' as any) : null);
 
@@ -268,6 +269,46 @@
     });
   }
 
+  // Annotation count for the active arrow direction
+  let annotationCountForDirection = $derived.by(() => {
+    const dir = connectionUx.activeDirection;
+    if (!dir) return 0;
+    const config = (data.connectionPoints as { top: number; bottom: number; left: number; right: number }) ?? { top: 0, bottom: 0, left: 0, right: 0 };
+    return config[dir] ?? 0;
+  });
+
+  function onAddAnnotation() {
+    const dir = connectionUx.activeDirection;
+    if (!dir) return;
+    const config = { ...((data.connectionPoints as { top: number; bottom: number; left: number; right: number }) ?? { top: 0, bottom: 0, left: 0, right: 0 }) };
+    if (config[dir] < 5) {
+      config[dir]++;
+      diagram.updateNodeData(id, { connectionPoints: config });
+    }
+  }
+
+  function onRemoveAnnotation() {
+    const dir = connectionUx.activeDirection;
+    if (!dir) return;
+    const config = { ...((data.connectionPoints as { top: number; bottom: number; left: number; right: number }) ?? { top: 0, bottom: 0, left: 0, right: 0 }) };
+    if (config[dir] > 0) {
+      // Remove edges connected to the handle being deleted (last index on this side)
+      const removedIdx = config[dir] - 1;
+      const removedSource = `cp-${dir}-${removedIdx}-source`;
+      const removedTarget = `cp-${dir}-${removedIdx}-target`;
+      const edgesToRemove = diagram.edges.filter(
+        (e) =>
+          (e.source === id && (e.sourceHandle === removedSource || e.sourceHandle === removedTarget)) ||
+          (e.target === id && (e.targetHandle === removedSource || e.targetHandle === removedTarget))
+      );
+      for (const edge of edgesToRemove) {
+        diagram.removeEdge(edge.id);
+      }
+      config[dir]--;
+      diagram.updateNodeData(id, { connectionPoints: config });
+    }
+  }
+
   function onMouseEnter() {
     isHovered = true;
     hoverTimer = setTimeout(() => { showTooltip = true; }, 300);
@@ -360,7 +401,11 @@
       handles={connectionUx.menuHandles}
       direction={connectionUx.activeDirection}
       pinnedIds={visibleHandleIds}
+      annotationCount={annotationCountForDirection}
+      anchorEl={nodeEl}
       onToggle={onHandleMenuToggle}
+      {onAddAnnotation}
+      {onRemoveAnnotation}
       onClose={() => connectionUx.closeMenu()}
     />
   {/if}
@@ -632,17 +677,28 @@
     opacity: 0.6 !important;
   }
 
-  /* Connection point handles for annotation edges */
+  /* Connection point handles for annotation edges.
+     Each annotation point has a source + target handle stacked at the same spot.
+     The target sits behind the source; only the source shows the visible dot. */
   :global(.connection-point-handle) {
     width: 8px !important;
     height: 8px !important;
-    background: var(--edge-annotation, #f59e0b) !important;
-    border: 2px solid #1a1d27 !important;
     border-radius: 50% !important;
   }
-  :global(.connection-point-handle:hover) {
+  :global(.connection-point-handle[data-handleid$="-source"]) {
+    background: var(--edge-annotation, #f59e0b) !important;
+    border: 2px solid #1a1d27 !important;
+    z-index: 2;
+  }
+  :global(.connection-point-handle[data-handleid$="-target"]) {
+    background: transparent !important;
+    border-color: transparent !important;
+    z-index: 1;
+  }
+  :global(.connection-point-handle[data-handleid$="-source"]:hover) {
     background: #3b82f6 !important;
-    transform: scale(1.3);
+    /* Must preserve SvelteFlow's translate so the handle stays centered on the edge */
+    scale: 1.3;
   }
 
   /* Plan review mode highlights */
