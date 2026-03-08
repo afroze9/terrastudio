@@ -3,7 +3,7 @@
   import { registry } from '$lib/bootstrap';
   import type { HandleDefinition, ResourceTypeId } from '@terrastudio/types';
 
-  let { handle, nodeTypeId, style, compact = false, hovered = false, connected = false }: { handle: HandleDefinition; nodeTypeId: ResourceTypeId; style?: string; compact?: boolean; hovered?: boolean; connected?: boolean } = $props();
+  let { handle, nodeTypeId, style, compact = false, hovered = false, connected = false, ghost = false, visible = false }: { handle: HandleDefinition; nodeTypeId: ResourceTypeId; style?: string; compact?: boolean; hovered?: boolean; connected?: boolean; ghost?: boolean; visible?: boolean } = $props();
 
   const positionMap = {
     top: Position.Top,
@@ -37,18 +37,19 @@
     return 'neutral';
   });
 
-  // In compact mode: hide handle dot unless hovered, connected, or a connection drag is in progress
+  // Hide handles by default — the directional arrow menu replaces direct handle interaction.
+  // Show when: explicitly visible, connected to an edge, during a connection drag, or ghost-highlighted.
   let isDragging = $derived(connection.current.inProgress);
-  let hideHandle = $derived(compact && !hovered && !connected && !isDragging);
-  // Handle labels: hidden in compact mode unless hovered
-  let hideLabel = $derived(compact && !hovered);
+  let hideHandle = $derived(!visible && !connected && !isDragging && !ghost);
+  // Handle labels: shown when visible, hovered, or ghost
+  let hideLabel = $derived(!visible && !hovered && !ghost);
 </script>
 
 <Handle
   type={handle.type}
   position={positionMap[handle.position]}
   id={handle.id}
-  class="{highlightState === 'compatible' ? 'handle-compatible' : highlightState === 'incompatible' ? 'handle-incompatible' : ''}{hideHandle ? ' handle-hidden' : ''}"
+  class="{highlightState === 'compatible' ? 'handle-compatible' : highlightState === 'incompatible' ? 'handle-incompatible' : ''}{hideHandle ? ' handle-hidden' : ''}{ghost ? ' handle-ghost' : ''}"
   style={style}
 >
   {#snippet children()}
@@ -99,5 +100,16 @@
   :global(.handle-hidden) {
     opacity: 0 !important;
     pointer-events: none !important;
+  }
+  :global(.handle-ghost) {
+    background: #3b82f6 !important;
+    border-color: #60a5fa !important;
+    opacity: 0.7 !important;
+    animation: ghost-pulse 1.5s ease-in-out infinite;
+    box-shadow: 0 0 6px rgba(59, 130, 246, 0.4);
+  }
+  @keyframes ghost-pulse {
+    0%, 100% { opacity: 0.7; box-shadow: 0 0 6px rgba(59, 130, 246, 0.4); }
+    50% { opacity: 1; box-shadow: 0 0 10px rgba(59, 130, 246, 0.6); }
   }
 </style>

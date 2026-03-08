@@ -50,6 +50,8 @@ export interface ResourceNodeData {
   connectionPoints?: ConnectionPointConfig;
   /** User overrides for schema/output handle positions */
   handlePositions?: HandlePositionOverrides;
+  /** Handle IDs explicitly made visible via the arrow menu */
+  visibleHandles?: string[];
   /** Which outputs are enabled (creates dynamic out-* handles) */
   enabledOutputs?: string[];
   /** User customizations (label, style) for reference edges originating from this node */

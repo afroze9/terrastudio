@@ -28,6 +28,7 @@
   import { EdgeMarkers } from './edges';
   import { autofitContainer } from '$lib/services/layout-service';
   import { connectionWizard } from '$lib/stores/connection-wizard.svelte';
+  import { connectionUx, type GhostTarget } from '$lib/stores/connection-ux.svelte';
   import { buildEdgeWizardEntry, buildContainmentWizardEntry } from '$lib/services/connection-wizard-builder';
   import ConnectionPointsModal from './ConnectionPointsModal.svelte';
   import ModuleBoundary from './ModuleBoundary.svelte';
@@ -847,6 +848,51 @@
     return result.valid;
   };
 
+  // ── Connection UX: ghost target computation ──────────────────────────
+  function computeGhostTargets(sourceNodeId: string, sourceHandleId: string): GhostTarget[] {
+    const sourceNode = diagram.nodes.find((n) => n.id === sourceNodeId);
+    if (!sourceNode) return [];
+
+    const sourceTypeId = sourceNode.type as ResourceTypeId;
+    const validTargets = registry.edgeValidator.getValidTargets(sourceTypeId, sourceHandleId);
+
+    const ghosts: GhostTarget[] = [];
+    for (const rule of validTargets) {
+      // Find all nodes of the target type on canvas
+      for (const node of diagram.nodes) {
+        if (node.id.startsWith('_')) continue; // skip synthetic nodes
+        if (node.id === sourceNodeId) continue;
+        if (node.type !== rule.targetType) continue;
+
+        // Check the target handle exists on this node's schema
+        const targetSchema = registry.getResourceSchema(rule.targetType);
+        if (!targetSchema) continue;
+
+        const targetHandle = targetSchema.handles?.find((h) => h.id === rule.targetHandle);
+        if (!targetHandle) continue;
+
+        ghosts.push({
+          nodeId: node.id,
+          handleId: rule.targetHandle,
+          handleType: 'target',
+          position: targetHandle.position,
+        });
+      }
+    }
+
+    return ghosts;
+  }
+
+  function handleConnectStart(event: MouseEvent | TouchEvent, params: { nodeId: string | null; handleId: string | null; handleType: string | null }) {
+    if (!params.nodeId || !params.handleId) return;
+    const ghosts = computeGhostTargets(params.nodeId, params.handleId);
+    connectionUx.onDragStart(params.nodeId, params.handleId, ghosts);
+  }
+
+  function handleConnectEnd() {
+    connectionUx.endDrag();
+  }
+
   const onDelete: OnDelete = ({ nodes: deletedNodes, edges: deletedEdges }) => {
     for (const node of deletedNodes) {
       diagram.removeNode(node.id);
@@ -1006,13 +1052,15 @@
     selectionMode={SelectionMode.Full}
     {isValidConnection}
     onconnect={onConnect}
+    onconnectstart={handleConnectStart}
+    onconnectend={handleConnectEnd}
     ondelete={onDelete}
     onnodedragstart={(event) => { contextMenu = null; handleNodeDragStart(event); }}
     onnodedrag={handleNodeDrag}
     onnodedragstop={(event) => { handleNodeDragStop(event); diagram.saveSnapshot(); }}
     onnodeclick={({ node }) => { contextMenu = null; diagram.selectedEdgeId = null; diagram.selectedModuleId = null; diagram.selectedNodeId = node.id; }}
     onedgeclick={({ edge }) => { contextMenu = null; diagram.selectedNodeId = null; diagram.selectedModuleId = null; diagram.selectedEdgeId = edge.id; }}
-    onpaneclick={() => { contextMenu = null; diagram.selectedNodeId = null; diagram.selectedEdgeId = null; diagram.selectedModuleId = null; }}
+    onpaneclick={() => { contextMenu = null; diagram.selectedNodeId = null; diagram.selectedEdgeId = null; diagram.selectedModuleId = null; connectionUx.reset(); }}
     onnodecontextmenu={({ event, node }) => { event.preventDefault(); contextMenu = { x: event.clientX, y: event.clientY, nodeId: node.id }; }}
     onselectioncontextmenu={({ event, nodes: selNodes }) => { event.preventDefault(); contextMenu = { x: event.clientX, y: event.clientY, nodeId: selNodes[0]?.id }; }}
     onedgecontextmenu={({ event, edge }) => { event.preventDefault(); contextMenu = { x: event.clientX, y: event.clientY, edgeId: edge.id }; }}

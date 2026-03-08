@@ -9,7 +9,10 @@
   import DeploymentBadge from './DeploymentBadge.svelte';
   import NodeTooltip from './NodeTooltip.svelte';
   import HandleWithLabel from './HandleWithLabel.svelte';
-  import type { ContainerStyle, HandleDefinition } from '@terrastudio/types';
+  import DirectionalArrows from './DirectionalArrows.svelte';
+  import HandleMenu from './HandleMenu.svelte';
+  import { connectionUx, type ArrowDirection, type HandleMenuEntry } from '$lib/stores/connection-ux.svelte';
+  import type { ContainerStyle, HandleDefinition, HandlePositionOverrides } from '@terrastudio/types';
 
   const updateNodeInternals = useUpdateNodeInternals();
 
@@ -289,15 +292,69 @@
     return ids;
   });
 
+  // Connection UX: show arrows when this node is hovered, ghost handles when it's a valid target
+  let showArrows = $derived(
+    connectionUx.state === 'showing-arrows' && connectionUx.activeNodeId === id
+    || connectionUx.state === 'menu-open' && connectionUx.activeNodeId === id
+  );
+  let showMenu = $derived(
+    connectionUx.state === 'menu-open' && connectionUx.activeNodeId === id
+  );
+  let ghostHandleIds = $derived.by(() => {
+    if (!connectionUx.isDragging) return new Set<string>();
+    const ghosts = connectionUx.getGhostHandles(id);
+    return new Set(ghosts.map((g) => g.handleId));
+  });
+
+  // Handle IDs explicitly made visible via the arrow menu
+  let visibleHandleIds = $derived(new Set((data.visibleHandles as string[]) ?? []));
+
+  function onArrowClick(direction: ArrowDirection) {
+    const allEntries: HandleMenuEntry[] = handles.map((h) => ({
+      handleId: h.id,
+      label: h.label,
+      type: h.type,
+      position: h.position,
+    }));
+    connectionUx.openMenu(direction, allEntries);
+  }
+
+  function onHandleMenuToggle(entry: HandleMenuEntry) {
+    const direction = connectionUx.activeDirection;
+    const currentVisible = [...(data.visibleHandles as string[] ?? [])];
+    const currentPositions = { ...(data.handlePositions as HandlePositionOverrides ?? {}) };
+    const idx = currentVisible.indexOf(entry.handleId);
+
+    if (idx >= 0) {
+      // Toggle off: remove from visible list
+      currentVisible.splice(idx, 1);
+    } else {
+      // Toggle on: add to visible list and position on the arrow's side
+      currentVisible.push(entry.handleId);
+      if (direction) {
+        currentPositions[entry.handleId] = direction;
+      }
+    }
+
+    diagram.updateNodeData(id, {
+      visibleHandles: currentVisible,
+      handlePositions: currentPositions,
+    });
+  }
+
   function onMouseEnter() {
     isHovered = true;
     hoverTimer = setTimeout(() => { showTooltip = true; }, 300);
+    if (!connectionUx.isDragging) {
+      connectionUx.hoverNode(id, data.typeId);
+    }
   }
 
   function onMouseLeave() {
     isHovered = false;
     showTooltip = false;
     if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
+    connectionUx.unhoverNode(id);
   }
 
   /** After this container is resized, expand any parent that is now too small. */
@@ -411,8 +468,22 @@
   <div class="container-body"></div>
 
   {#each handles as handle, i (handle.id)}
-    <HandleWithLabel {handle} nodeTypeId={data.typeId} style={handleStyles[i]} compact={ui.compactNodes} hovered={isHovered} connected={connectedHandleIds.has(handle.id)} />
+    <HandleWithLabel {handle} nodeTypeId={data.typeId} style={handleStyles[i]} compact={ui.compactNodes} hovered={isHovered} connected={connectedHandleIds.has(handle.id)} ghost={ghostHandleIds.has(handle.id)} visible={visibleHandleIds.has(handle.id)} />
   {/each}
+
+  {#if showArrows && !connectionUx.isDragging}
+    <DirectionalArrows {onArrowClick} />
+  {/if}
+
+  {#if showMenu && connectionUx.activeDirection}
+    <HandleMenu
+      handles={connectionUx.menuHandles}
+      direction={connectionUx.activeDirection}
+      pinnedIds={visibleHandleIds}
+      onToggle={onHandleMenuToggle}
+      onClose={() => connectionUx.closeMenu()}
+    />
+  {/if}
 
   <!-- User-defined connection point handles for annotation edges -->
   {#each connectionPointHandles as cpHandle (cpHandle.id)}
