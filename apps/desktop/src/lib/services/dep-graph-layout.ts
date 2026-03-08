@@ -40,14 +40,16 @@ export const CATEGORY_COLORS: Record<string, string> = {
 const NODE_WIDTH = 220;
 const NODE_HEIGHT = 64;
 
-export function layoutDepGraph(data: DepGraphData): DepGraphLayout {
+export type DepGraphDirection = 'TB' | 'LR';
+
+export function layoutDepGraph(data: DepGraphData, direction: DepGraphDirection = 'TB'): DepGraphLayout {
   if (data.nodes.length === 0) {
     return { nodes: [], edges: [] };
   }
 
   const g = new dagre.graphlib.Graph();
   g.setGraph({
-    rankdir: 'TB',
+    rankdir: direction,
     nodesep: 48,
     ranksep: 72,
     marginx: 24,
@@ -102,7 +104,7 @@ export function layoutDepGraph(data: DepGraphData): DepGraphLayout {
     id: `dep-${i}`,
     source: e.sourceInstanceId,
     target: e.targetInstanceId,
-    type: 'straight',
+    type: 'default',
     markerEnd: { type: MarkerType.ArrowClosed },
     style: `stroke: ${edgeColors[e.kind] ?? '#6b7280'}; stroke-width: 1.5;`,
     animated: false,

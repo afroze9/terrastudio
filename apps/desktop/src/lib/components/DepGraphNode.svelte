@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Handle, Position } from '@xyflow/svelte';
   import { registry } from '$lib/bootstrap';
   import { depGraph } from '$lib/stores/dep-graph.svelte';
   import { CATEGORY_COLORS } from '$lib/services/dep-graph-layout';
@@ -21,6 +22,8 @@
   });
 
   let opacity = $derived(data.highlight === 'unrelated' ? 0.25 : 1);
+  let sourcePos = $derived(depGraph.direction === 'TB' ? Position.Bottom : Position.Right);
+  let targetPos = $derived(depGraph.direction === 'TB' ? Position.Top : Position.Left);
 
   function handleClick() {
     depGraph.setFocus(data.instanceId);
@@ -31,6 +34,8 @@
   }
 </script>
 
+<Handle type="target" position={targetPos} class="dep-handle" />
+<Handle type="source" position={sourcePos} class="dep-handle" />
 <div
   class="dep-node"
   style="border-color: {borderColor}; opacity: {opacity};"
@@ -119,5 +124,14 @@
     overflow: hidden;
     text-overflow: ellipsis;
     font-family: monospace;
+  }
+
+  :global(.dep-handle) {
+    width: 1px !important;
+    height: 1px !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
   }
 </style>

@@ -90,6 +90,29 @@
         <Controls showLock={false} />
         <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
       </SvelteFlow>
+
+      <div class="direction-toggle">
+        <button
+          class="dir-btn"
+          class:active={depGraph.direction === 'TB'}
+          onclick={() => depGraph.setDirection('TB')}
+          title="Top to Bottom"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12l7 7 7-7" />
+          </svg>
+        </button>
+        <button
+          class="dir-btn"
+          class:active={depGraph.direction === 'LR'}
+          onclick={() => depGraph.setDirection('LR')}
+          title="Left to Right"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
     </div>
   {/if}
 
@@ -134,6 +157,43 @@
     gap: 12px;
     color: var(--color-text-muted);
     font-size: var(--font-13);
+  }
+
+  .direction-toggle {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    display: flex;
+    gap: 2px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 2px;
+    z-index: 5;
+  }
+
+  .dir-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s;
+  }
+
+  .dir-btn:hover {
+    background: var(--color-bg-hover, rgba(255,255,255,0.08));
+    color: var(--color-text);
+  }
+
+  .dir-btn.active {
+    background: var(--color-accent);
+    color: white;
   }
 
   .computing-overlay {

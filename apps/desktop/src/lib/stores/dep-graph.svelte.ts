@@ -4,7 +4,7 @@ import { diagram } from './diagram.svelte';
 import { ui } from './ui.svelte';
 import { registry } from '$lib/bootstrap';
 import { buildDependencyGraph } from '@terrastudio/core';
-import { layoutDepGraph, type DepGraphNodeData } from '$lib/services/dep-graph-layout';
+import { layoutDepGraph, type DepGraphNodeData, type DepGraphDirection } from '$lib/services/dep-graph-layout';
 
 const DEBOUNCE_MS = 300;
 
@@ -14,6 +14,7 @@ class DependencyGraphStore {
   flowNodes = $state<Node<DepGraphNodeData>[]>([]);
   flowEdges = $state<Edge[]>([]);
   focusedNodeId = $state<string | null>(null);
+  direction = $state<DepGraphDirection>('TB');
   private needsRefresh = false;
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -56,7 +57,7 @@ class DependencyGraphStore {
         registry.inner,
       );
       this.data = data;
-      const layout = layoutDepGraph(data);
+      const layout = layoutDepGraph(data, this.direction);
       this.flowNodes = layout.nodes;
       this.flowEdges = layout.edges;
     } finally {
@@ -66,6 +67,11 @@ class DependencyGraphStore {
 
   setFocus(instanceId: string | null): void {
     this.focusedNodeId = instanceId === this.focusedNodeId ? null : instanceId;
+  }
+
+  setDirection(dir: DepGraphDirection): void {
+    this.direction = dir;
+    this.refresh();
   }
 
   navigateToCanvas(instanceId: string): void {
