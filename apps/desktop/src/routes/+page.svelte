@@ -94,6 +94,12 @@
 		});
 
 		async function handleKeydown(e: KeyboardEvent) {
+			// Block browser refresh (F5, Ctrl+R)
+			if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
+				e.preventDefault();
+				return;
+			}
+
 			const tag = (e.target as HTMLElement).tagName;
 			const inInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
 
@@ -216,11 +222,23 @@
 			}
 		}
 
+		// Block browser right-click context menu globally.
+		// Custom context menus (TabBar, DnDFlow, TerraformSidebar) are Svelte components
+		// and are unaffected — they only use preventDefault() on the native event to
+		// suppress the browser menu, which this handler also does.
+		function blockContextMenu(e: MouseEvent) {
+			const tag = (e.target as HTMLElement).tagName;
+			if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable) return;
+			e.preventDefault();
+		}
+
 		window.addEventListener('keydown', handleKeydown);
+		window.addEventListener('contextmenu', blockContextMenu);
 		return () => {
 			unlistenClose.then((fn) => fn());
 			unlistenFocus.then((fn) => fn());
 			window.removeEventListener('keydown', handleKeydown);
+			window.removeEventListener('contextmenu', blockContextMenu);
 		};
 	});
 </script>

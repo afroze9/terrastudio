@@ -50,6 +50,7 @@
     "help": {
       "label": "Help",
       "shortcuts": "Keyboard Shortcuts",
+      "devTools": "Developer Tools",
       "about": "About TerraStudio"
     }
   },

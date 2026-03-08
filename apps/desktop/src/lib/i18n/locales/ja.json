@@ -4,7 +4,7 @@
     "file": { "label": "ファイル", "new": "新規プロジェクト", "newWindow": "新しいウィンドウ", "open": "プロジェクトを開く", "save": "保存", "close": "プロジェクトを閉じる", "exportPng": "PNGとしてエクスポート", "exportSvg": "SVGとしてエクスポート", "copyClipboard": "クリップボードにコピー", "exportDocs": "ドキュメントをエクスポート (.md)", "saveAsTemplate": "テンプレートとして保存..." },
     "edit": { "label": "編集", "undo": "元に戻す", "redo": "やり直す", "autoLayout": "自動レイアウト", "topToBottom": "上から下", "leftToRight": "左から右", "bottomToTop": "下から上", "rightToLeft": "右から左", "selectAll": "すべて選択" },
     "view": { "label": "表示", "hideSidePanel": "サイドパネルを非表示", "showSidePanel": "サイドパネルを表示", "hideProperties": "プロパティを非表示", "showProperties": "プロパティを表示", "hidePanel": "パネルを非表示", "showPanel": "パネルを表示", "fitView": "全体表示", "lightMode": "ライトモード", "darkMode": "ダークモード", "colorPalette": "カラーパレット", "edgeStyle": "エッジスタイル", "resources": "リソース", "terraform": "Terraform", "project": "プロジェクト", "cost": "コスト", "search": "検索", "settings": "設定" },
-    "help": { "label": "ヘルプ", "shortcuts": "キーボードショートカット", "about": "TerraStudioについて" }
+    "help": { "label": "ヘルプ", "shortcuts": "キーボードショートカット", "devTools": "開発者ツール", "about": "TerraStudioについて" }
   },
   "status": { "ready": "準備完了", "generatingHcl": "HCLを生成中...", "writingFiles": "ファイルを書き込み中...", "running": "terraform {command} を実行中...", "success": "成功", "error": "エラー", "terraformMissing": "Terraformが見つかりません", "terraformFound": "Terraform v{version}", "resources": "{count} リソース", "connections": "{count} 接続", "noProject": "プロジェクトが開かれていません", "terminal": "ターミナル", "problems": "問題", "annotations": "注釈", "connection": "接続", "colorPalette": "カラーパレット", "switchToLight": "ライトモードに切り替え", "switchToDark": "ダークモードに切り替え" },
   "settings": {

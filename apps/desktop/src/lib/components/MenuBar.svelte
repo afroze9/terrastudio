@@ -325,6 +325,11 @@
           <span class="shortcut">?</span>
         </button>
         <div class="dropdown-separator"></div>
+        <button class="dropdown-item" onclick={() => { close(); invoke('open_devtools'); }}>
+          <span>{t('menu.help.devTools')}</span>
+          <span class="shortcut">F12</span>
+        </button>
+        <div class="dropdown-separator"></div>
         <button class="dropdown-item" onclick={() => { close(); showAboutModal = true; }}>
           <span>{t('menu.help.about')}</span>
         </button>

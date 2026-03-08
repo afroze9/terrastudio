@@ -142,9 +142,20 @@ pub fn run() {
             get_pending_open_path,
             create_project_window,
             get_window_pending_path,
+            open_devtools,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+/// Toggle the webview developer tools for the calling window.
+#[tauri::command]
+fn open_devtools(window: tauri::WebviewWindow) {
+    if window.is_devtools_open() {
+        window.close_devtools();
+    } else {
+        window.open_devtools();
+    }
 }
 
 /// Change the global log level at runtime. The `log` crate uses an atomic for
