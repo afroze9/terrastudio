@@ -1,6 +1,8 @@
 <script lang="ts">
   import { Handle, Position } from '@xyflow/svelte';
   import { diagram } from '$lib/stores/diagram.svelte';
+  import { cost } from '$lib/stores/cost.svelte';
+  import { ui } from '$lib/stores/ui.svelte';
 
   let { data, id, selected }: { data: any; id: string; selected?: boolean } = $props();
 
@@ -62,6 +64,28 @@
   // Base height for header + hint; add space per handle row beyond what the base covers
   const nodeMinHeight = $derived(Math.max(60, 40 + maxHandles * 20));
 
+  // Sum costs of all non-synthetic member nodes belonging to this module
+  const moduleCost = $derived.by(() => {
+    if (!ui.showCostBadges || !moduleId || !cost.hasPrices) return null;
+    const memberIds = new Set(
+      diagram.nodes
+        .filter((n) => n.data.moduleId === moduleId && !n.id.startsWith('_'))
+        .map((n) => n.id),
+    );
+    let total = 0;
+    let hasAny = false;
+    for (const mid of memberIds) {
+      const est = cost.estimates.get(mid);
+      if (est?.monthlyCost != null) { total += est.monthlyCost; hasAny = true; }
+    }
+    return hasAny ? total : null;
+  });
+
+  const moduleCostLabel = $derived.by(() => {
+    if (moduleCost === null || moduleCost === 0) return null;
+    return moduleCost < 10 ? `~$${moduleCost.toFixed(2)}/mo` : `~$${Math.round(moduleCost)}/mo`;
+  });
+
   function handleExpand() {
     if (moduleId) diagram.toggleModuleCollapsed(moduleId);
   }
@@ -86,6 +110,9 @@
     </svg>
     <span class="module-node-name">{mod?.name ?? 'Module'}</span>
     <span class="module-node-badge">{memberCount}</span>
+    {#if moduleCostLabel}
+      <span class="cost-chip">{moduleCostLabel}</span>
+    {/if}
   </div>
   <div class="module-node-hint">Double-click to expand</div>
 
@@ -156,6 +183,14 @@
     min-width: 18px;
     text-align: center;
     margin-left: auto;
+  }
+
+  .cost-chip {
+    font-size: var(--font-9);
+    color: #8b90a0;
+    opacity: 0.8;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
   }
 
   .module-node-hint {

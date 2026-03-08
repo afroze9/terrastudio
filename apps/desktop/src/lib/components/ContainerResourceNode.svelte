@@ -208,12 +208,33 @@
   let isValidDropTarget = $derived(ui.dragFeedback?.validContainerIds.has(id) ?? false);
   let isInvalidDropTarget = $derived(ui.dragFeedback?.invalidContainerIds.has(id) ?? false);
 
-  let costEstimate = $derived(ui.showCostBadges ? cost.estimates.get(id) : undefined);
+  // Aggregate cost: sum all descendant resource costs (containers themselves are $0)
+  let aggregateCost = $derived.by(() => {
+    if (!ui.showCostBadges || !cost.hasPrices) return null;
+    const nodeMap = new Map(diagram.nodes.map((n) => [n.id, n]));
+    let total = 0;
+    let hasAny = false;
+    for (const node of diagram.nodes) {
+      if (node.id.startsWith('_')) continue;
+      if (node.id === id) continue;
+      // Walk parent chain to check if this node is a descendant
+      let cur = node;
+      let isDesc = false;
+      while (cur.parentId) {
+        if (cur.parentId === id) { isDesc = true; break; }
+        const parent = nodeMap.get(cur.parentId as string);
+        if (!parent) break;
+        cur = parent;
+      }
+      if (!isDesc) continue;
+      const est = cost.estimates.get(node.id);
+      if (est?.monthlyCost != null) { total += est.monthlyCost; hasAny = true; }
+    }
+    return hasAny ? total : null;
+  });
   let costLabel = $derived.by(() => {
-    if (!costEstimate || costEstimate.loading) return null;
-    if (costEstimate.monthlyCost === null) return null;
-    if (costEstimate.monthlyCost === 0) return null; // containers (RG, VNet) are free — no badge
-    return `~$${costEstimate.monthlyCost < 10 ? costEstimate.monthlyCost.toFixed(2) : Math.round(costEstimate.monthlyCost)}/mo`;
+    if (aggregateCost === null || aggregateCost === 0) return null;
+    return `~$${aggregateCost < 10 ? aggregateCost.toFixed(2) : Math.round(aggregateCost)}/mo`;
   });
 
   let hasNsg = $derived(!!data.references?.['nsg_id']);

@@ -420,7 +420,12 @@
       "noteUsageBased": "Les ressources basées sur l'utilisation (plan Consommation, CosmosDB) ne peuvent pas être estimées.",
       "noteStorage": "Le stockage suppose environ 100 Go pour le calcul.",
       "noteCached": "Les prix sont mis en cache localement pendant 24 heures.",
-      "free": "Gratuit"
+      "free": "Gratuit",
+      "byCategory": "Catégorie",
+      "byContainer": "Conteneur",
+      "byModule": "Module",
+      "unassigned": "Non assigné",
+      "noGroups": "Aucun groupe à afficher."
     }
   },
   "welcome": {

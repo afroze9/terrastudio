@@ -1,11 +1,21 @@
 <script lang="ts">
   import { t } from '$lib/i18n';
-  import { cost, AZURE_REGIONS } from '$lib/stores/cost.svelte';
+  import { cost, AZURE_REGIONS, type CostGroup, type CostView } from '$lib/stores/cost.svelte';
   import { diagram } from '$lib/stores/diagram.svelte';
   import { project } from '$lib/stores/project.svelte';
   import CollapsibleSection from './CollapsibleSection.svelte';
+  import CostGroupList from './CostGroupList.svelte';
+  import CostDistributionBar from './CostDistributionBar.svelte';
+
+  /** Billing container type IDs — the top-level grouping boundary */
+  const BILLING_CONTAINERS = new Set([
+    'azurerm/core/resource_group',
+    'aws/networking/vpc',
+  ]);
 
   let showRegionPicker = $state(false);
+  let view = $state<CostView>('category');
+  let expandedIds = $state<Set<string>>(new Set());
 
   const nodes = $derived(diagram.nodes);
 
@@ -21,7 +31,8 @@
   }
 
   function handleExportCsv() {
-    const csv = cost.exportCsv(nodes);
+    const activeGroups = view === 'container' ? containerGroups : view === 'module' ? moduleGroups : undefined;
+    const csv = cost.exportCsv(nodes, activeGroups ? { groupBy: view, groups: activeGroups } : undefined);
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -29,6 +40,13 @@
     a.download = `${project.name ?? 'terrastudio'}-cost-estimate.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  function toggleExpanded(id: string) {
+    const next = new Set(expandedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    expandedIds = next;
   }
 
   function formatCost(value: number | null): string {
@@ -59,6 +77,152 @@
       const totalB = b.items.reduce((s, i) => s + (i.monthlyCost ?? 0), 0);
       return totalB - totalA;
     });
+  });
+
+  // Container grouping: walk parentId to find billing container
+  const containerGroups = $derived.by((): CostGroup[] => {
+    if (!cost.hasPrices) return [];
+    const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+    const groupMap = new Map<string, { label: string; members: typeof estimateList }>();
+
+    for (const node of nodes) {
+      // Skip synthetic nodes
+      if (node.id.startsWith('_')) continue;
+      // Skip container-type nodes themselves (their cost is $0)
+      if (BILLING_CONTAINERS.has(node.data.typeId)) continue;
+
+      const est = cost.estimates.get(node.id);
+      if (!est) continue;
+
+      // Walk parent chain to find billing container
+      let containerId = '__unassigned__';
+      let containerLabel = t('cost.panel.unassigned');
+      let cur = node;
+      while (cur.parentId) {
+        const parent = nodeMap.get(cur.parentId as string);
+        if (!parent) break;
+        if (BILLING_CONTAINERS.has(parent.data.typeId)) {
+          containerId = parent.id;
+          containerLabel = parent.data.label ?? parent.id;
+          break;
+        }
+        cur = parent;
+      }
+
+      if (!groupMap.has(containerId)) {
+        groupMap.set(containerId, { label: containerLabel, members: [] });
+      }
+      groupMap.get(containerId)!.members.push(est);
+    }
+
+    const result: CostGroup[] = [];
+    for (const [id, data] of groupMap) {
+      let subtotal = 0;
+      let hasUsageBased = false;
+      for (const m of data.members) {
+        if (m.monthlyCost !== null) subtotal += m.monthlyCost;
+        else hasUsageBased = true;
+      }
+      result.push({ id, label: data.label, subtotal, hasUsageBased, members: data.members });
+    }
+
+    // Sort: by subtotal desc, unassigned last
+    return result.sort((a, b) => {
+      if (a.id === '__unassigned__') return 1;
+      if (b.id === '__unassigned__') return -1;
+      return b.subtotal - a.subtotal;
+    });
+  });
+
+  // Module grouping: group by moduleId
+  const moduleGroups = $derived.by((): CostGroup[] => {
+    if (!cost.hasPrices) return [];
+    const groupMap = new Map<string, { label: string; members: typeof estimateList; moduleKind: 'module' | 'template' | 'instance'; templateName?: string }>();
+
+    for (const node of nodes) {
+      if (node.id.startsWith('_')) continue;
+      const est = cost.estimates.get(node.id);
+      if (!est) continue;
+
+      const moduleId = node.data.moduleId as string | undefined;
+      if (moduleId) {
+        const mod = diagram.modules.find((m) => m.id === moduleId);
+        const label = mod?.name ?? moduleId;
+        const isTemplate = mod?.isTemplate ?? false;
+        if (!groupMap.has(moduleId)) {
+          groupMap.set(moduleId, {
+            label,
+            members: [],
+            moduleKind: isTemplate ? 'template' : 'module',
+          });
+        }
+        groupMap.get(moduleId)!.members.push(est);
+      } else {
+        if (!groupMap.has('__unassigned__')) {
+          groupMap.set('__unassigned__', {
+            label: t('cost.panel.unassigned'),
+            members: [],
+            moduleKind: 'module',
+          });
+        }
+        groupMap.get('__unassigned__')!.members.push(est);
+      }
+    }
+
+    // Add template instances as separate groups
+    for (const instance of diagram.moduleInstances) {
+      const template = diagram.modules.find((m) => m.id === instance.templateId);
+      if (!template) continue;
+      // Instance cost = same as template members' cost (shared estimates)
+      const templateGroup = groupMap.get(instance.templateId);
+      if (templateGroup && templateGroup.members.length > 0) {
+        groupMap.set(instance.id, {
+          label: instance.name,
+          members: [...templateGroup.members], // Share same estimates
+          moduleKind: 'instance',
+          templateName: template.name,
+        });
+      }
+    }
+
+    const result: CostGroup[] = [];
+    for (const [id, data] of groupMap) {
+      let subtotal = 0;
+      let hasUsageBased = false;
+      for (const m of data.members) {
+        if (m.monthlyCost !== null) subtotal += m.monthlyCost;
+        else hasUsageBased = true;
+      }
+      result.push({
+        id,
+        label: data.label,
+        subtotal,
+        hasUsageBased,
+        members: data.members,
+        moduleKind: data.moduleKind,
+        templateName: data.templateName,
+      });
+    }
+
+    return result.sort((a, b) => {
+      if (a.id === '__unassigned__') return 1;
+      if (b.id === '__unassigned__') return -1;
+      return b.subtotal - a.subtotal;
+    });
+  });
+
+  /** Active groups for the distribution bar */
+  const activeGroups = $derived.by((): CostGroup[] => {
+    if (view === 'container') return containerGroups;
+    if (view === 'module') return moduleGroups;
+    // For category view, convert groupedEstimates to CostGroup[]
+    return groupedEstimates.map((g) => ({
+      id: g.category,
+      label: g.category,
+      subtotal: g.items.reduce((s, i) => s + (i.monthlyCost ?? 0), 0),
+      hasUsageBased: g.items.some((i) => i.monthlyCost === null),
+      members: g.items,
+    }));
   });
 
   const estimateList = $derived(Array.from(cost.estimates.values()));
@@ -154,6 +318,13 @@
       <p class="note">Uses the public Azure Retail Prices API. No sign-in required.</p>
     </div>
   {:else}
+    <!-- View toggle -->
+    <div class="view-toggle">
+      <button class:active={view === 'category'} onclick={() => view = 'category'}>{t('cost.panel.byCategory')}</button>
+      <button class:active={view === 'container'} onclick={() => view = 'container'}>{t('cost.panel.byContainer')}</button>
+      <button class:active={view === 'module'} onclick={() => view = 'module'}>{t('cost.panel.byModule')}</button>
+    </div>
+
     <!-- Summary section -->
     <CollapsibleSection id="cost-summary" label={t('cost.panel.summary')}>
       <div class="summary-grid">
@@ -172,6 +343,7 @@
           <span class="summary-value muted">{cost.formatRelativeTime()}</span>
         {/if}
       </div>
+      <CostDistributionBar groups={activeGroups} total={cost.totalMonthly} />
       <button class="export-btn" onclick={handleExportCsv} disabled={!cost.hasPrices}>
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
@@ -180,33 +352,43 @@
       </button>
     </CollapsibleSection>
 
-    <!-- By resource type -->
-    <CollapsibleSection id="cost-by-type" label={t('cost.panel.byResourceType')} count={groupedEstimates.length}>
-      <div class="breakdown-list">
-        {#each groupedEstimates as group}
-          {@const groupTotal = group.items.reduce((s, i) => s + (i.monthlyCost ?? 0), 0)}
-          {@const pct = cost.totalMonthly ? Math.round((groupTotal / cost.totalMonthly) * 100) : 0}
-          <div class="group-header-row">
-            <span class="group-label">{group.category}</span>
-            <span class="group-pct">{pct}%</span>
-            <span class="group-cost">{formatCostShort(groupTotal || null)}</span>
-          </div>
-          {#each group.items as est}
-            <div class="resource-row">
-              {#if est.loading}
-                <span class="resource-name">{est.displayName}</span>
-                <span class="resource-cost loading">…</span>
-              {:else}
-                <span class="resource-name" title={est.typeId}>{est.displayName}</span>
-                <span class="resource-cost" class:free={est.monthlyCost === 0} class:usage={est.monthlyCost === null}>
-                  {formatCost(est.monthlyCost)}
-                </span>
-              {/if}
+    <!-- Breakdown by selected view -->
+    {#if view === 'category'}
+      <CollapsibleSection id="cost-by-type" label={t('cost.panel.byCategory')} count={groupedEstimates.length}>
+        <div class="breakdown-list">
+          {#each groupedEstimates as group}
+            {@const groupTotal = group.items.reduce((s, i) => s + (i.monthlyCost ?? 0), 0)}
+            {@const pct = cost.totalMonthly ? Math.round((groupTotal / cost.totalMonthly) * 100) : 0}
+            <div class="group-header-row">
+              <span class="group-label">{group.category}</span>
+              <span class="group-pct">{pct}%</span>
+              <span class="group-cost">{formatCostShort(groupTotal || null)}</span>
             </div>
+            {#each group.items as est}
+              <div class="resource-row">
+                {#if est.loading}
+                  <span class="resource-name">{est.displayName}</span>
+                  <span class="resource-cost loading">…</span>
+                {:else}
+                  <span class="resource-name" title={est.typeId}>{est.displayName}</span>
+                  <span class="resource-cost" class:free={est.monthlyCost === 0} class:usage={est.monthlyCost === null}>
+                    {formatCost(est.monthlyCost)}
+                  </span>
+                {/if}
+              </div>
+            {/each}
           {/each}
-        {/each}
-      </div>
-    </CollapsibleSection>
+        </div>
+      </CollapsibleSection>
+    {:else if view === 'container'}
+      <CollapsibleSection id="cost-by-container" label={t('cost.panel.byContainer')} count={containerGroups.length}>
+        <CostGroupList groups={containerGroups} {expandedIds} onToggle={toggleExpanded} totalMonthly={cost.totalMonthly} />
+      </CollapsibleSection>
+    {:else}
+      <CollapsibleSection id="cost-by-module" label={t('cost.panel.byModule')} count={moduleGroups.length}>
+        <CostGroupList groups={moduleGroups} {expandedIds} onToggle={toggleExpanded} totalMonthly={cost.totalMonthly} />
+      </CollapsibleSection>
+    {/if}
 
     <!-- Notes -->
     <CollapsibleSection id="cost-notes" label={t('cost.panel.notes')}>
@@ -321,6 +503,44 @@
   .region-option:hover, .region-option.active {
     background: var(--color-accent);
     color: var(--color-accent-text);
+  }
+
+  /* View toggle */
+  .view-toggle {
+    display: flex;
+    gap: 0;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+  .view-toggle button {
+    flex: 1;
+    padding: 4px 6px;
+    font-size: var(--font-10);
+    font-weight: 500;
+    color: var(--color-text-muted);
+    background: none;
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s, border-color 0.1s;
+  }
+  .view-toggle button:first-child {
+    border-radius: 4px 0 0 4px;
+  }
+  .view-toggle button:last-child {
+    border-radius: 0 4px 4px 0;
+  }
+  .view-toggle button:not(:first-child) {
+    border-left: none;
+  }
+  .view-toggle button.active {
+    background: var(--color-accent);
+    color: var(--color-accent-text);
+    border-color: var(--color-accent);
+  }
+  .view-toggle button:hover:not(.active) {
+    color: var(--color-text);
+    background: var(--color-surface-hover);
   }
 
   /* Empty state */

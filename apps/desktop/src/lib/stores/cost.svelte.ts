@@ -11,6 +11,27 @@ export interface CostEstimate {
   breakdown: { label: string; cost: number }[];
 }
 
+/** A single group entry in the container or module breakdown views. */
+export interface CostGroup {
+  /** Stable identifier — nodeId for containers, moduleId/instanceId for modules */
+  id: string;
+  /** Display label shown in the panel */
+  label: string;
+  /** Sum of monthlyCost for all members where monthlyCost !== null */
+  subtotal: number;
+  /** True if at least one member has monthlyCost === null (usage-based) */
+  hasUsageBased: boolean;
+  /** Ordered member estimates within this group */
+  members: CostEstimate[];
+  /** For module groups only: 'module' | 'template' | 'instance'. */
+  moduleKind?: 'module' | 'template' | 'instance';
+  /** For template instances: the display name of the template they reference. */
+  templateName?: string;
+}
+
+/** Which view is active in the cost panel. */
+export type CostView = 'category' | 'container' | 'module';
+
 const AZURE_REGIONS: { value: string; label: string }[] = [
   { value: 'eastus', label: 'East US' },
   { value: 'eastus2', label: 'East US 2' },
@@ -187,24 +208,45 @@ class CostStore {
     this.markSnapshot(nodes);
   }
 
-  exportCsv(nodes: DiagramNode[]): string {
-    const lines: string[] = [
-      'Resource Name,Type,Est. Monthly Cost (USD),Notes',
-    ];
+  exportCsv(nodes: DiagramNode[], options?: { groupBy?: CostView; groups?: CostGroup[] }): string {
+    const hasGroup = options?.groupBy && options?.groups;
+    const header = hasGroup
+      ? 'Resource Name,Group,Type,Est. Monthly Cost (USD),Notes'
+      : 'Resource Name,Type,Est. Monthly Cost (USD),Notes';
+    const lines: string[] = [header];
+
+    // Build nodeId → group label map if grouping
+    const nodeGroupMap = new Map<string, string>();
+    if (hasGroup && options!.groups) {
+      for (const group of options!.groups) {
+        for (const member of group.members) {
+          nodeGroupMap.set(member.nodeId, group.label);
+        }
+      }
+    }
 
     for (const node of nodes) {
       const est = this.estimates.get(node.id);
       const name = node.data.label ?? node.id;
       const type = node.data.typeId.split('/').pop() ?? node.data.typeId;
-      const cost = est?.monthlyCost !== undefined && est?.monthlyCost !== null
+      const costVal = est?.monthlyCost !== undefined && est?.monthlyCost !== null
         ? `$${est.monthlyCost.toFixed(2)}`
         : 'Usage-based';
       const notes = est?.monthlyCost === null ? 'Usage-based or unknown' : '';
-      lines.push(`"${name}","${type}",${cost},"${notes}"`);
+      if (hasGroup) {
+        const group = nodeGroupMap.get(node.id) ?? 'Unassigned';
+        lines.push(`"${name}","${group}","${type}",${costVal},"${notes}"`);
+      } else {
+        lines.push(`"${name}","${type}",${costVal},"${notes}"`);
+      }
     }
 
     const total = this.totalMonthly;
-    lines.push(`"TOTAL",,${total !== null ? `$${total.toFixed(2)}` : ''},"Excludes usage-based resources"`);
+    if (hasGroup) {
+      lines.push(`"TOTAL",,,"${total !== null ? `$${total.toFixed(2)}` : ''}","Excludes usage-based resources"`);
+    } else {
+      lines.push(`"TOTAL",,${total !== null ? `$${total.toFixed(2)}` : ''},"Excludes usage-based resources"`);
+    }
 
     return lines.join('\n');
   }
