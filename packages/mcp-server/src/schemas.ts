@@ -52,10 +52,25 @@ export const GetAvailableResourceTypesSchema = z.object({
     'Filter by provider, e.g. "azurerm"'
   ),
   category: z.string().optional().describe(
-    'Filter by category, e.g. "networking", "compute"'
+    'Filter by category, e.g. "networking", "compute", "storage", "database", "containers", "messaging", "web", "security", "identity", "monitoring", "dns", "core"'
+  ),
+  typeId: z.string().optional().describe(
+    'Get a single resource type by exact ID, e.g. "azurerm/networking/virtual_network". Returns full detail regardless of detail param.'
   ),
   detail: z.enum(['summary', 'full']).optional().describe(
-    'Detail level: "summary" returns typeId/displayName/category/provider/isContainer/description only. "full" (default) includes properties, handles, canBeChildOf.'
+    'Detail level: "summary" returns typeId/displayName/category/provider/isContainer/description only. "full" includes properties, handles, canBeChildOf, outputs. Defaults to "summary" when no category or typeId filter is set, "full" otherwise.'
+  ),
+  limit: z.number().int().min(1).max(50).optional().describe(
+    'Maximum number of types to return (default: 20 when unfiltered, all when filtered)'
+  ),
+  offset: z.number().int().min(0).optional().describe(
+    'Number of types to skip (default: 0). Use with limit for pagination.'
+  ),
+});
+
+export const ListResourceCategoriesSchema = z.object({
+  provider: z.string().optional().describe(
+    'Filter by provider, e.g. "azurerm". If omitted, returns categories for all providers.'
   ),
 });
 

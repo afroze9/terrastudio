@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { BridgeClient } from '../bridge.js';
-import { GetDiagramSchema, ListResourcesSchema, GetAvailableResourceTypesSchema, ListProjectsSchema } from '../schemas.js';
+import { GetDiagramSchema, ListResourcesSchema, GetAvailableResourceTypesSchema, ListProjectsSchema, ListResourceCategoriesSchema } from '../schemas.js';
 
 /**
  * Convert a simple glob pattern to a RegExp.
@@ -157,13 +157,28 @@ export function registerQueryTools(server: McpServer, bridge: BridgeClient): voi
 
   server.tool(
     'get_available_resource_types',
-    'Get registered resource types with schemas. Filter by provider/category, use detail: "summary" for compact output.',
+    'Get registered resource types. IMPORTANT: Always filter by category or typeId to avoid large payloads. Without filters, returns a summary list of categories and type counts. Use list_resource_categories first to discover available categories.',
     GetAvailableResourceTypesSchema.shape,
     async (params) => {
       const result = await bridge.request('mcp_get_resource_types') as any;
       let types = Array.isArray(result) ? result : [];
 
+      // --- Single type lookup ---
+      if (params.typeId) {
+        const match = types.find((t: any) => t.typeId === params.typeId);
+        if (!match) {
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify({ error: `Resource type "${params.typeId}" not found` }, null, 2) }],
+          };
+        }
+        return {
+          content: [{ type: 'text' as const, text: JSON.stringify(match, null, 2) }],
+        };
+      }
+
       // --- Filtering ---
+      const hasFilter = !!(params.provider || params.category);
+
       if (params.provider) {
         types = types.filter((t: any) => t.provider === params.provider);
       }
@@ -171,8 +186,32 @@ export function registerQueryTools(server: McpServer, bridge: BridgeClient): voi
         types = types.filter((t: any) => t.category === params.category);
       }
 
+      // --- Unfiltered: return category overview instead of all types ---
+      if (!hasFilter && !params.detail) {
+        const categories: Record<string, { count: number; types: string[] }> = {};
+        for (const t of types as any[]) {
+          const key = `${t.provider}/${t.category}`;
+          if (!categories[key]) {
+            categories[key] = { count: 0, types: [] };
+          }
+          categories[key].count++;
+          categories[key].types.push(t.typeId);
+        }
+        return {
+          content: [{
+            type: 'text' as const,
+            text: JSON.stringify({
+              message: 'Use category or typeId parameter to get detailed resource type info. Use detail: "full" to override this behavior.',
+              totalTypes: types.length,
+              categories,
+            }, null, 2),
+          }],
+        };
+      }
+
       // --- Detail level ---
-      if (params.detail === 'summary') {
+      const detail = params.detail ?? (hasFilter ? 'full' : 'summary');
+      if (detail === 'summary') {
         types = types.map((t: any) => ({
           typeId: t.typeId,
           displayName: t.displayName,
@@ -183,8 +222,58 @@ export function registerQueryTools(server: McpServer, bridge: BridgeClient): voi
         }));
       }
 
+      // --- Pagination ---
+      const total = types.length;
+      const offset = params.offset ?? 0;
+      const limit = params.limit ?? (hasFilter ? total : 20);
+      types = types.slice(offset, offset + limit);
+
+      const response: Record<string, unknown> = { types };
+      if (total > types.length || offset > 0) {
+        response.pagination = { total, offset, count: types.length };
+      }
+
       return {
-        content: [{ type: 'text' as const, text: JSON.stringify(types, null, 2) }],
+        content: [{ type: 'text' as const, text: JSON.stringify(response, null, 2) }],
+      };
+    }
+  );
+
+  server.tool(
+    'list_resource_categories',
+    'List available resource categories with type counts. Use this to discover what categories exist before calling get_available_resource_types with a category filter.',
+    ListResourceCategoriesSchema.shape,
+    async (params) => {
+      const result = await bridge.request('mcp_get_resource_types') as any;
+      let types = Array.isArray(result) ? result : [];
+
+      if (params.provider) {
+        types = types.filter((t: any) => t.provider === params.provider);
+      }
+
+      const categories: Record<string, string[]> = {};
+      for (const t of types as any[]) {
+        const key = `${t.provider}/${t.category}`;
+        if (!categories[key]) {
+          categories[key] = [];
+        }
+        categories[key].push(t.displayName);
+      }
+
+      return {
+        content: [{
+          type: 'text' as const,
+          text: JSON.stringify({
+            totalTypes: types.length,
+            categories: Object.entries(categories).map(([key, names]) => ({
+              key,
+              provider: key.split('/')[0],
+              category: key.split('/')[1],
+              count: names.length,
+              types: names,
+            })),
+          }, null, 2),
+        }],
       };
     }
   );
