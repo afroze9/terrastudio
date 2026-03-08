@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.38.2](https://github.com/afroze9/terrastudio/compare/v0.38.1...v0.38.2) (2026-03-08)
+
+
+### Features
+
+* multi-subscription HCL generation + new Azure resources (v0.39.0) ([94ba0fe](https://github.com/afroze9/terrastudio/commit/94ba0fe255baf9f6dc2e5f53bd04f7d662faef14))
+
 ## [0.38.1](https://github.com/afroze9/terrastudio/compare/v0.38.0...v0.38.1) (2026-03-08)
 
 
