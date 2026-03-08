@@ -149,12 +149,20 @@ pub fn run() {
 }
 
 /// Toggle the webview developer tools for the calling window.
+/// DevTools APIs are only available in debug builds (Tauri auto-enables them).
 #[tauri::command]
-fn open_devtools(window: tauri::WebviewWindow) {
-    if window.is_devtools_open() {
-        window.close_devtools();
-    } else {
-        window.open_devtools();
+fn open_devtools(_window: tauri::WebviewWindow) {
+    #[cfg(debug_assertions)]
+    {
+        if _window.is_devtools_open() {
+            _window.close_devtools();
+        } else {
+            _window.open_devtools();
+        }
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        log::debug!("DevTools not available in release builds");
     }
 }
 
