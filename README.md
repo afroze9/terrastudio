@@ -144,4 +144,7 @@ apps/
 
 ## License
 
-This project is licensed under the [GNU Affero General Public License v3.0](LICENSE).
+| Component | License | Details |
+|-----------|---------|---------|
+| Core, plugins, desktop app | [AGPL-3.0](LICENSE) | Open source — free to use, modify, and distribute under AGPL terms |
+| `@terrastudio/types` | [MIT](packages/types/LICENSE) | Permissive — build plugins and integrations freely |
