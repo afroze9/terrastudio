@@ -214,7 +214,7 @@
         <li>{t('cost.panel.notePayAsYouGo')}</li>
         <li>{t('cost.panel.noteLocation')}</li>
         <li>{t('cost.panel.noteFallbackRegion')}</li>
-        <li>{t('cost.panel.noteExcludes')}</li>
+        <li>{t('cost.panel.noteExclusions')}</li>
         <li>{t('cost.panel.noteUsageBased')}</li>
         <li>{t('cost.panel.noteStorage')}</li>
         <li>{t('cost.panel.noteCached')}</li>

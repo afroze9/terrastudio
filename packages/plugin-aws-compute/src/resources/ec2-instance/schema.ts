@@ -121,7 +121,9 @@ export const ec2InstanceSchema: ResourceSchema = {
     },
   ],
 
-  handles: [],
+  handles: [
+    { id: 'ec2-out', type: 'source', position: 'right', label: 'EC2 Instance' },
+  ],
 
   outputs: [
     { key: 'id', label: 'Instance ID', terraformAttribute: 'id' },
