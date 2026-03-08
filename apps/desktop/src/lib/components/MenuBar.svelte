@@ -79,6 +79,7 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <svelte:window onclick={handleWindowClick} />
 
+<!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
 <nav class="menu-bar" role="menubar">
   <!-- File -->
   <div class="menu-item" role="none">

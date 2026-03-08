@@ -42,7 +42,7 @@
     event.preventDefault();
     const ids = diagram.nodes.filter((n) => n.selected).map((n) => n.id);
     if (ids.length === 0 && diagram.selectedNodeId) ids.push(diagram.selectedNodeId);
-    if (ids.length > 0) { diagram.copyNodes(ids); diagram.pasteNodes(); }
+    if (ids.length > 0) diagram.duplicateNodes(ids);
     return;
   }
   if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'A') {

@@ -29,7 +29,7 @@ export default defineConfig({
 	},
 	build: {
 		// Tauri SPA bundles everything into one page — large chunks are expected
-		chunkSizeWarningLimit: 800,
+		chunkSizeWarningLimit: 1000,
 	},
 	// Prevent Vite from obscuring Rust errors
 	clearScreen: false,

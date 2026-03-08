@@ -1,7 +1,7 @@
 import type { Node, Edge } from '@xyflow/svelte';
 import type { ResourceNodeData, ResourceTypeId, ValidationError, TerraStudioEdgeData, EdgeCategoryId, ReferenceEdgeOverrides, HandleDefinition, ModuleDefinition, ModuleInstance, AnnotationNodeData, AnnotationColor, AnnotationSize } from '@terrastudio/types';
 import { ANNOTATION_SIZE_DEFAULTS } from '@terrastudio/types';
-import { generateNodeId, generateUniqueTerraformName } from '@terrastudio/core';
+import { generateNodeId, generateUniqueTerraformName, sanitizeTerraformName } from '@terrastudio/core';
 import { project } from './project.svelte';
 import { terraform } from './terraform.svelte';
 import { registry } from '$lib/bootstrap';
@@ -28,6 +28,49 @@ function generateCopyLabel(label: string): string {
     return `${base} (copy ${num})`;
   }
   return `${label} (copy)`;
+}
+
+/**
+ * Smart label increment for duplication.
+ * Strips "(copy)" suffixes, detects trailing numeric suffix, increments it.
+ * Falls back to appending "-2" for labels without a numeric suffix.
+ */
+function generateSmartLabel(label: string, existingLabels: Set<string>): string {
+  // Strip "(copy)" / "(copy N)" suffix first
+  const copyMatch = label.match(/^(.+?) \(copy(?: \d+)?\)$/);
+  const base = copyMatch ? copyMatch[1] : label;
+
+  // Try to detect trailing numeric suffix with separator
+  const numMatch = base.match(/^(.*?)([- _.])(\d+)$/);
+  if (numMatch) {
+    const stem = numMatch[1];
+    const sep = numMatch[2];
+    const escapedStem = stem.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escapedSep = sep.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const siblingPattern = new RegExp(`^${escapedStem}${escapedSep}(\\d+)$`);
+    let max = parseInt(numMatch[3], 10);
+    for (const existing of existingLabels) {
+      const m = existing.match(siblingPattern);
+      if (m) max = Math.max(max, parseInt(m[1], 10));
+    }
+    return `${stem}${sep}${max + 1}`;
+  }
+
+  // No numeric suffix — scan for existing siblings with any separator
+  const escapedBase = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const siblingPattern = new RegExp(`^${escapedBase}[- _.](\\d+)$`);
+  let max = 0;
+  for (const existing of existingLabels) {
+    const m = existing.match(siblingPattern);
+    if (m) max = Math.max(max, parseInt(m[1], 10));
+  }
+  return max > 0 ? `${base}-${max + 1}` : `${base}-2`;
+}
+
+/** Derive a Terraform name from a human label, ensuring uniqueness. */
+function deriveSmartTerraformName(newLabel: string, existingTfNames: Set<string>): string {
+  const baseName = sanitizeTerraformName(newLabel);
+  return generateUniqueTerraformName(baseName, existingTfNames);
 }
 
 class DiagramStore {
@@ -697,6 +740,134 @@ class DiagramStore {
     this.edges = [...this.edges, ...newEdges];
 
     this.selectedNodeId = null;
+    this.pushSnapshot();
+  }
+
+  /**
+   * Smart duplication: increments numeric suffixes, derives TF names from labels,
+   * remaps internal references and edges, preserves container placement.
+   */
+  duplicateNodes(nodeIds: string[]) {
+    this.flushPendingSnapshot();
+    this.ensureInitialSnapshot();
+
+    // Filter out synthetic nodes and annotations
+    const realIds = nodeIds.filter((id) => {
+      const n = this.nodes.find((nd) => nd.id === id);
+      return (
+        n &&
+        !n.id.startsWith('_mod_') &&
+        !n.id.startsWith('_modinst_') &&
+        !n.id.startsWith('_instmem_') &&
+        n.type !== '_annotation_'
+      );
+    });
+    if (realIds.length === 0) return;
+
+    // Expand to include children
+    const idSet = new Set(realIds);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const n of this.nodes) {
+        if (n.parentId && idSet.has(n.parentId as string) && !idSet.has(n.id)) {
+          idSet.add(n.id);
+          changed = true;
+        }
+      }
+    }
+
+    // Build working sets for collision detection
+    const existingLabels = new Set(this.nodes.map((n) => n.data.label as string));
+    const existingTfNames = new Set(this.nodes.map((n) => n.data.terraformName as string));
+    const oldToNew = new Map<string, string>();
+
+    // Assign new IDs upfront
+    for (const id of idSet) {
+      const node = this.nodes.find((n) => n.id === id)!;
+      oldToNew.set(id, generateNodeId(node.type as ResourceTypeId));
+    }
+
+    // Build new nodes
+    const newNodes: DiagramNode[] = [];
+    for (const id of idSet) {
+      const node = this.nodes.find((n) => n.id === id)!;
+      const newId = oldToNew.get(id)!;
+
+      const newLabel = generateSmartLabel(node.data.label as string, existingLabels);
+      existingLabels.add(newLabel);
+
+      const newTfName = deriveSmartTerraformName(newLabel, existingTfNames);
+      existingTfNames.add(newTfName);
+
+      // Remap parentId: internal → new parent, external → preserve
+      const originalParentId = node.parentId as string | undefined;
+      const newParentId = originalParentId
+        ? (oldToNew.get(originalParentId) ?? originalParentId)
+        : undefined;
+
+      // Remap references: internal → new IDs, external → unchanged
+      const newReferences: Record<string, string> = {};
+      for (const [key, refId] of Object.entries(node.data.references)) {
+        newReferences[key] = oldToNew.get(refId as string) ?? (refId as string);
+      }
+
+      const cloned = structuredClone(
+        $state.snapshot(node) as unknown,
+      ) as DiagramNode;
+
+      const newNode: DiagramNode = {
+        ...cloned,
+        id: newId,
+        position: {
+          x: node.position.x + 30,
+          y: node.position.y + 30,
+        },
+        selected: true,
+        data: {
+          ...cloned.data,
+          label: newLabel,
+          terraformName: newTfName,
+          references: newReferences,
+          validationErrors: [],
+          deploymentStatus: undefined,
+          referenceEdgeOverrides: undefined,
+        },
+      };
+
+      if (newParentId) {
+        newNode.parentId = newParentId;
+      } else {
+        delete (newNode as Record<string, unknown>).parentId;
+        delete (newNode as Record<string, unknown>).extent;
+      }
+
+      newNodes.push(newNode);
+    }
+
+    // Clone internal edges (both endpoints in the duplicated set)
+    const newEdges: DiagramEdge[] = [];
+    for (const edge of this.edges) {
+      const newSource = oldToNew.get(edge.source);
+      const newTarget = oldToNew.get(edge.target);
+      if (!newSource || !newTarget) continue;
+      newEdges.push({
+        ...edge,
+        id: `e-${newSource}-${edge.sourceHandle ?? 'default'}-${newTarget}`,
+        source: newSource,
+        target: newTarget,
+        selected: true,
+      });
+    }
+
+    // Deselect originals, append duplicates
+    this.nodes = [
+      ...this.nodes.map((n) => ({ ...n, selected: false })),
+      ...newNodes,
+    ];
+    this.edges = [...this.edges, ...newEdges];
+    this.selectedNodeId = null;
+
     this.pushSnapshot();
   }
 

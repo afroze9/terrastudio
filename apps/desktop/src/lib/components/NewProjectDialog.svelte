@@ -838,7 +838,7 @@
     line-height: 1.5;
   }
 
-  .section-hint code {
+  .section-hint :global(code) {
     font-size: var(--font-11);
     color: var(--color-accent);
     background: color-mix(in srgb, var(--color-accent) 10%, transparent);

@@ -250,8 +250,12 @@
   }
 
   function handleContextDuplicate() {
-    handleContextCopy();
-    diagram.pasteNodes();
+    const ids = diagram.nodes.filter((n) => n.selected).map((n) => n.id);
+    if (contextMenu?.nodeId && !ids.includes(contextMenu.nodeId)) {
+      ids.push(contextMenu.nodeId);
+    }
+    diagram.duplicateNodes(ids);
+    closeContextMenu();
   }
 
   function handleContextPaste() {
