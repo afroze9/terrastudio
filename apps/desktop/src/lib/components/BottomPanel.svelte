@@ -7,6 +7,7 @@
   import ProblemsTab from './bottom-panel/ProblemsTab.svelte';
   import AnnotationsTab from './bottom-panel/AnnotationsTab.svelte';
   import ConnectionWizardTab from './bottom-panel/ConnectionWizardTab.svelte';
+  import PlanTab from './bottom-panel/PlanTab.svelte';
 
   let isResizing = $state(false);
 
@@ -15,6 +16,7 @@
     { id: 'problems', labelKey: 'bottomPanel.problems' },
     { id: 'annotations', labelKey: 'bottomPanel.annotations' },
     { id: 'connection-wizard', labelKey: 'bottomPanel.connection' },
+    { id: 'plan', labelKey: 'bottomPanel.plan' },
   ];
 
   function onResizeMouseDown(e: MouseEvent) {
@@ -84,6 +86,8 @@
         <AnnotationsTab />
       {:else if ui.activeBottomTab === 'connection-wizard'}
         <ConnectionWizardTab />
+      {:else if ui.activeBottomTab === 'plan'}
+        <PlanTab />
       {/if}
     </div>
   </div>

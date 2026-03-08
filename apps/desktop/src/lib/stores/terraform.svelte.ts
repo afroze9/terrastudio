@@ -1,7 +1,7 @@
 import type { TerraformVariable } from '@terrastudio/types';
 import { broadcastSetting } from './settings-sync';
 
-export type TerraformCommand = 'init' | 'validate' | 'plan' | 'apply' | 'destroy';
+export type TerraformCommand = 'init' | 'validate' | 'plan' | 'apply' | 'destroy' | 'apply-plan';
 export type TerraformStatusType = 'idle' | 'generating' | 'writing' | 'running' | 'success' | 'error';
 
 export interface TerraformOutputLine {

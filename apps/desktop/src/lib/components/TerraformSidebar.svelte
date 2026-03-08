@@ -6,7 +6,7 @@
   import { diagram } from '$lib/stores/diagram.svelte';
   import { ui } from '$lib/stores/ui.svelte';
   import { revealItemInDir } from '@tauri-apps/plugin-opener';
-  import { generateAndWrite, runTerraformCommand, refreshDeploymentStatus } from '$lib/services/terraform-service';
+  import { generateAndWrite, runTerraformCommand, runTerraformPlan, refreshDeploymentStatus } from '$lib/services/terraform-service';
   import type { TerraformCommand } from '$lib/stores/terraform.svelte';
   import { registry } from '$lib/bootstrap';
   import type { ResourceTypeId, TerraformVariable, PropertySchema } from '@terrastudio/types';
@@ -252,6 +252,12 @@
     }
     showVarWarning = false;
     ui.showTerminal = true;
+
+    // Route plan through the plan visualization pipeline
+    if (command === 'plan') {
+      await runTerraformPlan();
+      return;
+    }
 
     const success = await runTerraformCommand(command);
     if ((command === 'apply' || command === 'destroy') && success) {

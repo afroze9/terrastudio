@@ -7,6 +7,7 @@ import { diagram, type DiagramEdge } from '$lib/stores/diagram.svelte';
 import { cost } from '$lib/stores/cost.svelte';
 import { ui } from '$lib/stores/ui.svelte';
 import { terraform } from '$lib/stores/terraform.svelte';
+import { plan } from '$lib/stores/plan.svelte';
 import { registry, loadPluginsForProject } from '$lib/bootstrap';
 import { logger } from '$lib/logger';
 import { applyTemplate } from '$lib/templates/service';
@@ -123,6 +124,7 @@ export async function createProject(
 
   diagram.clear();
   terraform.clear();
+  plan.clear();
   cost.clear();
   ui.closeAllFileTabs();
   project.open(data.path, data.metadata);
@@ -193,6 +195,7 @@ export async function loadProjectByPath(path: string): Promise<void> {
 
   diagram.clear();
   terraform.clear();
+  plan.clear();
   cost.clear();
   ui.closeAllFileTabs();
   project.open(data.path, data.metadata);

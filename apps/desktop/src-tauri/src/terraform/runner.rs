@@ -107,6 +107,29 @@ pub struct ResourceChangeInfo {
     pub error: Option<String>,
 }
 
+/// A single resource change from `terraform plan -json` with full before/after diffs.
+#[derive(Clone, Serialize, Deserialize)]
+pub struct PlanResourceChange {
+    pub address: String,
+    #[serde(default)]
+    pub module_address: String,
+    pub actions: Vec<String>,
+    #[serde(default)]
+    pub before: Option<serde_json::Value>,
+    #[serde(default)]
+    pub after: Option<serde_json::Value>,
+}
+
+/// Extended result from terraform plan that includes full before/after diffs.
+#[derive(Clone, Serialize)]
+pub struct TerraformPlanResult {
+    pub success: bool,
+    pub code: i32,
+    pub diagnostics: Vec<TerraformDiagnostic>,
+    pub plan_changes: Vec<PlanResourceChange>,
+    pub plan_file_path: String,
+}
+
 /// Run a terraform command and capture all output (no streaming).
 /// Used for commands like `terraform show -json` where we need the full JSON result.
 pub async fn run_terraform_capture(
@@ -332,6 +355,199 @@ pub async fn run_terraform_json(
         code,
         diagnostics: final_diagnostics,
         resource_changes: final_changes,
+    })
+}
+
+/// Run `terraform plan -json -out=tfplan`, collecting planned_change messages
+/// with full before/after property diffs. Returns a `TerraformPlanResult`.
+pub async fn run_terraform_json_plan(
+    app: &AppHandle,
+    window_label: &str,
+    working_dir: &Path,
+) -> Result<TerraformPlanResult, String> {
+    let plan_file = working_dir.join("tfplan");
+    let plan_file_str = plan_file.to_string_lossy().to_string();
+
+    // Emit running status
+    let _ = app.emit_to(
+        window_label,
+        "terraform:status",
+        TerraformStatus {
+            status: "running".into(),
+            command: "plan".into(),
+        },
+    );
+
+    let mut cmd = Command::new("terraform");
+    cmd.arg("plan")
+        .arg("-json")
+        .arg(format!("-out={}", plan_file.display()));
+    cmd.current_dir(working_dir);
+    cmd.stdin(std::process::Stdio::null());
+    cmd.stdout(std::process::Stdio::piped());
+    cmd.stderr(std::process::Stdio::piped());
+
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+
+    let mut child = cmd.spawn().map_err(|e| {
+        format!(
+            "Failed to spawn terraform: {}. Is terraform installed and on your PATH?",
+            e
+        )
+    })?;
+
+    let stdout = child.stdout.take().ok_or("Failed to capture stdout")?;
+    let stderr = child.stderr.take().ok_or("Failed to capture stderr")?;
+
+    let app_stdout = app.clone();
+    let app_stderr = app.clone();
+    let label_stdout = window_label.to_string();
+    let label_stderr = window_label.to_string();
+
+    let diagnostics = std::sync::Arc::new(std::sync::Mutex::new(Vec::<TerraformDiagnostic>::new()));
+    let plan_changes = std::sync::Arc::new(std::sync::Mutex::new(Vec::<PlanResourceChange>::new()));
+
+    let diag_clone = diagnostics.clone();
+    let changes_clone = plan_changes.clone();
+
+    // Process stdout JSON lines — look for planned_change messages
+    let stdout_task = tokio::spawn(async move {
+        let reader = BufReader::new(stdout);
+        let mut lines = reader.lines();
+        while let Ok(Some(line)) = lines.next_line().await {
+            // Try to parse the full JSON line for planned_change extraction
+            if let Ok(raw) = serde_json::from_str::<serde_json::Value>(&line) {
+                // Emit human-readable message for the terminal
+                let message = raw.get("@message")
+                    .and_then(|m| m.as_str())
+                    .unwrap_or(&line)
+                    .to_string();
+                let _ = app_stdout.emit_to(
+                    &label_stdout,
+                    "terraform:stdout",
+                    TerraformOutput {
+                        stream: "stdout".into(),
+                        line: message,
+                    },
+                );
+
+                // Also emit structured JSON for frontend
+                if let Ok(msg) = serde_json::from_str::<TerraformJsonMessage>(&line) {
+                    let _ = app_stdout.emit_to(&label_stdout, "terraform:json", msg.clone());
+
+                    // Collect diagnostics
+                    if let Some(diag) = msg.diagnostic {
+                        if let Ok(mut diags) = diag_clone.lock() {
+                            diags.push(diag);
+                        }
+                    }
+                }
+
+                // Extract planned_change messages with before/after
+                let msg_type = raw.get("type").and_then(|t| t.as_str()).unwrap_or("");
+                if msg_type == "planned_change" {
+                    if let Some(change) = raw.get("change") {
+                        let address = change
+                            .get("resource")
+                            .and_then(|r| r.get("addr"))
+                            .and_then(|a| a.as_str())
+                            .unwrap_or("")
+                            .to_string();
+                        let module_address = change
+                            .get("resource")
+                            .and_then(|r| r.get("module"))
+                            .and_then(|m| m.as_str())
+                            .unwrap_or("")
+                            .to_string();
+                        let action = change
+                            .get("action")
+                            .and_then(|a| a.as_str())
+                            .unwrap_or("unknown")
+                            .to_string();
+                        let before = change.get("before").cloned();
+                        let after = change.get("after").cloned();
+
+                        // Normalize action into actions array
+                        let actions = if action == "replace" {
+                            vec!["delete".to_string(), "create".to_string()]
+                        } else {
+                            vec![action]
+                        };
+
+                        if let Ok(mut changes) = changes_clone.lock() {
+                            changes.push(PlanResourceChange {
+                                address,
+                                module_address,
+                                actions,
+                                before,
+                                after,
+                            });
+                        }
+                    }
+                }
+            } else {
+                // Not valid JSON, emit as raw line
+                let _ = app_stdout.emit_to(
+                    &label_stdout,
+                    "terraform:stdout",
+                    TerraformOutput {
+                        stream: "stdout".into(),
+                        line,
+                    },
+                );
+            }
+        }
+    });
+
+    let stderr_task = tokio::spawn(async move {
+        let reader = BufReader::new(stderr);
+        let mut lines = reader.lines();
+        while let Ok(Some(line)) = lines.next_line().await {
+            let _ = app_stderr.emit_to(
+                &label_stderr,
+                "terraform:stderr",
+                TerraformOutput {
+                    stream: "stderr".into(),
+                    line,
+                },
+            );
+        }
+    });
+
+    let status = child
+        .wait()
+        .await
+        .map_err(|e| format!("Failed to wait for terraform: {}", e))?;
+
+    let _ = stdout_task.await;
+    let _ = stderr_task.await;
+
+    let code = status.code().unwrap_or(-1);
+    // terraform plan exits with code 2 when there are changes (success)
+    let success = code == 0 || code == 2;
+
+    let _ = app.emit_to(
+        window_label,
+        "terraform:status",
+        TerraformStatus {
+            status: if success { "success".into() } else { "error".into() },
+            command: "plan".into(),
+        },
+    );
+
+    let exit = TerraformExit { code, success };
+    let _ = app.emit_to(window_label, "terraform:exit", exit);
+
+    let final_diagnostics = diagnostics.lock().map(|d| d.clone()).unwrap_or_default();
+    let final_plan_changes = plan_changes.lock().map(|c| c.clone()).unwrap_or_default();
+
+    Ok(TerraformPlanResult {
+        success,
+        code,
+        diagnostics: final_diagnostics,
+        plan_changes: final_plan_changes,
+        plan_file_path: plan_file_str,
     })
 }
 

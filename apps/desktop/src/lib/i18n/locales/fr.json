@@ -508,7 +508,8 @@
     "dismiss": "Ignorer",
     "connectionPlaceholder": "Créez une connexion sur le canevas pour la voir expliquée ici",
     "connectionHistory": "Historique des connexions",
-    "clear": "Effacer"
+    "clear": "Effacer",
+    "plan": "Plan"
   },
   "problems": {
     "noProblems": "Aucun problème détecté",

@@ -12,6 +12,7 @@ import {
   type TerraformJsonResult,
 } from '$lib/stores/terraform.svelte';
 import { ui } from '$lib/stores/ui.svelte';
+import { plan, parsePlanChanges, type PlanAction, type PlanResourceChange } from '$lib/stores/plan.svelte';
 import { convertToResourceInstances, extractOutputBindings } from './diagram-converter';
 
 // Lazy-load notification plugin to avoid errors if not available
@@ -275,7 +276,7 @@ export function validateVariablesBeforeRun(): string[] {
 /**
  * Build a lookup map from terraform address to diagram node ID.
  */
-function buildAddressToNodeIdMap(): Map<string, string> {
+export function buildAddressToNodeIdMap(): Map<string, string> {
   const addressToNodeId = new Map<string, string>();
   for (const node of diagram.nodes) {
     // Skip synthetic/transient nodes
@@ -475,6 +476,230 @@ export async function runTerraformCommand(
       // Clear progress bar after a brief delay
       setTimeout(() => setTaskbarProgress('none'), 2000);
     }
+  }
+}
+
+/** Raw plan result from Rust backend (snake_case) */
+interface RawTerraformPlanResult {
+  success: boolean;
+  code: number;
+  diagnostics: { severity: string; summary: string; detail: string; address?: string }[];
+  plan_changes: Array<{
+    address: string;
+    module_address: string;
+    actions: string[];
+    before: Record<string, unknown> | null;
+    after: Record<string, unknown> | null;
+  }>;
+  plan_file_path: string;
+}
+
+/**
+ * Run terraform plan with plan file output, activate plan review mode.
+ */
+export async function runTerraformPlan(): Promise<boolean> {
+  if (!project.path) throw new Error('No project open');
+
+  // Check for stale files
+  if (terraform.filesStale) {
+    const proceed = await ui.confirm({
+      title: 'Terraform Files Out of Date',
+      message: 'The diagram has changed since the last generation. Do you want to regenerate terraform files first?',
+      confirmLabel: 'Regenerate & Run',
+      cancelLabel: 'Run Anyway',
+    });
+    if (proceed) {
+      try {
+        await generateAndWrite();
+      } catch {
+        return false;
+      }
+    }
+  }
+
+  await setTaskbarProgress('indeterminate');
+  terraform.setStatus('running', 'plan');
+  terraform.appendInfo('\n--- terraform plan (with diff capture) ---\n');
+  terraform.clearErrors();
+
+  const unlisteners: UnlistenFn[] = [];
+  const appWindow = getCurrentWindow();
+
+  unlisteners.push(
+    await appWindow.listen<{ stream: string; line: string }>(
+      'terraform:stdout',
+      (event) => {
+        terraform.appendOutput({ stream: 'stdout', line: event.payload.line });
+      },
+    ),
+  );
+  unlisteners.push(
+    await appWindow.listen<{ stream: string; line: string }>(
+      'terraform:stderr',
+      (event) => {
+        terraform.appendOutput({ stream: 'stderr', line: event.payload.line });
+      },
+    ),
+  );
+
+  let success = false;
+  try {
+    const rawResult = await invoke<RawTerraformPlanResult>(
+      'terraform_plan_with_out',
+      { projectPath: project.path },
+    );
+
+    success = rawResult.success;
+
+    if (success) {
+      // Parse plan changes
+      const planChanges = parsePlanChanges(rawResult.plan_changes);
+
+      // Build node mappings
+      const addressToNodeId = buildAddressToNodeIdMap();
+      const nodeActionMap = new Map<string, PlanAction>();
+      const nodeChangeMap = new Map<string, PlanResourceChange>();
+
+      for (const change of planChanges) {
+        // Try exact address match, then fallback: strip module prefix
+        let nodeId = addressToNodeId.get(change.address);
+        if (!nodeId && change.address.includes('.')) {
+          const parts = change.address.split('.');
+          const shortAddr = parts.slice(-2).join('.');
+          nodeId = addressToNodeId.get(shortAddr);
+        }
+        if (nodeId) {
+          nodeActionMap.set(nodeId, change.action);
+          nodeChangeMap.set(nodeId, change);
+        }
+      }
+
+      // Compute a simple diagram hash for staleness detection
+      const diagramHash = JSON.stringify(
+        diagram.nodes
+          .filter((n) => !n.id.startsWith('_'))
+          .map((n) => ({ id: n.id, tf: n.data.terraformName })),
+      );
+
+      plan.setPlanResult(
+        {
+          success: rawResult.success,
+          code: rawResult.code,
+          diagnostics: rawResult.diagnostics as import('$lib/stores/terraform.svelte').TerraformDiagnostic[],
+          planChanges,
+          planFilePath: rawResult.plan_file_path,
+          capturedAt: new Date().toISOString(),
+        },
+        nodeActionMap,
+        nodeChangeMap,
+        diagramHash,
+      );
+
+      // Show plan tab in bottom panel
+      ui.openBottomPanel('plan');
+    } else {
+      // Plan failed — log errors
+      for (const diag of rawResult.diagnostics) {
+        if (diag.severity === 'error') {
+          terraform.appendError(`Error: ${diag.summary}`);
+          if (diag.detail) terraform.appendError(`  ${diag.detail}`);
+        }
+      }
+    }
+
+    terraform.setStatus(success ? 'success' : 'error');
+    return success;
+  } catch (err) {
+    terraform.appendError(`Plan failed: ${err}`);
+    terraform.setStatus('error');
+    return false;
+  } finally {
+    for (const unlisten of unlisteners) unlisten();
+    if (terraform.isRunning) terraform.setStatus('error');
+    await setTaskbarProgress(success ? 'success' : 'error');
+    await notifyCompletion('plan', success);
+    setTimeout(() => setTaskbarProgress('none'), 2000);
+  }
+}
+
+/**
+ * Apply a previously saved plan file. Exits plan mode on success.
+ */
+export async function applyFromPlan(): Promise<boolean> {
+  if (!project.path) throw new Error('No project open');
+
+  const confirmed = await ui.confirm({
+    title: 'Apply Terraform Plan',
+    message: 'This will apply the exact changes from the plan. Infrastructure will be modified. Continue?',
+    confirmLabel: 'Apply',
+    cancelLabel: 'Cancel',
+    danger: true,
+  });
+  if (!confirmed) return false;
+
+  await setTaskbarProgress('indeterminate');
+  terraform.setStatus('running', 'apply-plan');
+  terraform.appendInfo('\n--- terraform apply (from saved plan) ---\n');
+  terraform.clearErrors();
+
+  const unlisteners: UnlistenFn[] = [];
+  const appWindow = getCurrentWindow();
+
+  unlisteners.push(
+    await appWindow.listen<{ stream: string; line: string }>(
+      'terraform:stdout',
+      (event) => {
+        terraform.appendOutput({ stream: 'stdout', line: event.payload.line });
+      },
+    ),
+  );
+  unlisteners.push(
+    await appWindow.listen<{ stream: string; line: string }>(
+      'terraform:stderr',
+      (event) => {
+        terraform.appendOutput({ stream: 'stderr', line: event.payload.line });
+      },
+    ),
+  );
+
+  let success = false;
+  try {
+    const result = await invoke<TerraformJsonResult>(
+      'terraform_apply_plan',
+      { projectPath: project.path },
+    );
+
+    terraform.setLastResult(result);
+    success = result.success;
+
+    if (!result.success) {
+      updateNodeErrorStatus(result);
+      for (const diag of result.diagnostics) {
+        if (diag.severity === 'error') {
+          terraform.appendError(`Error: ${diag.summary}`);
+          if (diag.detail) terraform.appendError(`  ${diag.detail}`);
+        }
+      }
+    }
+
+    terraform.setStatus(success ? 'success' : 'error');
+
+    if (success) {
+      plan.clear();
+      await refreshDeploymentStatus();
+    }
+
+    return success;
+  } catch (err) {
+    terraform.appendError(`Apply failed: ${err}`);
+    terraform.setStatus('error');
+    return false;
+  } finally {
+    for (const unlisten of unlisteners) unlisten();
+    if (terraform.isRunning) terraform.setStatus('error');
+    await setTaskbarProgress(success ? 'success' : 'error');
+    await notifyCompletion('apply', success);
+    setTimeout(() => setTaskbarProgress('none'), 2000);
   }
 }
 

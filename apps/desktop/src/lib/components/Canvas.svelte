@@ -1,10 +1,13 @@
 <script lang="ts">
   import { SvelteFlowProvider } from '@xyflow/svelte';
   import { diagram } from '$lib/stores/diagram.svelte';
+  import { plan } from '$lib/stores/plan.svelte';
   import { buildNodeTypes } from '$lib/bootstrap';
   import DnDFlow from './DnDFlow.svelte';
   import CanvasToolbar from './CanvasToolbar.svelte';
   import SelectionToolbar from './SelectionToolbar.svelte';
+  import PlanSummaryBanner from './PlanSummaryBanner.svelte';
+  import NodePlanDiff from './NodePlanDiff.svelte';
 
   const nodeTypes = buildNodeTypes();
 </script>
@@ -51,6 +54,10 @@
     diagram.addAnnotation({ x: 0, y: 0 });
     return;
   }
+  if (event.key === 'Escape') {
+    if (plan.diffNodeId) { plan.diffNodeId = null; return; }
+    if (plan.active) { plan.dismiss(); return; }
+  }
   if (event.key === 'Delete' || event.key === 'Backspace') {
     const hasSelected = diagram.nodes.some((n) => n.selected);
     if (hasSelected) {
@@ -67,6 +74,8 @@
     <CanvasToolbar />
     <SelectionToolbar />
   </SvelteFlowProvider>
+  <PlanSummaryBanner />
+  <NodePlanDiff />
 </div>
 
 <style>

@@ -113,6 +113,8 @@ pub fn run() {
             terraform::commands::terraform_plan,
             terraform::commands::terraform_apply,
             terraform::commands::terraform_destroy,
+            terraform::commands::terraform_plan_with_out,
+            terraform::commands::terraform_apply_plan,
             terraform::commands::terraform_show,
             terraform::commands::read_terraform_file,
             terraform::commands::list_terraform_files,

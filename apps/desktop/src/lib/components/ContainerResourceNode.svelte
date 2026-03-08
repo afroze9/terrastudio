@@ -5,6 +5,7 @@
   import { terraform } from '$lib/stores/terraform.svelte';
   import { ui } from '$lib/stores/ui.svelte';
   import { cost } from '$lib/stores/cost.svelte';
+  import { plan } from '$lib/stores/plan.svelte';
   import DeploymentBadge from './DeploymentBadge.svelte';
   import NodeTooltip from './NodeTooltip.svelte';
   import HandleWithLabel from './HandleWithLabel.svelte';
@@ -28,6 +29,9 @@
     const address = `${tfType}.${data.terraformName}`;
     return terraform.errorAddresses.get(address);
   });
+  // Plan review mode
+  let planAction = $derived(plan.active ? plan.getNodeAction(id) : undefined);
+
   // User position overrides for handles
   let handlePositions = $derived((data.handlePositions as Record<string, string>) ?? {});
 
@@ -333,6 +337,11 @@
   class:drop-valid={isValidDropTarget}
   class:drop-invalid={isInvalidDropTarget}
   class:has-validation-errors={hasValidationErrors && !isInvalidDropTarget && !isValidDropTarget}
+  class:plan-create={planAction === 'create'}
+  class:plan-update={planAction === 'update'}
+  class:plan-delete={planAction === 'delete'}
+  class:plan-replace={planAction === 'replace'}
+  class:plan-noop={planAction === 'no-op'}
   role="group"
   aria-label={`${data.label || schema?.displayName || 'Container'} (${schema?.terraformType ?? data.typeId})`}
   style="border-color: {isInvalidDropTarget ? '#ef4444' : isValidDropTarget ? '#22c55e' : hasValidationErrors ? '#ef4444' : selected ? '#3b82f6' : borderColor}; border-style: {useSvgBorder && !isInvalidDropTarget && !isValidDropTarget && !hasValidationErrors ? 'none' : isInvalidDropTarget || isValidDropTarget || hasValidationErrors ? 'solid' : borderStyle}; background: {isInvalidDropTarget ? 'rgba(239, 68, 68, 0.06)' : isValidDropTarget ? 'rgba(34, 197, 94, 0.06)' : hasValidationErrors ? 'rgba(239, 68, 68, 0.04)' : bg}; border-radius: {radius}px; border-width: {useSvgBorder && !isInvalidDropTarget && !isValidDropTarget && !hasValidationErrors ? 0 : isInvalidDropTarget || isValidDropTarget ? 2.5 : hasValidationErrors ? 2 : borderWidth}px;"
@@ -578,5 +587,43 @@
   :global(.connection-point-handle:hover) {
     background: #3b82f6 !important;
     transform: scale(1.3);
+  }
+
+  /* Plan review mode highlights (box-shadow doesn't conflict with inline border-color) */
+  .container-node.plan-create {
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.4), 0 0 16px rgba(34, 197, 94, 0.2);
+    animation: plan-pulse-create 2s ease-in-out 3;
+  }
+  .container-node.plan-update {
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.4), 0 0 16px rgba(245, 158, 11, 0.2);
+    animation: plan-pulse-update 2s ease-in-out 3;
+  }
+  .container-node.plan-delete {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.4), 0 0 16px rgba(239, 68, 68, 0.2);
+    animation: plan-pulse-delete 2s ease-in-out 3;
+  }
+  .container-node.plan-replace {
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.4), 0 0 16px rgba(249, 115, 22, 0.2);
+    animation: plan-pulse-replace 2s ease-in-out 3;
+  }
+  .container-node.plan-noop {
+    opacity: 0.6;
+  }
+
+  @keyframes plan-pulse-create {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.4), 0 0 16px rgba(34, 197, 94, 0.2); }
+    50% { box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.6), 0 0 28px rgba(34, 197, 94, 0.35); }
+  }
+  @keyframes plan-pulse-update {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.4), 0 0 16px rgba(245, 158, 11, 0.2); }
+    50% { box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.6), 0 0 28px rgba(245, 158, 11, 0.35); }
+  }
+  @keyframes plan-pulse-delete {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.4), 0 0 16px rgba(239, 68, 68, 0.2); }
+    50% { box-shadow: 0 0 0 5px rgba(239, 68, 68, 0.6), 0 0 28px rgba(239, 68, 68, 0.35); }
+  }
+  @keyframes plan-pulse-replace {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.4), 0 0 16px rgba(249, 115, 22, 0.2); }
+    50% { box-shadow: 0 0 0 5px rgba(249, 115, 22, 0.6), 0 0 28px rgba(249, 115, 22, 0.35); }
   }
 </style>

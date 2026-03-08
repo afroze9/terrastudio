@@ -508,7 +508,8 @@
     "dismiss": "Descartar",
     "connectionPlaceholder": "Haz una conexión en el lienzo para verla explicada aquí",
     "connectionHistory": "Historial de conexiones",
-    "clear": "Limpiar"
+    "clear": "Limpiar",
+    "plan": "Plan"
   },
   "problems": {
     "noProblems": "No se detectaron problemas",

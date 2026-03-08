@@ -508,7 +508,8 @@
     "dismiss": "Dismiss",
     "connectionPlaceholder": "Make a connection on the canvas to see it explained here",
     "connectionHistory": "Connection History",
-    "clear": "Clear"
+    "clear": "Clear",
+    "plan": "Plan"
   },
   "problems": {
     "noProblems": "No problems detected",

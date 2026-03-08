@@ -5,6 +5,7 @@
   import { terraform } from '$lib/stores/terraform.svelte';
   import { cost } from '$lib/stores/cost.svelte';
   import { ui } from '$lib/stores/ui.svelte';
+  import { plan } from '$lib/stores/plan.svelte';
   import DeploymentBadge from './DeploymentBadge.svelte';
   import NodeTooltip from './NodeTooltip.svelte';
   import HandleWithLabel from './HandleWithLabel.svelte';
@@ -29,6 +30,9 @@
     const address = `${tfType}.${data.terraformName}`;
     return terraform.errorAddresses.get(address);
   });
+  // Plan review mode
+  let planAction = $derived(plan.active ? plan.getNodeAction(id) : undefined);
+
   // User position overrides for handles
   let handlePositions = $derived((data.handlePositions as Record<string, string>) ?? {});
 
@@ -229,10 +233,16 @@
   class:selected
   class:compact={ui.compactNodes}
   class:has-validation-errors={hasValidationErrors}
+  class:plan-create={planAction === 'create'}
+  class:plan-update={planAction === 'update'}
+  class:plan-delete={planAction === 'delete'}
+  class:plan-replace={planAction === 'replace'}
+  class:plan-noop={planAction === 'no-op'}
   role="group"
   aria-label={`${data.label || schema?.displayName || 'Resource'} (${schema?.terraformType ?? data.typeId})`}
   onmouseenter={onMouseEnter}
   onmouseleave={onMouseLeave}
+  onclick={planAction ? () => { plan.diffNodeId = id; } : undefined}
   bind:this={nodeEl}
 >
   {#if ui.compactNodes}
@@ -562,5 +572,48 @@
   :global(.connection-point-handle:hover) {
     background: #3b82f6 !important;
     transform: scale(1.3);
+  }
+
+  /* Plan review mode highlights */
+  .resource-node.plan-create {
+    border-color: #22c55e;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3), 0 0 12px rgba(34, 197, 94, 0.15);
+    animation: plan-pulse-create 2s ease-in-out 3;
+  }
+  .resource-node.plan-update {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3), 0 0 12px rgba(245, 158, 11, 0.15);
+    animation: plan-pulse-update 2s ease-in-out 3;
+  }
+  .resource-node.plan-delete {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3), 0 0 12px rgba(239, 68, 68, 0.15);
+    animation: plan-pulse-delete 2s ease-in-out 3;
+  }
+  .resource-node.plan-replace {
+    border-color: #f97316;
+    box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.3), 0 0 12px rgba(249, 115, 22, 0.15);
+    animation: plan-pulse-replace 2s ease-in-out 3;
+  }
+  .resource-node.plan-noop {
+    border-color: #6b7280;
+    opacity: 0.6;
+  }
+
+  @keyframes plan-pulse-create {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3), 0 0 12px rgba(34, 197, 94, 0.15); }
+    50% { box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.5), 0 0 24px rgba(34, 197, 94, 0.3); }
+  }
+  @keyframes plan-pulse-update {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3), 0 0 12px rgba(245, 158, 11, 0.15); }
+    50% { box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.5), 0 0 24px rgba(245, 158, 11, 0.3); }
+  }
+  @keyframes plan-pulse-delete {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3), 0 0 12px rgba(239, 68, 68, 0.15); }
+    50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.5), 0 0 24px rgba(239, 68, 68, 0.3); }
+  }
+  @keyframes plan-pulse-replace {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.3), 0 0 12px rgba(249, 115, 22, 0.15); }
+    50% { box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.5), 0 0 24px rgba(249, 115, 22, 0.3); }
   }
 </style>

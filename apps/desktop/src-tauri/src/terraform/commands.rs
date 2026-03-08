@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use tauri::{command, AppHandle, WebviewWindow};
 
-use super::runner::{self, TerraformJsonResult};
+use super::runner::{self, TerraformJsonResult, TerraformPlanResult};
 use crate::security;
 
 /// Write generated .tf files to the project's terraform/ directory.
@@ -82,6 +82,23 @@ pub async fn terraform_apply(app: AppHandle, window: WebviewWindow, project_path
 pub async fn terraform_destroy(app: AppHandle, window: WebviewWindow, project_path: String) -> Result<TerraformJsonResult, String> {
     let terraform_dir = PathBuf::from(&project_path).join("terraform");
     runner::run_terraform_json(&app, window.label(), &terraform_dir, "destroy", &["-auto-approve"]).await
+}
+
+/// Run terraform plan with JSON output, saving plan to file for later apply.
+/// Returns extended result with full before/after property diffs.
+#[command]
+pub async fn terraform_plan_with_out(app: AppHandle, window: WebviewWindow, project_path: String) -> Result<TerraformPlanResult, String> {
+    let terraform_dir = PathBuf::from(&project_path).join("terraform");
+    runner::run_terraform_json_plan(&app, window.label(), &terraform_dir).await
+}
+
+/// Apply a previously saved plan file (`tfplan`).
+#[command]
+pub async fn terraform_apply_plan(app: AppHandle, window: WebviewWindow, project_path: String) -> Result<TerraformJsonResult, String> {
+    let terraform_dir = PathBuf::from(&project_path).join("terraform");
+    let plan_file = terraform_dir.join("tfplan");
+    let plan_path = plan_file.to_string_lossy().to_string();
+    runner::run_terraform_json(&app, window.label(), &terraform_dir, "apply", &[&plan_path]).await
 }
 
 /// Run terraform show -json to get the current state as JSON.

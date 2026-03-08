@@ -18,6 +18,7 @@
 	import { project } from '$lib/stores/project.svelte';
 	import { diagram } from '$lib/stores/diagram.svelte';
 	import { terraform } from '$lib/stores/terraform.svelte';
+	import { plan } from '$lib/stores/plan.svelte';
 	import { saveDiagram, openProject, guardUnsavedChanges, initWindowProject, initFileAssociationHandler } from '$lib/services/project-service';
 	import { destroyBridgeListener } from '$lib/mcp/bridge-listener';
 	import { initSettingsSync, destroySettingsSync } from '$lib/stores/settings-sync';
@@ -31,6 +32,7 @@
 			if (!(await guardUnsavedChanges())) return;
 			diagram.clear();
 			terraform.clear();
+			plan.clear();
 			ui.closeAllFileTabs();
 			project.close();
 			const win = getCurrentWindow();
