@@ -45,15 +45,17 @@ function generateSmartLabel(label: string, existingLabels: Set<string>): string 
   if (numMatch) {
     const stem = numMatch[1];
     const sep = numMatch[2];
+    const digits = numMatch[3];
+    const padWidth = digits.length;
     const escapedStem = stem.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const escapedSep = sep.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const siblingPattern = new RegExp(`^${escapedStem}${escapedSep}(\\d+)$`);
-    let max = parseInt(numMatch[3], 10);
+    let max = parseInt(digits, 10);
     for (const existing of existingLabels) {
       const m = existing.match(siblingPattern);
       if (m) max = Math.max(max, parseInt(m[1], 10));
     }
-    return `${stem}${sep}${max + 1}`;
+    return `${stem}${sep}${String(max + 1).padStart(padWidth, '0')}`;
   }
 
   // No numeric suffix — scan for existing siblings with any separator
@@ -764,13 +766,21 @@ class DiagramStore {
     });
     if (realIds.length === 0) return;
 
-    // Expand to include children
+    // Expand to include children (excluding synthetic/annotation nodes)
     const idSet = new Set(realIds);
     let changed = true;
     while (changed) {
       changed = false;
       for (const n of this.nodes) {
-        if (n.parentId && idSet.has(n.parentId as string) && !idSet.has(n.id)) {
+        if (
+          n.parentId &&
+          idSet.has(n.parentId as string) &&
+          !idSet.has(n.id) &&
+          !n.id.startsWith('_mod_') &&
+          !n.id.startsWith('_modinst_') &&
+          !n.id.startsWith('_instmem_') &&
+          n.type !== '_annotation_'
+        ) {
           idSet.add(n.id);
           changed = true;
         }
@@ -778,8 +788,8 @@ class DiagramStore {
     }
 
     // Build working sets for collision detection
-    const existingLabels = new Set(this.nodes.map((n) => n.data.label as string));
-    const existingTfNames = new Set(this.nodes.map((n) => n.data.terraformName as string));
+    const existingLabels = new Set(this.nodes.map((n) => (n.data.label as string) ?? '').filter(Boolean));
+    const existingTfNames = new Set(this.nodes.map((n) => (n.data.terraformName as string) ?? '').filter(Boolean));
     const oldToNew = new Map<string, string>();
 
     // Assign new IDs upfront
@@ -816,6 +826,12 @@ class DiagramStore {
         $state.snapshot(node) as unknown,
       ) as DiagramNode;
 
+      // Update the resource name property to match the new label
+      const newProperties = { ...cloned.data.properties };
+      if ('name' in newProperties) {
+        newProperties['name'] = newLabel;
+      }
+
       const newNode: DiagramNode = {
         ...cloned,
         id: newId,
@@ -828,6 +844,7 @@ class DiagramStore {
           ...cloned.data,
           label: newLabel,
           terraformName: newTfName,
+          properties: newProperties,
           references: newReferences,
           validationErrors: [],
           deploymentStatus: undefined,
