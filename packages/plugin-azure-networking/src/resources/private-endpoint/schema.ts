@@ -104,4 +104,6 @@ export const privateEndpointSchema: ResourceSchema = {
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
     { key: 'private_ip_address', label: 'Private IP', terraformAttribute: 'private_service_connection.0.private_ip_address' },
   ],
+
+  costEstimation: { serviceName: 'Private Link', staticMonthlyCost: 0 },
 };

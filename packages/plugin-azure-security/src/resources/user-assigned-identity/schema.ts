@@ -42,4 +42,6 @@ export const userAssignedIdentitySchema: ResourceSchema = {
     { key: 'client_id', label: 'Client ID', terraformAttribute: 'client_id' },
     { key: 'tenant_id', label: 'Tenant ID', terraformAttribute: 'tenant_id' },
   ],
+
+  costEstimation: { serviceName: 'Managed Identity', staticMonthlyCost: 0 },
 };

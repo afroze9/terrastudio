@@ -60,4 +60,9 @@ export const postgresqlFlexibleServerDatabaseSchema: ResourceSchema = {
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
   ],
+
+  costEstimation: {
+    serviceName: 'Azure Database for PostgreSQL',
+    staticMonthlyCost: 0,
+  },
 };

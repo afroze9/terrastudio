@@ -60,4 +60,9 @@ export const staticWebAppSchema: ResourceSchema = {
 		{ key: 'default_host_name', label: 'Default Hostname', terraformAttribute: 'default_host_name' },
 		{ key: 'api_key', label: 'API Key', terraformAttribute: 'api_key', sensitive: true },
 	],
+
+	costEstimation: {
+		serviceName: 'Static Web Apps',
+		skuProperty: 'sku_name',
+	},
 };

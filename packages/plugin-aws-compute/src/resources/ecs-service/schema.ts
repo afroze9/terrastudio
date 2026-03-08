@@ -78,4 +78,9 @@ export const ecsServiceSchema: ResourceSchema = {
     { key: 'id', label: 'Service ID', terraformAttribute: 'id' },
     { key: 'name', label: 'Service Name', terraformAttribute: 'name' },
   ],
+
+  costEstimation: {
+    serviceName: 'Amazon ECS',
+    staticMonthlyCost: 0,
+  },
 };

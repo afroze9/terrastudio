@@ -5,6 +5,7 @@ import { describeHclGenerator } from './hcl-checks.js';
 import { describeConnectionRules } from './connection-checks.js';
 import { describePaletteCategories } from './palette-checks.js';
 import { describePluginIntegration } from './integration-checks.js';
+import { describeCostEstimation } from './cost-checks.js';
 
 /**
  * Run the full conformance test suite for a plugin.
@@ -23,6 +24,7 @@ export function testPlugin(plugin: InfraPlugin): void {
     for (const [typeId, registration] of plugin.resourceTypes) {
       describeSchemaConformance(typeId, registration);
       describeHclGenerator(typeId, registration);
+      describeCostEstimation(typeId, registration);
     }
 
     // Plugin-wide checks

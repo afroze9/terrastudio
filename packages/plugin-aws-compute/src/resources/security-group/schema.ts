@@ -178,4 +178,9 @@ export const securityGroupSchema: ResourceSchema = {
     { key: 'arn', label: 'ARN', terraformAttribute: 'arn' },
     { key: 'name', label: 'Name', terraformAttribute: 'name' },
   ],
+
+  costEstimation: {
+    serviceName: 'Amazon VPC',
+    staticMonthlyCost: 0,
+  },
 };

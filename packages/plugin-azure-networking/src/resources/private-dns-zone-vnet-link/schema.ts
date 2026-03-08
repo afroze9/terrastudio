@@ -70,4 +70,6 @@ export const privateDnsZoneVnetLinkSchema: ResourceSchema = {
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
   ],
+
+  costEstimation: { serviceName: 'Private DNS', staticMonthlyCost: 0 },
 };

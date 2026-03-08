@@ -50,4 +50,9 @@ export const cosmosdbSqlDatabaseSchema: ResourceSchema = {
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
   ],
+
+  costEstimation: {
+    serviceName: 'Azure Cosmos DB',
+    staticMonthlyCost: 0,
+  },
 };

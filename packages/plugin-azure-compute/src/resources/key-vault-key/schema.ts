@@ -90,4 +90,9 @@ export const keyVaultKeySchema: ResourceSchema = {
     { key: 'version', label: 'Version', terraformAttribute: 'version' },
     { key: 'versionless_id', label: 'Versionless ID', terraformAttribute: 'versionless_id' },
   ],
+
+  costEstimation: {
+    serviceName: 'Key Vault',
+    staticMonthlyCost: 0,
+  },
 };

@@ -70,4 +70,9 @@ export const resourceGroupSchema: ResourceSchema = {
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
   ],
+
+  costEstimation: {
+    serviceName: 'Resource Group',
+    staticMonthlyCost: 0,
+  },
 };

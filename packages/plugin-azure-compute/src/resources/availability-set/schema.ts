@@ -78,4 +78,9 @@ export const availabilitySetSchema: ResourceSchema = {
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
   ],
+
+  costEstimation: {
+    serviceName: 'Availability Set',
+    staticMonthlyCost: 0,
+  },
 };

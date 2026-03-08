@@ -59,4 +59,9 @@ export const subscriptionSchema: ResourceSchema = {
       terraformAttribute: 'subscription_id',
     },
   ],
+
+  costEstimation: {
+    serviceName: 'Subscription',
+    staticMonthlyCost: 0,
+  },
 };

@@ -83,4 +83,9 @@ export const cdnEndpointSchema: ResourceSchema = {
     { key: 'fqdn', label: 'FQDN', terraformAttribute: 'fqdn' },
     { key: 'host_name', label: 'Host Name', terraformAttribute: 'host_name' },
   ],
+
+  costEstimation: {
+    serviceName: 'Content Delivery Network',
+    staticMonthlyCost: 0,
+  },
 };

@@ -28,4 +28,12 @@ export const containerAppSchema: ResourceSchema = {
     { key: 'latest_revision_fqdn', label: 'Latest Revision FQDN', terraformAttribute: 'latest_revision_fqdn' },
     { key: 'outbound_ip_addresses', label: 'Outbound IPs', terraformAttribute: 'outbound_ip_addresses' },
   ],
+
+  costEstimation: {
+    serviceName: 'Container Apps',
+    usageInputs: [
+      { key: '_cost_vcpu', label: 'vCPU Allocation', unit: 'vCPU', defaultValue: 0.5, min: 0.25, max: 4 },
+      { key: '_cost_memory_gb', label: 'Memory', unit: 'GB', defaultValue: 1, min: 0.5, max: 8 },
+    ],
+  },
 };

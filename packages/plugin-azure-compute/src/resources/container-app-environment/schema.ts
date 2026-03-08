@@ -38,4 +38,9 @@ export const containerAppEnvironmentSchema: ResourceSchema = {
     { key: 'default_domain', label: 'Default Domain', terraformAttribute: 'default_domain' },
     { key: 'static_ip_address', label: 'Static IP', terraformAttribute: 'static_ip_address' },
   ],
+
+  costEstimation: {
+    serviceName: 'Container Apps',
+    skuProperty: 'sku_name',
+  },
 };

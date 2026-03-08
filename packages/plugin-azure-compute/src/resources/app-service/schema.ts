@@ -120,4 +120,9 @@ export const appServiceSchema: ResourceSchema = {
     { key: 'default_hostname', label: 'Default Hostname', terraformAttribute: 'default_hostname' },
     { key: 'outbound_ip_addresses', label: 'Outbound IPs', terraformAttribute: 'outbound_ip_addresses' },
   ],
+
+  costEstimation: {
+    serviceName: 'Azure App Service',
+    staticMonthlyCost: 0,
+  },
 };

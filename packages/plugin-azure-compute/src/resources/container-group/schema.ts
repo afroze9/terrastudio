@@ -29,4 +29,12 @@ export const containerGroupSchema: ResourceSchema = {
     { key: 'ip_address', label: 'IP Address', terraformAttribute: 'ip_address' },
     { key: 'fqdn', label: 'FQDN', terraformAttribute: 'fqdn' },
   ],
+
+  costEstimation: {
+    serviceName: 'Container Instances',
+    usageInputs: [
+      { key: '_cost_vcpu', label: 'vCPU', unit: 'vCPU', defaultValue: 1, min: 0.25, max: 4 },
+      { key: '_cost_memory_gb', label: 'Memory', unit: 'GB', defaultValue: 1.5, min: 0.5, max: 16 },
+    ],
+  },
 };

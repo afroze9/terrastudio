@@ -67,4 +67,9 @@ export const eventhubSchema: ResourceSchema = {
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
   ],
+
+  costEstimation: {
+    serviceName: 'Event Hubs',
+    staticMonthlyCost: 0,
+  },
 };

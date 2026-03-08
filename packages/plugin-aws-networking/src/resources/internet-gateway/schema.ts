@@ -43,4 +43,6 @@ export const internetGatewaySchema: ResourceSchema = {
     { key: 'id', label: 'Gateway ID', terraformAttribute: 'id' },
     { key: 'arn', label: 'ARN', terraformAttribute: 'arn' },
   ],
+
+  costEstimation: { serviceName: 'Amazon VPC', staticMonthlyCost: 0 },
 };

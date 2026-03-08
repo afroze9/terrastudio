@@ -137,4 +137,9 @@ export const kubernetesClusterNodePoolSchema: ResourceSchema = {
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
   ],
+
+  costEstimation: {
+    serviceName: 'Azure Kubernetes Service',
+    skuProperty: 'vm_size',
+  },
 };

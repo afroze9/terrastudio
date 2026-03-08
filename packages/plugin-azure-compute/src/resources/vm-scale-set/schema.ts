@@ -61,4 +61,9 @@ export const vmScaleSetSchema: ResourceSchema = {
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
     { key: 'unique_id', label: 'Unique ID', terraformAttribute: 'unique_id' },
   ],
+
+  costEstimation: {
+    serviceName: 'Virtual Machines',
+    skuProperty: 'sku_name',
+  },
 };

@@ -81,4 +81,9 @@ export const fileShareSchema: ResourceSchema = {
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
     { key: 'url', label: 'URL', terraformAttribute: 'url' },
   ],
+
+  costEstimation: {
+    serviceName: 'Storage',
+    staticMonthlyCost: 0,
+  },
 };

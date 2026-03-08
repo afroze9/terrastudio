@@ -123,4 +123,9 @@ export const signalrServiceSchema: ResourceSchema = {
 			sensitive: true,
 		},
 	],
+
+	costEstimation: {
+		serviceName: 'SignalR Service',
+		skuProperty: 'sku_name',
+	},
 };

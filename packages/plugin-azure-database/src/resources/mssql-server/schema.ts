@@ -134,4 +134,9 @@ export const mssqlServerSchema: ResourceSchema = {
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
     { key: 'fully_qualified_domain_name', label: 'FQDN', terraformAttribute: 'fully_qualified_domain_name' },
   ],
+
+  costEstimation: {
+    serviceName: 'SQL Database',
+    staticMonthlyCost: 0,
+  },
 };

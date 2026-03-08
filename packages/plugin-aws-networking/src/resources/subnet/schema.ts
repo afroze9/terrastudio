@@ -115,4 +115,6 @@ export const subnetSchema: ResourceSchema = {
     { key: 'arn', label: 'ARN', terraformAttribute: 'arn' },
     { key: 'availability_zone', label: 'Availability Zone', terraformAttribute: 'availability_zone' },
   ],
+
+  costEstimation: { serviceName: 'Amazon VPC', staticMonthlyCost: 0 },
 };

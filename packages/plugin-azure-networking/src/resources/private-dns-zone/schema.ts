@@ -41,4 +41,6 @@ export const privateDnsZoneSchema: ResourceSchema = {
     { key: 'number_of_record_sets', label: 'Record Set Count', terraformAttribute: 'number_of_record_sets' },
     { key: 'max_number_of_record_sets', label: 'Max Record Sets', terraformAttribute: 'max_number_of_record_sets' },
   ],
+
+  costEstimation: { serviceName: 'Private DNS', staticMonthlyCost: 0 },
 };

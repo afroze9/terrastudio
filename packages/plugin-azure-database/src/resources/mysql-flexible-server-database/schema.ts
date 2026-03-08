@@ -66,4 +66,9 @@ export const mysqlFlexibleServerDatabaseSchema: ResourceSchema = {
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
   ],
+
+  costEstimation: {
+    serviceName: 'Azure Database for MySQL',
+    staticMonthlyCost: 0,
+  },
 };

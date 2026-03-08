@@ -117,4 +117,9 @@ export const eventhubNamespaceSchema: ResourceSchema = {
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
     { key: 'default_primary_connection_string', label: 'Primary Connection String', terraformAttribute: 'default_primary_connection_string', sensitive: true },
   ],
+
+  costEstimation: {
+    serviceName: 'Event Hubs',
+    skuProperty: 'sku',
+  },
 };

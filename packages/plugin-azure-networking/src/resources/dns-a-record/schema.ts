@@ -38,4 +38,6 @@ export const dnsARecordSchema: ResourceSchema = {
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
     { key: 'fqdn', label: 'FQDN', terraformAttribute: 'fqdn' },
   ],
+
+  costEstimation: { serviceName: 'DNS', staticMonthlyCost: 0 },
 };

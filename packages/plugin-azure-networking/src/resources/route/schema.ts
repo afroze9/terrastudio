@@ -76,4 +76,6 @@ export const routeSchema: ResourceSchema = {
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
   ],
+
+  costEstimation: { serviceName: 'Route Table', staticMonthlyCost: 0 },
 };

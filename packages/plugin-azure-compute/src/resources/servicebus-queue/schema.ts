@@ -91,4 +91,9 @@ export const serviceBusQueueSchema: ResourceSchema = {
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
   ],
+
+  costEstimation: {
+    serviceName: 'Service Bus',
+    staticMonthlyCost: 0,
+  },
 };

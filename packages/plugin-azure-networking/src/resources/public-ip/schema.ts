@@ -102,4 +102,6 @@ export const publicIpSchema: ResourceSchema = {
     { key: 'ip_address', label: 'IP Address', terraformAttribute: 'ip_address' },
     { key: 'fqdn', label: 'FQDN', terraformAttribute: 'fqdn' },
   ],
+
+  costEstimation: { serviceName: 'Public IP Addresses', skuProperty: 'sku' },
 };

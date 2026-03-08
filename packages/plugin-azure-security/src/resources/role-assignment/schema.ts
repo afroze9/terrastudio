@@ -73,4 +73,6 @@ export const roleAssignmentSchema: ResourceSchema = {
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
   ],
+
+  costEstimation: { serviceName: 'Role Assignment', staticMonthlyCost: 0 },
 };

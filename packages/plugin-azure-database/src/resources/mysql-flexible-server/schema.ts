@@ -151,4 +151,9 @@ export const mysqlFlexibleServerSchema: ResourceSchema = {
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
     { key: 'fqdn', label: 'Fully Qualified Domain Name', terraformAttribute: 'fqdn' },
   ],
+
+  costEstimation: {
+    serviceName: 'Azure Database for MySQL',
+    skuProperty: 'sku_name',
+  },
 };

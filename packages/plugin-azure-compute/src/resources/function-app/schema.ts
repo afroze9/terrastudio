@@ -127,4 +127,9 @@ export const functionAppSchema: ResourceSchema = {
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
     { key: 'default_hostname', label: 'Default Hostname', terraformAttribute: 'default_hostname' },
   ],
+
+  costEstimation: {
+    serviceName: 'Azure App Service',
+    staticMonthlyCost: 0,
+  },
 };

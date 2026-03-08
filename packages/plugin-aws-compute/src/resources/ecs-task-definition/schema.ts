@@ -113,4 +113,9 @@ export const ecsTaskDefinitionSchema: ResourceSchema = {
     { key: 'arn', label: 'ARN', terraformAttribute: 'arn' },
     { key: 'revision', label: 'Revision', terraformAttribute: 'revision' },
   ],
+
+  costEstimation: {
+    serviceName: 'Amazon ECS',
+    staticMonthlyCost: 0,
+  },
 };

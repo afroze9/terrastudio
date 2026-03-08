@@ -50,4 +50,6 @@ export const routeTableSchema: ResourceSchema = {
     { key: 'id', label: 'Route Table ID', terraformAttribute: 'id' },
     { key: 'arn', label: 'ARN', terraformAttribute: 'arn' },
   ],
+
+  costEstimation: { serviceName: 'Amazon VPC', staticMonthlyCost: 0 },
 };

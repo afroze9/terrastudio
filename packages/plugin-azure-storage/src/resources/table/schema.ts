@@ -40,4 +40,9 @@ export const tableSchema: ResourceSchema = {
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
   ],
+
+  costEstimation: {
+    serviceName: 'Storage',
+    staticMonthlyCost: 0,
+  },
 };

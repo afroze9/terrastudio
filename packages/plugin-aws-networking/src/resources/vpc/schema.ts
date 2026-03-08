@@ -92,4 +92,6 @@ export const vpcSchema: ResourceSchema = {
     { key: 'cidr_block', label: 'CIDR Block', terraformAttribute: 'cidr_block' },
     { key: 'default_security_group_id', label: 'Default Security Group ID', terraformAttribute: 'default_security_group_id' },
   ],
+
+  costEstimation: { serviceName: 'Amazon VPC', staticMonthlyCost: 0 },
 };
