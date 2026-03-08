@@ -9,7 +9,7 @@
     "directory": "apps/desktop"
   },
   "private": true,
-  "version": "0.38.0",
+  "version": "0.38.1",
   "type": "module",
   "scripts": {
     "dev": "vite dev",
