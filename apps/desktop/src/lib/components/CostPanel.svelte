@@ -169,13 +169,15 @@
       }
     }
 
-    // Add template instances as separate groups
+    // Add template instances as separate groups, and track which templates have instances
+    const templatesWithInstances = new Set<string>();
     for (const instance of diagram.moduleInstances) {
       const template = diagram.modules.find((m) => m.id === instance.templateId);
       if (!template) continue;
       // Instance cost = same as template members' cost (shared estimates)
       const templateGroup = groupMap.get(instance.templateId);
       if (templateGroup && templateGroup.members.length > 0) {
+        templatesWithInstances.add(instance.templateId);
         groupMap.set(instance.id, {
           label: instance.name,
           members: [...templateGroup.members], // Share same estimates
@@ -183,6 +185,11 @@
           templateName: template.name,
         });
       }
+    }
+
+    // Remove template groups that have instances (avoid double-counting)
+    for (const templateId of templatesWithInstances) {
+      groupMap.delete(templateId);
     }
 
     const result: CostGroup[] = [];
