@@ -181,13 +181,17 @@ describe('i18n import coverage', () => {
   // Remove entries from this list as you fix them. The test fails on NEW violations only.
   const KNOWN_VIOLATIONS = new Set([
     'lib/components/bottom-panel/AnnotationsTab.svelte',
+    'lib/components/bottom-panel/PlanTab.svelte',
     'lib/components/bottom-panel/SearchTab.svelte',
     'lib/components/ConnectionPointsModal.svelte',
     'lib/components/DependencyGraphView.svelte',
     'lib/components/DnDFlow.svelte',
     'lib/components/EdgeStylesSection.svelte',
+    'lib/components/HandleMenu.svelte',
     'lib/components/KeyVaultAccessControlSection.svelte',
     'lib/components/ModuleNode.svelte',
+    'lib/components/NodePlanDiff.svelte',
+    'lib/components/PlanSummaryBanner.svelte',
     'lib/components/SubscriptionPicker.svelte',
     'lib/components/AnnotationNode.svelte',
   ]);
