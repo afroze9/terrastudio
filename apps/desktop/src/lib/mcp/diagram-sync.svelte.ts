@@ -37,7 +37,7 @@ export function initDiagramSync(): void {
       // Access reactive state to establish dependency tracking.
       // Filter out transient instance-member clones — they're visual-only and shouldn't
       // be exposed to MCP consumers.
-      const nodes = diagram.nodes.filter((n) => !n.id.startsWith('_instmem_'));
+      const nodes = diagram.nodes.filter((n) => !n.id.startsWith('_instmem_') && n.type !== '_annotation_');
       const edges = diagram.edges.filter((e) => !e.id.startsWith('_instmem_'));
       const modules = diagram.modules;
       const moduleInstances = diagram.moduleInstances;

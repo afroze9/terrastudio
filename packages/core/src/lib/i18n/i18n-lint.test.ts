@@ -189,6 +189,7 @@ describe('i18n import coverage', () => {
     'lib/components/KeyVaultAccessControlSection.svelte',
     'lib/components/ModuleNode.svelte',
     'lib/components/SubscriptionPicker.svelte',
+    'lib/components/AnnotationNode.svelte',
   ]);
 
   // Collect files that have hardcoded strings but don't import t()

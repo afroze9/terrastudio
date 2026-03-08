@@ -45,6 +45,12 @@
     if (ids.length > 0) { diagram.copyNodes(ids); diagram.pasteNodes(); }
     return;
   }
+  if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'A') {
+    event.preventDefault();
+    // Add annotation at center of viewport — DnDFlow handles precise placement
+    diagram.addAnnotation({ x: 0, y: 0 });
+    return;
+  }
   if (event.key === 'Delete' || event.key === 'Backspace') {
     const hasSelected = diagram.nodes.some((n) => n.selected);
     if (hasSelected) {
