@@ -163,6 +163,12 @@ For each new resource, create these files in the plugin's `src/resources/{resour
 
 Then register it in the plugin's `src/index.ts` resourceTypes Map and add its category to `paletteCategories` if new.
 
+### 8. Icons
+Official Azure/AWS icon SVGs are available in `temp/azure/` and `temp/aws/`, organized by category (networking, compute, integration, etc.). **Always check these directories first** for an official icon before creating a custom one. When using an official SVG:
+- Replace long UUID-style gradient/element IDs with short unique prefixes (e.g., `fw-a`, `vpng-a`, `agw-a`) to avoid DOM conflicts when multiple icons render on the same page.
+- Remove unnecessary `<title>` elements and outer `id` attributes from the root `<svg>`.
+- Keep `width="18" height="18" viewBox="0 0 18 18"` as-is — these icons are designed at 18×18.
+
 ## Git Workflow & Versioning
 
 ### Commit Strategy

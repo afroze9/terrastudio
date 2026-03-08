@@ -159,6 +159,14 @@ function deriveParentReferences(
       references['_resource_group'] = rgNode.id;
     }
   }
+
+  // Walk up the hierarchy to find enclosing Subscription container
+  if (!references['_subscription']) {
+    const subNode = findAncestorSubscription(childNode, allNodes);
+    if (subNode) {
+      references['_subscription'] = subNode.id;
+    }
+  }
 }
 
 /**
@@ -173,6 +181,25 @@ function findAncestorResourceGroup(
     const parent = allNodes.find((n) => n.id === current!.parentId);
     if (!parent) break;
     if (parent.data.typeId === 'azurerm/core/resource_group') {
+      return parent;
+    }
+    current = parent;
+  }
+  return undefined;
+}
+
+/**
+ * Walk up the parent chain to find an enclosing Subscription container.
+ */
+function findAncestorSubscription(
+  node: DiagramNode,
+  allNodes: DiagramNode[],
+): DiagramNode | undefined {
+  let current: DiagramNode | undefined = node;
+  while (current?.parentId) {
+    const parent = allNodes.find((n) => n.id === current!.parentId);
+    if (!parent) break;
+    if (parent.data.typeId === 'azurerm/core/subscription') {
       return parent;
     }
     current = parent;

@@ -11,6 +11,9 @@ import { routeTableRegistration } from './resources/route-table/index.js';
 import { routeRegistration } from './resources/route/index.js';
 import { natGatewayRegistration } from './resources/nat-gateway/index.js';
 import { bastionRegistration } from './resources/bastion/index.js';
+import { firewallRegistration } from './resources/firewall/index.js';
+import { vpnGatewayRegistration } from './resources/vpn-gateway/index.js';
+import { applicationGatewayRegistration } from './resources/application-gateway/index.js';
 import { loadBalancerRegistration } from './resources/load-balancer/index.js';
 import { dnsZoneRegistration } from './resources/dns-zone/index.js';
 import { dnsARecordRegistration } from './resources/dns-a-record/index.js';
@@ -29,6 +32,9 @@ const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
   ['azurerm/networking/route', routeRegistration],
   ['azurerm/networking/nat_gateway', natGatewayRegistration],
   ['azurerm/networking/bastion_host', bastionRegistration],
+  ['azurerm/networking/firewall', firewallRegistration],
+  ['azurerm/networking/virtual_network_gateway', vpnGatewayRegistration],
+  ['azurerm/networking/application_gateway', applicationGatewayRegistration],
   ['azurerm/networking/load_balancer', loadBalancerRegistration],
   ['azurerm/dns/dns_zone', dnsZoneRegistration],
   ['azurerm/dns/dns_a_record', dnsARecordRegistration],

@@ -227,6 +227,20 @@ export async function generateAndWrite(): Promise<Record<string, string>> {
       moduleInstances: diagram.moduleInstances,
     });
 
+    // Check for pipeline-level validation errors (e.g. multi-subscription orphan resources)
+    if (result.errors && result.errors.length > 0) {
+      const errorDetails: string[] = [];
+      for (const pipelineError of result.errors) {
+        terraform.appendError(pipelineError.message);
+        errorDetails.push(pipelineError.message);
+      }
+      terraform.appendError('HCL generation blocked by validation errors. Fix issues and try again.');
+      terraform.setStatus('error');
+      const err = new Error('HCL pipeline validation failed');
+      (err as any).validationErrors = errorDetails;
+      throw err;
+    }
+
     // Store collected variables for UI display
     terraform.collectedVariables = result.collectedVariables;
 

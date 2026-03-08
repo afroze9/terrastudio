@@ -61,6 +61,8 @@ export interface HclBlock {
   readonly name?: string;
   readonly content: string;
   readonly dependsOn?: string[];
+  /** Provider alias for multi-subscription support (e.g. "sub_prod"). When set, `provider = azurerm.<alias>` is injected into the HCL content. */
+  readonly providerAlias?: string;
 }
 
 export interface TerraformVariable {

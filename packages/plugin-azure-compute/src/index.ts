@@ -26,6 +26,7 @@ import { availabilitySetRegistration } from './resources/availability-set/index.
 import { vmScaleSetRegistration } from './resources/vm-scale-set/index.js';
 import { staticWebAppRegistration } from './resources/static-web-app/index.js';
 import { signalrServiceRegistration } from './resources/signalr-service/index.js';
+import { apiManagementRegistration } from './resources/api-management/index.js';
 import { computeConnectionRules } from './connections/rules.js';
 import { keyVaultSecretBinding } from './bindings/keyvault-secret.js';
 
@@ -57,6 +58,7 @@ const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
   ['azurerm/compute/virtual_machine_scale_set', vmScaleSetRegistration],
   ['azurerm/web/static_web_app', staticWebAppRegistration],
   ['azurerm/web/signalr_service', signalrServiceRegistration],
+  ['azurerm/integration/api_management', apiManagementRegistration],
 ]);
 
 const plugin: InfraPlugin = {
@@ -99,6 +101,11 @@ const plugin: InfraPlugin = {
       id: 'web',
       label: 'Web',
       order: 45,
+    },
+    {
+      id: 'integration',
+      label: 'Integration',
+      order: 47,
     },
   ],
 };

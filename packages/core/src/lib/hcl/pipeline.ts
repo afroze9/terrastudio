@@ -15,7 +15,7 @@ import type {
 import type { PluginRegistry } from '../registry/plugin-registry.js';
 import { DependencyGraph } from './dependency-graph.js';
 import { VariableCollector, OutputCollector } from './variable-collector.js';
-import { ProviderConfigBuilder } from './provider-config-builder.js';
+import { ProviderConfigBuilder, sanitizeProviderAlias } from './provider-config-builder.js';
 import { HclBlockBuilder, type GeneratedFiles } from './block-builder.js';
 import { ModuleHclContext } from './module-context.js';
 import { escapeHclString } from './escape.js';
@@ -53,6 +53,13 @@ export interface PipelineInput {
 export interface PipelineResult {
   files: GeneratedFiles;
   collectedVariables: TerraformVariable[];
+  errors?: PipelineValidationError[];
+}
+
+export interface PipelineValidationError {
+  code: string;
+  message: string;
+  resourceNames?: string[];
 }
 
 /**
@@ -73,13 +80,29 @@ export class HclPipeline {
       resourceMap.set(resource.instanceId, resource);
     }
 
-    // 1b. Extract subscription_id from canvas Subscription node (if present)
-    let subscriptionId: string | undefined;
-    const subscriptionNode = resources.find(
+    // 1b. Collect all subscription nodes
+    const subscriptionNodes = resources.filter(
       (r) => r.typeId === 'azurerm/core/subscription',
     );
-    if (subscriptionNode) {
-      subscriptionId = subscriptionNode.properties['subscription_id'] as string;
+    const isMultiSubscription = subscriptionNodes.length > 1;
+
+    // For single-subscription backward compat: extract subscription_id
+    let subscriptionId: string | undefined;
+    if (subscriptionNodes.length === 1) {
+      subscriptionId = subscriptionNodes[0]!.properties['subscription_id'] as string;
+    }
+
+    // Build subscription alias map for multi-subscription
+    const subscriptionAliasMap = new Map<string, string>(); // nodeId → alias
+    const subscriptionConfigMap = new Map<string, string>(); // alias → subscription_id
+    if (isMultiSubscription) {
+      for (const sub of subscriptionNodes) {
+        const displayName = (sub.properties['display_name'] as string) || sub.terraformName;
+        const subId = sub.properties['subscription_id'] as string;
+        const alias = sanitizeProviderAlias(displayName);
+        subscriptionAliasMap.set(sub.instanceId, alias);
+        subscriptionConfigMap.set(alias, subId);
+      }
     }
 
     // 1c. Filter out virtual resources (no real Terraform resource)
@@ -114,9 +137,30 @@ export class HclPipeline {
       }
     }
 
+    // 2c. Multi-subscription validation: ensure all resources have a subscription ancestor
+    if (isMultiSubscription) {
+      const orphans = realResources.filter((r) => {
+        // Skip resource groups — they get their subscription from their own ancestry
+        // but we check all real resources that will generate HCL
+        return !r.references['_subscription'];
+      });
+      if (orphans.length > 0) {
+        const orphanNames = orphans.map((r) => r.terraformName);
+        return {
+          files: {} as GeneratedFiles,
+          collectedVariables: [],
+          errors: [{
+            code: 'MULTI_SUB_ORPHAN_RESOURCES',
+            message: `Multiple subscriptions detected but the following resources are not placed inside any subscription: ${orphanNames.join(', ')}. Place all resources under a subscription container.`,
+            resourceNames: orphanNames,
+          }],
+        };
+      }
+    }
+
     // If no modules with resources, run the original non-module path (unchanged behavior)
     if (moduleResourceMap.size === 0) {
-      return this.generateFlat(input, realResources, resourceMap, addressMap, subscriptionId);
+      return this.generateFlat(input, realResources, resourceMap, addressMap, subscriptionId, subscriptionAliasMap, subscriptionConfigMap);
     }
 
     // ── Module-aware generation ────────────────────────────────────
@@ -336,11 +380,18 @@ export class HclPipeline {
       }
     }
 
-    // 8. Topological sort root blocks
+    // 8. Multi-subscription: tag root blocks with providerAlias
+    if (isMultiSubscription) {
+      const injected = this.injectProviderAliases(rootBlocks, resourceMap, subscriptionAliasMap);
+      rootBlocks.length = 0;
+      rootBlocks.push(...injected);
+    }
+
+    // 8b. Topological sort root blocks
     const depGraph = new DependencyGraph(rootBlocks);
     const sortedBlocks = depGraph.topologicalSort();
 
-    // 8. Build provider configs
+    // 9. Build provider configs
     const providerBuilder = new ProviderConfigBuilder();
     const activeProviders = this.getActiveProviders(realResources);
 
@@ -352,6 +403,17 @@ export class HclPipeline {
           userConfig['subscription_id'] = subscriptionId;
         }
         providerBuilder.addProvider(providerConfig, userConfig);
+      }
+    }
+
+    // Register aliased providers for multi-subscription
+    if (isMultiSubscription) {
+      for (const [alias, subId] of subscriptionConfigMap) {
+        providerBuilder.addAliasedProvider({
+          providerType: 'azurerm',
+          alias,
+          config: { subscription_id: subId },
+        });
       }
     }
 
@@ -408,6 +470,8 @@ export class HclPipeline {
     resourceMap: Map<string, ResourceInstance>,
     addressMap: Map<string, string>,
     subscriptionId: string | undefined,
+    subscriptionAliasMap?: Map<string, string>,
+    subscriptionConfigMap?: Map<string, string>,
   ): PipelineResult {
     const { projectConfig } = input;
     const variableCollector = new VariableCollector();
@@ -415,7 +479,13 @@ export class HclPipeline {
 
     const context = this.createRootContext(resourceMap, addressMap, variableCollector, outputCollector, projectConfig);
 
-    const allBlocks = this.generateResourceBlocks(realResources, resourceMap, context, input.bindings);
+    let allBlocks = this.generateResourceBlocks(realResources, resourceMap, context, input.bindings);
+
+    // Multi-subscription: tag blocks with providerAlias and inject provider line
+    const isMultiSub = subscriptionAliasMap && subscriptionAliasMap.size > 0;
+    if (isMultiSub) {
+      allBlocks = this.injectProviderAliases(allBlocks, resourceMap, subscriptionAliasMap);
+    }
 
     // Topological sort
     const depGraph = new DependencyGraph(allBlocks);
@@ -433,6 +503,17 @@ export class HclPipeline {
           userConfig['subscription_id'] = subscriptionId;
         }
         providerBuilder.addProvider(providerConfig, userConfig);
+      }
+    }
+
+    // Register aliased providers for multi-subscription
+    if (isMultiSub && subscriptionConfigMap) {
+      for (const [alias, subId] of subscriptionConfigMap) {
+        providerBuilder.addAliasedProvider({
+          providerType: 'azurerm',
+          alias,
+          config: { subscription_id: subId },
+        });
       }
     }
 
@@ -636,6 +717,75 @@ export class HclPipeline {
   }
 
   /**
+   * For multi-subscription projects: tag each HCL block with the correct provider alias
+   * and inject `provider = azurerm.<alias>` into the block's content string.
+   * Blocks are matched to subscriptions via the generating resource's `_subscription` reference.
+   */
+  private injectProviderAliases(
+    blocks: HclBlock[],
+    resourceMap: Map<string, ResourceInstance>,
+    subscriptionAliasMap: Map<string, string>,
+  ): HclBlock[] {
+    // Build a terraform name → subscription alias lookup
+    const tfNameToAlias = new Map<string, string>();
+    for (const resource of resourceMap.values()) {
+      const subNodeId = resource.references['_subscription'];
+      if (subNodeId) {
+        const alias = subscriptionAliasMap.get(subNodeId);
+        if (alias) {
+          tfNameToAlias.set(resource.terraformName, alias);
+        }
+      }
+    }
+
+    // Sort terraform names by length descending so longer names match first
+    // (avoids "rg_1" matching "rg_1_something" when "rg_1_something" is a real name)
+    const sortedTfNames = [...tfNameToAlias.entries()].sort(
+      (a, b) => b[0].length - a[0].length,
+    );
+
+    return blocks.map((block) => {
+      // Only inject into resource and data blocks
+      if (block.blockType !== 'resource' && block.blockType !== 'data') return block;
+      if (!block.name) return block;
+
+      // 1. Exact match by block name
+      let alias: string | undefined = tfNameToAlias.get(block.name);
+
+      // 2. Prefix match for generated blocks (PEP, bindings, etc.)
+      //    e.g., pe_mssql_server_xxx, mssql_server_xxx_fully_qualified_domain_name
+      if (!alias) {
+        for (const [tfName, a] of sortedTfNames) {
+          if (block.name.startsWith(`pe_${tfName}`) || block.name.startsWith(`${tfName}_`)) {
+            alias = a;
+            break;
+          }
+        }
+      }
+
+      // 3. Fallback for shared data sources: resolve via dependsOn
+      if (!alias && block.dependsOn) {
+        for (const dep of block.dependsOn) {
+          // dependsOn entries are terraform addresses like "azurerm_resource_group.rg_1"
+          const dotIdx = dep.lastIndexOf('.');
+          const depName = dotIdx >= 0 ? dep.slice(dotIdx + 1) : dep;
+          const depAlias = tfNameToAlias.get(depName);
+          if (depAlias) {
+            alias = depAlias;
+            break;
+          }
+        }
+      }
+
+      if (!alias) return block;
+
+      // Inject `provider = azurerm.<alias>` after the opening brace
+      const content = injectProviderLine(block.content, 'azurerm', alias);
+      return { ...block, providerAlias: alias, content };
+    });
+  }
+
+  /**
    * Generate implicit Private Endpoint HCL blocks for a resource visually placed in a subnet.
    */
   private generateImplicitPep(
@@ -823,4 +973,13 @@ export class HclPipeline {
 
     return `locals {\n  common_tags = {\n${tagEntries}\n  }\n}`;
   }
+}
+
+/**
+ * Inject `provider = <providerType>.<alias>` into an HCL block string after the opening `{`.
+ */
+function injectProviderLine(content: string, providerType: string, alias: string): string {
+  const openBrace = content.indexOf('{');
+  if (openBrace === -1) return content;
+  return content.slice(0, openBrace + 1) + `\n  provider = ${providerType}.${alias}` + content.slice(openBrace + 1);
 }

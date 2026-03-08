@@ -13,7 +13,7 @@ export declare const pluginRegistry: IReactivePluginRegistry;
 
 // HCL Pipeline
 export { HclPipeline } from './lib/hcl/pipeline.js';
-export type { ProjectConfig, LayoutAlgorithm, PipelineInput, PipelineResult } from './lib/hcl/pipeline.js';
+export type { ProjectConfig, LayoutAlgorithm, PipelineInput, PipelineResult, PipelineValidationError } from './lib/hcl/pipeline.js';
 export { HclBlockBuilder } from './lib/hcl/block-builder.js';
 export type { GeneratedFiles } from './lib/hcl/block-builder.js';
 export { ModuleHclContext } from './lib/hcl/module-context.js';
@@ -21,7 +21,8 @@ export type { ModuleWiring } from './lib/hcl/module-context.js';
 export { DependencyGraph } from './lib/hcl/dependency-graph.js';
 export { buildDependencyGraph } from './lib/hcl/dep-graph-builder.js';
 export { VariableCollector, OutputCollector } from './lib/hcl/variable-collector.js';
-export { ProviderConfigBuilder } from './lib/hcl/provider-config-builder.js';
+export { ProviderConfigBuilder, sanitizeProviderAlias } from './lib/hcl/provider-config-builder.js';
+export type { AliasedProviderEntry } from './lib/hcl/provider-config-builder.js';
 export { escapeHclString } from './lib/hcl/escape.js';
 
 // Diagram
