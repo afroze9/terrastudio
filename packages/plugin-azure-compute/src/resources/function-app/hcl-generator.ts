@@ -72,7 +72,7 @@ export const functionAppHclGenerator: HclGenerator = {
       lines.push(`  enabled                    = ${context.getPropertyExpression(resource, 'enabled', false)}`);
     }
 
-    // site_config with application_stack
+    // site_config with application_stack (only if runtime is specified)
     lines.push('');
     lines.push('  site_config {');
 
@@ -88,7 +88,9 @@ export const functionAppHclGenerator: HclGenerator = {
             lines.push(`      python_version  = "${e(runtimeVersion)}"`);
             break;
           case 'dotnet':
+          case 'dotnet-isolated':
             lines.push(`      dotnet_version  = "${e(runtimeVersion)}"`);
+            lines.push(`      use_dotnet_isolated_runtime = ${runtimeStack === 'dotnet-isolated' ? 'true' : 'false'}`);
             break;
           case 'java':
             lines.push(`      java_version    = "${e(runtimeVersion)}"`);
@@ -104,7 +106,9 @@ export const functionAppHclGenerator: HclGenerator = {
             lines.push(`      node_version    = "~${e(runtimeVersion)}"`);
             break;
           case 'dotnet':
+          case 'dotnet-isolated':
             lines.push(`      dotnet_version  = "v${e(runtimeVersion)}"`);
+            lines.push(`      use_dotnet_isolated_runtime = ${runtimeStack === 'dotnet-isolated' ? 'true' : 'false'}`);
             break;
           case 'java':
             lines.push(`      java_version    = "${e(runtimeVersion)}"`);
@@ -116,6 +120,8 @@ export const functionAppHclGenerator: HclGenerator = {
       }
 
       lines.push('    }');
+    } else {
+      // Omit empty application_stack — Terraform requires at least one runtime field
     }
 
     lines.push('  }');

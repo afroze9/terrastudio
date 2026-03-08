@@ -85,7 +85,7 @@ export const keyVaultHclGenerator: HclGenerator = {
 
     // Enable RBAC authorization when using RBAC access model
     if (accessModel === 'rbac') {
-      lines.push('  enable_rbac_authorization = true');
+      lines.push('  rbac_authorization_enabled = true');
     }
 
     lines.push(`  soft_delete_retention_days = ${softDeleteDaysExpr}`);
