@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.20.2](https://github.com/afroze9/terrastudio/compare/v0.20.1...v0.20.2) (2026-03-08)
+
+
+### Features
+
+* add 6 new AWS resources with official icons and cost calculators (v0.24.0) ([90fba48](https://github.com/afroze9/terrastudio/commit/90fba4889b93478dc1cc56200046a44f4a565bef))
+* add 7 new palettes — Solarized, Nord, Monokai, GitHub, 3 colorblind-safe ([3d2907f](https://github.com/afroze9/terrastudio/commit/3d2907ff342e37fc36f7034399ce916e746bb2f7))
+* add 8 new AWS resources — S3, IAM, CloudWatch, Lambda, API GW, DynamoDB, SQS, SNS (v0.23.0) ([8df798c](https://github.com/afroze9/terrastudio/commit/8df798c2e90df5eea49fd5b70d001f5fda5722d9))
+* add AWS cost estimation for EC2, RDS, ALB, EIP, and NAT Gateway ([4f142fa](https://github.com/afroze9/terrastudio/commit/4f142fa9ab821aa07bc97d9d04624b41673ee700))
+* add AWS plugin support with template-driven provider selection and official icons (v0.21.0) ([07e9c58](https://github.com/afroze9/terrastudio/commit/07e9c58dbd03f7c98b3fd51eea21b51e7fc06347))
+* add canvas search in side panel with scoring, filters, and node navigation (v0.26.0) ([38aa17d](https://github.com/afroze9/terrastudio/commit/38aa17d7228ed64a0eaaea3d788ab7181ae25cbb))
+* add connection wizard + rework status bar (v0.27.0) ([4d0ed78](https://github.com/afroze9/terrastudio/commit/4d0ed785d8edc01e9518ad8b1e5fc3161b2868cd))
+* add costEstimation schema blocks for AWS resources and Azure gaps ([2a46b38](https://github.com/afroze9/terrastudio/commit/2a46b38c0ba1c41377e5f9e642238cf92836a372))
+* add dependency graph view with DAG layout and highlight traversal (v0.33.0) ([e527433](https://github.com/afroze9/terrastudio/commit/e52743339051d57eeedfa68f38a7b0283d72dfcc))
+* add diagram annotation sticky notes (v0.34.0) ([8e5b648](https://github.com/afroze9/terrastudio/commit/8e5b648b11f06003c50c6f47fdb8b2339e862ea6))
+* add High Contrast palette + color-accent-text theme variable (v0.30.0) ([8669e8f](https://github.com/afroze9/terrastudio/commit/8669e8fed89c2831a08c164b3ecc0ce54d72befa))
+* add internationalization with 6 languages (v0.28.0) ([4177efb](https://github.com/afroze9/terrastudio/commit/4177efbd1710092cc42a4ca83ce8f6185679f5ee))
+* add multi-tab bottom panel system + 11 feature specs ([42d9181](https://github.com/afroze9/terrastudio/commit/42d91815a02a35f5d8e05ecf200d5383d3a93ee9))
+* add validation dashboard with problems panel (v0.29.0) ([59691bf](https://github.com/afroze9/terrastudio/commit/59691bf45b3fc423886a280022046e4cdd43d43d))
+* ARIA accessibility, font scale system, reduced motion + settings UI (v0.32.0) ([b1323ec](https://github.com/afroze9/terrastudio/commit/b1323ec30aaafb191c22ee1d0f341d136d8df079))
+* complete Azure cost estimation coverage, fix AWS connection rules and compact mode (v0.22.0) ([c01b46c](https://github.com/afroze9/terrastudio/commit/c01b46c36d99062c4ba8b43222b78b7b411dd4a2))
+* cost breakdown by container and module with distribution bar (v0.37.0) ([af9532c](https://github.com/afroze9/terrastudio/commit/af9532c5ef7038530f6cb1ae190d51504effa84d))
+* make EKS/ECS clusters containers, add child resources (v0.25.0) ([a29bce7](https://github.com/afroze9/terrastudio/commit/a29bce76f0012441ce7959389b6d7f38732318bc))
+* replace AWS icons with official AWS Architecture icons (v0.23.0) ([f02ca21](https://github.com/afroze9/terrastudio/commit/f02ca2114174ba883feb9a64677c0ef334703b75))
+* smart resource duplication with numeric suffixes + fix build warnings (v0.35.0) ([0a7ff08](https://github.com/afroze9/terrastudio/commit/0a7ff08bcc00701af55aadb8902f4067b592acaf))
+* status indicator icons + global focus-visible rings (v0.31.0) ([e724baf](https://github.com/afroze9/terrastudio/commit/e724baf970f55a61b4e902191ce4e4aae848e964))
+* terraform plan visualization with node highlighting and diff view (v0.36.0) ([55fa8b1](https://github.com/afroze9/terrastudio/commit/55fa8b12c2048d107ec290acc61356d720524d91))
+* WCAG AA contrast audit + theme extensibility (Phase 1) ([39cdae3](https://github.com/afroze9/terrastudio/commit/39cdae389d9215631a467a4ac56840d890ae29c7))
+
+
+### Bug Fixes
+
+* add edge rendering, bezier curves, and TB/LR direction toggle to dep graph ([3ba754b](https://github.com/afroze9/terrastudio/commit/3ba754bcfa679885f27941b781f7e117be558ebe))
+* block browser context menu and F5 refresh, add dev tools menu entry ([a91613a](https://github.com/afroze9/terrastudio/commit/a91613a3585aa882926edafd0d83f060e6d7b4b9))
+* exclude template modules from cost grouping when instances exist ([06a5e3c](https://github.com/afroze9/terrastudio/commit/06a5e3cc760f3c538332635a73a43e1bc96692e7))
+* gate devtools API behind cfg(debug_assertions) for release builds ([a9ab6d8](https://github.com/afroze9/terrastudio/commit/a9ab6d836e395e1de19ce9e8622946d20fb126c1))
+* i18n key typo, missing EC2 handle, and add i18n lint tests ([e5ce3a9](https://github.com/afroze9/terrastudio/commit/e5ce3a9e0ce2d8b97cda2297686deadb99a26fe0))
+* improve WCAG AA contrast ratios for 4 light mode palettes (v0.29.1) ([109b6cf](https://github.com/afroze9/terrastudio/commit/109b6cfe209d29536957c2837a0d121a0baa4a5c))
+* render nested object arrays in sidebar instead of [object Object] ([3c032fc](https://github.com/afroze9/terrastudio/commit/3c032fc2b3ee7965b7376e38636a69052495b768))
+* restrict variable toggle to button click only ([fd39749](https://github.com/afroze9/terrastudio/commit/fd39749e2d98660a4e98de8f68f1f74fbdc5cd3e))
+* smart duplication preserves zero-padding and updates resource name ([489d7d9](https://github.com/afroze9/terrastudio/commit/489d7d974068e7d25e99f721387fcef5e8e80338))
+
 ## [0.20.1](https://github.com/afroze9/terrastudio/compare/v0.20.0...v0.20.1) (2026-03-05)
 
 
