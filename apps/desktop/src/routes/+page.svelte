@@ -10,7 +10,6 @@
 	import EditorArea from '$lib/components/EditorArea.svelte';
 	import PropertiesPanel from '$lib/components/PropertiesPanel.svelte';
 	import StatusBar from '$lib/components/StatusBar.svelte';
-	import NewProjectDialog from '$lib/components/NewProjectDialog.svelte';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import UnsavedChangesDialog from '$lib/components/UnsavedChangesDialog.svelte';
 	import WelcomeScreen from '$lib/components/WelcomeScreen.svelte';
@@ -23,7 +22,6 @@
 	import { destroyBridgeListener } from '$lib/mcp/bridge-listener';
 	import { initSettingsSync, destroySettingsSync } from '$lib/stores/settings-sync';
 
-	let showNewProjectDialog = $state(false);
 	let startWelcomeInWizard = $state(false);
 
 	/** Close the current project and go to the welcome screen's new project wizard. */
@@ -261,11 +259,6 @@
 {:else}
 	<WelcomeScreen startInWizard={startWelcomeInWizard} />
 {/if}
-
-<NewProjectDialog
-	open={showNewProjectDialog}
-	onclose={() => (showNewProjectDialog = false)}
-/>
 
 <ConfirmDialog />
 <UnsavedChangesDialog />
