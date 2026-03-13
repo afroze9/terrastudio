@@ -6,14 +6,12 @@
   import { getTemplateCategories } from '$lib/templates/service';
   import type { Template, TemplateCategory } from '$lib/templates/types';
   import type { NamingConvention, ProviderId } from '@terrastudio/types';
-  import type { LayoutAlgorithm } from '@terrastudio/core';
   import { applyNamingTemplate, buildTokens } from '@terrastudio/core';
-  import { ui, type EdgeStyle } from '$lib/stores/ui.svelte';
   import { t } from '$lib/i18n';
   import WindowControls from './WindowControls.svelte';
 
   // ── View state ─────────────────────────────────────────────────────────────
-  type View = 'home' | 'step1' | 'step2' | 'step3';
+  type View = 'home' | 'step1' | 'step2';
   const { startInWizard = false }: { startInWizard?: boolean } = $props();
   let view = $state<View>(startInWizard ? 'step1' : 'home');
 
@@ -70,7 +68,6 @@
   let folderPath  = $state('');
   let step1Error  = $state('');
   let step2Error  = $state('');
-  let step3Error  = $state('');
 
   // Provider filter for template gallery
   const PROVIDER_FILTERS = [
@@ -119,7 +116,7 @@
 
   async function enterWizard() {
     view = 'step1';
-    step1Error = step2Error = step3Error = '';
+    step1Error = step2Error = '';
     if (categories.length === 0) {
       loadingTemplates = true;
       try {
@@ -148,19 +145,11 @@
     view = 'step2';
   }
 
-  function goToStep3() {
-    step2Error = '';
-    if (!projectName.trim()) { step2Error = 'Project name is required'; return; }
-    if (!folderPath)          { step2Error = 'Please select a location'; return; }
-    view = 'step3';
-  }
-
   function goBackToStep1() { view = 'step1'; }
-  function goBackToStep2() { view = 'step2'; }
 
   function goHome() {
     view = 'home';
-    step1Error = step2Error = step3Error = '';
+    step1Error = step2Error = '';
   }
 
   // Step 3 – configuration
@@ -189,8 +178,6 @@
   let conventionEnv      = $state('dev');
   let conventionRegion   = $state('');
   let conventionOrg      = $state('');
-  let layoutAlgorithm    = $state<LayoutAlgorithm>('dagre');
-  let edgeStyle          = $state<EdgeStyle>('default');
   let creating           = $state(false);
 
   let convPreviewExamples = $derived.by(() => {
@@ -207,19 +194,20 @@
   });
 
   async function handleCreate() {
-    step3Error = '';
+    step2Error = '';
+    if (!projectName.trim()) { step2Error = 'Project name is required'; return; }
+    if (!folderPath)          { step2Error = 'Please select a location'; return; }
     creating = true;
     try {
       const namingConvention: NamingConvention | undefined = conventionEnabled
         ? { enabled: true, template: conventionTemplate, env: conventionEnv, region: conventionRegion || undefined, org: conventionOrg || undefined }
         : undefined;
       const activeProviders = selectedTemplate?.metadata.providers as ProviderId[] | undefined;
-      ui.setEdgeType(edgeStyle);
-      await createProject(projectName.trim(), folderPath, selectedTemplate!, namingConvention, layoutAlgorithm, activeProviders);
+      await createProject(projectName.trim(), folderPath, selectedTemplate!, namingConvention, undefined, activeProviders);
       invoke('set_last_project_location', { location: folderPath }).catch(() => {});
       resetWizard();
     } catch (e) {
-      step3Error = String(e);
+      step2Error = String(e);
     } finally {
       creating = false;
     }
@@ -234,9 +222,7 @@
     conventionEnv = 'dev';
     conventionRegion = '';
     conventionOrg = '';
-    layoutAlgorithm = 'dagre';
-    edgeStyle = 'default';
-    step1Error = step2Error = step3Error = '';
+    step1Error = step2Error = '';
     view = 'home';
   }
 
@@ -251,24 +237,7 @@
   };
   const getIcon = (icon: string) => iconMap[icon] || iconMap['blank'];
 
-  // ── Option data ────────────────────────────────────────────────────────────
-  const EDGE_STYLES: { value: EdgeStyle; label: string; desc: string; path: string }[] = [
-    { value: 'default',    label: 'Bezier',      desc: 'Smooth curves',   path: 'M 6,24 C 20,24 28,8 42,8' },
-    { value: 'smoothstep', label: 'Smooth Step', desc: 'Rounded corners', path: 'M 6,24 L 16,24 Q 24,24 24,16 L 24,8 Q 24,8 32,8 L 42,8' },
-    { value: 'step',       label: 'Step',        desc: 'Right angles',    path: 'M 6,24 L 24,24 L 24,8 L 42,8' },
-    { value: 'straight',   label: 'Straight',    desc: 'Direct line',     path: 'M 6,24 L 42,8' },
-  ];
 
-  const LAYOUT_OPTIONS: { value: LayoutAlgorithm; label: string; desc: string; icon: string }[] = [
-    {
-      value: 'dagre', label: 'Dagre', desc: 'Hierarchical layout based on connections',
-      icon: `<circle cx="12" cy="4" r="2" fill="currentColor"/><circle cx="6" cy="14" r="2" fill="currentColor"/><circle cx="18" cy="14" r="2" fill="currentColor"/><circle cx="12" cy="22" r="2" fill="currentColor"/><path d="M12 6v6M10 8l-4 4M14 8l4 4M8 16l4 4M16 16l-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>`,
-    },
-    {
-      value: 'hybrid', label: 'Hybrid Grid', desc: 'Grid layout with reference-aware clustering',
-      icon: `<rect x="2" y="2" width="8" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="14" y="2" width="8" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="14" width="8" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="14" y="14" width="8" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 6h4M6 10v4M18 10v4M10 18h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>`,
-    },
-  ];
 </script>
 
 <div class="welcome">
@@ -378,19 +347,14 @@
 
       <!-- Step indicator -->
       <div class="step-indicator">
-        <div class="step" class:active={view === 'step1'} class:done={view === 'step2' || view === 'step3'}>
-          <div class="step-circle">{view === 'step2' || view === 'step3' ? '✓' : '1'}</div>
+        <div class="step" class:active={view === 'step1'} class:done={view === 'step2'}>
+          <div class="step-circle">{view === 'step2' ? '✓' : '1'}</div>
           <span class="step-label">Template</span>
         </div>
-        <div class="step-connector" class:done={view === 'step2' || view === 'step3'}></div>
-        <div class="step" class:active={view === 'step2'} class:done={view === 'step3'}>
-          <div class="step-circle">{view === 'step3' ? '✓' : '2'}</div>
+        <div class="step-connector" class:done={view === 'step2'}></div>
+        <div class="step" class:active={view === 'step2'}>
+          <div class="step-circle">2</div>
           <span class="step-label">Project Details</span>
-        </div>
-        <div class="step-connector" class:done={view === 'step3'}></div>
-        <div class="step" class:active={view === 'step3'}>
-          <div class="step-circle">3</div>
-          <span class="step-label">Configuration</span>
         </div>
       </div>
 
@@ -511,7 +475,7 @@
                 class="field-input"
                 placeholder="my-infrastructure"
                 bind:value={projectName}
-                onkeydown={(e) => e.key === 'Enter' && goToStep3()}
+                onkeydown={(e) => e.key === 'Enter' && handleCreate()}
               />
             </div>
 
@@ -534,27 +498,6 @@
               <div class="field-error">{step2Error}</div>
             {/if}
           </div>
-
-          <div class="step-actions">
-            <button class="wizard-btn wizard-btn-secondary" onclick={goBackToStep1}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M15 18l-6-6 6-6"/>
-              </svg>
-              Back
-            </button>
-            <button class="wizard-btn wizard-btn-primary" onclick={goToStep3} disabled={!projectName.trim() || !folderPath}>
-              Next
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 18l6-6-6-6"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-      {/if}
-
-      <!-- ── Step 3: Configuration ────────────────────────────────────────────── -->
-      {#if view === 'step3'}
-        <div class="step3-layout">
 
           <!-- Naming Convention -->
           <div class="config-section">
@@ -626,53 +569,12 @@
             {/if}
           </div>
 
-          <!-- Layout + Connection side-by-side -->
-          <div class="options-row">
-            <div class="config-section flex1">
-              <div class="config-section-title">Auto Layout</div>
-              <div class="option-grid cols-1">
-                {#each LAYOUT_OPTIONS as opt}
-                  <!-- svelte-ignore a11y_click_events_have_key_events -->
-                  <!-- svelte-ignore a11y_no_static_element_interactions -->
-                  <div class="option-card" class:selected={layoutAlgorithm === opt.value} onclick={() => (layoutAlgorithm = opt.value)}>
-                    <div class="option-icon">
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">{@html opt.icon}</svg>
-                    </div>
-                    <div class="option-info">
-                      <div class="option-label">{opt.label}</div>
-                      <div class="option-desc">{opt.desc}</div>
-                    </div>
-                  </div>
-                {/each}
-              </div>
-            </div>
-
-            <div class="config-section flex2">
-              <div class="config-section-title">Connection Style</div>
-              <div class="option-grid cols-4">
-                {#each EDGE_STYLES as style}
-                  <!-- svelte-ignore a11y_click_events_have_key_events -->
-                  <!-- svelte-ignore a11y_no_static_element_interactions -->
-                  <div class="option-card edge-card" class:selected={edgeStyle === style.value} onclick={() => (edgeStyle = style.value)}>
-                    <svg class="edge-preview" viewBox="0 0 48 32" fill="none">
-                      <path d={style.path} stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
-                      <circle cx="6" cy="24" r="3" fill="currentColor" opacity="0.4"/>
-                      <circle cx="42" cy="8" r="3" fill="currentColor" opacity="0.4"/>
-                    </svg>
-                    <div class="option-label">{style.label}</div>
-                    <div class="option-desc">{style.desc}</div>
-                  </div>
-                {/each}
-              </div>
-            </div>
-          </div>
-
-          {#if step3Error}
-            <div class="field-error">{step3Error}</div>
+          {#if step2Error}
+            <div class="field-error">{step2Error}</div>
           {/if}
 
           <div class="step-actions">
-            <button class="wizard-btn wizard-btn-secondary" onclick={goBackToStep2} disabled={creating}>
+            <button class="wizard-btn wizard-btn-secondary" onclick={goBackToStep1} disabled={creating}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M15 18l-6-6 6-6"/>
               </svg>
@@ -682,7 +584,6 @@
               {creating ? 'Creating...' : 'Create Project'}
             </button>
           </div>
-
         </div>
       {/if}
 
@@ -1086,18 +987,7 @@
   .provider-filter-btn:hover { border-color: var(--color-text-muted); color: var(--color-text); }
   .provider-filter-btn.active { border-color: var(--color-accent); color: var(--color-accent); background: color-mix(in srgb, var(--color-accent) 8%, transparent); }
 
-  /* ── Step 3: Configuration ──────────────────────────────────────────────── */
-  .step3-layout {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    flex: 1;
-  }
-
-  .options-row { display: flex; gap: 16px; align-items: flex-start; }
-  .flex1 { flex: 1; }
-  .flex2 { flex: 2; }
-
+  /* ── Configuration Sections ────────────────────────────────────────────── */
   .config-section {
     display: flex; flex-direction: column; gap: 12px;
     padding: 16px;
@@ -1166,31 +1056,6 @@
   .conv-preview-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .conv-preview-label { font-size: var(--font-11); color: var(--color-text-muted); }
   .conv-preview-result { font-size: var(--font-11); font-family: monospace; color: var(--color-accent); }
-
-  .option-grid { display: grid; gap: 8px; }
-  .option-grid.cols-1 { grid-template-columns: 1fr; }
-  .option-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
-
-  .option-card {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 12px;
-    border: 1.5px solid var(--color-border); border-radius: 6px;
-    cursor: pointer; transition: border-color 0.12s, background 0.12s;
-  }
-  .option-card:hover { border-color: var(--color-text-muted); background: var(--color-surface-hover); }
-  .option-card.selected { border-color: var(--color-accent); background: color-mix(in srgb, var(--color-accent) 8%, transparent); }
-
-  .option-icon { color: var(--color-text-muted); flex-shrink: 0; }
-  .option-card.selected .option-icon { color: var(--color-accent); }
-  .option-info { display: flex; flex-direction: column; gap: 2px; }
-  .option-label { font-size: var(--font-12); font-weight: 500; color: var(--color-text); }
-  .option-desc { font-size: var(--font-11); color: var(--color-text-muted); line-height: 1.3; }
-
-  .edge-card { flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 10px 6px; }
-  .edge-card .option-label { font-size: var(--font-11); }
-  .edge-card .option-desc { font-size: var(--font-10); }
-  .edge-preview { width: 100%; height: 28px; color: var(--color-text-muted); }
-  .edge-card.selected .edge-preview { color: var(--color-accent); }
 
   /* ── Shared: nav buttons ────────────────────────────────────────────────── */
   .step-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: auto; padding-top: 8px; }
