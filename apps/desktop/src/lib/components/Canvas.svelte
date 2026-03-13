@@ -2,6 +2,7 @@
   import { SvelteFlowProvider } from '@xyflow/svelte';
   import { diagram } from '$lib/stores/diagram.svelte';
   import { plan } from '$lib/stores/plan.svelte';
+  import { ui } from '$lib/stores/ui.svelte';
   import { buildNodeTypes } from '$lib/bootstrap';
   import DnDFlow from './DnDFlow.svelte';
   import CanvasToolbar from './CanvasToolbar.svelte';
@@ -65,6 +66,23 @@
     } else if (diagram.selectedNodeId) {
       diagram.confirmAndRemoveNode(diagram.selectedNodeId);
     }
+    return;
+  }
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+    const selected = diagram.nodes.filter((n) => n.selected);
+    if (selected.length === 0 && diagram.selectedNodeId) {
+      const node = diagram.nodes.find((n) => n.id === diagram.selectedNodeId);
+      if (node) selected.push(node);
+    }
+    if (selected.length === 0) return;
+    event.preventDefault();
+    const step = ui.snapToGrid ? ui.gridSize : 1;
+    const dx = event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0;
+    const dy = event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0;
+    for (const node of selected) {
+      node.position = { x: node.position.x + dx, y: node.position.y + dy };
+    }
+    diagram.saveSnapshot();
   }
 }} />
 
