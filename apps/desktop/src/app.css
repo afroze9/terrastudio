@@ -170,28 +170,28 @@ textarea:focus-visible {
   height: 10px;
 }
 
-/* Canvas cursor overrides */
-/* Pane: default arrow; selection drag keeps arrow (not pointer) */
-.svelte-flow__pane {
+/* Canvas cursor overrides — higher specificity to beat library re-imports */
+/* Pane: default arrow cursor on empty canvas */
+.svelte-flow .svelte-flow__pane {
   cursor: default;
 }
-.svelte-flow__pane.selection {
+.svelte-flow .svelte-flow__pane.selection {
   cursor: default;
 }
 /* Space held (pan activation): open hand */
-.svelte-flow__pane.draggable {
+.svelte-flow .svelte-flow__pane.draggable {
   cursor: grab;
 }
 /* Actively panning: closed hand */
-.svelte-flow__pane.dragging {
+.svelte-flow .svelte-flow__pane.dragging {
   cursor: grabbing;
 }
 /* Nodes: open hand on hover, closed hand while dragging */
-.svelte-flow__node.selectable,
-.svelte-flow__node.draggable {
+.svelte-flow .svelte-flow__node.selectable,
+.svelte-flow .svelte-flow__node.draggable {
   cursor: grab;
 }
-.svelte-flow__node.draggable.dragging {
+.svelte-flow .svelte-flow__node.draggable.dragging {
   cursor: grabbing;
 }
 
