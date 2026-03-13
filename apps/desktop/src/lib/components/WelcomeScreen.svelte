@@ -503,10 +503,19 @@
           <div class="config-section">
             <div class="config-section-header">
               <div class="config-section-title">Naming Convention</div>
-              <label class="toggle-inline">
-                <input type="checkbox" bind:checked={conventionEnabled} />
+              <div class="toggle-inline">
                 <span class="toggle-text">{conventionEnabled ? 'Enabled' : 'Disabled'}</span>
-              </label>
+                <button
+                  class="toggle-switch"
+                  class:on={conventionEnabled}
+                  onclick={() => (conventionEnabled = !conventionEnabled)}
+                  role="switch"
+                  aria-checked={conventionEnabled}
+                  aria-label="Toggle naming convention"
+                >
+                  <span class="toggle-knob"></span>
+                </button>
+              </div>
             </div>
 
             {#if !conventionEnabled}
@@ -998,7 +1007,24 @@
   .config-section-header { display: flex; align-items: center; justify-content: space-between; }
   .config-section-title { font-size: var(--font-13); font-weight: 600; color: var(--color-text); }
 
-  .toggle-inline { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: var(--font-11); color: var(--color-text-muted); user-select: none; }
+  .toggle-inline { display: flex; align-items: center; gap: 8px; font-size: var(--font-11); color: var(--color-text-muted); user-select: none; }
+
+  .toggle-switch {
+    position: relative;
+    width: 32px; height: 18px;
+    background: var(--color-border);
+    border: none; border-radius: 9px;
+    cursor: pointer; transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle-switch.on { background: var(--color-accent); }
+  .toggle-knob {
+    position: absolute; top: 2px; left: 2px;
+    width: 14px; height: 14px;
+    background: white; border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .toggle-switch.on .toggle-knob { transform: translateX(14px); }
 
   .section-hint { font-size: var(--font-12); color: var(--color-text-muted); margin: 0; line-height: 1.5; }
   .section-hint code { font-size: var(--font-11); color: var(--color-accent); background: color-mix(in srgb, var(--color-accent) 10%, transparent); padding: 1px 4px; border-radius: 3px; }
