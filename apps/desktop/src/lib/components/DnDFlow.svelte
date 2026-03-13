@@ -976,20 +976,6 @@
     clearDragFeedback();
     if (!targetNode) return;
 
-    // Snap all dragged nodes to the nearest grid point (absolute position, not delta)
-    if (ui.snapToGrid && ui.gridSize > 0) {
-      const g = ui.gridSize;
-      for (const dn of draggedNodes) {
-        const node = diagram.nodes.find((n) => n.id === dn.id);
-        if (node) {
-          node.position = {
-            x: Math.round(node.position.x / g) * g,
-            y: Math.round(node.position.y / g) * g,
-          };
-        }
-      }
-    }
-
     const draggedNode = targetNode;
     const isAnnotation = draggedNode.type === '_annotation_';
     const schema = isAnnotation ? null : registry.getResourceSchema(draggedNode.type as ResourceTypeId);
