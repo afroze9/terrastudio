@@ -174,6 +174,9 @@ jobs:
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
 
@@ -193,6 +196,4 @@ jobs:
 
       - name: Publish @afroze9/terrastudio-cli to npm
         working-directory: packages/cli
-        run: pnpm publish --no-git-checks --provenance
-        env:
-          NPM_CONFIG_PROVENANCE: true
+        run: npm publish --provenance --access public
