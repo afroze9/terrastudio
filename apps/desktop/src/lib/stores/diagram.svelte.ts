@@ -6,6 +6,7 @@ import { project } from './project.svelte';
 import { terraform } from './terraform.svelte';
 import { registry } from '$lib/bootstrap';
 import { ui } from './ui.svelte';
+import { logger } from '$lib/logger';
 
 export type DiagramNode = Node<ResourceNodeData>;
 export type DiagramEdge = Edge<TerraStudioEdgeData>;
@@ -232,6 +233,7 @@ class DiagramStore {
     this.historyIndex--;
     this.restoreSnapshot(this.history[this.historyIndex]);
     project.markDirty();
+    logger.debug(`[diagram] Undo (history index: ${this.historyIndex})`);
   }
 
   redo() {
@@ -240,6 +242,7 @@ class DiagramStore {
     this.historyIndex++;
     this.restoreSnapshot(this.history[this.historyIndex]);
     project.markDirty();
+    logger.debug(`[diagram] Redo (history index: ${this.historyIndex})`);
   }
 
   private restoreSnapshot(snapshot: DiagramSnapshot) {
@@ -264,6 +267,7 @@ class DiagramStore {
     this.ensureInitialSnapshot();
     this.nodes = [...this.nodes, node];
     this.pushSnapshot();
+    logger.debug(`[diagram] Node added: ${node.id} (${(node.data as any)?.typeId ?? node.type})`);
   }
 
   addAnnotation(
@@ -336,6 +340,7 @@ class DiagramStore {
       this.selectedNodeId = null;
     }
     this.pushSnapshot();
+    logger.debug(`[diagram] Node removed: ${id}${toRemove.size > 1 ? ` (+${toRemove.size - 1} descendants)` : ''}`);
   }
 
   updateNodeData(id: string, data: Partial<ResourceNodeData>) {
@@ -377,6 +382,7 @@ class DiagramStore {
       edge,
     ];
     this.pushSnapshot();
+    logger.debug(`[diagram] Edge added: ${edge.source} → ${edge.target} (${(edge.data as any)?.category ?? 'default'})`);
   }
 
   updateEdgeLabel(edgeId: string, label: string) {
@@ -600,6 +606,7 @@ class DiagramStore {
     this.ensureInitialSnapshot();
     this.edges = this.edges.filter((e) => e.id !== id);
     this.pushSnapshot();
+    logger.debug(`[diagram] Edge removed: ${id}`);
   }
 
   /**
