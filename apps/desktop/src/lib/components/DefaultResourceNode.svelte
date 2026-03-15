@@ -2,7 +2,9 @@
   import { Handle, Position, useUpdateNodeInternals } from '@xyflow/svelte';
   import { registry } from '$lib/bootstrap';
   import { diagram } from '$lib/stores/diagram.svelte';
+  import { project } from '$lib/stores/project.svelte';
   import { terraform } from '$lib/stores/terraform.svelte';
+  import { buildTokens, applyNamingTemplate } from '@terrastudio/core';
   import { cost } from '$lib/stores/cost.svelte';
   import { ui } from '$lib/stores/ui.svelte';
   import { plan } from '$lib/stores/plan.svelte';
@@ -20,6 +22,30 @@
 
   let schema = $derived(registry.getResourceSchema(data.typeId));
   let icon = $derived(schema ? registry.getIcon(data.typeId) : null);
+
+  /** Canvas label: if a naming convention is active and node has a namingSlug, compute the full name.
+   *  Otherwise fall back to displayLabel → label → schema.displayName. */
+  let canvasLabel = $derived.by(() => {
+    if (data.displayLabel) return data.displayLabel as string;
+    const conv = project.projectConfig.namingConvention;
+    if (conv?.enabled && schema?.cafAbbreviation && data.namingSlug !== undefined) {
+      // Find nearest RG ancestor for env override
+      let rgEnv: string | undefined;
+      let cur = diagram.nodes.find(n => n.id === id);
+      while (cur?.parentId) {
+        const parent = diagram.nodes.find(n => n.id === cur!.parentId);
+        if (!parent) break;
+        if (parent.data.typeId === 'azurerm/core/resource_group') {
+          rgEnv = (parent.data.properties['naming_env'] as string | undefined) || undefined;
+          break;
+        }
+        cur = parent;
+      }
+      const tokens = buildTokens(conv, schema.cafAbbreviation, data.namingSlug as string, rgEnv ? { env: rgEnv } : {});
+      return applyNamingTemplate(conv.template, tokens, schema.namingConstraints) || (data.label as string) || schema.displayName;
+    }
+    return (data.label as string) || schema?.displayName || 'Resource';
+  });
 
   // Get error message for this resource if any
   let errorMessage = $derived.by(() => {
@@ -337,7 +363,7 @@
   class:plan-replace={planAction === 'replace'}
   class:plan-noop={planAction === 'no-op'}
   role="group"
-  aria-label={`${data.displayLabel || data.label || schema?.displayName || 'Resource'} (${schema?.terraformType ?? data.typeId})`}
+  aria-label={`${canvasLabel} (${schema?.terraformType ?? data.typeId})`}
   onmouseenter={onMouseEnter}
   onmouseleave={onMouseLeave}
   onclick={planAction ? () => { plan.diffNodeId = id; } : undefined}
@@ -360,7 +386,7 @@
         <span class="compact-badge compact-badge-pep" title="Private Endpoint ({pepSubresources})">{@html pepIcon.svg}</span>
       {/if}
     </div>
-    <span class="compact-label">{data.displayLabel || data.label || schema?.displayName || 'Resource'}</span>
+    <span class="compact-label">{canvasLabel}</span>
   {:else}
     <!-- Detailed card view -->
     <div class="node-header">
@@ -368,7 +394,7 @@
         <span class="node-icon">{@html icon.svg}</span>
       {/if}
       <div class="node-info">
-        <span class="node-label">{data.displayLabel || data.label || schema?.displayName || 'Resource'}</span>
+        <span class="node-label">{canvasLabel}</span>
         <span class="node-type">{schema?.terraformType ?? data.typeId}</span>
       </div>
       {#if hasNsg && nsgIcon?.type === 'svg' && nsgIcon.svg}

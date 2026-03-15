@@ -3,6 +3,7 @@ import type { DiagramError, TopologyError } from '@terrastudio/core';
 import type { ValidationError } from '@terrastudio/types';
 import { untrack } from 'svelte';
 import { diagram } from './diagram.svelte';
+import { project } from './project.svelte';
 import { registry } from '$lib/bootstrap';
 import { convertToResourceInstances } from '$lib/services/diagram-converter';
 
@@ -110,6 +111,7 @@ class ValidationStore {
         edges,
         registry.connectionRules,
         (typeId) => registry.getResourceSchema(typeId),
+        project.projectConfig,
       );
 
       const diagramResult = validateDiagram(resources, registry.inner);

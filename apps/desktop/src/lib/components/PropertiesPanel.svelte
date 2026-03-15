@@ -4,7 +4,7 @@
   import { project } from '$lib/stores/project.svelte';
   import { ui } from '$lib/stores/ui.svelte';
   import { registry } from '$lib/bootstrap';
-  import { applyNamingTemplate, extractSlug, sanitizeTerraformName, buildTokens } from '@terrastudio/core';
+  import { applyNamingTemplate, sanitizeTerraformName, buildTokens } from '@terrastudio/core';
   import PropertyRenderer from './PropertyRenderer.svelte';
   import SubscriptionPicker from './SubscriptionPicker.svelte';
   import KeyVaultAccessControlSection from './KeyVaultAccessControlSection.svelte';
@@ -103,41 +103,12 @@
     return {};
   });
 
-  // Local state for the slug input — prevents feedback loop from derived values
-  let localSlugValue = $state('');
-  let lastSelectedNodeId = $state<string | null>(null);
-
-  // Sync local slug from stored name when node selection changes
-  $effect(() => {
-    const nodeId = diagram.selectedNode?.id ?? null;
-    if (nodeId !== lastSelectedNodeId) {
-      lastSelectedNodeId = nodeId;
-      if (conventionActive && diagram.selectedNode && schema?.cafAbbreviation) {
-        const conv = project.projectConfig.namingConvention!;
-        const fullName = (diagram.selectedNode.data.properties['name'] as string) ?? '';
-        // Try to extract slug using current RG overrides first; if extraction fails (returns
-        // the full name unchanged), retry with project-level tokens only. This handles the
-        // case where the name was generated before RG overrides were set.
-        const tokensWithOverride = buildTokens(conv, schema.cafAbbreviation, '', rgNamingOverrides);
-        let slug = extractSlug(fullName, conv.template, tokensWithOverride, schema.namingConstraints);
-        if (slug === fullName && Object.keys(rgNamingOverrides).length > 0) {
-          const tokensFallback = buildTokens(conv, schema.cafAbbreviation, '');
-          const slugFallback = extractSlug(fullName, conv.template, tokensFallback, schema.namingConstraints);
-          if (slugFallback !== fullName) slug = slugFallback;
-          else slug = '';
-        }
-        localSlugValue = slug;
-      } else {
-        localSlugValue = '';
-      }
-    }
-  });
-
-  /** Preview of the full Azure name as the user types */
+  /** Preview of the full Azure name — always computed, never stored. */
   let namePreview = $derived.by(() => {
-    if (!conventionActive || !schema?.cafAbbreviation) return '';
+    if (!conventionActive || !schema?.cafAbbreviation || !diagram.selectedNode) return '';
     const conv = project.projectConfig.namingConvention!;
-    const tokens = buildTokens(conv, schema.cafAbbreviation, localSlugValue, rgNamingOverrides);
+    const slug = (diagram.selectedNode.data.namingSlug as string | undefined) ?? '';
+    const tokens = buildTokens(conv, schema.cafAbbreviation, slug, rgNamingOverrides);
     return applyNamingTemplate(conv.template, tokens, schema.namingConstraints);
   });
 
@@ -161,19 +132,14 @@
     return props;
   });
 
-  function onConventionNameChange(slug: string) {
+  function onSlugChange(slug: string) {
     if (!diagram.selectedNode || !schema?.cafAbbreviation) return;
-    // Update local state first to prevent feedback loop
-    localSlugValue = slug;
     const conv = project.projectConfig.namingConvention!;
     const tokens = buildTokens(conv, schema.cafAbbreviation, slug, rgNamingOverrides);
     const fullName = applyNamingTemplate(conv.template, tokens, schema.namingConstraints);
-    const newProps = { ...diagram.selectedNode.data.properties, name: fullName };
-    const tfName = sanitizeTerraformName(fullName) || diagram.selectedNode.data.terraformName;
     diagram.updateNodeData(diagram.selectedNode.id, {
-      properties: newProps,
-      label: fullName || schema.displayName,
-      terraformName: tfName,
+      namingSlug: slug || undefined,
+      terraformName: sanitizeTerraformName(fullName) || diagram.selectedNode.data.terraformName,
     });
   }
 
@@ -232,11 +198,13 @@
     if (!diagram.selectedNode) return;
     const newProps = { ...diagram.selectedNode.data.properties };
     newProps[key] = value;
+    // When convention is active, label comes from namingSlug — don't sync from properties['name']
+    const newLabel = key === 'name' && typeof value === 'string' && !conventionActive
+      ? value || schema?.displayName || diagram.selectedNode.data.label
+      : diagram.selectedNode.data.label;
     diagram.updateNodeData(diagram.selectedNode.id, {
       properties: newProps,
-      label: key === 'name' && typeof value === 'string'
-        ? value || schema?.displayName || diagram.selectedNode.data.label
-        : diagram.selectedNode.data.label,
+      label: newLabel,
     });
   }
 
@@ -559,8 +527,8 @@
               type="text"
               placeholder={t('properties.serviceNamePlaceholder')}
               disabled={isTemplateMember}
-              bind:value={localSlugValue}
-              oninput={(e) => onConventionNameChange((e.target as HTMLInputElement).value)}
+              value={diagram.selectedNode.data.namingSlug ?? ''}
+              oninput={(e) => onSlugChange((e.target as HTMLInputElement).value)}
             />
             {#if namePreview}
               <span class="name-preview">→ {namePreview}</span>
