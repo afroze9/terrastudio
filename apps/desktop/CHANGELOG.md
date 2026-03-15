@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.41.7](https://github.com/afroze9/terrastudio/compare/v0.41.6...v0.41.7) (2026-03-15)
+
+
+### Bug Fixes
+
+* bump version to 0.41.7 and align cli package version ([a259531](https://github.com/afroze9/terrastudio/commit/a25953189e7671ed786392bdbc308d9254238857))
+
 ## [0.41.6](https://github.com/afroze9/terrastudio/compare/v0.41.5...v0.41.6) (2026-03-15)
 
 
