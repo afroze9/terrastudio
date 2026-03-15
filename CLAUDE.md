@@ -178,17 +178,23 @@ Official Azure/AWS icon SVGs are available in `temp/azure/` and `temp/aws/`, org
 - Do NOT push automatically; wait for explicit user request
 
 ### Version Bumping (Semantic Versioning)
-The app version must be updated in these locations:
+Run the version bump script from the repo root — it updates all locations at once:
 
-| File | Field | Notes |
-|------|-------|-------|
-| `apps/desktop/package.json` | `"version"` | Primary source of truth. About dialog reads this at build time via `__APP_VERSION__`. |
-| `apps/desktop/src-tauri/tauri.conf.json` | `"version"` | Tauri uses this for the OS-level app version (installer metadata, window title). |
-| `apps/desktop/src-tauri/Cargo.toml` | `version` | Rust crate version. Keep in sync for consistency. |
+```bash
+pnpm version-bump 0.40.0
+```
 
-**Not manually updated** (derived automatically):
-- About dialog (`AboutModal.svelte`) — reads `__APP_VERSION__` injected by Vite from `package.json`
-- Package sub-versions (`packages/*/package.json`) — stay at `0.1.0` until individually published
+This updates:
+| File | Notes |
+|------|-------|
+| `apps/desktop/package.json` | Source of truth. Vite injects it as `__APP_VERSION__`. |
+| `apps/desktop/src-tauri/Cargo.toml` | Rust crate version. |
+| `packages/cli/package.json` | CLI reports this via `tstudio --version`. |
+
+**Derived automatically (no manual update needed):**
+- `apps/desktop/src-tauri/tauri.conf.json` — `"version": "../package.json"` reads from `package.json`
+- About dialog (`AboutModal.svelte`) — reads `__APP_VERSION__` injected by Vite
+- Package sub-versions (`packages/*/package.json` except CLI) — stay at `0.1.0` until individually published
 
 **PATCH (0.0.x)** — Bug fixes, minor tweaks:
 - Fixing a bug that doesn't change behavior

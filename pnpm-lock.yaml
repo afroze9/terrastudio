@@ -46,28 +46,28 @@ importers:
         version: link:../../packages/platform-tauri
       '@terrastudio/plugin-aws-compute':
         specifier: workspace:*
-        version: link:../../packages/plugin-aws-compute
+        version: link:../../plugins/plugin-aws-compute
       '@terrastudio/plugin-aws-networking':
         specifier: workspace:*
-        version: link:../../packages/plugin-aws-networking
+        version: link:../../plugins/plugin-aws-networking
       '@terrastudio/plugin-azure-compute':
         specifier: workspace:*
-        version: link:../../packages/plugin-azure-compute
+        version: link:../../plugins/plugin-azure-compute
       '@terrastudio/plugin-azure-database':
         specifier: workspace:*
-        version: link:../../packages/plugin-azure-database
+        version: link:../../plugins/plugin-azure-database
       '@terrastudio/plugin-azure-monitoring':
         specifier: workspace:*
-        version: link:../../packages/plugin-azure-monitoring
+        version: link:../../plugins/plugin-azure-monitoring
       '@terrastudio/plugin-azure-networking':
         specifier: workspace:*
-        version: link:../../packages/plugin-azure-networking
+        version: link:../../plugins/plugin-azure-networking
       '@terrastudio/plugin-azure-security':
         specifier: workspace:*
-        version: link:../../packages/plugin-azure-security
+        version: link:../../plugins/plugin-azure-security
       '@terrastudio/plugin-azure-storage':
         specifier: workspace:*
-        version: link:../../packages/plugin-azure-storage
+        version: link:../../plugins/plugin-azure-storage
       '@terrastudio/project':
         specifier: workspace:*
         version: link:../../packages/project
@@ -128,28 +128,28 @@ importers:
         version: link:../platform-node
       '@terrastudio/plugin-aws-compute':
         specifier: workspace:*
-        version: link:../plugin-aws-compute
+        version: link:../../plugins/plugin-aws-compute
       '@terrastudio/plugin-aws-networking':
         specifier: workspace:*
-        version: link:../plugin-aws-networking
+        version: link:../../plugins/plugin-aws-networking
       '@terrastudio/plugin-azure-compute':
         specifier: workspace:*
-        version: link:../plugin-azure-compute
+        version: link:../../plugins/plugin-azure-compute
       '@terrastudio/plugin-azure-database':
         specifier: workspace:*
-        version: link:../plugin-azure-database
+        version: link:../../plugins/plugin-azure-database
       '@terrastudio/plugin-azure-monitoring':
         specifier: workspace:*
-        version: link:../plugin-azure-monitoring
+        version: link:../../plugins/plugin-azure-monitoring
       '@terrastudio/plugin-azure-networking':
         specifier: workspace:*
-        version: link:../plugin-azure-networking
+        version: link:../../plugins/plugin-azure-networking
       '@terrastudio/plugin-azure-security':
         specifier: workspace:*
-        version: link:../plugin-azure-security
+        version: link:../../plugins/plugin-azure-security
       '@terrastudio/plugin-azure-storage':
         specifier: workspace:*
-        version: link:../plugin-azure-storage
+        version: link:../../plugins/plugin-azure-storage
       '@terrastudio/project':
         specifier: workspace:*
         version: link:../project
@@ -209,158 +209,6 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
-  packages/plugin-aws-compute:
-    dependencies:
-      '@terrastudio/core':
-        specifier: workspace:*
-        version: link:../core
-      '@terrastudio/types':
-        specifier: workspace:*
-        version: link:../types
-    devDependencies:
-      '@vitest/coverage-v8':
-        specifier: ^4.0.18
-        version: 4.0.18(vitest@4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-      vitest:
-        specifier: ^4.0.18
-        version: 4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)
-
-  packages/plugin-aws-networking:
-    dependencies:
-      '@terrastudio/core':
-        specifier: workspace:*
-        version: link:../core
-      '@terrastudio/types':
-        specifier: workspace:*
-        version: link:../types
-    devDependencies:
-      '@vitest/coverage-v8':
-        specifier: ^4.0.18
-        version: 4.0.18(vitest@4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-      vitest:
-        specifier: ^4.0.18
-        version: 4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)
-
-  packages/plugin-azure-compute:
-    dependencies:
-      '@terrastudio/core':
-        specifier: workspace:*
-        version: link:../core
-      '@terrastudio/types':
-        specifier: workspace:*
-        version: link:../types
-    devDependencies:
-      '@vitest/coverage-v8':
-        specifier: ^4.0.18
-        version: 4.0.18(vitest@4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-      vitest:
-        specifier: ^4.0.18
-        version: 4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)
-
-  packages/plugin-azure-database:
-    dependencies:
-      '@terrastudio/core':
-        specifier: workspace:*
-        version: link:../core
-      '@terrastudio/types':
-        specifier: workspace:*
-        version: link:../types
-    devDependencies:
-      '@vitest/coverage-v8':
-        specifier: ^4.0.18
-        version: 4.0.18(vitest@4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-      vitest:
-        specifier: ^4.0.18
-        version: 4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)
-
-  packages/plugin-azure-monitoring:
-    dependencies:
-      '@terrastudio/core':
-        specifier: workspace:*
-        version: link:../core
-      '@terrastudio/types':
-        specifier: workspace:*
-        version: link:../types
-    devDependencies:
-      '@vitest/coverage-v8':
-        specifier: ^4.0.18
-        version: 4.0.18(vitest@4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-      vitest:
-        specifier: ^4.0.18
-        version: 4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)
-
-  packages/plugin-azure-networking:
-    dependencies:
-      '@terrastudio/core':
-        specifier: workspace:*
-        version: link:../core
-      '@terrastudio/types':
-        specifier: workspace:*
-        version: link:../types
-    devDependencies:
-      '@vitest/coverage-v8':
-        specifier: ^4.0.18
-        version: 4.0.18(vitest@4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-      vitest:
-        specifier: ^4.0.18
-        version: 4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)
-
-  packages/plugin-azure-security:
-    dependencies:
-      '@terrastudio/core':
-        specifier: workspace:*
-        version: link:../core
-      '@terrastudio/types':
-        specifier: workspace:*
-        version: link:../types
-    devDependencies:
-      '@vitest/coverage-v8':
-        specifier: ^4.0.18
-        version: 4.0.18(vitest@4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-      vitest:
-        specifier: ^4.0.18
-        version: 4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)
-
-  packages/plugin-azure-storage:
-    dependencies:
-      '@terrastudio/core':
-        specifier: workspace:*
-        version: link:../core
-      '@terrastudio/types':
-        specifier: workspace:*
-        version: link:../types
-    devDependencies:
-      '@vitest/coverage-v8':
-        specifier: ^4.0.18
-        version: 4.0.18(vitest@4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-      vitest:
-        specifier: ^4.0.18
-        version: 4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)
-
   packages/project:
     dependencies:
       '@terrastudio/core':
@@ -379,6 +227,158 @@ importers:
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
+
+  plugins/plugin-aws-compute:
+    dependencies:
+      '@terrastudio/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@terrastudio/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: ^4.0.18
+        version: 4.0.18(vitest@4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)
+
+  plugins/plugin-aws-networking:
+    dependencies:
+      '@terrastudio/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@terrastudio/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: ^4.0.18
+        version: 4.0.18(vitest@4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)
+
+  plugins/plugin-azure-compute:
+    dependencies:
+      '@terrastudio/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@terrastudio/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: ^4.0.18
+        version: 4.0.18(vitest@4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)
+
+  plugins/plugin-azure-database:
+    dependencies:
+      '@terrastudio/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@terrastudio/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: ^4.0.18
+        version: 4.0.18(vitest@4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)
+
+  plugins/plugin-azure-monitoring:
+    dependencies:
+      '@terrastudio/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@terrastudio/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: ^4.0.18
+        version: 4.0.18(vitest@4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)
+
+  plugins/plugin-azure-networking:
+    dependencies:
+      '@terrastudio/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@terrastudio/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: ^4.0.18
+        version: 4.0.18(vitest@4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)
+
+  plugins/plugin-azure-security:
+    dependencies:
+      '@terrastudio/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@terrastudio/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: ^4.0.18
+        version: 4.0.18(vitest@4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)
+
+  plugins/plugin-azure-storage:
+    dependencies:
+      '@terrastudio/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@terrastudio/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: ^4.0.18
+        version: 4.0.18(vitest@4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)
 
 packages:
 
