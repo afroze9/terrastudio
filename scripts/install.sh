@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 # Install tstudio CLI — TerraStudio headless CLI
 # Usage: curl -fsSL https://raw.githubusercontent.com/afroze9/terrastudio/master/scripts/install.sh | sh
+# npm: npm install -g @afroze9/terrastudio-cli
 set -e
 
 REPO="afroze9/terrastudio"
