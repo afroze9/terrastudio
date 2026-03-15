@@ -18,6 +18,7 @@ jobs:
       release_created: ${{ steps.release.outputs['apps/desktop--release_created'] }}
       tag_name: ${{ steps.release.outputs['apps/desktop--tag_name'] }}
       version: ${{ steps.release.outputs['apps/desktop--version'] }}
+      cli_version: ${{ steps.release.outputs['packages/cli--version'] }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
