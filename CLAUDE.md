@@ -240,3 +240,4 @@ Detailed architecture docs in `docs/`:
 - [hcl-generation.md](docs/hcl-generation.md) - HCL pipeline, dependency resolution, variable extraction
 - [project-structure.md](docs/project-structure.md) - Complete directory tree
 - [implementation-roadmap.md](docs/implementation-roadmap.md) - 10-phase build plan
+- [platform-architecture-plan.md](docs/platform-architecture-plan.md) - Multi-platform plan: CLI, web app, IPlatform abstraction
