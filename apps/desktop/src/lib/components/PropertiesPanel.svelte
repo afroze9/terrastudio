@@ -4,7 +4,7 @@
   import { project } from '$lib/stores/project.svelte';
   import { ui } from '$lib/stores/ui.svelte';
   import { registry } from '$lib/bootstrap';
-  import { applyNamingTemplate, sanitizeTerraformName, buildTokens } from '@terrastudio/core';
+  import { applyNamingTemplate, sanitizeTerraformName, buildTokens, extractSlug } from '@terrastudio/core';
   import PropertyRenderer from './PropertyRenderer.svelte';
   import SubscriptionPicker from './SubscriptionPicker.svelte';
   import KeyVaultAccessControlSection from './KeyVaultAccessControlSection.svelte';
@@ -225,11 +225,23 @@
       }
       for (const child of getDescendants(rgId)) {
         const childSchema = registry.getResourceSchema(child.data.typeId);
-        if (!childSchema?.cafAbbreviation || child.data.namingSlug === undefined) continue;
-        const tokens = buildTokens(conv, childSchema.cafAbbreviation, child.data.namingSlug as string, overrides);
+        if (!childSchema?.cafAbbreviation) continue;
+
+        // Resolve slug: use stored namingSlug, or try to extract from existing label
+        let slug = child.data.namingSlug as string | undefined;
+        if (slug === undefined) {
+          const existingLabel = child.data.label as string;
+          const fallbackTokens = buildTokens(conv, childSchema.cafAbbreviation, '');
+          const extracted = extractSlug(existingLabel, conv.template, fallbackTokens, childSchema.namingConstraints);
+          if (extracted && extracted !== existingLabel) slug = extracted;
+        }
+        if (slug === undefined) continue;
+
+        const tokens = buildTokens(conv, childSchema.cafAbbreviation, slug, overrides);
         const fullName = applyNamingTemplate(conv.template, tokens, childSchema.namingConstraints);
         if (fullName) {
           diagram.updateNodeData(child.id, {
+            namingSlug: slug,
             label: fullName,
             terraformName: sanitizeTerraformName(fullName) || child.data.terraformName,
           });
