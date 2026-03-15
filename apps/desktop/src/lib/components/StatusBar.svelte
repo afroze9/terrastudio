@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount, type Component } from 'svelte';
   import { terraform } from '$lib/stores/terraform.svelte';
   import { ui, type BottomPanelTab } from '$lib/stores/ui.svelte';
   import { connectionWizard } from '$lib/stores/connection-wizard.svelte';
@@ -8,11 +7,6 @@
   import { t } from '$lib/i18n';
 
   let showPaletteSelector = $state(false);
-  let McpStatusPill = $state<Component | null>(null);
-
-  onMount(() => {
-    import('./McpStatusPill.svelte').then((m) => { McpStatusPill = m.default; });
-  });
   let currentAccent = $derived(ui.palette?.previewAccent ?? '#818cf8');
 
   const panelButtons: { id: BottomPanelTab; labelKey: string; icon: string }[] = [
@@ -119,10 +113,6 @@
     {/if}
     {#if terraform.terraformInstalled === false}
       <span class="warning-badge">{t('status.terraformMissing')}</span>
-    {/if}
-    <span class="separator"></span>
-    {#if McpStatusPill}
-      <McpStatusPill />
     {/if}
     <span class="separator"></span>
     <div class="palette-btn-wrapper">

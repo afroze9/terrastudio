@@ -116,13 +116,6 @@
       "resetDismissed": "Restablecer tipos descartados",
       "hint": "Cuando marcas \"No mostrar de nuevo\" en un tipo de conexión, el asistente no se abrirá automáticamente para ese tipo. Restablece aquí para volver a habilitarlos."
     },
-    "mcp": {
-      "label": "Servidor MCP",
-      "status": "Estado",
-      "ipcPort": "Puerto IPC",
-      "httpPort": "Puerto HTTP",
-      "hint": "El servidor MCP permite que los asistentes de IA (Claude Desktop, VS Code Cline, Cursor) interactúen con TerraStudio de forma programática."
-    },
     "accessibility": {
       "label": "Accesibilidad",
       "fontScale": "Escala de fuente",

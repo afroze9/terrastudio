@@ -116,13 +116,6 @@
       "resetDismissed": "Réinitialiser les types masqués",
       "hint": "Lorsque vous cochez « Ne plus afficher » pour un type de connexion, l'assistant ne s'ouvrira plus automatiquement pour ce type. Réinitialisez ici pour tout réactiver."
     },
-    "mcp": {
-      "label": "Serveur MCP",
-      "status": "Statut",
-      "ipcPort": "Port IPC",
-      "httpPort": "Port HTTP",
-      "hint": "Le serveur MCP permet aux assistants IA (Claude Desktop, VS Code Cline, Cursor) d'interagir avec TerraStudio de manière programmatique."
-    },
     "accessibility": {
       "label": "Accessibilité",
       "fontScale": "Échelle de police",

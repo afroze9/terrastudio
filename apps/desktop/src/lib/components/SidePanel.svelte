@@ -16,7 +16,7 @@
     explorer: categoryIds,
     terraform: ['tf-files', 'tf-variables', 'tf-commands'],
     settings: ['project-provider', 'project-naming', 'project-layout', 'project-edge-styles', 'project-tags'],
-    'app-settings': ['app-appearance', 'app-canvas', 'app-cost', 'app-logging', 'app-mcp'],
+    'app-settings': ['app-appearance', 'app-canvas', 'app-cost', 'app-logging'],
     cost: ['cost-summary', 'cost-by-type', 'cost-notes'],
   };
 

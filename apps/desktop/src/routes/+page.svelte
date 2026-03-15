@@ -19,7 +19,6 @@
 	import { terraform } from '$lib/stores/terraform.svelte';
 	import { plan } from '$lib/stores/plan.svelte';
 	import { saveDiagram, openProject, guardUnsavedChanges, initWindowProject, initFileAssociationHandler } from '$lib/services/project-service';
-	import { destroyBridgeListener } from '$lib/mcp/bridge-listener';
 	import { initSettingsSync, destroySettingsSync } from '$lib/stores/settings-sync';
 
 	let startWelcomeInWizard = $state(false);
@@ -33,13 +32,7 @@
 			plan.clear();
 			ui.closeAllFileTabs();
 			project.close();
-			const win = getCurrentWindow();
-			win.setTitle('TerraStudio').catch(() => {});
-			invoke('mcp_set_window_project', {
-				windowLabel: win.label,
-				projectName: '',
-				projectPath: '',
-			}).catch(() => {});
+			getCurrentWindow().setTitle('TerraStudio').catch(() => {});
 		}
 		// Signal the welcome screen to go straight into the wizard
 		startWelcomeInWizard = true;
@@ -57,11 +50,6 @@
 		initWindowProject();
 		initFileAssociationHandler();
 		initSettingsSync();
-
-		// Track active window for MCP targeting
-		const unlistenFocus = appWindow.onFocusChanged(({ payload: focused }) => {
-			if (focused) invoke('mcp_set_active_window', { windowLabel: appWindow.label }).catch(() => {});
-		});
 
 		const unlistenClose = appWindow.onCloseRequested(async (event) => {
 			event.preventDefault();
@@ -85,9 +73,7 @@
 				if (result === 'save') await saveDiagram();
 			}
 
-			// Unregister from MCP state and clean up listeners before destroying
 			destroySettingsSync();
-			destroyBridgeListener();
 			await appWindow.destroy();
 		});
 
@@ -162,14 +148,7 @@
 					ui.closeAllFileTabs();
 					startWelcomeInWizard = false;
 					project.close();
-					const win = getCurrentWindow();
-					win.setTitle('TerraStudio').catch(() => {});
-					// Clear MCP project metadata (window stays registered, just no project)
-					invoke('mcp_set_window_project', {
-						windowLabel: win.label,
-						projectName: '',
-						projectPath: '',
-					}).catch(() => {});
+					getCurrentWindow().setTitle('TerraStudio').catch(() => {});
 				}
 				return;
 			}
@@ -234,7 +213,6 @@
 		window.addEventListener('contextmenu', blockContextMenu);
 		return () => {
 			unlistenClose.then((fn) => fn());
-			unlistenFocus.then((fn) => fn());
 			window.removeEventListener('keydown', handleKeydown);
 			window.removeEventListener('contextmenu', blockContextMenu);
 		};
