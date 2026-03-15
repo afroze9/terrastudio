@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.41.5](https://github.com/afroze9/terrastudio/compare/v0.41.4...v0.41.5) (2026-03-15)
+
+
+### Features
+
+* add structured logging across diagram, HCL gen, terraform, and project ops ([e6b258b](https://github.com/afroze9/terrastudio/commit/e6b258b7fb72be9f777727c633306ddbaf0fbdaf))
+
 ## [0.41.4](https://github.com/afroze9/terrastudio/compare/v0.41.3...v0.41.4) (2026-03-15)
 
 
