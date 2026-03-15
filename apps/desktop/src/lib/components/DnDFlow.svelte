@@ -714,7 +714,7 @@
         // includes the container itself and all its ancestors.
         const rgOverrides = parentId
           ? getNamingOverridesFromAncestors(
-              { id: '__drop__', parentId, data: { typeId: schema.typeId, properties: {} } },
+              { id: '__drop__', parentId, position: { x: 0, y: 0 }, data: { typeId: schema.typeId, properties: {}, references: {}, terraformName: '', label: '', validationErrors: [] } },
               diagram.nodes,
               (typeId) => registry.getResourceSchema(typeId),
             )

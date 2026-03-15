@@ -3,7 +3,7 @@ import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { project, type ProjectMetadata } from '$lib/stores/project.svelte';
-import { diagram, type DiagramEdge } from '$lib/stores/diagram.svelte';
+import { diagram } from '$lib/stores/diagram.svelte';
 import { cost } from '$lib/stores/cost.svelte';
 import { ui } from '$lib/stores/ui.svelte';
 import { terraform } from '$lib/stores/terraform.svelte';
@@ -12,41 +12,10 @@ import { registry, loadPluginsForProject } from '$lib/bootstrap';
 import { logger } from '$lib/logger';
 import { applyTemplate } from '$lib/templates/service';
 import type { Template } from '$lib/templates/types';
-import type { NamingConvention, EdgeCategoryId } from '@terrastudio/types';
+import type { NamingConvention } from '@terrastudio/types';
 import type { LayoutAlgorithm, ProjectConfig } from '@terrastudio/core';
 import type { ProviderId } from '@terrastudio/types';
-
-/**
- * Migrate edges from old format (no data.category) to new format.
- * Infers category from edge properties:
- * - animated: true -> binding
- * - id starts with 'ref-' -> reference
- * - otherwise -> structural
- */
-function migrateEdges(edges: unknown[]): DiagramEdge[] {
-  return edges.map((edge: any) => {
-    // Already migrated - has data.category
-    if (edge.data?.category) return edge as DiagramEdge;
-
-    // Infer category from existing properties
-    let category: EdgeCategoryId = 'structural';
-    if (edge.animated) {
-      category = 'binding';
-    } else if (edge.id?.startsWith('ref-')) {
-      category = 'reference';
-    }
-
-    // Create new edge with data.category, preserving existing label
-    const { animated, style, label, ...rest } = edge;
-    return {
-      ...rest,
-      data: {
-        category,
-        label: label ?? undefined,
-      },
-    } as DiagramEdge;
-  });
-}
+import { migrateEdges, resolveActiveProviders } from '@terrastudio/project';
 
 interface ProjectData {
   metadata: ProjectMetadata;
@@ -56,39 +25,6 @@ interface ProjectData {
   } | null;
   cost: unknown | null;
   path: string;
-}
-
-/**
- * Resolve which provider IDs to load for a given project config.
- * If activeProviders is set, use it. Otherwise infer from diagram node types
- * (e.g. 'aws/networking/vpc' → 'aws'). Falls back to ['azurerm'].
- */
-function resolveActiveProviders(config: ProjectConfig, diagramNodes?: unknown[]): ProviderId[] {
-  if (config.activeProviders?.length) {
-    logger.info(`[project] activeProviders from config: [${config.activeProviders.join(', ')}]`);
-    return config.activeProviders as ProviderId[];
-  }
-
-  logger.warn('[project] No activeProviders in project config, inferring from diagram nodes');
-
-  // Infer providers from diagram node types (format: '{provider}/...')
-  if (diagramNodes?.length) {
-    const providers = new Set<string>();
-    for (const node of diagramNodes) {
-      const type = (node as any)?.type as string | undefined;
-      if (type && type.includes('/') && !type.startsWith('_')) {
-        providers.add(type.split('/')[0]);
-      }
-    }
-    if (providers.size > 0) {
-      const inferred = [...providers] as ProviderId[];
-      logger.info(`[project] Inferred providers from ${diagramNodes.length} nodes: [${inferred.join(', ')}]`);
-      return inferred;
-    }
-  }
-
-  logger.info('[project] No providers inferred, defaulting to [azurerm]');
-  return ['azurerm' as ProviderId];
 }
 
 /**

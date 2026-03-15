@@ -36,6 +36,8 @@ export type {
   ConnectionPointConfig,
   HandlePositionOverrides,
   ResourceNodeData,
+  ProjectNode,
+  ProjectEdge,
   ResourceNodeComponent,
   PropertyEditorProps,
   PropertyEditorComponent,
