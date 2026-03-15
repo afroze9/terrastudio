@@ -1,9 +1,9 @@
 export default [
   'packages/core',
-  'packages/plugin-azure-compute',
-  'packages/plugin-azure-database',
-  'packages/plugin-azure-monitoring',
-  'packages/plugin-azure-networking',
-  'packages/plugin-azure-security',
-  'packages/plugin-azure-storage',
+  'plugins/plugin-azure-compute',
+  'plugins/plugin-azure-database',
+  'plugins/plugin-azure-monitoring',
+  'plugins/plugin-azure-networking',
+  'plugins/plugin-azure-security',
+  'plugins/plugin-azure-storage',
 ];

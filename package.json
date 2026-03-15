@@ -11,7 +11,8 @@
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "test:coverage": "turbo run test:coverage"
+    "test:coverage": "turbo run test:coverage",
+    "version-bump": "node scripts/version-bump.mjs"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
