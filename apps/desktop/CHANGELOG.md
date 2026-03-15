@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.38.3](https://github.com/afroze9/terrastudio/compare/v0.38.2...v0.38.3) (2026-03-15)
+
+
+### Features
+
+* add Display Name field for canvas nodes (v0.39.0) ([d3f4447](https://github.com/afroze9/terrastudio/commit/d3f4447d13c246675f5fe25458483a29f0d044cb)), closes [#39](https://github.com/afroze9/terrastudio/issues/39)
+* delete MCP bridge, scaffold @terrastudio/cli (Phase B) ([b87d140](https://github.com/afroze9/terrastudio/commit/b87d140999d4f44b9fafda6b2eb73848b21cb6aa))
+* extract @terrastudio/project package (Phase A of platform architecture) ([0cdd07b](https://github.com/afroze9/terrastudio/commit/0cdd07b4c2f370dd4e042f964dc1383d0bea0806))
+* Phase C — IProjectStorage interface + platform adapters ([6aba245](https://github.com/afroze9/terrastudio/commit/6aba24511595e6658229c3ea33ebc2e69d1c8fba))
+
+
+### Bug Fixes
+
+* canvas crosshair cursor and middle-click tab close ([80ce5e5](https://github.com/afroze9/terrastudio/commit/80ce5e54f8200c57adb7a5f56479b65c6e45dd5e))
+* decouple naming convention slug from computed name/label ([2f07f59](https://github.com/afroze9/terrastudio/commit/2f07f59b9e04516bfba501da3e0c595f83a2fae8))
+* derive naming region from RG location dropdown (v0.39.1) ([5d00e74](https://github.com/afroze9/terrastudio/commit/5d00e7473ed18ad6d3f2c93f86fc4a3e211800dc)), closes [#28](https://github.com/afroze9/terrastudio/issues/28)
+* implement proper keyboard arrow key movement for canvas nodes ([77e51de](https://github.com/afroze9/terrastudio/commit/77e51ded6375ade963cfb003d023948c9dbff706)), closes [#30](https://github.com/afroze9/terrastudio/issues/30)
+* inherit env/region naming tokens from parent Resource Group ([#28](https://github.com/afroze9/terrastudio/issues/28)) ([ede190f](https://github.com/afroze9/terrastudio/commit/ede190f2c8ff1ade7425c3e4626a0b7ffd9e2295))
+* keep label in sync with naming slug, simplify canvas label derivation ([3974700](https://github.com/afroze9/terrastudio/commit/39747002dee0d8a6cd6f244a9f632ef3a02cf67a))
+* propagate RG naming overrides to nodes without a stored namingSlug ([597c89a](https://github.com/afroze9/terrastudio/commit/597c89a518a9d564f6f8ea005787edb0e4739c1c))
+* remove redundant naming_region field and fix slug extraction feedback loop ([22cd20a](https://github.com/afroze9/terrastudio/commit/22cd20a60525826a58d924c85867f3ef7acc247f))
+* remove redundant snap-on-drop that caused grid placement drift ([97494d8](https://github.com/afroze9/terrastudio/commit/97494d8b72492a0d65bd913bb5a04a8a1fe02fc7)), closes [#29](https://github.com/afroze9/terrastudio/issues/29)
+* replace naming convention checkbox with toggle switch ([2a73d63](https://github.com/afroze9/terrastudio/commit/2a73d634d091a267c1c11fe51ee035c3378a492f))
+* restore naming_region shortcode field on Resource Group ([c93783e](https://github.com/afroze9/terrastudio/commit/c93783e2412ed7ab4af166072c4529c623979be0))
+* simplify project creation to 2-step workflow ([b8f16f4](https://github.com/afroze9/terrastudio/commit/b8f16f4072657c2b840538f633df3bc1d24fb05e)), closes [#32](https://github.com/afroze9/terrastudio/issues/32)
+
 ## [0.38.2](https://github.com/afroze9/terrastudio/compare/v0.38.1...v0.38.2) (2026-03-08)
 
 
