@@ -91,6 +91,12 @@ export function makeProjectCommand(): Command {
     )
     .option('--layout-algorithm <value>', 'Layout algorithm (dagre or hybrid)')
     .option('--providers <providers...>', 'Active providers (space-separated)')
+    .option(
+      '--variable <key=value>',
+      'Set a variable value (e.g. --variable location=eastus). Repeat for multiple variables.',
+      (val: string, acc: string[]) => [...acc, val],
+      [] as string[],
+    )
     .action(
       async (
         projectPath: string,
@@ -98,6 +104,7 @@ export function makeProjectCommand(): Command {
           namingConvention?: string;
           layoutAlgorithm?: string;
           providers?: string[];
+          variable: string[];
         },
       ) => {
         const stored = await storage.loadProject(projectPath);
@@ -129,6 +136,26 @@ export function makeProjectCommand(): Command {
           project.projectConfig = {
             ...project.projectConfig,
             activeProviders: options.providers as ProviderId[],
+          };
+        }
+
+        if (options.variable.length > 0) {
+          const variableValues: Record<string, unknown> = {
+            ...(project.projectConfig.variableValues ?? {}),
+          };
+          for (const entry of options.variable) {
+            const eq = entry.indexOf('=');
+            if (eq === -1) {
+              console.error(`Invalid --variable format (expected key=value): ${entry}`);
+              process.exit(1);
+            }
+            const key = entry.slice(0, eq);
+            const value = entry.slice(eq + 1);
+            variableValues[key] = value;
+          }
+          project.projectConfig = {
+            ...project.projectConfig,
+            variableValues,
           };
         }
 
