@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.41.4](https://github.com/afroze9/terrastudio/compare/v0.41.3...v0.41.4) (2026-03-15)
+
+
+### Bug Fixes
+
+* force release-please PR for pending fixes ([b3b59ea](https://github.com/afroze9/terrastudio/commit/b3b59ea52673ef5f9f5089b440617c79bb100891))
+* trigger release after unblocking release-please ([6525ded](https://github.com/afroze9/terrastudio/commit/6525dede1b38ae5b29d94c2cf04d3118f0148c6a))
+* unblock release-please after tagging v0.41.3 ([d7a9018](https://github.com/afroze9/terrastudio/commit/d7a901859ad8d5b1350ad3b73e5082d394fd0f9a))
+
 ## [0.41.2](https://github.com/afroze9/terrastudio/compare/v0.41.1...v0.41.2) (2026-03-15)
 
 
