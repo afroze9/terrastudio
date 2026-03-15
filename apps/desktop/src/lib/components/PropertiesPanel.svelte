@@ -170,7 +170,7 @@
         const outputDef = sourceSchema?.outputs?.find((o: OutputDefinition) => o.key === attribute);
         return {
           edgeId: edge.id,
-          sourceLabel: sourceNode?.data.label ?? 'Unknown',
+          sourceLabel: (sourceNode?.data.displayLabel || sourceNode?.data.label) ?? 'Unknown',
           attributeLabel: outputDef?.label ?? attribute,
           sensitive: outputDef?.sensitive ?? false,
         };
@@ -235,7 +235,7 @@
   let diagramNodesForRef = $derived(
     diagram.nodes
       .filter((n) => diagram.selectedNode ? n.id !== diagram.selectedNode.id : true)
-      .map((n) => ({ id: n.id, typeId: n.data.typeId as string, label: n.data.label }))
+      .map((n) => ({ id: n.id, typeId: n.data.typeId as string, label: (n.data.displayLabel || n.data.label) as string }))
   );
 
   const panelTitle = $derived.by(() => {
@@ -469,6 +469,39 @@
 
       <div class="tf-name-field">
         <label class="field-label">
+          <span class="label-text">{t('properties.displayName')}</span>
+          <div class="display-name-row">
+            <input
+              type="text"
+              value={diagram.selectedNode.data.displayLabel ?? ''}
+              placeholder={diagram.selectedNode.data.label || schema?.displayName || ''}
+              disabled={isTemplateMember}
+              oninput={(e) => {
+                if (diagram.selectedNode) {
+                  const val = (e.target as HTMLInputElement).value;
+                  diagram.updateNodeData(diagram.selectedNode.id, {
+                    displayLabel: val || undefined,
+                  });
+                }
+              }}
+            />
+            {#if diagram.selectedNode.data.displayLabel}
+              <button
+                class="clear-display-name"
+                title="Reset to resource name"
+                onclick={() => {
+                  if (diagram.selectedNode) {
+                    diagram.updateNodeData(diagram.selectedNode.id, { displayLabel: undefined });
+                  }
+                }}
+              >✕</button>
+            {/if}
+          </div>
+        </label>
+      </div>
+
+      <div class="tf-name-field">
+        <label class="field-label">
           <span class="label-text">{t('properties.terraformName')}</span>
           <input
             type="text"
@@ -642,12 +675,12 @@
       <div class="edge-endpoints">
         <div class="edge-endpoint">
           <span class="endpoint-label">{t('properties.from')}</span>
-          <span class="endpoint-value">{sourceNode?.data.label || 'Unknown'}</span>
+          <span class="endpoint-value">{sourceNode?.data.displayLabel || sourceNode?.data.label || 'Unknown'}</span>
         </div>
         <div class="edge-arrow">&#8595;</div>
         <div class="edge-endpoint">
           <span class="endpoint-label">{t('properties.to')}</span>
-          <span class="endpoint-value">{targetNode?.data.label || 'Unknown'}</span>
+          <span class="endpoint-value">{targetNode?.data.displayLabel || targetNode?.data.label || 'Unknown'}</span>
         </div>
       </div>
 
@@ -765,6 +798,30 @@
   }
   .tf-name-field {
     margin-bottom: 12px;
+  }
+  .display-name-row {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  .display-name-row input {
+    flex: 1;
+    min-width: 0;
+  }
+  .clear-display-name {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    font-size: var(--font-11);
+    padding: 2px 5px;
+    border-radius: 3px;
+    line-height: 1;
+  }
+  .clear-display-name:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
   }
   .convention-name-field {
     margin-bottom: 12px;

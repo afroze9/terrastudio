@@ -103,7 +103,7 @@
         if (!parent) break;
         if (BILLING_CONTAINERS.has(parent.data.typeId)) {
           containerId = parent.id;
-          containerLabel = parent.data.label ?? parent.id;
+          containerLabel = parent.data.displayLabel || parent.data.label || parent.id;
           break;
         }
         cur = parent;

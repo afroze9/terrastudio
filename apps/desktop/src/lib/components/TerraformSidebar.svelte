@@ -40,7 +40,7 @@
         vars.push({
           name: varName,
           type: varType,
-          description: `${propSchema.label} for ${node.data.label || node.data.terraformName}`,
+          description: `${propSchema.label} for ${node.data.displayLabel || node.data.label || node.data.terraformName}`,
           defaultValue: currentValue !== undefined && currentValue !== '' ? currentValue : undefined,
           sensitive: propSchema.sensitive ?? false,
         });

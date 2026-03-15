@@ -337,7 +337,7 @@
   class:plan-replace={planAction === 'replace'}
   class:plan-noop={planAction === 'no-op'}
   role="group"
-  aria-label={`${data.label || schema?.displayName || 'Resource'} (${schema?.terraformType ?? data.typeId})`}
+  aria-label={`${data.displayLabel || data.label || schema?.displayName || 'Resource'} (${schema?.terraformType ?? data.typeId})`}
   onmouseenter={onMouseEnter}
   onmouseleave={onMouseLeave}
   onclick={planAction ? () => { plan.diffNodeId = id; } : undefined}
@@ -360,7 +360,7 @@
         <span class="compact-badge compact-badge-pep" title="Private Endpoint ({pepSubresources})">{@html pepIcon.svg}</span>
       {/if}
     </div>
-    <span class="compact-label">{data.label || schema?.displayName || 'Resource'}</span>
+    <span class="compact-label">{data.displayLabel || data.label || schema?.displayName || 'Resource'}</span>
   {:else}
     <!-- Detailed card view -->
     <div class="node-header">
@@ -368,7 +368,7 @@
         <span class="node-icon">{@html icon.svg}</span>
       {/if}
       <div class="node-info">
-        <span class="node-label">{data.label || schema?.displayName || 'Resource'}</span>
+        <span class="node-label">{data.displayLabel || data.label || schema?.displayName || 'Resource'}</span>
         <span class="node-type">{schema?.terraformType ?? data.typeId}</span>
       </div>
       {#if hasNsg && nsgIcon?.type === 'svg' && nsgIcon.svg}

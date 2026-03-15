@@ -254,7 +254,7 @@ function generateDocumentation(): string {
       const status = node.data.deploymentStatus ?? 'pending';
       const statusIcon = status === 'created' ? 'deployed' : 'pending';
 
-      lines.push(`| ${node.data.label} | ${displayType} | \`${tfName}\` | \`${tfType}\` | ${statusIcon} |`);
+      lines.push(`| ${node.data.displayLabel || node.data.label} | ${displayType} | \`${tfName}\` | \`${tfType}\` | ${statusIcon} |`);
     }
     lines.push('');
   }
@@ -301,7 +301,7 @@ function generateDocumentation(): string {
         }
       }
 
-      lines.push(`| ${node.data.label} | ${displayType} | ${costCell} | ${notesCell} |`);
+      lines.push(`| ${node.data.displayLabel || node.data.label} | ${displayType} | ${costCell} | ${notesCell} |`);
     }
 
     lines.push('');
@@ -334,7 +334,7 @@ function generateDocumentation(): string {
       for (const child of children) {
         const schema = registry.getResourceSchema(child.data.typeId as ResourceTypeId);
         const icon = schema?.isContainer ? '📁' : '📄';
-        lines.push(`${indent}- ${icon} **${child.data.label}** (${schema?.displayName ?? child.data.typeId})`);
+        lines.push(`${indent}- ${icon} **${child.data.displayLabel || child.data.label}** (${schema?.displayName ?? child.data.typeId})`);
         renderTree(child.id, indent + '  ');
       }
     }
@@ -352,7 +352,7 @@ function generateDocumentation(): string {
 
     // Node definitions
     for (const node of realNodes) {
-      const label = node.data.label.replace(/"/g, "'");
+      const label = (node.data.displayLabel || node.data.label).replace(/"/g, "'");
       lines.push(`    ${node.id}["${label}"]`);
     }
 
@@ -372,7 +372,7 @@ function generateDocumentation(): string {
   for (const node of realNodes) {
     const typeId = node.data.typeId as ResourceTypeId;
     const schema = registry.getResourceSchema(typeId);
-    lines.push(`### ${node.data.label}`);
+    lines.push(`### ${node.data.displayLabel || node.data.label}`);
     lines.push('');
     lines.push(`- **Type**: ${schema?.displayName ?? typeId}`);
     lines.push(`- **Terraform**: \`${schema?.terraformType}.${node.data.terraformName}\``);

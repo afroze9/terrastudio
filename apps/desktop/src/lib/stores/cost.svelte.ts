@@ -172,7 +172,7 @@ class CostStore {
     for (const node of nodes) {
       initial.set(node.id, {
         nodeId: node.id,
-        displayName: node.data.label ?? node.id,
+        displayName: node.data.displayLabel || node.data.label || node.id,
         typeId: node.data.typeId,
         monthlyCost: null,
         loading: true,
@@ -193,7 +193,7 @@ class CostStore {
         const updated = new Map(this.estimates);
         updated.set(node.id, {
           nodeId: node.id,
-          displayName: node.data.label ?? node.id,
+          displayName: node.data.displayLabel || node.data.label || node.id,
           typeId: node.data.typeId,
           monthlyCost: result.monthly,
           loading: false,
@@ -227,7 +227,7 @@ class CostStore {
 
     for (const node of nodes) {
       const est = this.estimates.get(node.id);
-      const name = node.data.label ?? node.id;
+      const name = node.data.displayLabel || node.data.label || node.id;
       const type = node.data.typeId.split('/').pop() ?? node.data.typeId;
       const costVal = est?.monthlyCost !== undefined && est?.monthlyCost !== null
         ? `$${est.monthlyCost.toFixed(2)}`
