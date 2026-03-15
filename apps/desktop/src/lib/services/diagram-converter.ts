@@ -1,6 +1,7 @@
 import type { ResourceInstance, ConnectionRule, ResourceSchema, ResourceTypeId, OutputBinding } from '@terrastudio/types';
 import type { EdgeRuleValidator, ProjectConfig } from '@terrastudio/core';
-import { buildTokens, applyNamingTemplate, LOCATION_REGION_SHORTCODES } from '@terrastudio/core';
+import { buildTokens, applyNamingTemplate } from '@terrastudio/core';
+import { getNamingOverridesFromAncestors } from './naming-overrides.js';
 import type { DiagramNode, DiagramEdge } from '$lib/stores/diagram.svelte';
 
 /**
@@ -50,11 +51,8 @@ export function convertToResourceInstances(
     const conv = projectConfig?.namingConvention;
     const schema = getSchema(data.typeId);
     if (conv?.enabled && schema?.cafAbbreviation && data.namingSlug !== undefined) {
-      const rgNode = findAncestorResourceGroup({ parentId: node.parentId } as DiagramNode, nodes);
-      const rgEnv = (rgNode?.data.properties['naming_env'] as string | undefined) || undefined;
-      const rgLocation = rgNode?.data.properties['location'] as string | undefined;
-      const rgRegion = rgLocation ? LOCATION_REGION_SHORTCODES[rgLocation] : undefined;
-      const tokens = buildTokens(conv, schema.cafAbbreviation, data.namingSlug as string, (rgEnv || rgRegion) ? { env: rgEnv, region: rgRegion } : {});
+      const overrides = getNamingOverridesFromAncestors(node, nodes, getSchema);
+      const tokens = buildTokens(conv, schema.cafAbbreviation, data.namingSlug as string, overrides);
       const fullName = applyNamingTemplate(conv.template, tokens, schema.namingConstraints);
       if (fullName) properties['name'] = fullName;
     }

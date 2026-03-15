@@ -1,4 +1,4 @@
-import type { NamingConvention, NamingConstraints } from '@terrastudio/types';
+import type { NamingConvention, NamingConstraints, NamingTokenSource } from '@terrastudio/types';
 
 /** Maps Azure location IDs to conventional region shortcodes used in naming conventions. */
 export const LOCATION_REGION_SHORTCODES: Record<string, string> = {
@@ -35,6 +35,28 @@ export interface NamingTokens {
   name: string;
   region?: string;
   org?: string;
+}
+
+/**
+ * Resolve naming token overrides contributed by a single container node.
+ * Given the node's raw properties and its schema's namingTokenSources declarations,
+ * returns a partial token map with only the tokens this node contributes.
+ *
+ * The caller is responsible for merging overrides from multiple ancestors
+ * (typically closer ancestors should win).
+ */
+export function resolveNamingOverrides(
+  properties: Record<string, unknown>,
+  sources: ReadonlyArray<NamingTokenSource>,
+): Partial<NamingTokens> {
+  const overrides: Partial<NamingTokens> = {};
+  for (const source of sources) {
+    const raw = properties[source.propertyKey];
+    if (!raw || typeof raw !== 'string') continue;
+    const value = source.valueMap ? source.valueMap[raw] : raw;
+    if (value) (overrides as Record<string, string>)[source.token] = value;
+  }
+  return overrides;
 }
 
 /**

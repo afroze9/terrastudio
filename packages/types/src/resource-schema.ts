@@ -112,6 +112,32 @@ export interface NamingConstraints {
   readonly maxLength?: number;
 }
 
+/**
+ * Declares that a container resource contributes a naming token to its descendants.
+ * The app walks up the parent chain, collects these sources from any ancestor whose
+ * schema declares them, and merges them into the naming token overrides (closer
+ * ancestors win). This is provider-agnostic — Azure RGs, AWS accounts, etc. all
+ * express their naming contributions the same way.
+ *
+ * Example — Azure Resource Group contributing {env} and {region}:
+ *   { token: 'env',    propertyKey: 'naming_env' }
+ *   { token: 'region', propertyKey: 'location', valueMap: LOCATION_REGION_SHORTCODES }
+ *
+ * Example — AWS Account contributing {region}:
+ *   { token: 'region', propertyKey: 'region', valueMap: AWS_REGION_SHORTCODES }
+ */
+export interface NamingTokenSource {
+  /** Which NamingTokens key this source populates ('env' | 'region' | 'org') */
+  readonly token: 'env' | 'region' | 'org';
+  /** Property key on this resource to read the raw value from */
+  readonly propertyKey: string;
+  /**
+   * Optional lookup table mapping raw property values to token values.
+   * If omitted, the raw property value is used as-is.
+   */
+  readonly valueMap?: Readonly<Record<string, string>>;
+}
+
 export interface CostUsageInput {
   /** Property key used to store the value on the node (prefixed with `_cost_`) */
   readonly key: string;
@@ -155,6 +181,12 @@ export interface ResourceSchema {
   readonly cafAbbreviation?: string;
   /** Resource-specific constraints applied after naming template rendering */
   readonly namingConstraints?: NamingConstraints;
+  /**
+   * Declares that this container resource contributes naming token overrides to its
+   * descendants. Any ancestor in the parent chain with this field set will have its
+   * tokens collected (closer ancestors win). Provider-agnostic.
+   */
+  readonly namingTokenSources?: ReadonlyArray<NamingTokenSource>;
   /** If true, this resource renders as a container that can hold child nodes */
   readonly isContainer?: boolean;
   /** Which container typeIds this resource can be placed inside */

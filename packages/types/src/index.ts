@@ -11,6 +11,7 @@ export type {
   ContainerStyle,
   OutputDefinition,
   NamingConstraints,
+  NamingTokenSource,
   CostEstimationMeta,
   CostUsageInput,
 } from './resource-schema.js';

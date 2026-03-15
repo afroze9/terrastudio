@@ -4,7 +4,8 @@
   import { project } from '$lib/stores/project.svelte';
   import { ui } from '$lib/stores/ui.svelte';
   import { registry } from '$lib/bootstrap';
-  import { applyNamingTemplate, sanitizeTerraformName, buildTokens, extractSlug, LOCATION_REGION_SHORTCODES } from '@terrastudio/core';
+  import { applyNamingTemplate, sanitizeTerraformName, buildTokens, extractSlug, resolveNamingOverrides } from '@terrastudio/core';
+  import { getNamingOverridesFromAncestors } from '$lib/services/naming-overrides';
   import PropertyRenderer from './PropertyRenderer.svelte';
   import SubscriptionPicker from './SubscriptionPicker.svelte';
   import KeyVaultAccessControlSection from './KeyVaultAccessControlSection.svelte';
@@ -84,25 +85,13 @@
   });
 
   /**
-   * Walk the containment hierarchy from the selected node upward to find the nearest
-   * Resource Group, then return its naming_env override (if set).
+   * Walk the containment hierarchy from the selected node upward, collecting
+   * naming token overrides from any ancestor whose schema declares namingTokenSources.
    */
-  let rgNamingOverrides = $derived.by((): { env?: string; region?: string } => {
+  let rgNamingOverrides = $derived.by(() => {
     const node = diagram.selectedNode;
     if (!node) return {};
-    let cur = node;
-    while (cur.parentId) {
-      const parent = diagram.nodes.find((n) => n.id === cur.parentId);
-      if (!parent) break;
-      if (parent.data.typeId === 'azurerm/core/resource_group') {
-        const env = (parent.data.properties['naming_env'] as string | undefined) || undefined;
-        const location = parent.data.properties['location'] as string | undefined;
-        const region = location ? LOCATION_REGION_SHORTCODES[location] : undefined;
-        return { env, region };
-      }
-      cur = parent;
-    }
-    return {};
+    return getNamingOverridesFromAncestors(node, diagram.nodes, (typeId) => registry.getResourceSchema(typeId));
   });
 
   /** Preview of the full Azure name — always computed, never stored. */
@@ -210,15 +199,24 @@
       label: newLabel,
     });
 
-    // When an RG's naming overrides change, recompute labels for all children that have a namingSlug
-    if ((key === 'naming_env' || key === 'location') && diagram.selectedNode) {
+    // When a property that contributes a naming token changes, recompute labels for all descendants
+    const changedSchema = diagram.selectedNode ? registry.getResourceSchema(diagram.selectedNode.data.typeId) : null;
+    const affectsNaming = changedSchema?.namingTokenSources?.some((s) => s.propertyKey === key);
+    if (affectsNaming && diagram.selectedNode) {
       const conv = project.projectConfig.namingConvention;
       if (!conv?.enabled) return;
       const rgId = diagram.selectedNode.id;
-      const env = newProps['naming_env'] as string | undefined || undefined;
-      const location = newProps['location'] as string | undefined;
-      const region = location ? LOCATION_REGION_SHORTCODES[location] : undefined;
-      const overrides = { env, region };
+      // Compute overrides contributed by this node (using updated props) plus any of its own ancestors
+      const selfOverrides = changedSchema!.namingTokenSources
+        ? resolveNamingOverrides(newProps, changedSchema!.namingTokenSources)
+        : {};
+      const ancestorOverrides = getNamingOverridesFromAncestors(
+        diagram.selectedNode,
+        diagram.nodes,
+        (typeId) => registry.getResourceSchema(typeId),
+      );
+      // Self wins over its own ancestors (closer to the children)
+      const overrides = { ...ancestorOverrides, ...selfOverrides };
 
       // Find all descendants of this RG that have a namingSlug
       function getDescendants(parentId: string): typeof diagram.nodes {

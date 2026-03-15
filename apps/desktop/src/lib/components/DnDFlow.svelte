@@ -19,7 +19,7 @@
   import { registry, edgeTypes } from '$lib/bootstrap';
   import {
     createNodeData, generateNodeId, nextAvailableCidr,
-    applyNamingTemplate, buildTokens, sanitizeTerraformName, generateUniqueTerraformName, LOCATION_REGION_SHORTCODES,
+    applyNamingTemplate, buildTokens, sanitizeTerraformName, generateUniqueTerraformName,
   } from '@terrastudio/core';
   import { project } from '$lib/stores/project.svelte';
   import type { ResourceNodeComponent, ResourceTypeId, EdgeCategoryId, TerraStudioEdgeData } from '@terrastudio/types';
@@ -27,6 +27,7 @@
   import { tick, untrack } from 'svelte';
   import { EdgeMarkers } from './edges';
   import { autofitContainer } from '$lib/services/layout-service';
+  import { getNamingOverridesFromAncestors } from '$lib/services/naming-overrides';
   import { connectionWizard } from '$lib/stores/connection-wizard.svelte';
   import { connectionUx, type GhostTarget } from '$lib/stores/connection-ux.svelte';
   import { buildEdgeWizardEntry, buildContainmentWizardEntry } from '$lib/services/connection-wizard-builder';
@@ -708,22 +709,16 @@
       if (convention?.enabled && schema.cafAbbreviation) {
         const instanceCount = diagram.nodes.filter(n => n.data.typeId === schema.typeId).length + 1;
         const defaultSlug = String(instanceCount).padStart(2, '0');
-        // Walk up from drop container to find the nearest Resource Group for env override
-        const rgOverrides: { env?: string; region?: string } = {};
-        if (parentId) {
-          let cur = diagram.nodes.find(n => n.id === parentId);
-          while (cur) {
-            if (cur.data.typeId === 'azurerm/core/resource_group') {
-              const env = (cur.data.properties['naming_env'] as string | undefined) || undefined;
-              const location = cur.data.properties['location'] as string | undefined;
-              const region = location ? LOCATION_REGION_SHORTCODES[location] : undefined;
-              if (env) rgOverrides.env = env;
-              if (region) rgOverrides.region = region;
-              break;
-            }
-            cur = cur.parentId ? diagram.nodes.find(n => n.id === cur!.parentId) : undefined;
-          }
-        }
+        // Walk up from drop container to collect naming token overrides from ancestor schemas.
+        // Pass a synthetic node whose parentId points to the drop container so the walk
+        // includes the container itself and all its ancestors.
+        const rgOverrides = parentId
+          ? getNamingOverridesFromAncestors(
+              { id: '__drop__', parentId, data: { typeId: schema.typeId, properties: {} } },
+              diagram.nodes,
+              (typeId) => registry.getResourceSchema(typeId),
+            )
+          : {};
         const tokens = buildTokens(convention, schema.cafAbbreviation, defaultSlug, rgOverrides);
         const fullName = applyNamingTemplate(convention.template, tokens, schema.namingConstraints);
         nodeData.namingSlug = defaultSlug;
