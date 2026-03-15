@@ -3,6 +3,7 @@ import { TauriProjectStorage } from '@terrastudio/platform-tauri';
 
 const storage = new TauriProjectStorage();
 import { getCurrentWindow, ProgressBarStatus } from '@tauri-apps/api/window';
+import { logger } from '$lib/logger';
 import type { UnlistenFn } from '@tauri-apps/api/event';
 import type { DeploymentStatus, ResourceTypeId } from '@terrastudio/types';
 import { HclPipeline, validateDiagram, validateNetworkTopology } from '@terrastudio/core';
@@ -146,6 +147,8 @@ export async function checkTerraform(): Promise<void> {
 export async function generateAndWrite(): Promise<Record<string, string>> {
   if (!project.path) throw new Error('No project open');
 
+  logger.info('[hcl] Starting HCL generation');
+  const t0 = performance.now();
   terraform.setStatus('generating');
   terraform.appendInfo('--- Generating Terraform ---');
 
@@ -163,6 +166,8 @@ export async function generateAndWrite(): Promise<Record<string, string>> {
       project.projectConfig,
     );
 
+    logger.debug(`[hcl] Converted ${resources.length} resource instances`);
+
     // Validate diagram before generation
     const validation = validateDiagram(resources, registry.inner);
     if (!validation.valid) {
@@ -177,6 +182,7 @@ export async function generateAndWrite(): Promise<Record<string, string>> {
         `Validation failed with ${validation.errors.length} resource(s) having errors. Fix issues and try again.`,
       );
       terraform.setStatus('error');
+      logger.warn(`[hcl] Diagram validation failed: ${validation.errors.length} error(s)`);
       const err = new Error('Diagram validation failed');
       (err as any).validationErrors = errorDetails;
       throw err;
@@ -213,6 +219,7 @@ export async function generateAndWrite(): Promise<Record<string, string>> {
     }
 
     terraform.appendInfo('Validation passed.');
+    logger.debug('[hcl] Validation passed');
 
     // Extract output bindings from edges
     const bindings = extractOutputBindings(
@@ -271,10 +278,12 @@ export async function generateAndWrite(): Promise<Record<string, string>> {
       `Generated ${Object.keys(fileMap).length} files to ${project.path}/terraform`,
     );
     terraform.setStatus('success');
+    logger.info(`[hcl] HCL generation complete — ${Object.keys(fileMap).length} files in ${Math.round(performance.now() - t0)}ms`);
     return fileMap;
   } catch (err) {
     terraform.appendError(`Generation failed: ${err}`);
     terraform.setStatus('error');
+    logger.error(`[hcl] HCL generation failed: ${err}`);
     throw err;
   }
 }
@@ -393,6 +402,8 @@ export async function runTerraformCommand(
     await setTaskbarProgress('indeterminate');
   }
 
+  logger.info(`[terraform] Running: terraform ${command}`);
+  const tfStart = performance.now();
   terraform.setStatus('running', command);
   terraform.appendInfo(`\n--- terraform ${command} ---\n`);
   terraform.clearErrors();
@@ -468,8 +479,15 @@ export async function runTerraformCommand(
       terraform.setStatus(success ? 'success' : 'error');
     }
 
+    const elapsed = Math.round(performance.now() - tfStart);
+    if (success) {
+      logger.info(`[terraform] terraform ${command} succeeded in ${elapsed}ms`);
+    } else {
+      logger.warn(`[terraform] terraform ${command} failed in ${elapsed}ms`);
+    }
     return success;
   } catch (err) {
+    logger.error(`[terraform] terraform ${command} threw: ${err}`);
     terraform.appendError(`Command failed: ${err}`);
     terraform.setStatus('error');
     return false;

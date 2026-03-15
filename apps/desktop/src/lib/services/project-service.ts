@@ -52,6 +52,7 @@ export async function createProject(
   layoutAlgorithm?: LayoutAlgorithm,
   activeProviders?: ProviderId[],
 ): Promise<void> {
+  logger.info(`[project] Creating project "${name}" at ${parentPath}`);
   const data = await invoke<ProjectData>('create_project', {
     name,
     parentPath,
@@ -59,6 +60,7 @@ export async function createProject(
 
   // Load plugins before opening project in store
   const providers = activeProviders?.length ? activeProviders : ['azurerm' as ProviderId];
+  logger.info(`[project] Loading plugins for providers: [${providers.join(', ')}]`);
   await loadPluginsForProject(providers);
 
   diagram.clear();
@@ -78,10 +80,12 @@ export async function createProject(
   await storage.saveProjectConfig(data.path, project.projectConfig);
 
   if (template) {
+    logger.debug(`[project] Applying template "${template.metadata.name}"`);
     const { nodes, edges } = applyTemplate(template, namingConvention, registry);
     diagram.loadDiagram(nodes, edges);
     await saveDiagram();
   }
+  logger.info(`[project] Project "${name}" created at ${data.path}`);
 }
 
 /**
@@ -160,6 +164,7 @@ export async function loadProjectByPath(path: string): Promise<void> {
     const edges = migrateEdges(d.edges ?? []);
     const modules = (d.modules ?? []) as any[];
     const moduleInstances = (d.moduleInstances ?? []) as any[];
+    logger.debug(`[project] Restoring diagram: ${nodes.length} nodes, ${edges.length} edges, ${modules.length} modules, ${moduleInstances.length} instances`);
     diagram.loadDiagram(nodes, edges, modules, moduleInstances);
   }
 
@@ -168,6 +173,7 @@ export async function loadProjectByPath(path: string): Promise<void> {
     cost.loadSaved(data.cost as any);
     cost.checkDirty(diagram.nodes);
   }
+  logger.info(`[project] Project "${data.metadata.name}" loaded from ${path}`);
 }
 
 /**
@@ -246,6 +252,7 @@ export async function saveDiagram(): Promise<void> {
 
   await Promise.all(savePromises);
   project.markSaved();
+  logger.info(`[project] Project "${project.name}" saved`);
 }
 
 /**

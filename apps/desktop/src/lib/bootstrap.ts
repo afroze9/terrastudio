@@ -6,7 +6,7 @@ import ModuleInstanceNode from '$lib/components/ModuleInstanceNode.svelte';
 import AnnotationNode from '$lib/components/AnnotationNode.svelte';
 import { TerraStudioEdge } from '$lib/components/edges';
 import { checkTerraform } from '$lib/services/terraform-service';
-import { setLoggerLevel, type LogLevel } from '$lib/logger';
+import { logger, setLoggerLevel, type LogLevel } from '$lib/logger';
 import { i18n } from '$lib/i18n';
 import { validation } from '$lib/stores/validation.svelte';
 import type { Component } from 'svelte';
@@ -51,6 +51,7 @@ export function declarePlugins(): void {
   pluginRegistry.registerLazyPlugin('aws', () => import('@terrastudio/plugin-aws-compute'));
   // Future providers:
   // pluginRegistry.registerLazyPlugin('google', () => import('@terrastudio/plugin-gcp-compute'));
+  logger.debug('[bootstrap] Plugin factories declared');
 }
 
 /**
@@ -59,7 +60,10 @@ export function declarePlugins(): void {
  * Idempotent — already-loaded providers are skipped.
  */
 export async function loadPluginsForProject(providerIds: ProviderId[]): Promise<void> {
+  logger.info(`[bootstrap] Loading plugins for providers: [${providerIds.join(', ')}]`);
+  const t0 = performance.now();
   await pluginRegistry.loadPluginsForProviders(providerIds);
+  logger.info(`[bootstrap] Plugins loaded in ${Math.round(performance.now() - t0)}ms`);
 }
 
 /** Apply the persisted log level to both the JS logger and Rust backend. */
