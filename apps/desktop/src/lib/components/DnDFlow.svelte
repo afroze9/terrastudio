@@ -708,16 +708,14 @@
       if (convention?.enabled && schema.cafAbbreviation) {
         const instanceCount = diagram.nodes.filter(n => n.data.typeId === schema.typeId).length + 1;
         const defaultSlug = String(instanceCount).padStart(2, '0');
-        // Walk up from drop container to find the nearest Resource Group for env/region overrides
-        const rgOverrides: { env?: string; region?: string } = {};
+        // Walk up from drop container to find the nearest Resource Group for env override
+        const rgOverrides: { env?: string } = {};
         if (parentId) {
           let cur = diagram.nodes.find(n => n.id === parentId);
           while (cur) {
             if (cur.data.typeId === 'azurerm/core/resource_group') {
               const env = (cur.data.properties['naming_env'] as string | undefined) || undefined;
-              const region = (cur.data.properties['naming_region'] as string | undefined) || undefined;
               if (env) rgOverrides.env = env;
-              if (region) rgOverrides.region = region;
               break;
             }
             cur = cur.parentId ? diagram.nodes.find(n => n.id === cur!.parentId) : undefined;
