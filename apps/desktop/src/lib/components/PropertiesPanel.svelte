@@ -87,7 +87,7 @@
    * Walk the containment hierarchy from the selected node upward to find the nearest
    * Resource Group, then return its naming_env override (if set).
    */
-  let rgNamingOverrides = $derived.by((): { env?: string } => {
+  let rgNamingOverrides = $derived.by((): { env?: string; region?: string } => {
     const node = diagram.selectedNode;
     if (!node) return {};
     let cur = node;
@@ -96,7 +96,8 @@
       if (!parent) break;
       if (parent.data.typeId === 'azurerm/core/resource_group') {
         const env = (parent.data.properties['naming_env'] as string | undefined) || undefined;
-        return { env };
+        const region = (parent.data.properties['naming_region'] as string | undefined) || undefined;
+        return { env, region };
       }
       cur = parent;
     }
