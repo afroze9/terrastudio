@@ -141,7 +141,7 @@ jobs:
       - name: Package CLI binaries
         working-directory: packages/cli
         run: >
-          pnpm pkg bundle/cli.cjs
+          ./node_modules/.bin/pkg bundle/cli.cjs
           --targets node22-win-x64,node22-linux-x64,node22-macos-arm64,node22-macos-x64
           --output bin/tstudio
 
