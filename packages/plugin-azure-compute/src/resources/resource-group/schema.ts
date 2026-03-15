@@ -1,4 +1,5 @@
 import type { ResourceSchema } from '@terrastudio/types';
+import { LOCATION_REGION_SHORTCODES } from '@terrastudio/core';
 
 export const resourceGroupSchema: ResourceSchema = {
   typeId: 'azurerm/core/resource_group',
@@ -25,6 +26,11 @@ export const resourceGroupSchema: ResourceSchema = {
     dashArray: '20,12',
   },
   minSize: { width: 300, height: 200 },
+
+  namingTokenSources: [
+    { token: 'env', propertyKey: 'naming_env' },
+    { token: 'region', propertyKey: 'location', valueMap: LOCATION_REGION_SHORTCODES },
+  ],
 
   properties: [
     {

@@ -56,6 +56,7 @@ export {
   extractSlug,
   sanitizeTerraformName,
   buildTokens,
+  resolveNamingOverrides,
   LOCATION_REGION_SHORTCODES,
 } from './lib/naming/naming-engine.js';
 export type { NamingTokens } from './lib/naming/naming-engine.js';
