@@ -2,7 +2,7 @@
   "name": "@terrastudio/plugin-aws-networking",
   "version": "0.1.0",
   "description": "AWS networking resources plugin (VPC, Subnet, IGW, NAT Gateway, Route Table) for TerraStudio",
-  "author": "afroze9 <afrozeamjad@gmail.com>",
+  "author": "afroze9",
   "license": "AGPL-3.0-only",
   "private": true,
   "type": "module",

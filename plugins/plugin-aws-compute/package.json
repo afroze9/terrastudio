@@ -2,7 +2,7 @@
   "name": "@terrastudio/plugin-aws-compute",
   "version": "0.1.0",
   "description": "AWS compute resources plugin (Security Group, EC2, EIP, ALB, RDS) for TerraStudio",
-  "author": "afroze9 <afrozeamjad@gmail.com>",
+  "author": "afroze9",
   "license": "AGPL-3.0-only",
   "private": true,
   "type": "module",
