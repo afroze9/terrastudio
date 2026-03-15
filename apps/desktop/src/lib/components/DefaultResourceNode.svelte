@@ -29,19 +29,21 @@
     if (data.displayLabel) return data.displayLabel as string;
     const conv = project.projectConfig.namingConvention;
     if (conv?.enabled && schema?.cafAbbreviation && data.namingSlug !== undefined) {
-      // Find nearest RG ancestor for env override
+      // Find nearest RG ancestor for env/region overrides
       let rgEnv: string | undefined;
+      let rgRegion: string | undefined;
       let cur = diagram.nodes.find(n => n.id === id);
       while (cur?.parentId) {
         const parent = diagram.nodes.find(n => n.id === cur!.parentId);
         if (!parent) break;
         if (parent.data.typeId === 'azurerm/core/resource_group') {
           rgEnv = (parent.data.properties['naming_env'] as string | undefined) || undefined;
+          rgRegion = (parent.data.properties['naming_region'] as string | undefined) || undefined;
           break;
         }
         cur = parent;
       }
-      const tokens = buildTokens(conv, schema.cafAbbreviation, data.namingSlug as string, rgEnv ? { env: rgEnv } : {});
+      const tokens = buildTokens(conv, schema.cafAbbreviation, data.namingSlug as string, (rgEnv || rgRegion) ? { env: rgEnv, region: rgRegion } : {});
       return applyNamingTemplate(conv.template, tokens, schema.namingConstraints) || (data.label as string) || schema.displayName;
     }
     return (data.label as string) || schema?.displayName || 'Resource';

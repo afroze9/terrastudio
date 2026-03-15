@@ -52,7 +52,8 @@ export function convertToResourceInstances(
     if (conv?.enabled && schema?.cafAbbreviation && data.namingSlug !== undefined) {
       const rgNode = findAncestorResourceGroup({ parentId: node.parentId } as DiagramNode, nodes);
       const rgEnv = (rgNode?.data.properties['naming_env'] as string | undefined) || undefined;
-      const tokens = buildTokens(conv, schema.cafAbbreviation, data.namingSlug as string, rgEnv ? { env: rgEnv } : {});
+      const rgRegion = (rgNode?.data.properties['naming_region'] as string | undefined) || undefined;
+      const tokens = buildTokens(conv, schema.cafAbbreviation, data.namingSlug as string, (rgEnv || rgRegion) ? { env: rgEnv, region: rgRegion } : {});
       const fullName = applyNamingTemplate(conv.template, tokens, schema.namingConstraints);
       if (fullName) properties['name'] = fullName;
     }
