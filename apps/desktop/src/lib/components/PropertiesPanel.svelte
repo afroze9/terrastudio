@@ -85,9 +85,9 @@
 
   /**
    * Walk the containment hierarchy from the selected node upward to find the nearest
-   * Resource Group, then return its naming_env / naming_region overrides (if set).
+   * Resource Group, then return its naming_env override (if set).
    */
-  let rgNamingOverrides = $derived.by((): { env?: string; region?: string } => {
+  let rgNamingOverrides = $derived.by((): { env?: string } => {
     const node = diagram.selectedNode;
     if (!node) return {};
     let cur = node;
@@ -96,8 +96,7 @@
       if (!parent) break;
       if (parent.data.typeId === 'azurerm/core/resource_group') {
         const env = (parent.data.properties['naming_env'] as string | undefined) || undefined;
-        const region = (parent.data.properties['naming_region'] as string | undefined) || undefined;
-        return { env, region };
+        return { env };
       }
       cur = parent;
     }
@@ -116,8 +115,18 @@
       if (conventionActive && diagram.selectedNode && schema?.cafAbbreviation) {
         const conv = project.projectConfig.namingConvention!;
         const fullName = (diagram.selectedNode.data.properties['name'] as string) ?? '';
-        const tokens = buildTokens(conv, schema.cafAbbreviation, '', rgNamingOverrides);
-        localSlugValue = extractSlug(fullName, conv.template, tokens, schema.namingConstraints);
+        // Try to extract slug using current RG overrides first; if extraction fails (returns
+        // the full name unchanged), retry with project-level tokens only. This handles the
+        // case where the name was generated before RG overrides were set.
+        const tokensWithOverride = buildTokens(conv, schema.cafAbbreviation, '', rgNamingOverrides);
+        let slug = extractSlug(fullName, conv.template, tokensWithOverride, schema.namingConstraints);
+        if (slug === fullName && Object.keys(rgNamingOverrides).length > 0) {
+          const tokensFallback = buildTokens(conv, schema.cafAbbreviation, '');
+          const slugFallback = extractSlug(fullName, conv.template, tokensFallback, schema.namingConstraints);
+          if (slugFallback !== fullName) slug = slugFallback;
+          else slug = '';
+        }
+        localSlugValue = slug;
       } else {
         localSlugValue = '';
       }
