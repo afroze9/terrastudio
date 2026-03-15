@@ -140,6 +140,7 @@
     const fullName = applyNamingTemplate(conv.template, tokens, schema.namingConstraints);
     diagram.updateNodeData(diagram.selectedNode.id, {
       namingSlug: slug || undefined,
+      label: fullName || schema.displayName,
       terraformName: sanitizeTerraformName(fullName) || diagram.selectedNode.data.terraformName,
     });
   }
@@ -207,6 +208,34 @@
       properties: newProps,
       label: newLabel,
     });
+
+    // When an RG's naming overrides change, recompute labels for all children that have a namingSlug
+    if ((key === 'naming_env' || key === 'naming_region') && diagram.selectedNode) {
+      const conv = project.projectConfig.namingConvention;
+      if (!conv?.enabled) return;
+      const rgId = diagram.selectedNode.id;
+      const env = (key === 'naming_env' ? value : newProps['naming_env']) as string | undefined || undefined;
+      const region = (key === 'naming_region' ? value : newProps['naming_region']) as string | undefined || undefined;
+      const overrides = { env, region };
+
+      // Find all descendants of this RG that have a namingSlug
+      function getDescendants(parentId: string): typeof diagram.nodes {
+        const children = diagram.nodes.filter(n => n.parentId === parentId);
+        return children.flatMap(c => [c, ...getDescendants(c.id)]);
+      }
+      for (const child of getDescendants(rgId)) {
+        const childSchema = registry.getResourceSchema(child.data.typeId);
+        if (!childSchema?.cafAbbreviation || child.data.namingSlug === undefined) continue;
+        const tokens = buildTokens(conv, childSchema.cafAbbreviation, child.data.namingSlug as string, overrides);
+        const fullName = applyNamingTemplate(conv.template, tokens, childSchema.namingConstraints);
+        if (fullName) {
+          diagram.updateNodeData(child.id, {
+            label: fullName,
+            terraformName: sanitizeTerraformName(fullName) || child.data.terraformName,
+          });
+        }
+      }
+    }
   }
 
   function onReferenceChange(key: string, targetId: string | null) {

@@ -2,9 +2,7 @@
   import { Handle, NodeResizer, Position, useUpdateNodeInternals } from '@xyflow/svelte';
   import { registry } from '$lib/bootstrap';
   import { diagram } from '$lib/stores/diagram.svelte';
-  import { project } from '$lib/stores/project.svelte';
   import { terraform } from '$lib/stores/terraform.svelte';
-  import { buildTokens, applyNamingTemplate } from '@terrastudio/core';
   import { ui } from '$lib/stores/ui.svelte';
   import { cost } from '$lib/stores/cost.svelte';
   import { plan } from '$lib/stores/plan.svelte';
@@ -23,30 +21,8 @@
   let schema = $derived(registry.getResourceSchema(data.typeId));
   let icon = $derived(schema ? registry.getIcon(data.typeId) : null);
 
-  /** Canvas label: if a naming convention is active and node has a namingSlug, compute the full name.
-   *  Otherwise fall back to displayLabel → label → schema.displayName. */
-  let canvasLabel = $derived.by(() => {
-    if (data.displayLabel) return data.displayLabel as string;
-    const conv = project.projectConfig.namingConvention;
-    if (conv?.enabled && schema?.cafAbbreviation && data.namingSlug !== undefined) {
-      let rgEnv: string | undefined;
-      let rgRegion: string | undefined;
-      let cur = diagram.nodes.find(n => n.id === id);
-      while (cur?.parentId) {
-        const parent = diagram.nodes.find(n => n.id === cur!.parentId);
-        if (!parent) break;
-        if (parent.data.typeId === 'azurerm/core/resource_group') {
-          rgEnv = (parent.data.properties['naming_env'] as string | undefined) || undefined;
-          rgRegion = (parent.data.properties['naming_region'] as string | undefined) || undefined;
-          break;
-        }
-        cur = parent;
-      }
-      const tokens = buildTokens(conv, schema.cafAbbreviation, data.namingSlug as string, (rgEnv || rgRegion) ? { env: rgEnv, region: rgRegion } : {});
-      return applyNamingTemplate(conv.template, tokens, schema.namingConstraints) || (data.label as string) || schema.displayName;
-    }
-    return (data.label as string) || schema?.displayName || 'Container';
-  });
+  /** Canvas label: displayLabel overrides everything; otherwise use label (kept in sync with naming convention). */
+  let canvasLabel = $derived((data.displayLabel || data.label || schema?.displayName || 'Container') as string);
 
   // Get error message for this resource if any
   let errorMessage = $derived.by(() => {
