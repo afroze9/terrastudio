@@ -3,7 +3,7 @@
  *
  * Project file I/O is handled by NodeProjectStorage from @terrastudio/platform-node.
  * This module provides the shared storage instance and CLI-only utilities such as
- * loadValidator (plugin loading — desktop uses a reactive registry instead).
+ * loadRegistry / loadValidator (plugin loading — desktop uses a reactive registry instead).
  */
 import { NodeProjectStorage } from '@terrastudio/platform-node';
 import { PluginRegistry, EdgeRuleValidator } from '@terrastudio/core';
@@ -22,14 +22,9 @@ export function toLoadedProject(stored: StoredProjectData): LoadedProject {
 }
 
 /**
- * Load plugins for the given providers and return a ProjectValidatorContext.
- * This enables containment and connection validation in Project mutations.
- * Call once per command invocation — plugin loading is idempotent.
+ * Register lazy plugin loaders for the given provider IDs onto a PluginRegistry.
  */
-export async function loadValidator(providerIds: ProviderId[]): Promise<ProjectValidatorContext> {
-  const registry = new PluginRegistry();
-
-  // Register lazy loaders for known providers
+function registerPlugins(registry: PluginRegistry, providerIds: ProviderId[]): void {
   for (const providerId of providerIds) {
     if (providerId === 'azurerm') {
       registry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-networking'));
@@ -43,12 +38,27 @@ export async function loadValidator(providerIds: ProviderId[]): Promise<ProjectV
       registry.registerLazyPlugin('aws', () => import('@terrastudio/plugin-aws-compute'));
     }
   }
+}
 
+/**
+ * Load plugins for the given providers and return the fully loaded PluginRegistry.
+ * Use this when you need the registry for HCL generation (connectionRules, schemas, pipeline).
+ */
+export async function loadRegistry(providerIds: ProviderId[]): Promise<PluginRegistry> {
+  const registry = new PluginRegistry();
+  registerPlugins(registry, providerIds);
   await registry.loadPluginsForProviders(providerIds);
+  return registry;
+}
 
+/**
+ * Load plugins for the given providers and return a ProjectValidatorContext.
+ * Use this for mutation validation (addNode, addEdge, moveNode).
+ */
+export async function loadValidator(providerIds: ProviderId[]): Promise<ProjectValidatorContext> {
+  const registry = await loadRegistry(providerIds);
   const rules = registry.getConnectionRules();
   const edgeValidator = new EdgeRuleValidator(rules);
-
   return {
     getSchema: (typeId: ResourceTypeId) => registry.getResourceSchema(typeId),
     edgeValidator,
