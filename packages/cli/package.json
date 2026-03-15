@@ -1,0 +1,36 @@
+{
+  "name": "@terrastudio/cli",
+  "version": "0.1.0",
+  "description": "CLI for TerraStudio — headless project manipulation and HCL generation",
+  "author": "afroze9 <afrozeamjad@gmail.com>",
+  "license": "AGPL-3.0-only",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "tstudio": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "dev": "node --loader ts-node/esm src/cli.ts"
+  },
+  "dependencies": {
+    "@terrastudio/core": "workspace:*",
+    "@terrastudio/project": "workspace:*",
+    "@terrastudio/types": "workspace:*",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.7.0"
+  }
+}

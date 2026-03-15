@@ -60,30 +60,6 @@ export function declarePlugins(): void {
  */
 export async function loadPluginsForProject(providerIds: ProviderId[]): Promise<void> {
   await pluginRegistry.loadPluginsForProviders(providerIds);
-  // Initialize MCP sync after plugins are loaded (lazy + non-blocking)
-  initMcpLazy();
-}
-
-let mcpStarted = false;
-
-/** Lazy-init MCP: wire up per-window sync + listeners on every window.
- *  Only the main window starts the IPC bridge + sidecar process. */
-function initMcpLazy(): void {
-  if (mcpStarted) return;
-  mcpStarted = true;
-
-  // Every window: diagram sync + bridge listener (per-window targeted)
-  import('$lib/mcp/diagram-sync.svelte').then((m) => m.initDiagramSync()).catch(console.warn);
-  import('$lib/mcp/bridge-listener').then((m) => m.initBridgeListener()).catch(console.warn);
-
-  // Only the main window starts the IPC bridge + Node sidecar
-  import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
-    if (getCurrentWindow().label === 'main') {
-      import('@tauri-apps/api/core').then(({ invoke }) => {
-        invoke('mcp_start').catch(console.warn);
-      }).catch(console.warn);
-    }
-  }).catch(console.warn);
 }
 
 /** Apply the persisted log level to both the JS logger and Rust backend. */

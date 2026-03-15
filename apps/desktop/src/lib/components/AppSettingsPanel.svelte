@@ -7,7 +7,6 @@
   import { invoke } from '@tauri-apps/api/core';
   import { open as openDialog } from '@tauri-apps/plugin-dialog';
   import { readTextFile } from '@tauri-apps/plugin-fs';
-  import { onMount } from 'svelte';
   import CollapsibleSection from './CollapsibleSection.svelte';
   import SearchBox from './SearchBox.svelte';
   import { connectionWizard } from '$lib/stores/connection-wizard.svelte';
@@ -15,13 +14,6 @@
   import type { LocaleCode } from '@terrastudio/types';
 
   let searchQuery = $state('');
-  let mcpStatus: any = $state({ statusColor: '#6b7280', statusLabel: 'MCP', ipcPort: null, ssePort: null, error: null });
-
-  onMount(async () => {
-    const mod = await import('$lib/mcp/mcp-status.svelte');
-    mcpStatus = mod.mcpStatus;
-    mod.mcpStatus.init();
-  });
 
   function sectionVisible(label: string) {
     return !searchQuery || label.toLowerCase().includes(searchQuery.toLowerCase());
@@ -362,34 +354,6 @@
     </div>
   </CollapsibleSection>
   {/if}
-
-  <!-- MCP Server -->
-  {#if sectionVisible(t('settings.mcp.label'))}
-  <CollapsibleSection id="app-mcp" label={t('settings.mcp.label')} forceExpand={!!searchQuery}>
-    <div class="setting-row">
-      <span class="setting-label">{t('settings.mcp.status')}</span>
-      <span class="mcp-status" style="color: {mcpStatus.statusColor}">{mcpStatus.statusLabel}</span>
-    </div>
-    {#if mcpStatus.ipcPort}
-    <div class="setting-row">
-      <span class="setting-label">{t('settings.mcp.ipcPort')}</span>
-      <span class="mcp-value">{mcpStatus.ipcPort}</span>
-    </div>
-    {/if}
-    {#if mcpStatus.ssePort}
-    <div class="setting-row">
-      <span class="setting-label">{t('settings.mcp.httpPort')}</span>
-      <span class="mcp-value">{mcpStatus.ssePort}</span>
-    </div>
-    {/if}
-    {#if mcpStatus.error}
-    <div class="mcp-error">{mcpStatus.error}</div>
-    {/if}
-    <div class="mcp-hint">
-      {t('settings.mcp.hint')}
-    </div>
-  </CollapsibleSection>
-  {/if}
 </div>
 
 <style>
@@ -602,22 +566,10 @@
     background: var(--color-surface-hover);
     color: var(--color-text);
   }
-
-  /* MCP section */
-  .mcp-status {
-    font-size: var(--font-11);
-    font-weight: 500;
-  }
   .mcp-value {
     font-size: var(--font-11);
     color: var(--color-text-muted);
     font-family: monospace;
-  }
-  .mcp-error {
-    font-size: var(--font-10);
-    color: #ef4444;
-    padding: 4px 0;
-    margin-bottom: 6px;
   }
   .mcp-hint {
     font-size: var(--font-10);
