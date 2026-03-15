@@ -4,6 +4,10 @@
   "description": "CLI for TerraStudio — headless project manipulation and HCL generation",
   "author": "afroze9",
   "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/afroze9/terrastudio"
+  },
   "private": false,
   "publishConfig": {
     "access": "public"
