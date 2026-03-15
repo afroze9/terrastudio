@@ -81,3 +81,21 @@ export function writeTerraformFiles(projectPath: string, files: Record<string, s
     writeText(path.join(tfDir, filename), content);
   }
 }
+
+/**
+ * Read all .tf files from the project's terraform/ directory.
+ * Returns a map of filename -> content. Returns empty object if dir doesn't exist.
+ */
+export function readTerraformFiles(projectPath: string): Record<string, string> {
+  const tfDir = path.join(projectPath, 'terraform');
+  if (!fs.existsSync(tfDir)) return {};
+
+  const entries = fs.readdirSync(tfDir);
+  const result: Record<string, string> = {};
+  for (const entry of entries) {
+    if (entry.endsWith('.tf')) {
+      result[entry] = fs.readFileSync(path.join(tfDir, entry), 'utf8');
+    }
+  }
+  return result;
+}
