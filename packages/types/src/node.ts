@@ -42,6 +42,8 @@ export interface ResourceNodeData {
   references: Record<string, string>;
   terraformName: string;
   label: string;
+  /** User-set display name shown on the canvas. Overrides label for canvas rendering only; does not affect terraform naming. */
+  displayLabel?: string;
   validationErrors: ValidationError[];
   deploymentStatus?: DeploymentStatus;
   /** Per-property override for literal vs variable mode */

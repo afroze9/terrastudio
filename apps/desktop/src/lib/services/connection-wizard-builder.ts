@@ -28,8 +28,8 @@ export function buildEdgeWizardEntry(opts: {
   if (!sourceSchema || !targetSchema) return null;
 
   const kind = rule.outputBinding ? 'binding' : 'edge';
-  const sourceLabel = sourceNode.data.label || sourceNode.id;
-  const targetLabel = targetNode.data.label || targetNode.id;
+  const sourceLabel = sourceNode.data.displayLabel || sourceNode.data.label || sourceNode.id;
+  const targetLabel = targetNode.data.displayLabel || targetNode.data.label || targetNode.id;
   const sourceTfName = sourceNode.data.terraformName || sourceNode.id;
   const targetTfName = targetNode.data.terraformName || targetNode.id;
 
@@ -123,8 +123,8 @@ export function buildContainmentWizardEntry(opts: {
   if (!parentSchema) return null;
 
   const propKey = childSchema.parentReference.propertyKey;
-  const childLabel = childNode.data.label || childNode.id;
-  const parentLabel = parentNode.data.label || parentNode.id;
+  const childLabel = childNode.data.displayLabel || childNode.data.label || childNode.id;
+  const parentLabel = parentNode.data.displayLabel || parentNode.data.label || parentNode.id;
   const childTfName = childNode.data.terraformName || childNode.id;
   const parentTfName = parentNode.data.terraformName || parentNode.id;
 

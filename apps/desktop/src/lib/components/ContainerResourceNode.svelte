@@ -487,7 +487,7 @@
   class:plan-replace={planAction === 'replace'}
   class:plan-noop={planAction === 'no-op'}
   role="group"
-  aria-label={`${data.label || schema?.displayName || 'Container'} (${schema?.terraformType ?? data.typeId})`}
+  aria-label={`${data.displayLabel || data.label || schema?.displayName || 'Container'} (${schema?.terraformType ?? data.typeId})`}
   style="border-color: {isInvalidDropTarget ? '#ef4444' : isValidDropTarget ? '#22c55e' : hasValidationErrors ? '#ef4444' : selected ? '#3b82f6' : borderColor}; border-style: {useSvgBorder && !isInvalidDropTarget && !isValidDropTarget && !hasValidationErrors ? 'none' : isInvalidDropTarget || isValidDropTarget || hasValidationErrors ? 'solid' : borderStyle}; background: {isInvalidDropTarget ? 'rgba(239, 68, 68, 0.06)' : isValidDropTarget ? 'rgba(34, 197, 94, 0.06)' : hasValidationErrors ? 'rgba(239, 68, 68, 0.04)' : bg}; border-radius: {radius}px; border-width: {useSvgBorder && !isInvalidDropTarget && !isValidDropTarget && !hasValidationErrors ? 0 : isInvalidDropTarget || isValidDropTarget ? 2.5 : hasValidationErrors ? 2 : borderWidth}px;"
   onmouseenter={onMouseEnter}
   onmouseleave={onMouseLeave}
@@ -526,7 +526,7 @@
     {#if icon?.type === 'svg' && icon.svg && iconSize > 0}
       <span class="node-icon" style="width: {iconSize}px; height: {iconSize}px;">{@html icon.svg}</span>
     {/if}
-    <span class="node-label" style="color: {headerColor}; font-size: {labelSize}px;">{data.label || schema?.displayName || 'Container'}</span>
+    <span class="node-label" style="color: {headerColor}; font-size: {labelSize}px;">{data.displayLabel || data.label || schema?.displayName || 'Container'}</span>
     {#if cidrSubtitle}
       <span class="cidr-subtitle">{cidrSubtitle}</span>
     {/if}

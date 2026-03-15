@@ -39,7 +39,7 @@
   let managedIdentities = $derived(
     diagram.nodes
       .filter(n => n.data.typeId === 'azurerm/identity/user_assigned_identity')
-      .map(n => ({ id: n.id, label: n.data.label as string }))
+      .map(n => ({ id: n.id, label: (n.data.displayLabel || n.data.label) as string }))
   );
 
   function resetForm() {

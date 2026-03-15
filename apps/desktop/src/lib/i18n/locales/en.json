@@ -452,6 +452,7 @@
     "noVariables": "No variables defined. Toggle properties to \"variable\" mode on template nodes.",
     "deleteInstance": "Delete Instance",
     "templateReadOnly": "This resource belongs to a template module. Properties are read-only. Toggle properties to \"variable\" mode to make them configurable per-instance.",
+    "displayName": "Display Name",
     "terraformName": "Terraform Name",
     "serviceName": "Service Name",
     "convention": "convention",

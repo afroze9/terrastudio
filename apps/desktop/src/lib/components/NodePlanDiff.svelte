@@ -78,7 +78,7 @@
 {#if change && plan.diffNodeId}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="diff-backdrop" onclick={close}></div>
-  <div class="diff-popover" role="dialog" aria-label="Plan diff for {node?.data.label ?? 'resource'}">
+  <div class="diff-popover" role="dialog" aria-label="Plan diff for {node?.data.displayLabel || node?.data.label || 'resource'}">
     <div class="diff-header" style="border-color: {actionColor};">
       <span class="diff-action" style="color: {actionColor};">{actionLabel}</span>
       <span class="diff-address">{change.address}</span>
