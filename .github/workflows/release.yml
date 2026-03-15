@@ -16,6 +16,7 @@ jobs:
       release_created: ${{ steps.release.outputs['apps/desktop--release_created'] }}
       tag_name: ${{ steps.release.outputs['apps/desktop--tag_name'] }}
       version: ${{ steps.release.outputs['apps/desktop--version'] }}
+      cli_release_created: ${{ steps.release.outputs['packages/cli--release_created'] }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
@@ -24,7 +25,7 @@ jobs:
 
   build-release:
     needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
+    if: needs.release-please.outputs.release_created == 'true' || needs.release-please.outputs.cli_release_created == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -117,7 +118,7 @@ jobs:
 
   build-cli:
     needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
+    if: needs.release-please.outputs.release_created == 'true' || needs.release-please.outputs.cli_release_created == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -172,7 +173,7 @@ jobs:
 
   publish-cli-npm:
     needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
+    if: needs.release-please.outputs.release_created == 'true' || needs.release-please.outputs.cli_release_created == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
