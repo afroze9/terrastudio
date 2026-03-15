@@ -120,6 +120,30 @@ importers:
       '@terrastudio/core':
         specifier: workspace:*
         version: link:../core
+      '@terrastudio/plugin-aws-compute':
+        specifier: workspace:*
+        version: link:../plugin-aws-compute
+      '@terrastudio/plugin-aws-networking':
+        specifier: workspace:*
+        version: link:../plugin-aws-networking
+      '@terrastudio/plugin-azure-compute':
+        specifier: workspace:*
+        version: link:../plugin-azure-compute
+      '@terrastudio/plugin-azure-database':
+        specifier: workspace:*
+        version: link:../plugin-azure-database
+      '@terrastudio/plugin-azure-monitoring':
+        specifier: workspace:*
+        version: link:../plugin-azure-monitoring
+      '@terrastudio/plugin-azure-networking':
+        specifier: workspace:*
+        version: link:../plugin-azure-networking
+      '@terrastudio/plugin-azure-security':
+        specifier: workspace:*
+        version: link:../plugin-azure-security
+      '@terrastudio/plugin-azure-storage':
+        specifier: workspace:*
+        version: link:../plugin-azure-storage
       '@terrastudio/project':
         specifier: workspace:*
         version: link:../project

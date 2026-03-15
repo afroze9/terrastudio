@@ -25,6 +25,14 @@
   },
   "dependencies": {
     "@terrastudio/core": "workspace:*",
+    "@terrastudio/plugin-azure-compute": "workspace:*",
+    "@terrastudio/plugin-azure-database": "workspace:*",
+    "@terrastudio/plugin-azure-monitoring": "workspace:*",
+    "@terrastudio/plugin-azure-networking": "workspace:*",
+    "@terrastudio/plugin-azure-security": "workspace:*",
+    "@terrastudio/plugin-azure-storage": "workspace:*",
+    "@terrastudio/plugin-aws-compute": "workspace:*",
+    "@terrastudio/plugin-aws-networking": "workspace:*",
     "@terrastudio/project": "workspace:*",
     "@terrastudio/types": "workspace:*",
     "commander": "^12.1.0"

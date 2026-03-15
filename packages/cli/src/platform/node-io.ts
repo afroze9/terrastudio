@@ -4,7 +4,9 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import type { DiagramSnapshot, ProjectMetadata, LoadedProject } from '@terrastudio/project';
+import type { DiagramSnapshot, ProjectMetadata, LoadedProject, ProjectValidatorContext } from '@terrastudio/project';
+import { PluginRegistry, EdgeRuleValidator } from '@terrastudio/core';
+import type { ProviderId, ResourceTypeId } from '@terrastudio/types';
 
 /** Read and parse a JSON file. Throws if the file does not exist. */
 export function readJson<T>(filePath: string): T {
@@ -80,6 +82,40 @@ export function writeTerraformFiles(projectPath: string, files: Record<string, s
   for (const [filename, content] of Object.entries(files)) {
     writeText(path.join(tfDir, filename), content);
   }
+}
+
+/**
+ * Load plugins for the given providers and return a ProjectValidatorContext.
+ * This enables containment and connection validation in Project mutations.
+ * Call once per command invocation — plugin loading is idempotent.
+ */
+export async function loadValidator(providerIds: ProviderId[]): Promise<ProjectValidatorContext> {
+  const registry = new PluginRegistry();
+
+  // Register lazy loaders for known providers
+  for (const providerId of providerIds) {
+    if (providerId === 'azurerm') {
+      registry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-networking'));
+      registry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-compute'));
+      registry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-storage'));
+      registry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-database'));
+      registry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-monitoring'));
+      registry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-security'));
+    } else if (providerId === 'aws') {
+      registry.registerLazyPlugin('aws', () => import('@terrastudio/plugin-aws-networking'));
+      registry.registerLazyPlugin('aws', () => import('@terrastudio/plugin-aws-compute'));
+    }
+  }
+
+  await registry.loadPluginsForProviders(providerIds);
+
+  const rules = registry.getConnectionRules();
+  const edgeValidator = new EdgeRuleValidator(rules);
+
+  return {
+    getSchema: (typeId: ResourceTypeId) => registry.getResourceSchema(typeId),
+    edgeValidator,
+  };
 }
 
 /**
