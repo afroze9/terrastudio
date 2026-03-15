@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { loadProject, saveProjectConfig } from '../platform/node-io.js';
+import { storage, toLoadedProject } from '../platform/node-io.js';
 import { Project } from '@terrastudio/project';
 import type { ProviderId } from '@terrastudio/types';
 
@@ -31,9 +31,9 @@ export function makeProjectCommand(): Command {
   cmd
     .command('info <path>')
     .description('Show project metadata')
-    .action((projectPath: string) => {
-      const loaded = loadProject(projectPath);
-      const project = Project.fromLoaded(loaded);
+    .action(async (projectPath: string) => {
+      const stored = await storage.loadProject(projectPath);
+      const project = Project.fromLoaded(toLoadedProject(stored));
       console.log(`Name:     ${project.name}`);
       console.log(`Version:  ${project.version}`);
       console.log(`Path:     ${project.path}`);
@@ -46,9 +46,9 @@ export function makeProjectCommand(): Command {
   cmd
     .command('config <path>')
     .description('Print project config as JSON (sensitive values redacted)')
-    .action((projectPath: string) => {
-      const loaded = loadProject(projectPath);
-      const project = Project.fromLoaded(loaded);
+    .action(async (projectPath: string) => {
+      const stored = await storage.loadProject(projectPath);
+      const project = Project.fromLoaded(toLoadedProject(stored));
       const redacted = redactSensitive(project.projectConfig);
       console.log(JSON.stringify(redacted, null, 2));
     });
@@ -63,7 +63,7 @@ export function makeProjectCommand(): Command {
     .option('--layout-algorithm <value>', 'Layout algorithm (dagre or hybrid)')
     .option('--providers <providers...>', 'Active providers (space-separated)')
     .action(
-      (
+      async (
         projectPath: string,
         options: {
           namingConvention?: string;
@@ -71,8 +71,8 @@ export function makeProjectCommand(): Command {
           providers?: string[];
         },
       ) => {
-        const loaded = loadProject(projectPath);
-        const project = Project.fromLoaded(loaded);
+        const stored = await storage.loadProject(projectPath);
+        const project = Project.fromLoaded(toLoadedProject(stored));
 
         if (options.namingConvention !== undefined) {
           let parsed: unknown;
@@ -103,7 +103,7 @@ export function makeProjectCommand(): Command {
           };
         }
 
-        saveProjectConfig(projectPath, project.toMetadata());
+        await storage.saveProjectConfig(projectPath, project.projectConfig);
         console.log('Project config updated.');
       },
     );

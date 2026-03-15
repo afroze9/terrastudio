@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { loadProject, saveDiagram, loadValidator } from '../platform/node-io.js';
+import { storage, loadValidator, toLoadedProject } from '../platform/node-io.js';
 import { Project } from '@terrastudio/project';
 import type { ProjectNode, ProjectEdge, ResourceTypeId } from '@terrastudio/types';
 
@@ -24,9 +24,9 @@ export function makeResourceCommand(): Command {
     .command('list <path>')
     .description('List all resources in the project diagram')
     .option('-t, --type <typeId>', 'Filter by resource type ID')
-    .action((projectPath: string, options: { type?: string }) => {
-      const loaded = loadProject(projectPath);
-      const project = Project.fromLoaded(loaded);
+    .action(async (projectPath: string, options: { type?: string }) => {
+      const stored = await storage.loadProject(projectPath);
+      const project = Project.fromLoaded(toLoadedProject(stored));
 
       let nodes = project.nodes.filter(
         (n) => n.type && !n.type.startsWith('_') && n.data.typeId,
@@ -58,8 +58,8 @@ export function makeResourceCommand(): Command {
     .description('Add a new resource to the diagram')
     .option('-p, --parent <parentId>', 'Parent node ID (for contained resources)')
     .action(async (projectPath: string, typeId: string, terraformName: string, options: { parent?: string }) => {
-      const loaded = loadProject(projectPath);
-      const project = Project.fromLoaded(loaded);
+      const stored = await storage.loadProject(projectPath);
+      const project = Project.fromLoaded(toLoadedProject(stored));
 
       if (options.parent && !project.getNode(options.parent)) {
         console.error(`Parent node not found: ${options.parent}`);
@@ -88,7 +88,7 @@ export function makeResourceCommand(): Command {
       };
 
       const { warnings } = project.addNode(node);
-      saveDiagram(projectPath, project.toDiagramSnapshot());
+      await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
       console.log(`Added ${typeId} "${terraformName}" (${id})`);
       printWarnings(warnings);
     });
@@ -98,9 +98,9 @@ export function makeResourceCommand(): Command {
     .description('Update a resource property')
     .requiredOption('-k, --key <key>', 'Property key to update')
     .requiredOption('-v, --value <value>', 'New property value')
-    .action((projectPath: string, nodeId: string, options: { key: string; value: string }) => {
-      const loaded = loadProject(projectPath);
-      const project = Project.fromLoaded(loaded);
+    .action(async (projectPath: string, nodeId: string, options: { key: string; value: string }) => {
+      const stored = await storage.loadProject(projectPath);
+      const project = Project.fromLoaded(toLoadedProject(stored));
 
       const node = project.getNode(nodeId);
       if (!node) {
@@ -118,16 +118,16 @@ export function makeResourceCommand(): Command {
         },
       });
 
-      saveDiagram(projectPath, project.toDiagramSnapshot());
+      await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
       console.log(`Updated node ${nodeId}: ${options.key} = ${options.value}`);
     });
 
   cmd
     .command('remove <path> <nodeId>')
     .description('Remove a resource from the diagram')
-    .action((projectPath: string, nodeId: string) => {
-      const loaded = loadProject(projectPath);
-      const project = Project.fromLoaded(loaded);
+    .action(async (projectPath: string, nodeId: string) => {
+      const stored = await storage.loadProject(projectPath);
+      const project = Project.fromLoaded(toLoadedProject(stored));
 
       const node = project.getNode(nodeId);
       if (!node) {
@@ -143,7 +143,7 @@ export function makeResourceCommand(): Command {
 
       const name = node.data.terraformName ?? node.data.label ?? nodeId;
       project.removeNode(nodeId);
-      saveDiagram(projectPath, project.toDiagramSnapshot());
+      await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
       console.log(`Removed resource: ${name} (${nodeId})`);
     });
 
@@ -160,8 +160,8 @@ export function makeResourceCommand(): Command {
         targetId: string,
         options: { sourceHandle?: string; targetHandle?: string; label?: string },
       ) => {
-        const loaded = loadProject(projectPath);
-        const project = Project.fromLoaded(loaded);
+        const stored = await storage.loadProject(projectPath);
+        const project = Project.fromLoaded(toLoadedProject(stored));
 
         if (!project.getNode(sourceId)) {
           console.error(`Source node not found: ${sourceId}`);
@@ -192,7 +192,7 @@ export function makeResourceCommand(): Command {
         };
 
         const { warnings } = project.addEdge(edge);
-        saveDiagram(projectPath, project.toDiagramSnapshot());
+        await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
         console.log(`Connected ${sourceId} -> ${targetId} (${edgeId})`);
         printWarnings(warnings);
       },
@@ -201,9 +201,9 @@ export function makeResourceCommand(): Command {
   cmd
     .command('disconnect <path> <edgeId>')
     .description('Remove an edge by ID')
-    .action((projectPath: string, edgeId: string) => {
-      const loaded = loadProject(projectPath);
-      const project = Project.fromLoaded(loaded);
+    .action(async (projectPath: string, edgeId: string) => {
+      const stored = await storage.loadProject(projectPath);
+      const project = Project.fromLoaded(toLoadedProject(stored));
 
       const edge = project.edges.find((e) => e.id === edgeId);
       if (!edge) {
@@ -212,7 +212,7 @@ export function makeResourceCommand(): Command {
       }
 
       project.removeEdge(edgeId);
-      saveDiagram(projectPath, project.toDiagramSnapshot());
+      await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
       console.log(`Removed edge: ${edgeId}`);
     });
 
@@ -228,8 +228,8 @@ export function makeResourceCommand(): Command {
         nodeId: string,
         options: { x?: string; y?: string; parent?: string },
       ) => {
-        const loaded = loadProject(projectPath);
-        const project = Project.fromLoaded(loaded);
+        const stored = await storage.loadProject(projectPath);
+        const project = Project.fromLoaded(toLoadedProject(stored));
 
         const node = project.getNode(nodeId);
         if (!node) {
@@ -255,7 +255,7 @@ export function makeResourceCommand(): Command {
         project.validator = await loadValidator(providers);
 
         const { warnings } = project.moveNode(nodeId, { x, y }, parentArg);
-        saveDiagram(projectPath, project.toDiagramSnapshot());
+        await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
         console.log(`Moved node ${nodeId} to (${x}, ${y})`);
         printWarnings(warnings);
       },
@@ -267,13 +267,13 @@ export function makeResourceCommand(): Command {
     .requiredOption('--width <width>', 'New width')
     .requiredOption('--height <height>', 'New height')
     .action(
-      (
+      async (
         projectPath: string,
         nodeId: string,
         options: { width: string; height: string },
       ) => {
-        const loaded = loadProject(projectPath);
-        const project = Project.fromLoaded(loaded);
+        const stored = await storage.loadProject(projectPath);
+        const project = Project.fromLoaded(toLoadedProject(stored));
 
         if (!project.getNode(nodeId)) {
           console.error(`Node not found: ${nodeId}`);
@@ -284,7 +284,7 @@ export function makeResourceCommand(): Command {
         const height = Number(options.height);
 
         project.resizeNode(nodeId, width, height);
-        saveDiagram(projectPath, project.toDiagramSnapshot());
+        await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
         console.log(`Resized node ${nodeId} to ${width}x${height}`);
       },
     );
@@ -294,13 +294,13 @@ export function makeResourceCommand(): Command {
     .description('Enable specific output keys on a node')
     .option('--enable <keys...>', 'Output keys to enable (space-separated)')
     .action(
-      (
+      async (
         projectPath: string,
         nodeId: string,
         options: { enable?: string[] },
       ) => {
-        const loaded = loadProject(projectPath);
-        const project = Project.fromLoaded(loaded);
+        const stored = await storage.loadProject(projectPath);
+        const project = Project.fromLoaded(toLoadedProject(stored));
 
         const node = project.getNode(nodeId);
         if (!node) {
@@ -316,7 +316,7 @@ export function makeResourceCommand(): Command {
           },
         });
 
-        saveDiagram(projectPath, project.toDiagramSnapshot());
+        await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
         console.log(
           `Set enabled outputs for ${nodeId}: [${enabledOutputs.join(', ')}]`,
         );
@@ -327,9 +327,9 @@ export function makeResourceCommand(): Command {
     .command('edges <path>')
     .description('List edges in the diagram')
     .option('--node <nodeId>', 'Filter edges connected to a specific node')
-    .action((projectPath: string, options: { node?: string }) => {
-      const loaded = loadProject(projectPath);
-      const project = Project.fromLoaded(loaded);
+    .action(async (projectPath: string, options: { node?: string }) => {
+      const stored = await storage.loadProject(projectPath);
+      const project = Project.fromLoaded(toLoadedProject(stored));
 
       let edges = project.edges;
       if (options.node) {

@@ -1,4 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
+import { TauriProjectStorage } from '@terrastudio/platform-tauri';
+
+const storage = new TauriProjectStorage();
 import { getCurrentWindow, ProgressBarStatus } from '@tauri-apps/api/window';
 import type { UnlistenFn } from '@tauri-apps/api/event';
 import type { DeploymentStatus, ResourceTypeId } from '@terrastudio/types';
@@ -255,10 +258,7 @@ export async function generateAndWrite(): Promise<Record<string, string>> {
       }
     }
 
-    const outputPath = await invoke<string>('write_terraform_files', {
-      projectPath: project.path,
-      files: fileMap,
-    });
+    await storage.writeTerraformFiles(project.path, fileMap);
 
     // Populate generated file list for TerraformSidebar
     ui.generatedFiles = Object.keys(fileMap);
@@ -268,7 +268,7 @@ export async function generateAndWrite(): Promise<Record<string, string>> {
     terraform.markFilesGenerated(diagramHash);
 
     terraform.appendInfo(
-      `Generated ${Object.keys(fileMap).length} files to ${outputPath}`,
+      `Generated ${Object.keys(fileMap).length} files to ${project.path}/terraform`,
     );
     terraform.setStatus('success');
     return fileMap;
