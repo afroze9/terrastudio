@@ -83,6 +83,27 @@
     return !!(conv?.enabled && schema?.cafAbbreviation && schema.properties.some((p: PropertySchema) => p.key === 'name'));
   });
 
+  /**
+   * Walk the containment hierarchy from the selected node upward to find the nearest
+   * Resource Group, then return its naming_env / naming_region overrides (if set).
+   */
+  let rgNamingOverrides = $derived.by((): { env?: string; region?: string } => {
+    const node = diagram.selectedNode;
+    if (!node) return {};
+    let cur = node;
+    while (cur.parentId) {
+      const parent = diagram.nodes.find((n) => n.id === cur.parentId);
+      if (!parent) break;
+      if (parent.data.typeId === 'azurerm/core/resource_group') {
+        const env = (parent.data.properties['naming_env'] as string | undefined) || undefined;
+        const region = (parent.data.properties['naming_region'] as string | undefined) || undefined;
+        return { env, region };
+      }
+      cur = parent;
+    }
+    return {};
+  });
+
   // Local state for the slug input — prevents feedback loop from derived values
   let localSlugValue = $state('');
   let lastSelectedNodeId = $state<string | null>(null);
@@ -95,7 +116,7 @@
       if (conventionActive && diagram.selectedNode && schema?.cafAbbreviation) {
         const conv = project.projectConfig.namingConvention!;
         const fullName = (diagram.selectedNode.data.properties['name'] as string) ?? '';
-        const tokens = buildTokens(conv, schema.cafAbbreviation);
+        const tokens = buildTokens(conv, schema.cafAbbreviation, '', rgNamingOverrides);
         localSlugValue = extractSlug(fullName, conv.template, tokens, schema.namingConstraints);
       } else {
         localSlugValue = '';
@@ -107,7 +128,7 @@
   let namePreview = $derived.by(() => {
     if (!conventionActive || !schema?.cafAbbreviation) return '';
     const conv = project.projectConfig.namingConvention!;
-    const tokens = buildTokens(conv, schema.cafAbbreviation, localSlugValue);
+    const tokens = buildTokens(conv, schema.cafAbbreviation, localSlugValue, rgNamingOverrides);
     return applyNamingTemplate(conv.template, tokens, schema.namingConstraints);
   });
 
@@ -136,7 +157,7 @@
     // Update local state first to prevent feedback loop
     localSlugValue = slug;
     const conv = project.projectConfig.namingConvention!;
-    const tokens = buildTokens(conv, schema.cafAbbreviation, slug);
+    const tokens = buildTokens(conv, schema.cafAbbreviation, slug, rgNamingOverrides);
     const fullName = applyNamingTemplate(conv.template, tokens, schema.namingConstraints);
     const newProps = { ...diagram.selectedNode.data.properties, name: fullName };
     const tfName = sanitizeTerraformName(fullName) || diagram.selectedNode.data.terraformName;

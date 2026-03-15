@@ -10,17 +10,19 @@ export interface NamingTokens {
 
 /**
  * Build the token map from a NamingConvention + a resource's cafAbbreviation.
+ * Optional overrides (e.g. from a parent Resource Group) take precedence over project-level values.
  */
 export function buildTokens(
   convention: NamingConvention,
   cafAbbreviation: string,
   name = '',
+  overrides?: { env?: string; region?: string },
 ): NamingTokens {
   return {
     type: cafAbbreviation,
-    env: convention.env,
+    env: overrides?.env || convention.env,
     name,
-    region: convention.region,
+    region: overrides?.region || convention.region,
     org: convention.org,
   };
 }
