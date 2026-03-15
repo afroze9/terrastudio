@@ -12,6 +12,12 @@ import type { ProjectConfig } from '@terrastudio/core';
 import { convertToResourceInstances, extractOutputBindings } from './diagram-converter.js';
 import type { ConnectionRule } from '@terrastudio/types';
 import type { EdgeRuleValidator, HclPipeline, PipelineResult } from '@terrastudio/core';
+import {
+  validateContainment,
+  validateConnection,
+  validateBounds,
+  type MutationResult,
+} from './validation.js';
 
 // ─── Shared types ─────────────────────────────────────────────────────────────
 
@@ -104,6 +110,15 @@ export function resolveActiveProviders(
  * HCL generation requires an `HclPipeline` and `EdgeRuleValidator` instance
  * (constructed by the caller after loading the appropriate plugins).
  */
+/**
+ * Optional validator context — provide after loading plugins to get
+ * containment and connection warnings from mutation methods.
+ */
+export interface ProjectValidatorContext {
+  getSchema: (typeId: ResourceTypeId) => ResourceSchema | undefined;
+  edgeValidator?: EdgeRuleValidator;
+}
+
 export class Project {
   readonly path: string;
   readonly name: string;
@@ -114,6 +129,9 @@ export class Project {
   edges: ProjectEdge[];
   modules: ModuleDefinition[];
   moduleInstances: ModuleInstance[];
+
+  /** Set after loading plugins to enable validation warnings on mutations. */
+  validator: ProjectValidatorContext | undefined;
 
   constructor(
     path: string,
@@ -216,8 +234,32 @@ export class Project {
 
   // ─── Mutations ───────────────────────────────────────────────────────────────
 
-  addNode(node: ProjectNode): void {
+  /**
+   * Add a node to the diagram.
+   * Returns warnings for containment violations or out-of-bounds placement.
+   * The mutation always proceeds regardless of warnings.
+   */
+  addNode(node: ProjectNode): MutationResult {
+    const warnings: string[] = [];
+
+    if (this.validator) {
+      const { getSchema } = this.validator;
+      const parentTypeId = node.parentId
+        ? (this.getNode(node.parentId)?.type as ResourceTypeId | undefined)
+        : undefined;
+
+      const containmentWarn = validateContainment(node.data.typeId, parentTypeId, getSchema);
+      if (containmentWarn) warnings.push(containmentWarn);
+
+      if (node.parentId) {
+        const parentNode = this.getNode(node.parentId);
+        const boundsWarn = validateBounds(node.position, parentNode);
+        if (boundsWarn) warnings.push(boundsWarn);
+      }
+    }
+
     this.nodes = [...this.nodes, node];
+    return { warnings };
   }
 
   updateNode(id: string, patch: Partial<ProjectNode> & { data?: Partial<ProjectNode['data']> }): void {
@@ -247,21 +289,75 @@ export class Project {
     );
   }
 
-  addEdge(edge: ProjectEdge): void {
+  /**
+   * Add an edge between two nodes.
+   * Returns a warning if the connection violates plugin connection rules.
+   * The mutation always proceeds regardless of warnings.
+   */
+  addEdge(edge: ProjectEdge): MutationResult {
+    const warnings: string[] = [];
+
+    if (this.validator?.edgeValidator) {
+      const sourceNode = this.getNode(edge.source);
+      const targetNode = this.getNode(edge.target);
+
+      if (sourceNode?.type && targetNode?.type) {
+        const warn = validateConnection(
+          sourceNode.type as ResourceTypeId,
+          edge.sourceHandle ?? '',
+          targetNode.type as ResourceTypeId,
+          edge.targetHandle ?? '',
+          this.validator.edgeValidator,
+        );
+        if (warn) warnings.push(warn);
+      }
+    }
+
     this.edges = [...this.edges, edge];
+    return { warnings };
   }
 
   removeEdge(id: string): void {
     this.edges = this.edges.filter((e) => e.id !== id);
   }
 
-  moveNode(id: string, position: { x: number; y: number }, parentId?: string | null): void {
+  /**
+   * Move a node to a new position, optionally reparenting it.
+   * Returns warnings for containment violations or out-of-bounds placement.
+   * The mutation always proceeds regardless of warnings.
+   */
+  moveNode(id: string, position: { x: number; y: number }, parentId?: string | null): MutationResult {
+    const warnings: string[] = [];
+
+    if (this.validator) {
+      const { getSchema } = this.validator;
+      const node = this.getNode(id);
+
+      if (node) {
+        // Determine the effective parentId after the move
+        const effectiveParentId = parentId !== undefined
+          ? (parentId ?? undefined)
+          : node.parentId;
+
+        const parentNode = effectiveParentId ? this.getNode(effectiveParentId) : undefined;
+        const parentTypeId = parentNode?.type as ResourceTypeId | undefined;
+
+        const containmentWarn = validateContainment(node.data.typeId, parentTypeId, getSchema);
+        if (containmentWarn) warnings.push(containmentWarn);
+
+        const boundsWarn = validateBounds(position, parentNode);
+        if (boundsWarn) warnings.push(boundsWarn);
+      }
+    }
+
     this.nodes = this.nodes.map((n) => {
       if (n.id !== id) return n;
       const update: Partial<ProjectNode> = { position };
       if (parentId !== undefined) update.parentId = parentId ?? undefined;
       return { ...n, ...update };
     });
+
+    return { warnings };
   }
 
   resizeNode(id: string, width: number, height: number): void {

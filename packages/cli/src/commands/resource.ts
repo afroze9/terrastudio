@@ -1,7 +1,13 @@
 import { Command } from 'commander';
-import { loadProject, saveDiagram } from '../platform/node-io.js';
+import { loadProject, saveDiagram, loadValidator } from '../platform/node-io.js';
 import { Project } from '@terrastudio/project';
 import type { ProjectNode, ProjectEdge, ResourceTypeId } from '@terrastudio/types';
+
+function printWarnings(warnings: string[]): void {
+  for (const w of warnings) {
+    console.warn(`  ⚠ ${w}`);
+  }
+}
 
 /** Generate a node ID in the same format the desktop app uses. */
 function generateNodeId(typeId: string): string {
@@ -51,7 +57,7 @@ export function makeResourceCommand(): Command {
     .command('add <path> <typeId> <terraformName>')
     .description('Add a new resource to the diagram')
     .option('-p, --parent <parentId>', 'Parent node ID (for contained resources)')
-    .action((projectPath: string, typeId: string, terraformName: string, options: { parent?: string }) => {
+    .action(async (projectPath: string, typeId: string, terraformName: string, options: { parent?: string }) => {
       const loaded = loadProject(projectPath);
       const project = Project.fromLoaded(loaded);
 
@@ -59,6 +65,9 @@ export function makeResourceCommand(): Command {
         console.error(`Parent node not found: ${options.parent}`);
         process.exit(1);
       }
+
+      const providers = (project.projectConfig.activeProviders ?? ['azurerm']) as import('@terrastudio/types').ProviderId[];
+      project.validator = await loadValidator(providers);
 
       const resolvedTypeId = typeId as ResourceTypeId;
       const id = generateNodeId(typeId);
@@ -78,9 +87,10 @@ export function makeResourceCommand(): Command {
         ...(options.parent ? { parentId: options.parent } : {}),
       };
 
-      project.addNode(node);
+      const { warnings } = project.addNode(node);
       saveDiagram(projectPath, project.toDiagramSnapshot());
       console.log(`Added ${typeId} "${terraformName}" (${id})`);
+      printWarnings(warnings);
     });
 
   cmd
@@ -144,7 +154,7 @@ export function makeResourceCommand(): Command {
     .option('--target-handle <handle>', 'Target handle ID')
     .option('--label <label>', 'Edge label')
     .action(
-      (
+      async (
         projectPath: string,
         sourceId: string,
         targetId: string,
@@ -162,6 +172,9 @@ export function makeResourceCommand(): Command {
           process.exit(1);
         }
 
+        const providers = (project.projectConfig.activeProviders ?? ['azurerm']) as import('@terrastudio/types').ProviderId[];
+        project.validator = await loadValidator(providers);
+
         const sourceHandle = options.sourceHandle ?? 'default';
         const targetHandle = options.targetHandle ?? 'default';
         const edgeId = `e-${sourceId}-${sourceHandle}-${targetId}-${targetHandle}`;
@@ -178,9 +191,10 @@ export function makeResourceCommand(): Command {
           },
         };
 
-        project.addEdge(edge);
+        const { warnings } = project.addEdge(edge);
         saveDiagram(projectPath, project.toDiagramSnapshot());
         console.log(`Connected ${sourceId} -> ${targetId} (${edgeId})`);
+        printWarnings(warnings);
       },
     );
 
@@ -209,7 +223,7 @@ export function makeResourceCommand(): Command {
     .option('--y <y>', 'Y coordinate')
     .option('--parent <parentId>', 'New parent node ID (use empty string to unparent)')
     .action(
-      (
+      async (
         projectPath: string,
         nodeId: string,
         options: { x?: string; y?: string; parent?: string },
@@ -237,9 +251,13 @@ export function makeResourceCommand(): Command {
           process.exit(1);
         }
 
-        project.moveNode(nodeId, { x, y }, parentArg);
+        const providers = (project.projectConfig.activeProviders ?? ['azurerm']) as import('@terrastudio/types').ProviderId[];
+        project.validator = await loadValidator(providers);
+
+        const { warnings } = project.moveNode(nodeId, { x, y }, parentArg);
         saveDiagram(projectPath, project.toDiagramSnapshot());
         console.log(`Moved node ${nodeId} to (${x}, ${y})`);
+        printWarnings(warnings);
       },
     );
 
