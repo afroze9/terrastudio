@@ -26,7 +26,36 @@ function redactSensitive(obj: unknown): unknown {
 }
 
 export function makeProjectCommand(): Command {
-  const cmd = new Command('project').description('Project information and validation');
+  const cmd = new Command('project').description('Project information and configuration');
+
+  cmd
+    .command('create <parentPath> <name>')
+    .description('Create a new TerraStudio project directory')
+    .option('--providers <providers...>', 'Active providers (default: azurerm)')
+    .option('--location <location>', 'Default Azure location (default: eastus)')
+    .option('--rg <resourceGroupName>', 'Default resource group name')
+    .action(
+      async (
+        parentPath: string,
+        name: string,
+        options: { providers?: string[]; location?: string; rg?: string },
+      ) => {
+        const stored = await storage.createProject(name, parentPath);
+
+        // Apply any option overrides to the saved config
+        if (options.providers || options.location || options.rg) {
+          const config = stored.metadata.projectConfig as Record<string, unknown>;
+          if (options.providers) config['activeProviders'] = options.providers;
+          if (options.location) config['location'] = options.location;
+          if (options.rg) config['resourceGroupName'] = options.rg;
+          await storage.saveProjectConfig(stored.path, config);
+        }
+
+        console.log(`Created project "${name}" at: ${stored.path}`);
+        const providers = (options.providers ?? ['azurerm']).join(', ');
+        console.log(`Providers: ${providers}`);
+      },
+    );
 
   cmd
     .command('info <path>')
