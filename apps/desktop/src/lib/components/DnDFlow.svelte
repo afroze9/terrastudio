@@ -19,7 +19,7 @@
   import { registry, edgeTypes } from '$lib/bootstrap';
   import {
     createNodeData, generateNodeId, nextAvailableCidr,
-    applyNamingTemplate, buildTokens, sanitizeTerraformName, generateUniqueTerraformName,
+    applyNamingTemplate, buildTokens, sanitizeTerraformName, generateUniqueTerraformName, LOCATION_REGION_SHORTCODES,
   } from '@terrastudio/core';
   import { project } from '$lib/stores/project.svelte';
   import type { ResourceNodeComponent, ResourceTypeId, EdgeCategoryId, TerraStudioEdgeData } from '@terrastudio/types';
@@ -715,7 +715,8 @@
           while (cur) {
             if (cur.data.typeId === 'azurerm/core/resource_group') {
               const env = (cur.data.properties['naming_env'] as string | undefined) || undefined;
-              const region = (cur.data.properties['naming_region'] as string | undefined) || undefined;
+              const location = cur.data.properties['location'] as string | undefined;
+              const region = location ? LOCATION_REGION_SHORTCODES[location] : undefined;
               if (env) rgOverrides.env = env;
               if (region) rgOverrides.region = region;
               break;
