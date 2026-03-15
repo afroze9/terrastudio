@@ -1,6 +1,6 @@
 {
   "name": "@afroze9/terrastudio-cli",
-  "version": "0.41.2",
+  "version": "0.41.3",
   "description": "CLI for TerraStudio — headless project manipulation and HCL generation",
   "author": "afroze9",
   "license": "AGPL-3.0-only",
