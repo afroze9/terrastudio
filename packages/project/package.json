@@ -1,0 +1,30 @@
+{
+  "name": "@terrastudio/project",
+  "version": "0.1.0",
+  "description": "Platform-agnostic project model and diagram operations for TerraStudio",
+  "author": "afroze9 <afrozeamjad@gmail.com>",
+  "license": "AGPL-3.0-only",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@terrastudio/core": "workspace:*",
+    "@terrastudio/types": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

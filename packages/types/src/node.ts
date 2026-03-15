@@ -1,7 +1,7 @@
 import type { ResourceTypeId } from './resource-schema.js';
 import type { ResourceSchema } from './resource-schema.js';
 import type { ValidationError } from './validation.js';
-import type { ReferenceEdgeOverrides } from './edge.js';
+import type { ReferenceEdgeOverrides, TerraStudioEdgeData } from './edge.js';
 
 export type DeploymentStatus =
   | 'pending'
@@ -64,6 +64,37 @@ export interface ResourceNodeData {
   referenceEdgeOverrides?: ReferenceEdgeOverrides;
   /** Module this resource belongs to (logical grouping, independent of parentId) */
   moduleId?: string;
+}
+
+/**
+ * Platform-agnostic node type used by @terrastudio/project.
+ * Structurally compatible with @xyflow/svelte's Node<ResourceNodeData>
+ * but has no dependency on xyflow or Svelte.
+ */
+export interface ProjectNode {
+  id: string;
+  type?: string;
+  position: { x: number; y: number };
+  data: ResourceNodeData;
+  parentId?: string;
+  width?: number;
+  height?: number;
+  [key: string]: unknown;
+}
+
+/**
+ * Platform-agnostic edge type used by @terrastudio/project.
+ * Structurally compatible with @xyflow/svelte's Edge<TerraStudioEdgeData>
+ * but has no dependency on xyflow or Svelte.
+ */
+export interface ProjectEdge {
+  id: string;
+  source: string;
+  target: string;
+  sourceHandle?: string | null;
+  targetHandle?: string | null;
+  data?: TerraStudioEdgeData;
+  [key: string]: unknown;
 }
 
 /**
