@@ -1,5 +1,34 @@
 import type { NamingConvention, NamingConstraints } from '@terrastudio/types';
 
+/** Maps Azure location IDs to conventional region shortcodes used in naming conventions. */
+export const LOCATION_REGION_SHORTCODES: Record<string, string> = {
+  eastus: 'eus',
+  eastus2: 'eus2',
+  westus: 'wus',
+  westus2: 'wus2',
+  centralus: 'cus',
+  northeurope: 'neu',
+  westeurope: 'weu',
+  uksouth: 'uks',
+  ukwest: 'ukw',
+  southeastasia: 'sea',
+  eastasia: 'ea',
+  australiaeast: 'aue',
+  australiasoutheast: 'ause',
+  japaneast: 'jpe',
+  japanwest: 'jpw',
+  brazilsouth: 'brs',
+  canadacentral: 'cac',
+  canadaeast: 'cae',
+  francecentral: 'frc',
+  germanywestcentral: 'gwc',
+  norwayeast: 'noe',
+  switzerlandnorth: 'swn',
+  southafricanorth: 'san',
+  uaenorth: 'uaen',
+  koreacentral: 'krc',
+};
+
 export interface NamingTokens {
   type: string;
   env: string;

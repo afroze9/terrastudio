@@ -4,7 +4,7 @@
   import { project } from '$lib/stores/project.svelte';
   import { ui } from '$lib/stores/ui.svelte';
   import { registry } from '$lib/bootstrap';
-  import { applyNamingTemplate, sanitizeTerraformName, buildTokens, extractSlug } from '@terrastudio/core';
+  import { applyNamingTemplate, sanitizeTerraformName, buildTokens, extractSlug, LOCATION_REGION_SHORTCODES } from '@terrastudio/core';
   import PropertyRenderer from './PropertyRenderer.svelte';
   import SubscriptionPicker from './SubscriptionPicker.svelte';
   import KeyVaultAccessControlSection from './KeyVaultAccessControlSection.svelte';
@@ -96,7 +96,8 @@
       if (!parent) break;
       if (parent.data.typeId === 'azurerm/core/resource_group') {
         const env = (parent.data.properties['naming_env'] as string | undefined) || undefined;
-        const region = (parent.data.properties['naming_region'] as string | undefined) || undefined;
+        const location = parent.data.properties['location'] as string | undefined;
+        const region = location ? LOCATION_REGION_SHORTCODES[location] : undefined;
         return { env, region };
       }
       cur = parent;
@@ -210,12 +211,13 @@
     });
 
     // When an RG's naming overrides change, recompute labels for all children that have a namingSlug
-    if ((key === 'naming_env' || key === 'naming_region') && diagram.selectedNode) {
+    if ((key === 'naming_env' || key === 'location') && diagram.selectedNode) {
       const conv = project.projectConfig.namingConvention;
       if (!conv?.enabled) return;
       const rgId = diagram.selectedNode.id;
-      const env = (key === 'naming_env' ? value : newProps['naming_env']) as string | undefined || undefined;
-      const region = (key === 'naming_region' ? value : newProps['naming_region']) as string | undefined || undefined;
+      const env = newProps['naming_env'] as string | undefined || undefined;
+      const location = newProps['location'] as string | undefined;
+      const region = location ? LOCATION_REGION_SHORTCODES[location] : undefined;
       const overrides = { env, region };
 
       // Find all descendants of this RG that have a namingSlug

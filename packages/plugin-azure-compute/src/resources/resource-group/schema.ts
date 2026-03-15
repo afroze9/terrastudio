@@ -53,16 +53,6 @@ export const resourceGroupSchema: ResourceSchema = {
       description: 'Overrides the project-level environment token (e.g. dev, prod) for resources inside this Resource Group.',
     },
     {
-      key: 'naming_region',
-      label: 'Region Shortcode',
-      type: 'string',
-      required: false,
-      placeholder: 'eus2',
-      group: 'Naming Convention',
-      order: 11,
-      description: 'Overrides the project-level region shortcode (e.g. eus2, weu) for resources inside this Resource Group.',
-    },
-    {
       key: 'location',
       label: 'Location',
       type: 'select',
