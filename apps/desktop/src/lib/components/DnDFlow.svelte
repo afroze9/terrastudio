@@ -703,7 +703,7 @@
       // Check if dropped inside a container node
       const parentId = findContainerAtPosition(position.x, position.y, schema.typeId);
 
-      // Apply naming convention if active
+      // Apply naming convention if active — store only the slug; name/label are computed
       const convention = project.projectConfig.namingConvention;
       if (convention?.enabled && schema.cafAbbreviation) {
         const instanceCount = diagram.nodes.filter(n => n.data.typeId === schema.typeId).length + 1;
@@ -723,9 +723,8 @@
         }
         const tokens = buildTokens(convention, schema.cafAbbreviation, defaultSlug, rgOverrides);
         const fullName = applyNamingTemplate(convention.template, tokens, schema.namingConstraints);
+        nodeData.namingSlug = defaultSlug;
         if (fullName) {
-          nodeData.properties['name'] = fullName;
-          nodeData.label = fullName;
           nodeData.terraformName = generateUniqueTerraformName(
             sanitizeTerraformName(fullName) || nodeData.terraformName,
             new Set(diagram.nodes.map(n => n.data.terraformName)),

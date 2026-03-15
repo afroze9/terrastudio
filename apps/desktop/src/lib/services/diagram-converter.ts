@@ -1,5 +1,6 @@
 import type { ResourceInstance, ConnectionRule, ResourceSchema, ResourceTypeId, OutputBinding } from '@terrastudio/types';
-import type { EdgeRuleValidator } from '@terrastudio/core';
+import type { EdgeRuleValidator, ProjectConfig } from '@terrastudio/core';
+import { buildTokens, applyNamingTemplate } from '@terrastudio/core';
 import type { DiagramNode, DiagramEdge } from '$lib/stores/diagram.svelte';
 
 /**
@@ -15,6 +16,7 @@ export function convertToResourceInstances(
   edges: DiagramEdge[],
   connectionRules: ConnectionRule[],
   getSchema: (typeId: ResourceTypeId) => ResourceSchema | undefined,
+  projectConfig?: ProjectConfig,
 ): ResourceInstance[] {
   const instances: ResourceInstance[] = [];
 
@@ -43,10 +45,22 @@ export function convertToResourceInstances(
       deriveParentReferences(node, nodes, references, getSchema);
     }
 
+    // If a naming convention is active and this node has a namingSlug, compute properties['name']
+    const properties = { ...data.properties };
+    const conv = projectConfig?.namingConvention;
+    const schema = getSchema(data.typeId);
+    if (conv?.enabled && schema?.cafAbbreviation && data.namingSlug !== undefined) {
+      const rgNode = findAncestorResourceGroup({ parentId: node.parentId } as DiagramNode, nodes);
+      const rgEnv = (rgNode?.data.properties['naming_env'] as string | undefined) || undefined;
+      const tokens = buildTokens(conv, schema.cafAbbreviation, data.namingSlug as string, rgEnv ? { env: rgEnv } : {});
+      const fullName = applyNamingTemplate(conv.template, tokens, schema.namingConstraints);
+      if (fullName) properties['name'] = fullName;
+    }
+
     instances.push({
       instanceId: node.id,
       typeId: data.typeId,
-      properties: { ...data.properties },
+      properties,
       references,
       terraformName: data.terraformName,
       variableOverrides: data.variableOverrides,

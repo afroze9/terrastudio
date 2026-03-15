@@ -44,6 +44,10 @@ export interface ResourceNodeData {
   label: string;
   /** User-set display name shown on the canvas. Overrides label for canvas rendering only; does not affect terraform naming. */
   displayLabel?: string;
+  /** The user-supplied slug used by naming conventions to compute the full resource name.
+   *  Only meaningful when a naming convention is active and the resource has a cafAbbreviation.
+   *  The full name (properties['name']) is derived from this at HCL generation time and for preview — never stored. */
+  namingSlug?: string;
   validationErrors: ValidationError[];
   deploymentStatus?: DeploymentStatus;
   /** Per-property override for literal vs variable mode */
