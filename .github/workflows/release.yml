@@ -113,3 +113,58 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload "${{ needs.release-please.outputs.tag_name }}" "apps/desktop/src-tauri/target/release/TerraStudio-${{ needs.release-please.outputs.version }}-portable-linux-x64.tar.gz" --clobber
+
+  build-cli:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build workspace packages
+        run: pnpm build
+
+      - name: Bundle CLI (esbuild → CJS)
+        working-directory: packages/cli
+        run: pnpm bundle
+
+      - name: Package CLI binaries
+        working-directory: packages/cli
+        run: >
+          pnpm pkg bundle/cli.cjs
+          --targets node22-win-x64,node22-linux-x64,node22-macos-arm64,node22-macos-x64
+          --output bin/tstudio
+
+      - name: Rename binaries with version
+        working-directory: packages/cli/bin
+        shell: bash
+        run: |
+          VERSION="${{ needs.release-please.outputs.version }}"
+          mv tstudio-win-x64.exe   "tstudio-${VERSION}-win-x64.exe"
+          mv tstudio-linux-x64     "tstudio-${VERSION}-linux-x64"
+          mv tstudio-macos-arm64   "tstudio-${VERSION}-macos-arm64"
+          mv tstudio-macos-x64     "tstudio-${VERSION}-macos-x64"
+
+      - name: Upload CLI binaries to release
+        working-directory: packages/cli/bin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ needs.release-please.outputs.version }}"
+          TAG="${{ needs.release-please.outputs.tag_name }}"
+          gh release upload "$TAG" \
+            "tstudio-${VERSION}-win-x64.exe" \
+            "tstudio-${VERSION}-linux-x64" \
+            "tstudio-${VERSION}-macos-arm64" \
+            "tstudio-${VERSION}-macos-x64" \
+            --clobber
