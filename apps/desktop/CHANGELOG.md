@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.41.2](https://github.com/afroze9/terrastudio/compare/v0.41.1...v0.41.2) (2026-03-15)
+
+
+### Bug Fixes
+
+* remove email address from package author fields ([dd80f40](https://github.com/afroze9/terrastudio/commit/dd80f4095c3db79640b972586553e6ca8abb4942))
+
 ## [0.41.1](https://github.com/afroze9/terrastudio/compare/v0.41.0...v0.41.1) (2026-03-15)
 
 
