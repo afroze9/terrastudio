@@ -1,20 +1,13 @@
 import { Command } from 'commander';
 import { storage, loadValidator, toLoadedProject } from '../platform/node-io.js';
 import { Project } from '@terrastudio/project';
+import { generateNodeId, generateUniqueTerraformName } from '@terrastudio/core';
 import type { ProjectNode, ProjectEdge, ResourceTypeId } from '@terrastudio/types';
 
 function printWarnings(warnings: string[]): void {
   for (const w of warnings) {
     console.warn(`  ⚠ ${w}`);
   }
-}
-
-/** Generate a node ID in the same format the desktop app uses. */
-function generateNodeId(typeId: string): string {
-  const part = typeId.replace(/\//g, '-');
-  const ts = Date.now();
-  const rand = Math.random().toString(36).slice(2, 8);
-  return `${part}-${ts}-${rand}`;
 }
 
 export function makeResourceCommand(): Command {
@@ -70,7 +63,7 @@ export function makeResourceCommand(): Command {
       project.validator = await loadValidator(providers);
 
       const resolvedTypeId = typeId as ResourceTypeId;
-      const id = generateNodeId(typeId);
+      const id = generateNodeId(resolvedTypeId);
       const node: ProjectNode = {
         id,
         type: typeId,
@@ -95,10 +88,29 @@ export function makeResourceCommand(): Command {
 
   cmd
     .command('update <path> <nodeId>')
-    .description('Update a resource property')
-    .requiredOption('-k, --key <key>', 'Property key to update')
-    .requiredOption('-v, --value <value>', 'New property value')
-    .action(async (projectPath: string, nodeId: string, options: { key: string; value: string }) => {
+    .description('Update a resource property, label, or terraform name')
+    .option('-k, --key <key>', 'Property key to update (in data.properties)')
+    .option('-v, --value <value>', 'New property value')
+    .option('--label <label>', 'Update the display label')
+    .option('--terraform-name <name>', 'Update the Terraform resource name')
+    .action(async (
+      projectPath: string,
+      nodeId: string,
+      options: { key?: string; value?: string; label?: string; terraformName?: string },
+    ) => {
+      if (options.key !== undefined && options.value === undefined) {
+        console.error('--value is required when --key is specified');
+        process.exit(1);
+      }
+      if (options.value !== undefined && options.key === undefined) {
+        console.error('--key is required when --value is specified');
+        process.exit(1);
+      }
+      if (!options.key && !options.label && !options.terraformName) {
+        console.error('Specify at least one of: --key/--value, --label, --terraform-name');
+        process.exit(1);
+      }
+
       const stored = await storage.loadProject(projectPath);
       const project = Project.fromLoaded(toLoadedProject(stored));
 
@@ -108,18 +120,96 @@ export function makeResourceCommand(): Command {
         process.exit(1);
       }
 
+      const dataUpdate: ProjectNode['data'] = { ...node.data };
+      if (options.key && options.value !== undefined) {
+        dataUpdate.properties = { ...node.data.properties, [options.key]: options.value };
+      }
+      if (options.label !== undefined) dataUpdate.label = options.label;
+      if (options.terraformName !== undefined) dataUpdate.terraformName = options.terraformName;
+
+      project.updateNode(nodeId, { data: dataUpdate });
+      await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
+
+      const changes: string[] = [];
+      if (options.key) changes.push(`${options.key} = ${options.value}`);
+      if (options.label) changes.push(`label = "${options.label}"`);
+      if (options.terraformName) changes.push(`terraformName = "${options.terraformName}"`);
+      console.log(`Updated ${nodeId}: ${changes.join(', ')}`);
+    });
+
+  cmd
+    .command('rename <path> <nodeId> <terraformName>')
+    .description('Rename a resource (updates both label and terraform name)')
+    .option('--label <label>', 'Override the display label (defaults to terraformName)')
+    .action(async (
+      projectPath: string,
+      nodeId: string,
+      terraformName: string,
+      options: { label?: string },
+    ) => {
+      const stored = await storage.loadProject(projectPath);
+      const project = Project.fromLoaded(toLoadedProject(stored));
+
+      const node = project.getNode(nodeId);
+      if (!node) {
+        console.error(`Node not found: ${nodeId}`);
+        process.exit(1);
+      }
+
+      const label = options.label ?? terraformName;
       project.updateNode(nodeId, {
-        data: {
-          ...node.data,
-          properties: {
-            ...node.data.properties,
-            [options.key]: options.value,
-          },
-        },
+        data: { ...node.data, terraformName, label },
       });
 
       await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
-      console.log(`Updated node ${nodeId}: ${options.key} = ${options.value}`);
+      console.log(`Renamed ${nodeId}: "${node.data.terraformName}" → "${terraformName}"`);
+    });
+
+  cmd
+    .command('duplicate <path> <nodeId>')
+    .description('Duplicate a resource (new ID, unique terraform name, offset position)')
+    .option('--terraform-name <name>', 'Override the terraform name of the duplicate')
+    .action(async (
+      projectPath: string,
+      nodeId: string,
+      options: { terraformName?: string },
+    ) => {
+      const stored = await storage.loadProject(projectPath);
+      const project = Project.fromLoaded(toLoadedProject(stored));
+
+      const node = project.getNode(nodeId);
+      if (!node) {
+        console.error(`Node not found: ${nodeId}`);
+        process.exit(1);
+      }
+
+      const providers = (project.projectConfig.activeProviders ?? ['azurerm']) as import('@terrastudio/types').ProviderId[];
+      project.validator = await loadValidator(providers);
+
+      // Generate unique terraform name
+      const existingNames = new Set(
+        project.nodes.map((n) => n.data.terraformName).filter(Boolean) as string[],
+      );
+      const baseName = options.terraformName ?? (node.data.terraformName ?? 'resource');
+      const newTerraformName = generateUniqueTerraformName(baseName, existingNames);
+
+      const newId = generateNodeId((node.type ?? 'resource') as ResourceTypeId);
+      const duplicate: ProjectNode = {
+        ...node,
+        id: newId,
+        position: { x: node.position.x + 40, y: node.position.y + 40 },
+        data: {
+          ...node.data,
+          terraformName: newTerraformName,
+          label: newTerraformName,
+          validationErrors: [],
+        },
+      };
+
+      const { warnings } = project.addNode(duplicate);
+      await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
+      console.log(`Duplicated ${nodeId} → ${newId} ("${newTerraformName}")`);
+      printWarnings(warnings);
     });
 
   cmd
