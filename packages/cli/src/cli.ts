@@ -5,6 +5,7 @@ import { makeProjectCommand } from './commands/project.js';
 import { makeResourceCommand } from './commands/resource.js';
 import { makeHclCommand } from './commands/hcl.js';
 import { makeModuleCommand } from './commands/module.js';
+import { makeTerraformCommand } from './commands/terraform.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json') as { version: string };
@@ -20,5 +21,6 @@ program.addCommand(makeProjectCommand());
 program.addCommand(makeResourceCommand());
 program.addCommand(makeHclCommand());
 program.addCommand(makeModuleCommand());
+program.addCommand(makeTerraformCommand());
 
 program.parse(process.argv);
