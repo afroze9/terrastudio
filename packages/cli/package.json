@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@terrastudio/core": "workspace:*",
+    "@terrastudio/platform-node": "workspace:*",
     "@terrastudio/plugin-azure-compute": "workspace:*",
     "@terrastudio/plugin-azure-database": "workspace:*",
     "@terrastudio/plugin-azure-monitoring": "workspace:*",

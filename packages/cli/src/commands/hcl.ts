@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { loadProject, readTerraformFiles, writeTerraformFiles } from '../platform/node-io.js';
+import { storage, toLoadedProject } from '../platform/node-io.js';
 import { Project } from '@terrastudio/project';
 import path from 'node:path';
 
@@ -16,15 +16,15 @@ export function makeHclCommand(): Command {
     .option('--file <filename>', 'Show only a specific file (e.g. main.tf)')
     .option('--write', 'Write files to the terraform/ directory (no-op if already on disk)')
     .action(
-      (
+      async (
         projectPath: string,
         options: { file?: string; write?: boolean },
       ) => {
-        const loaded = loadProject(projectPath);
+        const stored = await storage.loadProject(projectPath);
         // Validate project loads correctly
-        Project.fromLoaded(loaded);
+        Project.fromLoaded(toLoadedProject(stored));
 
-        const files = readTerraformFiles(projectPath);
+        const files = await storage.readTerraformFiles(projectPath);
 
         if (Object.keys(files).length === 0) {
           console.log(
@@ -59,7 +59,7 @@ export function makeHclCommand(): Command {
         }
 
         if (options.write) {
-          writeTerraformFiles(projectPath, files);
+          await storage.writeTerraformFiles(projectPath, files);
           const tfDir = path.join(projectPath, 'terraform');
           console.log(`Terraform files written to: ${tfDir}`);
         }
@@ -71,15 +71,15 @@ export function makeHclCommand(): Command {
     .description('Read and print existing Terraform files from the terraform/ directory')
     .option('--file <filename>', 'Show only a specific file (e.g. main.tf)')
     .action(
-      (
+      async (
         projectPath: string,
         options: { file?: string },
       ) => {
-        const loaded = loadProject(projectPath);
+        const stored = await storage.loadProject(projectPath);
         // Validate project loads correctly
-        Project.fromLoaded(loaded);
+        Project.fromLoaded(toLoadedProject(stored));
 
-        const files = readTerraformFiles(projectPath);
+        const files = await storage.readTerraformFiles(projectPath);
 
         if (Object.keys(files).length === 0) {
           console.log('No Terraform files found in terraform/ directory.');

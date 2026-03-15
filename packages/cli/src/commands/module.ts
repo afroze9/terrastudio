@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { loadProject, saveDiagram } from '../platform/node-io.js';
+import { storage, toLoadedProject } from '../platform/node-io.js';
 import { Project } from '@terrastudio/project';
 import type { ModuleDefinition, ModuleInstance } from '@terrastudio/types';
 
@@ -23,9 +23,9 @@ export function makeModuleCommand(): Command {
   cmd
     .command('list <path>')
     .description('List all modules in the project')
-    .action((projectPath: string) => {
-      const loaded = loadProject(projectPath);
-      const project = Project.fromLoaded(loaded);
+    .action(async (projectPath: string) => {
+      const stored = await storage.loadProject(projectPath);
+      const project = Project.fromLoaded(toLoadedProject(stored));
 
       if (project.modules.length === 0) {
         console.log('No modules found.');
@@ -60,13 +60,13 @@ export function makeModuleCommand(): Command {
     .requiredOption('--members <nodeIds...>', 'Node IDs to include in the module')
     .option('--template', 'Make this module a reusable template')
     .action(
-      (
+      async (
         projectPath: string,
         name: string,
         options: { members: string[]; template?: boolean },
       ) => {
-        const loaded = loadProject(projectPath);
-        const project = Project.fromLoaded(loaded);
+        const stored = await storage.loadProject(projectPath);
+        const project = Project.fromLoaded(toLoadedProject(stored));
 
         // Validate all member nodes exist
         for (const nodeId of options.members) {
@@ -95,7 +95,7 @@ export function makeModuleCommand(): Command {
           });
         }
 
-        saveDiagram(projectPath, project.toDiagramSnapshot());
+        await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
         console.log(
           `Created module "${name}" (${moduleId}) with ${options.members.length} member(s).`,
         );
@@ -107,9 +107,9 @@ export function makeModuleCommand(): Command {
   cmd
     .command('delete <path> <moduleId>')
     .description('Delete a module (does not delete member resources)')
-    .action((projectPath: string, moduleId: string) => {
-      const loaded = loadProject(projectPath);
-      const project = Project.fromLoaded(loaded);
+    .action(async (projectPath: string, moduleId: string) => {
+      const stored = await storage.loadProject(projectPath);
+      const project = Project.fromLoaded(toLoadedProject(stored));
 
       const mod = project.modules.find((m) => m.id === moduleId);
       if (!mod) {
@@ -126,7 +126,7 @@ export function makeModuleCommand(): Command {
       }
 
       project.modules = project.modules.filter((m) => m.id !== moduleId);
-      saveDiagram(projectPath, project.toDiagramSnapshot());
+      await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
       console.log(`Deleted module: ${mod.name} (${moduleId})`);
     });
 
@@ -135,9 +135,9 @@ export function makeModuleCommand(): Command {
   cmd
     .command('rename <path> <moduleId> <newName>')
     .description('Rename a module')
-    .action((projectPath: string, moduleId: string, newName: string) => {
-      const loaded = loadProject(projectPath);
-      const project = Project.fromLoaded(loaded);
+    .action(async (projectPath: string, moduleId: string, newName: string) => {
+      const stored = await storage.loadProject(projectPath);
+      const project = Project.fromLoaded(toLoadedProject(stored));
 
       const mod = project.modules.find((m) => m.id === moduleId);
       if (!mod) {
@@ -149,7 +149,7 @@ export function makeModuleCommand(): Command {
         m.id === moduleId ? { ...m, name: newName } : m,
       );
 
-      saveDiagram(projectPath, project.toDiagramSnapshot());
+      await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
       console.log(`Renamed module ${moduleId}: "${mod.name}" -> "${newName}"`);
     });
 
@@ -160,13 +160,13 @@ export function makeModuleCommand(): Command {
     .description('Add nodes to a module')
     .requiredOption('--members <nodeIds...>', 'Node IDs to add')
     .action(
-      (
+      async (
         projectPath: string,
         moduleId: string,
         options: { members: string[] },
       ) => {
-        const loaded = loadProject(projectPath);
-        const project = Project.fromLoaded(loaded);
+        const stored = await storage.loadProject(projectPath);
+        const project = Project.fromLoaded(toLoadedProject(stored));
 
         const mod = project.modules.find((m) => m.id === moduleId);
         if (!mod) {
@@ -185,7 +185,7 @@ export function makeModuleCommand(): Command {
           });
         }
 
-        saveDiagram(projectPath, project.toDiagramSnapshot());
+        await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
         console.log(
           `Added ${options.members.length} member(s) to module ${moduleId}.`,
         );
@@ -199,13 +199,13 @@ export function makeModuleCommand(): Command {
     .description('Remove nodes from a module')
     .requiredOption('--members <nodeIds...>', 'Node IDs to remove')
     .action(
-      (
+      async (
         projectPath: string,
         moduleId: string,
         options: { members: string[] },
       ) => {
-        const loaded = loadProject(projectPath);
-        const project = Project.fromLoaded(loaded);
+        const stored = await storage.loadProject(projectPath);
+        const project = Project.fromLoaded(toLoadedProject(stored));
 
         if (!project.modules.find((m) => m.id === moduleId)) {
           console.error(`Module not found: ${moduleId}`);
@@ -223,7 +223,7 @@ export function makeModuleCommand(): Command {
           });
         }
 
-        saveDiagram(projectPath, project.toDiagramSnapshot());
+        await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
         console.log(
           `Removed ${options.members.length} member(s) from module ${moduleId}.`,
         );
@@ -240,9 +240,9 @@ export function makeModuleCommand(): Command {
     .command('list <path>')
     .description('List module instances')
     .option('--template <templateId>', 'Filter by template module ID')
-    .action((projectPath: string, options: { template?: string }) => {
-      const loaded = loadProject(projectPath);
-      const project = Project.fromLoaded(loaded);
+    .action(async (projectPath: string, options: { template?: string }) => {
+      const stored = await storage.loadProject(projectPath);
+      const project = Project.fromLoaded(toLoadedProject(stored));
 
       let instances = project.moduleInstances;
       if (options.template) {
@@ -271,9 +271,9 @@ export function makeModuleCommand(): Command {
     .command('create <path> <templateModuleId> <instanceName>')
     .description('Create a new module instance from a template')
     .action(
-      (projectPath: string, templateModuleId: string, instanceName: string) => {
-        const loaded = loadProject(projectPath);
-        const project = Project.fromLoaded(loaded);
+      async (projectPath: string, templateModuleId: string, instanceName: string) => {
+        const stored = await storage.loadProject(projectPath);
+        const project = Project.fromLoaded(toLoadedProject(stored));
 
         const template = project.modules.find((m) => m.id === templateModuleId);
         if (!template) {
@@ -297,7 +297,7 @@ export function makeModuleCommand(): Command {
         };
 
         project.moduleInstances = [...project.moduleInstances, instance];
-        saveDiagram(projectPath, project.toDiagramSnapshot());
+        await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
         console.log(
           `Created instance "${instanceName}" (${instanceId}) from template ${templateModuleId}.`,
         );
@@ -307,9 +307,9 @@ export function makeModuleCommand(): Command {
   instancesCmd
     .command('delete <path> <instanceId>')
     .description('Delete a module instance')
-    .action((projectPath: string, instanceId: string) => {
-      const loaded = loadProject(projectPath);
-      const project = Project.fromLoaded(loaded);
+    .action(async (projectPath: string, instanceId: string) => {
+      const stored = await storage.loadProject(projectPath);
+      const project = Project.fromLoaded(toLoadedProject(stored));
 
       const instance = project.moduleInstances.find((i) => i.id === instanceId);
       if (!instance) {
@@ -320,7 +320,7 @@ export function makeModuleCommand(): Command {
       project.moduleInstances = project.moduleInstances.filter(
         (i) => i.id !== instanceId,
       );
-      saveDiagram(projectPath, project.toDiagramSnapshot());
+      await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
       console.log(`Deleted instance: ${instance.name} (${instanceId})`);
     });
 
@@ -330,13 +330,13 @@ export function makeModuleCommand(): Command {
     .requiredOption('--key <key>', 'Variable key')
     .requiredOption('--value <value>', 'Variable value')
     .action(
-      (
+      async (
         projectPath: string,
         instanceId: string,
         options: { key: string; value: string },
       ) => {
-        const loaded = loadProject(projectPath);
-        const project = Project.fromLoaded(loaded);
+        const stored = await storage.loadProject(projectPath);
+        const project = Project.fromLoaded(toLoadedProject(stored));
 
         const instance = project.moduleInstances.find((i) => i.id === instanceId);
         if (!instance) {
@@ -355,7 +355,7 @@ export function makeModuleCommand(): Command {
           };
         });
 
-        saveDiagram(projectPath, project.toDiagramSnapshot());
+        await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
         console.log(
           `Set ${options.key} = ${options.value} on instance ${instanceId}.`,
         );

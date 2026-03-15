@@ -2,6 +2,9 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
+import { TauriProjectStorage } from '@terrastudio/platform-tauri';
+
+const storage = new TauriProjectStorage();
 import { project, type ProjectMetadata } from '$lib/stores/project.svelte';
 import { diagram } from '$lib/stores/diagram.svelte';
 import { cost } from '$lib/stores/cost.svelte';
@@ -72,10 +75,7 @@ export async function createProject(
   if (namingConvention) project.projectConfig = { ...project.projectConfig, namingConvention };
   if (layoutAlgorithm) project.projectConfig = { ...project.projectConfig, layoutAlgorithm };
   project.projectConfig = { ...project.projectConfig, activeProviders: providers };
-  await invoke('save_project_config', {
-    projectPath: data.path,
-    projectConfig: project.projectConfig,
-  });
+  await storage.saveProjectConfig(data.path, project.projectConfig);
 
   if (template) {
     const { nodes, edges } = applyTemplate(template, namingConvention, registry);
@@ -224,14 +224,8 @@ export async function saveDiagram(): Promise<void> {
 
   // Save diagram, project config (without secrets), and cost in parallel
   const savePromises: Promise<unknown>[] = [
-    invoke('save_diagram', {
-      projectPath: project.path,
-      diagram: diagramData,
-    }),
-    invoke('save_project_config', {
-      projectPath: project.path,
-      projectConfig: configForSave,
-    }),
+    storage.saveDiagram(project.path, diagramData),
+    storage.saveProjectConfig(project.path, configForSave),
     cost.hasPrices
       ? invoke('save_cost', {
           projectPath: project.path,

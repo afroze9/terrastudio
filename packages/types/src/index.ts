@@ -88,6 +88,9 @@ export type { DepGraphNode, DepGraphEdge, DepGraphCluster, DepGraphData } from '
 export type { AnnotationNodeData, AnnotationColor, AnnotationSize } from './annotation.js';
 export { ANNOTATION_SIZE_DEFAULTS, ANNOTATION_COLOR_THEMES } from './annotation.js';
 
+// Platform storage interface
+export type { IProjectStorage, StoredProjectData, DiagramData, ProjectFileMetadata } from './platform.js';
+
 // Access control types
 export type { AccessModel, IdentityType, AccessGrant } from './access-control.js';
 export {

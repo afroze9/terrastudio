@@ -29,6 +29,7 @@
     "@tauri-apps/plugin-notification": "^2.2.1",
     "@tauri-apps/plugin-opener": "^2.5.3",
     "@terrastudio/core": "workspace:*",
+    "@terrastudio/platform-tauri": "workspace:*",
     "@terrastudio/project": "workspace:*",
     "@terrastudio/plugin-aws-compute": "workspace:*",
     "@terrastudio/plugin-aws-networking": "workspace:*",
