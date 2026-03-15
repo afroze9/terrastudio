@@ -2,7 +2,7 @@
   "name": "@terrastudio/platform-tauri",
   "version": "0.1.0",
   "description": "Tauri IProjectStorage adapter for TerraStudio — used by the desktop app",
-  "author": "afroze9 <afrozeamjad@gmail.com>",
+  "author": "afroze9",
   "license": "AGPL-3.0-only",
   "private": true,
   "type": "module",

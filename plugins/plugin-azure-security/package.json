@@ -2,7 +2,7 @@
   "name": "@terrastudio/plugin-azure-security",
   "version": "0.1.0",
   "description": "Azure identity & security resources plugin (Managed Identity, Role Assignment) for TerraStudio",
-  "author": "afroze9 <afrozeamjad@gmail.com>",
+  "author": "afroze9",
   "license": "AGPL-3.0-only",
   "private": true,
   "type": "module",

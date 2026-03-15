@@ -2,7 +2,7 @@
   "name": "@terrastudio/types",
   "version": "0.1.0",
   "description": "Shared TypeScript interfaces for TerraStudio",
-  "author": "afroze9 <afrozeamjad@gmail.com>",
+  "author": "afroze9",
   "license": "MIT",
   "private": true,
   "type": "module",

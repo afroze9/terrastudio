@@ -2,7 +2,7 @@
   "name": "@terrastudio/plugin-azure-database",
   "version": "0.1.0",
   "description": "Azure database resources plugin (SQL Server, SQL Database, Cosmos DB) for TerraStudio",
-  "author": "afroze9 <afrozeamjad@gmail.com>",
+  "author": "afroze9",
   "license": "AGPL-3.0-only",
   "private": true,
   "type": "module",

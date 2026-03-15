@@ -2,7 +2,7 @@
   "name": "@terrastudio/plugin-azure-storage",
   "version": "0.1.0",
   "description": "Azure storage resources plugin (Storage Account) for TerraStudio",
-  "author": "afroze9 <afrozeamjad@gmail.com>",
+  "author": "afroze9",
   "license": "AGPL-3.0-only",
   "private": true,
   "type": "module",
