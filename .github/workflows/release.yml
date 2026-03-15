@@ -184,7 +184,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
           registry-url: https://registry.npmjs.org
 
@@ -196,4 +196,4 @@ jobs:
 
       - name: Publish @afroze9/terrastudio-cli to npm
         working-directory: packages/cli
-        run: npm publish --access public
+        run: npm publish --provenance --access public
