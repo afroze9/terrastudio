@@ -1,5 +1,5 @@
 {
-  "name": "@terrastudio/cli",
+  "name": "@afroze9/terrastudio-cli",
   "version": "0.41.0",
   "description": "CLI for TerraStudio — headless project manipulation and HCL generation",
   "author": "afroze9 <afrozeamjad@gmail.com>",

@@ -1,5 +1,6 @@
 # Install tstudio CLI — TerraStudio headless CLI
 # Usage: irm https://raw.githubusercontent.com/afroze9/terrastudio/master/scripts/install.ps1 | iex
+# npm: npm install -g @afroze9/terrastudio-cli
 [CmdletBinding()]
 param(
   [string]$InstallDir = "$env:LOCALAPPDATA\Programs\tstudio"
