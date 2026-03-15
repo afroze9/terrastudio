@@ -700,12 +700,30 @@
       const nodeData = createNodeData(schema);
       const id = generateNodeId(schema.typeId);
 
+      // Check if dropped inside a container node
+      const parentId = findContainerAtPosition(position.x, position.y, schema.typeId);
+
       // Apply naming convention if active
       const convention = project.projectConfig.namingConvention;
       if (convention?.enabled && schema.cafAbbreviation) {
         const instanceCount = diagram.nodes.filter(n => n.data.typeId === schema.typeId).length + 1;
         const defaultSlug = String(instanceCount).padStart(2, '0');
-        const tokens = buildTokens(convention, schema.cafAbbreviation, defaultSlug);
+        // Walk up from drop container to find the nearest Resource Group for env/region overrides
+        const rgOverrides: { env?: string; region?: string } = {};
+        if (parentId) {
+          let cur = diagram.nodes.find(n => n.id === parentId);
+          while (cur) {
+            if (cur.data.typeId === 'azurerm/core/resource_group') {
+              const env = (cur.data.properties['naming_env'] as string | undefined) || undefined;
+              const region = (cur.data.properties['naming_region'] as string | undefined) || undefined;
+              if (env) rgOverrides.env = env;
+              if (region) rgOverrides.region = region;
+              break;
+            }
+            cur = cur.parentId ? diagram.nodes.find(n => n.id === cur!.parentId) : undefined;
+          }
+        }
+        const tokens = buildTokens(convention, schema.cafAbbreviation, defaultSlug, rgOverrides);
         const fullName = applyNamingTemplate(convention.template, tokens, schema.namingConstraints);
         if (fullName) {
           nodeData.properties['name'] = fullName;
@@ -716,9 +734,6 @@
           );
         }
       }
-
-      // Check if dropped inside a container node
-      const parentId = findContainerAtPosition(position.x, position.y, schema.typeId);
 
       // Auto-assign subnet CIDR when dropped into a VNet
       if (parentId && schema.typeId === 'azurerm/networking/subnet') {
