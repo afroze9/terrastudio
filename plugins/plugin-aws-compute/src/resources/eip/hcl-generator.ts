@@ -19,7 +19,7 @@ export const eipHclGenerator: HclGenerator = {
     const instanceRef = resource.references['instance_id'];
     if (instanceRef) {
       const instanceIdExpr = context.getAttributeReference(instanceRef, 'id');
-      lines.push(`  instance = ${instanceIdExpr}`);
+      lines.push(`  instance_id = ${instanceIdExpr}`);
       const addr = context.getTerraformAddress(instanceRef);
       if (addr) dependsOn.push(addr);
     }

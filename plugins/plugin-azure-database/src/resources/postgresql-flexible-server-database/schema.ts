@@ -8,7 +8,7 @@ export const postgresqlFlexibleServerDatabaseSchema: ResourceSchema = {
   description: 'A database on an Azure PostgreSQL Flexible Server',
   terraformType: 'azurerm_postgresql_flexible_server_database',
   supportsTags: false,
-  requiresResourceGroup: false,
+  requiresResourceGroup: true,
 
   canBeChildOf: [
     'azurerm/database/postgresql_flexible_server',

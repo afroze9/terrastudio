@@ -46,10 +46,25 @@ export const lambdaFunctionHclGenerator: HclGenerator = {
       lines.push(`  description   = ${descExpr}`);
     }
 
-    // Placeholder for deployment package
+    // Deployment package
+    const deploymentSource = (props['deployment_source'] as string) ?? 'local_file';
     lines.push('');
-    lines.push('  # TODO: Replace with actual deployment package');
-    lines.push('  filename      = "lambda.zip"');
+    if (deploymentSource === 's3') {
+      const s3Bucket = props['s3_bucket'] as string | undefined;
+      const s3Key = props['s3_key'] as string | undefined;
+      if (s3Bucket || resource.variableOverrides?.['s3_bucket'] === 'variable') {
+        const s3BucketExpr = context.getPropertyExpression(resource, 's3_bucket', s3Bucket ?? '');
+        lines.push(`  s3_bucket     = ${s3BucketExpr}`);
+      }
+      if (s3Key || resource.variableOverrides?.['s3_key'] === 'variable') {
+        const s3KeyExpr = context.getPropertyExpression(resource, 's3_key', s3Key ?? '');
+        lines.push(`  s3_key        = ${s3KeyExpr}`);
+      }
+    } else {
+      const filename = (props['filename'] as string) ?? 'lambda.zip';
+      const filenameExpr = context.getPropertyExpression(resource, 'filename', filename);
+      lines.push(`  filename      = ${filenameExpr}`);
+    }
 
     // Environment variables
     if (envVars && Object.keys(envVars).length > 0) {
