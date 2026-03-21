@@ -123,6 +123,6 @@ export const redisCacheSchema: ResourceSchema = {
 
   costEstimation: {
     serviceName: 'Azure Cache for Redis',
-    skuProperty: 'family',
+    skuProperty: 'sku_name',
   },
 };

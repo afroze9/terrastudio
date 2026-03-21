@@ -15,7 +15,6 @@ export const cosmosdbAccountSchema: ResourceSchema = {
 
   canBeChildOf: [
     'azurerm/core/resource_group',
-    'azurerm/networking/subnet',
   ],
   visualContainment: true,
   privateEndpointConfig: {

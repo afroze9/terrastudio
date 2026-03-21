@@ -15,6 +15,9 @@ export const staticWebAppHclGenerator: HclGenerator = {
 		const nameExpr = context.getPropertyExpression(resource, 'name', name);
 		const skuExpr = context.getPropertyExpression(resource, 'sku_name', skuName);
 
+		// For azurerm_static_web_app, sku_tier and sku_size always use the same value
+		// ("Free" or "Standard"). This is correct per the AzureRM provider — they are
+		// not independent like on other Azure resources.
 		const lines: string[] = [
 			`resource "azurerm_static_web_app" "${resource.terraformName}" {`,
 			`  name                = ${nameExpr}`,
