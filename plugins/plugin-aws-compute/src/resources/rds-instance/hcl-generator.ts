@@ -17,6 +17,14 @@ export const rdsInstanceHclGenerator: HclGenerator = {
     const multiAz = props['multi_az'] as boolean ?? false;
     const publiclyAccessible = props['publicly_accessible'] as boolean ?? false;
     const skipFinalSnapshot = props['skip_final_snapshot'] as boolean ?? true;
+    const backupRetentionPeriod = props['backup_retention_period'] as number | undefined;
+    const backupWindow = props['backup_window'] as string | undefined;
+    const maintenanceWindow = props['maintenance_window'] as string | undefined;
+    const parameterGroupName = props['parameter_group_name'] as string | undefined;
+    const optionGroupName = props['option_group_name'] as string | undefined;
+    const monitoringInterval = props['monitoring_interval'] as string | undefined;
+    const iamDbAuth = props['iam_database_authentication_enabled'] as boolean ?? false;
+    const dbSubnetGroupName = props['db_subnet_group_name'] as string | undefined;
 
     const dependsOn: string[] = [];
 
@@ -58,6 +66,50 @@ export const rdsInstanceHclGenerator: HclGenerator = {
     lines.push(`  multi_az            = ${multiAzExpr}`);
     lines.push(`  publicly_accessible = ${publiclyAccessibleExpr}`);
     lines.push(`  skip_final_snapshot = ${skipFinalSnapshotExpr}`);
+
+    // Backup configuration
+    if (backupRetentionPeriod !== undefined && backupRetentionPeriod !== 7 || resource.variableOverrides?.['backup_retention_period'] === 'variable') {
+      const expr = context.getPropertyExpression(resource, 'backup_retention_period', backupRetentionPeriod ?? 7);
+      lines.push(`  backup_retention_period = ${expr}`);
+    }
+    if (backupWindow || resource.variableOverrides?.['backup_window'] === 'variable') {
+      const expr = context.getPropertyExpression(resource, 'backup_window', backupWindow ?? '');
+      lines.push(`  backup_window            = ${expr}`);
+    }
+
+    // Maintenance window
+    if (maintenanceWindow || resource.variableOverrides?.['maintenance_window'] === 'variable') {
+      const expr = context.getPropertyExpression(resource, 'maintenance_window', maintenanceWindow ?? '');
+      lines.push(`  maintenance_window       = ${expr}`);
+    }
+
+    // Configuration
+    if (parameterGroupName || resource.variableOverrides?.['parameter_group_name'] === 'variable') {
+      const expr = context.getPropertyExpression(resource, 'parameter_group_name', parameterGroupName ?? '');
+      lines.push(`  parameter_group_name     = ${expr}`);
+    }
+    if (optionGroupName || resource.variableOverrides?.['option_group_name'] === 'variable') {
+      const expr = context.getPropertyExpression(resource, 'option_group_name', optionGroupName ?? '');
+      lines.push(`  option_group_name        = ${expr}`);
+    }
+
+    // Monitoring
+    if (monitoringInterval && monitoringInterval !== '0' || resource.variableOverrides?.['monitoring_interval'] === 'variable') {
+      const expr = context.getPropertyExpression(resource, 'monitoring_interval', monitoringInterval ?? '0');
+      lines.push(`  monitoring_interval      = ${expr}`);
+    }
+
+    // IAM database authentication
+    if (iamDbAuth || resource.variableOverrides?.['iam_database_authentication_enabled'] === 'variable') {
+      const expr = context.getPropertyExpression(resource, 'iam_database_authentication_enabled', iamDbAuth);
+      lines.push(`  iam_database_authentication_enabled = ${expr}`);
+    }
+
+    // Networking - DB subnet group
+    if (dbSubnetGroupName || resource.variableOverrides?.['db_subnet_group_name'] === 'variable') {
+      const expr = context.getPropertyExpression(resource, 'db_subnet_group_name', dbSubnetGroupName ?? '');
+      lines.push(`  db_subnet_group_name     = ${expr}`);
+    }
 
     // Security group reference
     const sgRef = resource.references['security_group_ids'];

@@ -13,6 +13,12 @@ export const containerAppHclGenerator: HclGenerator = {
     const ingressEnabled = props['ingress_enabled'] as boolean | undefined;
     const ingressTargetPort = props['ingress_target_port'] as number | undefined;
     const ingressExternal = props['ingress_external'] as boolean ?? true;
+    const envVars = props['environment_variables'] as Record<string, string> | undefined;
+    const minReplicas = props['min_replicas'] as number | undefined;
+    const maxReplicas = props['max_replicas'] as number | undefined;
+    const secrets = props['secrets'] as Array<{ name: string; value: string }> | undefined;
+    const identityEnabled = props['identity_enabled'] as boolean | undefined;
+    const identityType = (props['identity_type'] as string) ?? 'SystemAssigned';
 
     const rgExpr = context.getResourceGroupExpression(resource);
     const nameExpr = context.getPropertyExpression(resource, 'name', name);
@@ -36,14 +42,34 @@ export const containerAppHclGenerator: HclGenerator = {
       `  revision_mode                = ${revisionModeExpr}`,
       '',
       '  template {',
-      '    container {',
-      `      name   = "${e(containerName)}"`,
-      `      image  = ${context.getPropertyExpression(resource, 'container_image', containerImage)}`,
-      `      cpu    = ${containerCpu}`,
-      `      memory = "${containerMemory}"`,
-      '    }',
-      '  }',
     ];
+
+    if (minReplicas !== undefined || resource.variableOverrides?.['min_replicas'] === 'variable') {
+      lines.push(`    min_replicas = ${context.getPropertyExpression(resource, 'min_replicas', minReplicas ?? 0)}`);
+    }
+    if (maxReplicas !== undefined || resource.variableOverrides?.['max_replicas'] === 'variable') {
+      lines.push(`    max_replicas = ${context.getPropertyExpression(resource, 'max_replicas', maxReplicas ?? 10)}`);
+    }
+
+    lines.push('');
+    lines.push('    container {');
+    lines.push(`      name   = "${e(containerName)}"`);
+    lines.push(`      image  = ${context.getPropertyExpression(resource, 'container_image', containerImage)}`);
+    lines.push(`      cpu    = ${containerCpu}`);
+    lines.push(`      memory = "${containerMemory}"`);
+
+    if (envVars && Object.keys(envVars).length > 0) {
+      for (const [key, value] of Object.entries(envVars)) {
+        lines.push('');
+        lines.push('      env {');
+        lines.push(`        name  = "${e(key)}"`);
+        lines.push(`        value = "${e(String(value))}"`);
+        lines.push('      }');
+      }
+    }
+
+    lines.push('    }');
+    lines.push('  }');
 
     if (ingressEnabled) {
       lines.push('');
@@ -54,6 +80,23 @@ export const containerAppHclGenerator: HclGenerator = {
       lines.push('      latest_revision = true');
       lines.push('      percentage      = 100');
       lines.push('    }');
+      lines.push('  }');
+    }
+
+    if (secrets && secrets.length > 0) {
+      for (const secret of secrets) {
+        lines.push('');
+        lines.push('  secret {');
+        lines.push(`    name  = "${e(secret.name)}"`);
+        lines.push(`    value = "${e(secret.value)}"`);
+        lines.push('  }');
+      }
+    }
+
+    if (identityEnabled) {
+      lines.push('');
+      lines.push('  identity {');
+      lines.push(`    type = ${context.getPropertyExpression(resource, 'identity_type', identityType)}`);
       lines.push('  }');
     }
 

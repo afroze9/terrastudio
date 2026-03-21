@@ -12,6 +12,11 @@ export const mysqlFlexibleServerHclGenerator: HclGenerator = {
     const adminPassword = (props['administrator_password'] as string) ?? '';
     const storageSizeGb = props['storage_size_gb'] !== undefined ? Number(props['storage_size_gb']) : 20;
     const backupRetention = props['backup_retention_days'] as number | undefined;
+    const geoRedundantBackup = props['geo_redundant_backup_enabled'] as boolean | undefined;
+    const haEnabled = props['ha_enabled'] as boolean | undefined;
+    const haMode = (props['ha_mode'] as string) ?? 'ZoneRedundant';
+    const maintenanceDay = props['maintenance_day'] as string | undefined;
+    const maintenanceHour = props['maintenance_hour'] as number | undefined;
 
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
@@ -51,6 +56,31 @@ export const mysqlFlexibleServerHclGenerator: HclGenerator = {
     if (backupRetention !== undefined && backupRetention !== 7) {
       const retentionExpr = context.getPropertyExpression(resource, 'backup_retention_days', backupRetention);
       lines.push(`  backup_retention_days  = ${retentionExpr}`);
+    }
+
+    if (geoRedundantBackup === true || resource.variableOverrides?.['geo_redundant_backup_enabled'] === 'variable') {
+      const geoExpr = context.getPropertyExpression(resource, 'geo_redundant_backup_enabled', geoRedundantBackup ?? false);
+      lines.push(`  geo_redundant_backup_enabled = ${geoExpr}`);
+    }
+
+    if (haEnabled === true || resource.variableOverrides?.['ha_enabled'] === 'variable') {
+      const modeExpr = context.getPropertyExpression(resource, 'ha_mode', haMode);
+      lines.push('');
+      lines.push('  high_availability {');
+      lines.push(`    mode = ${modeExpr}`);
+      lines.push('  }');
+    }
+
+    if (maintenanceDay !== undefined || resource.variableOverrides?.['maintenance_day'] === 'variable') {
+      const dayExpr = context.getPropertyExpression(resource, 'maintenance_day', Number(maintenanceDay ?? 0));
+      lines.push('');
+      lines.push('  maintenance_window {');
+      lines.push(`    day_of_week  = ${dayExpr}`);
+      if (maintenanceHour !== undefined || resource.variableOverrides?.['maintenance_hour'] === 'variable') {
+        const hourExpr = context.getPropertyExpression(resource, 'maintenance_hour', maintenanceHour ?? 0);
+        lines.push(`    start_hour   = ${hourExpr}`);
+      }
+      lines.push('  }');
     }
 
     lines.push('');
