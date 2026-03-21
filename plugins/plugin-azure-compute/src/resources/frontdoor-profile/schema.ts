@@ -45,11 +45,37 @@ export const frontdoorProfileSchema: ResourceSchema = {
       description: 'Timeout in seconds for backend responses',
       validation: { min: 16, max: 240 },
     },
+    {
+      key: 'identity_enabled',
+      label: 'Enable Identity',
+      type: 'boolean',
+      required: false,
+      group: 'Identity',
+      order: 4,
+      defaultValue: false,
+    },
+    {
+      key: 'identity_type',
+      label: 'Identity Type',
+      type: 'select',
+      required: false,
+      group: 'Identity',
+      order: 5,
+      defaultValue: 'SystemAssigned',
+      visibleWhen: { field: 'identity_enabled', operator: 'truthy' },
+      options: [
+        { label: 'System Assigned', value: 'SystemAssigned' },
+        { label: 'User Assigned', value: 'UserAssigned' },
+        { label: 'System & User Assigned', value: 'SystemAssigned, UserAssigned' },
+      ],
+    },
   ],
   handles: [],
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
     { key: 'resource_guid', label: 'Resource GUID', terraformAttribute: 'resource_guid' },
+    { key: 'principal_id', label: 'Principal ID', terraformAttribute: 'identity[0].principal_id' },
+    { key: 'tenant_id', label: 'Tenant ID', terraformAttribute: 'identity[0].tenant_id' },
   ],
 
   costEstimation: {

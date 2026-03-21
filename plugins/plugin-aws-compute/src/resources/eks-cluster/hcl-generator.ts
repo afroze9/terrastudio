@@ -9,18 +9,42 @@ export const eksClusterHclGenerator: HclGenerator = {
     const k8sVersion = props['kubernetes_version'] as string | undefined;
     const privateAccess = props['endpoint_private_access'] as boolean ?? false;
     const publicAccess = props['endpoint_public_access'] as boolean ?? true;
+    const roleArn = props['role_arn'] as string | undefined;
+    const subnetIds = props['subnet_ids'] as string[] | undefined;
+    const securityGroupIds = props['security_group_ids'] as string[] | undefined;
+    const enabledLogTypes = props['enabled_cluster_log_types'] as string[] | undefined;
 
     const nameExpr = context.getPropertyExpression(resource, 'name', name);
 
-    const roleRef = resource.references?.['role_arn'];
-    const roleArnExpr = roleRef
-      ? context.getAttributeReference(roleRef, 'arn')
-      : '"ROLE_ARN_PLACEHOLDER"';
+    // Role ARN: use property if set, fall back to reference, then placeholder
+    let roleArnExpr: string;
+    if (roleArn || resource.variableOverrides?.['role_arn'] === 'variable') {
+      roleArnExpr = context.getPropertyExpression(resource, 'role_arn', roleArn ?? '');
+    } else {
+      const roleRef = resource.references?.['role_arn'];
+      roleArnExpr = roleRef
+        ? context.getAttributeReference(roleRef, 'arn')
+        : '"ROLE_ARN_PLACEHOLDER"';
+    }
 
-    const subnetRef = resource.references?.['subnet_ids'];
-    const subnetIdsExpr = subnetRef
-      ? context.getAttributeReference(subnetRef, 'id')
-      : '[]';
+    // Subnet IDs: use property if set, fall back to reference
+    let subnetIdsExpr: string;
+    if ((subnetIds && subnetIds.length > 0) || resource.variableOverrides?.['subnet_ids'] === 'variable') {
+      subnetIdsExpr = context.getPropertyExpression(resource, 'subnet_ids', subnetIds ?? []);
+    } else {
+      const subnetRef = resource.references?.['subnet_ids'];
+      subnetIdsExpr = subnetRef
+        ? context.getAttributeReference(subnetRef, 'id')
+        : '[]';
+    }
+
+    // Security Group IDs
+    let securityGroupIdsExpr: string;
+    if ((securityGroupIds && securityGroupIds.length > 0) || resource.variableOverrides?.['security_group_ids'] === 'variable') {
+      securityGroupIdsExpr = context.getPropertyExpression(resource, 'security_group_ids', securityGroupIds ?? []);
+    } else {
+      securityGroupIdsExpr = '[]';
+    }
 
     const lines: string[] = [
       `resource "aws_eks_cluster" "${resource.terraformName}" {`,
@@ -35,9 +59,17 @@ export const eksClusterHclGenerator: HclGenerator = {
     lines.push('');
     lines.push('  vpc_config {');
     lines.push(`    subnet_ids              = ${subnetIdsExpr}`);
+    lines.push(`    security_group_ids      = ${securityGroupIdsExpr}`);
     lines.push(`    endpoint_private_access = ${privateAccess}`);
     lines.push(`    endpoint_public_access  = ${publicAccess}`);
     lines.push('  }');
+
+    // Cluster logging
+    if (enabledLogTypes && enabledLogTypes.length > 0) {
+      const logTypesFormatted = enabledLogTypes.map(t => `"${t}"`).join(', ');
+      lines.push('');
+      lines.push(`  enabled_cluster_log_types = [${logTypesFormatted}]`);
+    }
 
     lines.push('');
     lines.push('  tags = local.common_tags');

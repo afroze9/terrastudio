@@ -11,7 +11,11 @@ export const apiManagementHclGenerator: HclGenerator = {
     const skuName = (props['sku_name'] as string) ?? 'Developer_1';
     const vnetType = (props['virtual_network_type'] as string) ?? 'None';
     const publicAccess = props['public_network_access_enabled'] as boolean | undefined;
-    const identityType = (props['identity_type'] as string) ?? 'None';
+    const clientCertEnabled = props['client_certificate_enabled'] as boolean | undefined;
+    const gatewayDisabled = props['gateway_disabled'] as boolean | undefined;
+    const notificationEmail = props['notification_sender_email'] as string | undefined;
+    const identityEnabled = props['identity_enabled'] as boolean | undefined;
+    const identityType = (props['identity_type'] as string) ?? 'SystemAssigned';
     const minApiVersion = props['min_api_version'] as string | undefined;
     const zones = props['zones'] as string[] | undefined;
 
@@ -61,6 +65,33 @@ export const apiManagementHclGenerator: HclGenerator = {
       lines.push(`  public_network_access_enabled = ${publicExpr}`);
     }
 
+    // Client certificate authentication
+    if (clientCertEnabled) {
+      const certExpr = context.getPropertyExpression(resource, 'client_certificate_enabled', true);
+      lines.push(`  client_certificate_enabled = ${certExpr}`);
+    } else if (resource.variableOverrides?.['client_certificate_enabled'] === 'variable') {
+      const certExpr = context.getPropertyExpression(resource, 'client_certificate_enabled', false);
+      lines.push(`  client_certificate_enabled = ${certExpr}`);
+    }
+
+    // Gateway disabled
+    if (gatewayDisabled) {
+      const gwExpr = context.getPropertyExpression(resource, 'gateway_disabled', true);
+      lines.push(`  gateway_disabled = ${gwExpr}`);
+    } else if (resource.variableOverrides?.['gateway_disabled'] === 'variable') {
+      const gwExpr = context.getPropertyExpression(resource, 'gateway_disabled', false);
+      lines.push(`  gateway_disabled = ${gwExpr}`);
+    }
+
+    // Notification sender email
+    if (notificationEmail) {
+      const emailExpr = context.getPropertyExpression(resource, 'notification_sender_email', notificationEmail);
+      lines.push(`  notification_sender_email = ${emailExpr}`);
+    } else if (resource.variableOverrides?.['notification_sender_email'] === 'variable') {
+      const emailExpr = context.getPropertyExpression(resource, 'notification_sender_email', '');
+      lines.push(`  notification_sender_email = ${emailExpr}`);
+    }
+
     // Minimum API version
     if (minApiVersion) {
       const minExpr = context.getPropertyExpression(resource, 'min_api_version', minApiVersion);
@@ -85,14 +116,14 @@ export const apiManagementHclGenerator: HclGenerator = {
     }
 
     // Identity block
-    if (identityType !== 'None') {
+    if (identityEnabled) {
       const identityExpr = context.getPropertyExpression(resource, 'identity_type', identityType);
       lines.push('');
       lines.push('  identity {');
       lines.push(`    type = ${identityExpr}`);
       lines.push('  }');
     } else if (resource.variableOverrides?.['identity_type'] === 'variable') {
-      const identityExpr = context.getPropertyExpression(resource, 'identity_type', 'None');
+      const identityExpr = context.getPropertyExpression(resource, 'identity_type', identityType);
       lines.push('');
       lines.push('  identity {');
       lines.push(`    type = ${identityExpr}`);

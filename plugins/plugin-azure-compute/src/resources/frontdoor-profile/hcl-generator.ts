@@ -10,6 +10,8 @@ export const frontdoorProfileHclGenerator: HclGenerator = {
     const responseTimeout = props['response_timeout_seconds'] !== undefined
       ? Number(props['response_timeout_seconds'])
       : undefined;
+    const identityEnabled = props['identity_enabled'] as boolean | undefined;
+    const identityType = (props['identity_type'] as string) ?? 'SystemAssigned';
 
     const rgExpr = context.getResourceGroupExpression(resource);
 
@@ -25,6 +27,14 @@ export const frontdoorProfileHclGenerator: HclGenerator = {
 
     if ((responseTimeout !== undefined && responseTimeout !== 120) || resource.variableOverrides?.['response_timeout_seconds'] === 'variable') {
       lines.push(`  response_timeout_seconds = ${context.getPropertyExpression(resource, 'response_timeout_seconds', responseTimeout ?? 120)}`);
+    }
+
+    // Identity block
+    if (identityEnabled || resource.variableOverrides?.['identity_type'] === 'variable') {
+      lines.push('');
+      lines.push('  identity {');
+      lines.push(`    type = ${context.getPropertyExpression(resource, 'identity_type', identityType)}`);
+      lines.push('  }');
     }
 
     lines.push('');
