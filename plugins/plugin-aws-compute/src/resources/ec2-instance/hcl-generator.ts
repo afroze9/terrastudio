@@ -12,6 +12,12 @@ export const ec2InstanceHclGenerator: HclGenerator = {
     const associatePublicIp = props['associate_public_ip_address'] as boolean ?? false;
     const rootSize = props['root_block_device_size'] as number ?? 8;
     const rootType = (props['root_block_device_type'] as string) ?? 'gp3';
+    const iamInstanceProfile = props['iam_instance_profile'] as string | undefined;
+    const userData = props['user_data'] as string | undefined;
+    const metadataHttpTokens = (props['metadata_http_tokens'] as string) ?? 'required';
+    const metadataHttpEndpoint = (props['metadata_http_endpoint'] as string) ?? 'enabled';
+    const monitoring = props['monitoring'] as boolean ?? false;
+    const disableApiTermination = props['disable_api_termination'] as boolean ?? false;
 
     const dependsOn: string[] = [];
 
@@ -47,6 +53,37 @@ export const ec2InstanceHclGenerator: HclGenerator = {
       lines.push(`  key_name                    = ${keyNameExpr}`);
     }
 
+    // IAM Instance Profile
+    if (iamInstanceProfile || resource.variableOverrides?.['iam_instance_profile'] === 'variable') {
+      const iamExpr = context.getPropertyExpression(resource, 'iam_instance_profile', iamInstanceProfile ?? '');
+      lines.push(`  iam_instance_profile        = ${iamExpr}`);
+    }
+
+    // Monitoring
+    if (monitoring || resource.variableOverrides?.['monitoring'] === 'variable') {
+      const monitoringExpr = context.getPropertyExpression(resource, 'monitoring', monitoring);
+      lines.push(`  monitoring                  = ${monitoringExpr}`);
+    }
+
+    // Termination Protection
+    if (disableApiTermination || resource.variableOverrides?.['disable_api_termination'] === 'variable') {
+      const terminationExpr = context.getPropertyExpression(resource, 'disable_api_termination', disableApiTermination);
+      lines.push(`  disable_api_termination     = ${terminationExpr}`);
+    }
+
+    // User Data
+    if (userData || resource.variableOverrides?.['user_data'] === 'variable') {
+      if (resource.variableOverrides?.['user_data'] === 'variable') {
+        const userDataExpr = context.getPropertyExpression(resource, 'user_data', userData ?? '');
+        lines.push(`  user_data                   = base64encode(${userDataExpr})`);
+      } else {
+        lines.push(`  user_data                   = base64encode(<<-EOF`);
+        lines.push(`${userData}`);
+        lines.push(`EOF`);
+        lines.push(`  )`);
+      }
+    }
+
     // Security group reference
     const sgRef = resource.references['security_group_ids'];
     if (sgRef) {
@@ -61,6 +98,17 @@ export const ec2InstanceHclGenerator: HclGenerator = {
     lines.push(`    volume_size = ${rootSizeExpr}`);
     lines.push(`    volume_type = ${rootTypeExpr}`);
     lines.push('  }');
+
+    // Metadata Options (IMDSv2) — always emitted to enforce secure defaults
+    {
+      const httpTokensExpr = context.getPropertyExpression(resource, 'metadata_http_tokens', metadataHttpTokens);
+      const httpEndpointExpr = context.getPropertyExpression(resource, 'metadata_http_endpoint', metadataHttpEndpoint);
+      lines.push('');
+      lines.push('  metadata_options {');
+      lines.push(`    http_tokens   = ${httpTokensExpr}`);
+      lines.push(`    http_endpoint = ${httpEndpointExpr}`);
+      lines.push('  }');
+    }
 
     lines.push('');
     lines.push('  tags = merge(local.common_tags, {');
