@@ -12,6 +12,10 @@ export const eksNodeGroupHclGenerator: HclGenerator = {
     const maxSize = Number(props['max_size'] ?? 3);
     const diskSize = Number(props['disk_size'] ?? 20);
     const capacityType = (props['capacity_type'] as string) ?? 'ON_DEMAND';
+    const nodeRoleArn = props['node_role_arn'] as string | undefined;
+    const subnetIds = props['subnet_ids'] as string[] | undefined;
+    const amiType = props['ami_type'] as string | undefined;
+    const labels = props['labels'] as Record<string, string> | undefined;
 
     const nameExpr = context.getPropertyExpression(resource, 'name', name);
 
@@ -21,17 +25,27 @@ export const eksNodeGroupHclGenerator: HclGenerator = {
       ? context.getAttributeReference(clusterRef, 'name')
       : '"CLUSTER_NAME_PLACEHOLDER"';
 
-    // Node role reference
-    const roleRef = resource.references?.['node_role_arn'];
-    const roleArnExpr = roleRef
-      ? context.getAttributeReference(roleRef, 'arn')
-      : '"NODE_ROLE_ARN_PLACEHOLDER"';
+    // Node role ARN: use property if set, fall back to reference, then placeholder
+    let roleArnExpr: string;
+    if (nodeRoleArn || resource.variableOverrides?.['node_role_arn'] === 'variable') {
+      roleArnExpr = context.getPropertyExpression(resource, 'node_role_arn', nodeRoleArn ?? '');
+    } else {
+      const roleRef = resource.references?.['node_role_arn'];
+      roleArnExpr = roleRef
+        ? context.getAttributeReference(roleRef, 'arn')
+        : '"NODE_ROLE_ARN_PLACEHOLDER"';
+    }
 
-    // Subnet IDs reference
-    const subnetRef = resource.references?.['subnet_ids'];
-    const subnetIdsExpr = subnetRef
-      ? context.getAttributeReference(subnetRef, 'id')
-      : '[]';
+    // Subnet IDs: use property if set, fall back to reference
+    let subnetIdsExpr: string;
+    if ((subnetIds && subnetIds.length > 0) || resource.variableOverrides?.['subnet_ids'] === 'variable') {
+      subnetIdsExpr = context.getPropertyExpression(resource, 'subnet_ids', subnetIds ?? []);
+    } else {
+      const subnetRef = resource.references?.['subnet_ids'];
+      subnetIdsExpr = subnetRef
+        ? context.getAttributeReference(subnetRef, 'id')
+        : '[]';
+    }
 
     const lines: string[] = [
       `resource "aws_eks_node_group" "${resource.terraformName}" {`,
@@ -43,16 +57,36 @@ export const eksNodeGroupHclGenerator: HclGenerator = {
       `  instance_types  = ["${instanceType}"]`,
       `  capacity_type   = "${capacityType}"`,
       `  disk_size       = ${diskSize}`,
-      '',
-      '  scaling_config {',
-      `    desired_size = ${desiredSize}`,
-      `    min_size     = ${minSize}`,
-      `    max_size     = ${maxSize}`,
-      '  }',
-      '',
-      '  tags = local.common_tags',
-      '}',
     ];
+
+    // AMI type (only emit when non-default)
+    if (amiType && amiType !== 'AL2_x86_64') {
+      lines.push(`  ami_type        = "${amiType}"`);
+    } else if (resource.variableOverrides?.['ami_type'] === 'variable') {
+      const amiTypeExpr = context.getPropertyExpression(resource, 'ami_type', amiType ?? 'AL2_x86_64');
+      lines.push(`  ami_type        = ${amiTypeExpr}`);
+    }
+
+    lines.push('');
+    lines.push('  scaling_config {');
+    lines.push(`    desired_size = ${desiredSize}`);
+    lines.push(`    min_size     = ${minSize}`);
+    lines.push(`    max_size     = ${maxSize}`);
+    lines.push('  }');
+
+    // Node labels
+    if (labels && Object.keys(labels).length > 0) {
+      lines.push('');
+      lines.push('  labels = {');
+      for (const [k, v] of Object.entries(labels)) {
+        lines.push(`    ${k} = "${v}"`);
+      }
+      lines.push('  }');
+    }
+
+    lines.push('');
+    lines.push('  tags = local.common_tags');
+    lines.push('}');
 
     return [
       {
