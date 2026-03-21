@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.41.8](https://github.com/afroze9/terrastudio/compare/v0.41.7...v0.41.8) (2026-03-21)
+
+
+### Features
+
+* add annotation plugin and remove old annotation system ([#31](https://github.com/afroze9/terrastudio/issues/31)) ([957b671](https://github.com/afroze9/terrastudio/commit/957b6715790d9b6faaee428162459fd4abf08425))
+
 ## [0.41.7](https://github.com/afroze9/terrastudio/compare/v0.41.6...v0.41.7) (2026-03-15)
 
 
