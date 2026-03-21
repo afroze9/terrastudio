@@ -5,7 +5,6 @@
   import { t } from '$lib/i18n';
   import TerminalTab from './bottom-panel/TerminalTab.svelte';
   import ProblemsTab from './bottom-panel/ProblemsTab.svelte';
-  import AnnotationsTab from './bottom-panel/AnnotationsTab.svelte';
   import ConnectionWizardTab from './bottom-panel/ConnectionWizardTab.svelte';
   import PlanTab from './bottom-panel/PlanTab.svelte';
 
@@ -14,7 +13,6 @@
   const tabs: { id: BottomPanelTab; labelKey: string }[] = [
     { id: 'terminal', labelKey: 'bottomPanel.terminal' },
     { id: 'problems', labelKey: 'bottomPanel.problems' },
-    { id: 'annotations', labelKey: 'bottomPanel.annotations' },
     { id: 'connection-wizard', labelKey: 'bottomPanel.connection' },
     { id: 'plan', labelKey: 'bottomPanel.plan' },
   ];
@@ -82,8 +80,6 @@
         <TerminalTab />
       {:else if ui.activeBottomTab === 'problems'}
         <ProblemsTab />
-      {:else if ui.activeBottomTab === 'annotations'}
-        <AnnotationsTab />
       {:else if ui.activeBottomTab === 'connection-wizard'}
         <ConnectionWizardTab />
       {:else if ui.activeBottomTab === 'plan'}

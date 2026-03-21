@@ -101,7 +101,7 @@ class ValidationStore {
 
       // Filter out synthetic module nodes
       const realNodes = nodes.filter(
-        (n) => !n.id.startsWith('_mod_') && !n.id.startsWith('_modinst_') && !n.id.startsWith('_instmem_') && n.type !== '_annotation_',
+        (n) => !n.id.startsWith('_mod_') && !n.id.startsWith('_modinst_') && !n.id.startsWith('_instmem_') && !n.type?.startsWith('_annotation/'),
       );
 
       diagram.clearAllValidationErrors();

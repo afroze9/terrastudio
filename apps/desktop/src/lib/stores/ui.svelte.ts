@@ -37,7 +37,7 @@ const DEFAULT_EDGE_VISIBILITY: EdgeCategoryVisibility = {
 export type SidebarView = 'explorer' | 'terraform' | 'settings' | 'cost' | 'app-settings' | 'search';
 export type EdgeStyle = 'default' | 'smoothstep' | 'step' | 'straight';
 export type Theme = 'dark' | 'light';
-export type BottomPanelTab = 'terminal' | 'problems' | 'annotations' | 'connection-wizard' | 'plan';
+export type BottomPanelTab = 'terminal' | 'problems' | 'connection-wizard' | 'plan';
 export type ReducedMotionPref = 'system' | 'reduce' | 'no-preference';
 export type FontScale = 75 | 85 | 100 | 115 | 130 | 150;
 

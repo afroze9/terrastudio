@@ -3,7 +3,6 @@ import DefaultResourceNode from '$lib/components/DefaultResourceNode.svelte';
 import ContainerResourceNode from '$lib/components/ContainerResourceNode.svelte';
 import ModuleNode from '$lib/components/ModuleNode.svelte';
 import ModuleInstanceNode from '$lib/components/ModuleInstanceNode.svelte';
-import AnnotationNode from '$lib/components/AnnotationNode.svelte';
 import { TerraStudioEdge } from '$lib/components/edges';
 import { checkTerraform } from '$lib/services/terraform-service';
 import { logger, setLoggerLevel, type LogLevel } from '$lib/logger';
@@ -40,6 +39,9 @@ export function declarePlugins(): void {
     }
   });
 
+  // Annotations — always available regardless of active cloud providers
+  pluginRegistry.registerLazyPlugin('_annotation', () => import('@terrastudio/plugin-annotations'));
+
   pluginRegistry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-networking'));
   pluginRegistry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-compute'));
   pluginRegistry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-storage'));
@@ -60,9 +62,11 @@ export function declarePlugins(): void {
  * Idempotent — already-loaded providers are skipped.
  */
 export async function loadPluginsForProject(providerIds: ProviderId[]): Promise<void> {
-  logger.info(`[bootstrap] Loading plugins for providers: [${providerIds.join(', ')}]`);
+  // Always load annotation plugin alongside cloud providers
+  const allProviders = providerIds.includes('_annotation') ? providerIds : ['_annotation', ...providerIds];
+  logger.info(`[bootstrap] Loading plugins for providers: [${allProviders.join(', ')}]`);
   const t0 = performance.now();
-  await pluginRegistry.loadPluginsForProviders(providerIds);
+  await pluginRegistry.loadPluginsForProviders(allProviders);
   logger.info(`[bootstrap] Plugins loaded in ${Math.round(performance.now() - t0)}ms`);
 }
 
@@ -99,8 +103,6 @@ export function buildNodeTypes(): Record<string, Component<any>> {
   map['_terrastudio/module'] = ModuleNode;
   // Synthetic node type for module template instances
   map['_terrastudio/module_instance'] = ModuleInstanceNode;
-  // Annotation sticky notes
-  map['_annotation_'] = AnnotationNode;
   return map;
 }
 

@@ -17,10 +17,11 @@
         let resources = registry.getResourceTypesForCategory(category.id)
           .filter((r: ResourceTypeRegistration) => !r.schema.hideFromPalette);
 
-        // Filter by active providers
+        // Filter by active providers (annotations bypass this filter — always visible)
         const active = project.projectConfig.activeProviders;
         if (active?.length) {
-          resources = resources.filter((r: ResourceTypeRegistration) => active.includes(r.schema.provider as any));
+          resources = resources.filter((r: ResourceTypeRegistration) =>
+            r.schema.provider === '_annotation' || active.includes(r.schema.provider as any));
         }
 
         // Search filter

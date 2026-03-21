@@ -49,12 +49,6 @@
     if (ids.length > 0) diagram.duplicateNodes(ids);
     return;
   }
-  if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'A') {
-    event.preventDefault();
-    // Add annotation at center of viewport — DnDFlow handles precise placement
-    diagram.addAnnotation({ x: 0, y: 0 });
-    return;
-  }
   if (event.key === 'Escape') {
     if (plan.diffNodeId) { plan.diffNodeId = null; return; }
     if (plan.active) { plan.dismiss(); return; }
