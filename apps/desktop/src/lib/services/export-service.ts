@@ -225,7 +225,7 @@ function generateDocumentation(): string {
 
   // Filter out synthetic/transient nodes for documentation
   const isSyntheticNode = (n: { id: string; type?: string }) =>
-    n.id.startsWith('_mod_') || n.id.startsWith('_modinst_') || n.id.startsWith('_instmem_') || n.type === '_annotation_';
+    n.id.startsWith('_mod_') || n.id.startsWith('_modinst_') || n.id.startsWith('_instmem_') || n.type?.startsWith('_annotation/');
   const realNodes = diagram.nodes.filter((n) => !isSyntheticNode(n));
 
   // Title

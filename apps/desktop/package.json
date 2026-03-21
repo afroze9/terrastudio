@@ -33,6 +33,7 @@
     "@terrastudio/project": "workspace:*",
     "@terrastudio/plugin-aws-compute": "workspace:*",
     "@terrastudio/plugin-aws-networking": "workspace:*",
+    "@terrastudio/plugin-annotations": "workspace:*",
     "@terrastudio/plugin-azure-compute": "workspace:*",
     "@terrastudio/plugin-azure-database": "workspace:*",
     "@terrastudio/plugin-azure-monitoring": "workspace:*",

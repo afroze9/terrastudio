@@ -21,11 +21,6 @@
       icon: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.5L14.5 13H1.5L8 1.5z" /><path d="M8 6.5v3" /><circle cx="8" cy="11.5" r="0.5" fill="currentColor" /></svg>',
     },
     {
-      id: 'annotations',
-      labelKey: 'status.annotations',
-      icon: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h10v8H7L3 14V3z" /></svg>',
-    },
-    {
       id: 'connection-wizard',
       labelKey: 'status.connection',
       icon: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3v6a2 2 0 0 1-2 2H5" /><polyline points="8 8 5 11 8 14" /></svg>',

@@ -23,7 +23,7 @@ export function convertToResourceInstances(
   for (const node of nodes) {
     // Skip synthetic/visual-only nodes (collapsed modules, module instance cards, instance member clones)
     if (node.id.startsWith('_mod_') || node.id.startsWith('_modinst_') || node.id.startsWith('_instmem_')) continue;
-    if (node.type === '_annotation_' || !node.type) continue;
+    if (node.type?.startsWith('_annotation/') || !node.type) continue;
 
     const data = node.data;
     const references: Record<string, string> = { ...data.references };

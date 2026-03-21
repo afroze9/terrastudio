@@ -1,6 +1,5 @@
 import type { Node, Edge } from '@xyflow/svelte';
-import type { ResourceNodeData, ResourceTypeId, ValidationError, TerraStudioEdgeData, EdgeCategoryId, ReferenceEdgeOverrides, HandleDefinition, ModuleDefinition, ModuleInstance, AnnotationNodeData, AnnotationColor, AnnotationSize } from '@terrastudio/types';
-import { ANNOTATION_SIZE_DEFAULTS } from '@terrastudio/types';
+import type { ResourceNodeData, ResourceTypeId, ValidationError, TerraStudioEdgeData, EdgeCategoryId, ReferenceEdgeOverrides, HandleDefinition, ModuleDefinition, ModuleInstance } from '@terrastudio/types';
 import { generateNodeId, generateUniqueTerraformName, sanitizeTerraformName } from '@terrastudio/core';
 import { project } from './project.svelte';
 import { terraform } from './terraform.svelte';
@@ -94,7 +93,7 @@ class DiagramStore {
   referenceEdges = $derived.by((): DiagramEdge[] => {
     const result: DiagramEdge[] = [];
     for (const node of this.nodes) {
-      if (node.type === '_annotation_') continue;
+      if (node.type?.startsWith('_annotation/')) continue;
       const schema = registry.getResourceSchema(node.type as ResourceTypeId);
       if (!schema) continue;
       const overrides = (node.data.referenceEdgeOverrides as ReferenceEdgeOverrides) ?? {};
@@ -268,50 +267,6 @@ class DiagramStore {
     this.nodes = [...this.nodes, node];
     this.pushSnapshot();
     logger.debug(`[diagram] Node added: ${node.id} (${(node.data as any)?.typeId ?? node.type})`);
-  }
-
-  addAnnotation(
-    position: { x: number; y: number },
-    options?: { color?: AnnotationColor; size?: AnnotationSize; text?: string },
-  ): string {
-    this.flushPendingSnapshot();
-    this.ensureInitialSnapshot();
-    const color = options?.color ?? 'yellow';
-    const size = options?.size ?? 'medium';
-    const dims = ANNOTATION_SIZE_DEFAULTS[size];
-    const id = `ann_${crypto.randomUUID().slice(0, 8)}`;
-    const node = {
-      id,
-      type: '_annotation_',
-      position,
-      width: dims.width,
-      height: dims.height,
-      data: {
-        kind: '_annotation_' as const,
-        text: options?.text ?? '',
-        color,
-        size,
-      },
-    } as unknown as DiagramNode;
-    // Append so annotations render on top of resource nodes
-    this.nodes = [...this.nodes, node];
-    this.pushSnapshot();
-    return id;
-  }
-
-  updateAnnotation(id: string, patch: Partial<Pick<AnnotationNodeData, 'text' | 'color' | 'size'>>) {
-    this.ensureInitialSnapshot();
-    if (this.debounceTimer !== null) {
-      clearTimeout(this.debounceTimer);
-    }
-    project.markDirty();
-    this.nodes = this.nodes.map((n) =>
-      n.id === id ? { ...n, data: { ...n.data, ...patch } } : n
-    );
-    this.debounceTimer = setTimeout(() => {
-      this.debounceTimer = null;
-      this.pushSnapshot();
-    }, 500);
   }
 
   removeNode(id: string) {
@@ -548,12 +503,6 @@ class DiagramStore {
    * Delete a node, prompting for confirmation if it has children.
    */
   async confirmAndRemoveNode(id: string) {
-    // Annotations never have children — skip confirmation
-    const node = this.nodes.find((n) => n.id === id);
-    if (node?.type === '_annotation_') {
-      this.removeNode(id);
-      return;
-    }
     const childCount = this.countChildren(new Set([id]));
     if (childCount > 0) {
       const confirmed = await ui.confirm({
@@ -768,7 +717,7 @@ class DiagramStore {
         !n.id.startsWith('_mod_') &&
         !n.id.startsWith('_modinst_') &&
         !n.id.startsWith('_instmem_') &&
-        n.type !== '_annotation_'
+        !n.type?.startsWith('_annotation/')
       );
     });
     if (realIds.length === 0) return;
@@ -786,7 +735,7 @@ class DiagramStore {
           !n.id.startsWith('_mod_') &&
           !n.id.startsWith('_modinst_') &&
           !n.id.startsWith('_instmem_') &&
-          n.type !== '_annotation_'
+          !n.type?.startsWith('_annotation/')
         ) {
           idSet.add(n.id);
           changed = true;

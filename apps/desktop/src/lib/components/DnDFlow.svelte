@@ -528,7 +528,6 @@
     for (const node of diagram.nodes) {
       if (node.id === excludeNodeId) continue;
       if (node.hidden) continue;
-      if (node.type === '_annotation_') continue;
       const nodeSchema = registry.getResourceSchema(node.type as ResourceTypeId);
       if (!nodeSchema?.isContainer) continue;
 
@@ -973,7 +972,7 @@
    */
   function handleNodeDrag({ targetNode }: { targetNode: DiagramNode | null; nodes: DiagramNode[]; event: MouseEvent | TouchEvent }) {
     if (!targetNode) return;
-    if (targetNode.type === '_annotation_') return; // annotations can go anywhere — no feedback needed
+    if (targetNode.type?.startsWith('_annotation/')) return; // annotations can go anywhere — no feedback needed
     const absPos = getAbsolutePosition(targetNode.id);
     updateDragFeedback(absPos.x, absPos.y, targetNode.type as ResourceTypeId, targetNode.id);
   }
@@ -987,7 +986,7 @@
     if (!targetNode) return;
 
     const draggedNode = targetNode;
-    const isAnnotation = draggedNode.type === '_annotation_';
+    const isAnnotation = draggedNode.type?.startsWith('_annotation/');
     const schema = isAnnotation ? null : registry.getResourceSchema(draggedNode.type as ResourceTypeId);
     if (!schema && !isAnnotation) return;
 
@@ -1216,9 +1215,6 @@
     {:else}
       <button class="context-menu-item" onclick={handleContextPaste} disabled={!diagram.hasClipboard}>
         <span class="ctx-label"><svg class="ctx-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 2.5h1A1.5 1.5 0 0 1 13 4v9.5a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 3 13.5V4a1.5 1.5 0 0 1 1.5-1.5h1" /><rect x="5.5" y="1" width="5" height="3" rx="1" /></svg>Paste</span><span class="ctx-shortcut">Ctrl+V</span>
-      </button>
-      <button class="context-menu-item" onclick={() => { const pos = screenToFlowPosition({ x: contextMenu!.x, y: contextMenu!.y }); diagram.addAnnotation(pos); closeContextMenu(); }}>
-        <span class="ctx-label"><svg class="ctx-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="12" height="12" rx="1.5" /><line x1="5" y1="6" x2="11" y2="6" /><line x1="5" y1="8.5" x2="11" y2="8.5" /><line x1="5" y1="11" x2="9" y2="11" /></svg>Add Annotation</span><span class="ctx-shortcut">Ctrl+Shift+A</span>
       </button>
       <div class="context-menu-separator"></div>
       <button class="context-menu-item" onclick={handleContextSelectAll}>
