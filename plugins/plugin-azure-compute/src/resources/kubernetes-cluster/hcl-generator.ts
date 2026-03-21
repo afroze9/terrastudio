@@ -11,6 +11,23 @@ export const kubernetesClusterHclGenerator: HclGenerator = {
     const skuTier = props['sku_tier'] as string | undefined;
     const networkPlugin = (props['network_plugin'] as string) ?? 'azure';
     const identityType = (props['identity_type'] as string) ?? 'SystemAssigned';
+    const loadBalancerSku = (props['load_balancer_sku'] as string) ?? 'standard';
+    const outboundType = (props['outbound_type'] as string) ?? 'loadBalancer';
+
+    // Security
+    const privateClusterEnabled = props['private_cluster_enabled'] as boolean | undefined;
+    const rbacEnabled = props['rbac_enabled'] as boolean | undefined;
+    const apiServerAuthorizedIpRanges = props['api_server_authorized_ip_ranges'] as string[] | undefined;
+
+    // Addons
+    const azurePolicyEnabled = props['azure_policy_enabled'] as boolean | undefined;
+    const httpApplicationRoutingEnabled = props['http_application_routing_enabled'] as boolean | undefined;
+    const workloadIdentityEnabled = props['workload_identity_enabled'] as boolean | undefined;
+    const oidcIssuerEnabled = props['oidc_issuer_enabled'] as boolean | undefined;
+
+    // Monitoring
+    const omsAgentEnabled = props['oms_agent_enabled'] as boolean | undefined;
+    const logAnalyticsWorkspaceId = props['log_analytics_workspace_id'] as string | undefined;
 
     // Default node pool
     const poolName = (props['default_pool_name'] as string) ?? 'default';
@@ -39,6 +56,44 @@ export const kubernetesClusterHclGenerator: HclGenerator = {
 
     if (skuTier && skuTier !== 'Free') {
       lines.push(`  sku_tier            = ${context.getPropertyExpression(resource, 'sku_tier', skuTier)}`);
+    }
+
+    // Security
+    if (privateClusterEnabled || resource.variableOverrides?.['private_cluster_enabled'] === 'variable') {
+      lines.push(`  private_cluster_enabled = ${context.getPropertyExpression(resource, 'private_cluster_enabled', privateClusterEnabled ?? false)}`);
+    }
+
+    // rbac_enabled defaults to true, so always emit it
+    const rbacValue = rbacEnabled ?? true;
+    lines.push(`  role_based_access_control_enabled = ${context.getPropertyExpression(resource, 'rbac_enabled', rbacValue)}`);
+
+    if ((apiServerAuthorizedIpRanges && apiServerAuthorizedIpRanges.length > 0) || resource.variableOverrides?.['api_server_authorized_ip_ranges'] === 'variable') {
+      lines.push('');
+      lines.push('  api_server_access_profile {');
+      lines.push(`    authorized_ip_ranges = ${context.getPropertyExpression(resource, 'api_server_authorized_ip_ranges', apiServerAuthorizedIpRanges ?? [])}`);
+      lines.push('  }');
+    }
+
+    // Addons
+    if (azurePolicyEnabled || resource.variableOverrides?.['azure_policy_enabled'] === 'variable') {
+      lines.push(`  azure_policy_enabled = ${context.getPropertyExpression(resource, 'azure_policy_enabled', azurePolicyEnabled ?? false)}`);
+    }
+    if (httpApplicationRoutingEnabled || resource.variableOverrides?.['http_application_routing_enabled'] === 'variable') {
+      lines.push(`  http_application_routing_enabled = ${context.getPropertyExpression(resource, 'http_application_routing_enabled', httpApplicationRoutingEnabled ?? false)}`);
+    }
+    if (workloadIdentityEnabled || resource.variableOverrides?.['workload_identity_enabled'] === 'variable') {
+      lines.push(`  workload_identity_enabled = ${context.getPropertyExpression(resource, 'workload_identity_enabled', workloadIdentityEnabled ?? false)}`);
+    }
+    if (oidcIssuerEnabled || resource.variableOverrides?.['oidc_issuer_enabled'] === 'variable') {
+      lines.push(`  oidc_issuer_enabled = ${context.getPropertyExpression(resource, 'oidc_issuer_enabled', oidcIssuerEnabled ?? false)}`);
+    }
+
+    // Monitoring - OMS Agent
+    if (omsAgentEnabled || resource.variableOverrides?.['oms_agent_enabled'] === 'variable') {
+      lines.push('');
+      lines.push('  oms_agent {');
+      lines.push(`    log_analytics_workspace_id = ${context.getPropertyExpression(resource, 'log_analytics_workspace_id', logAnalyticsWorkspaceId ?? '')}`);
+      lines.push('  }');
     }
 
     // Default node pool block
@@ -78,7 +133,9 @@ export const kubernetesClusterHclGenerator: HclGenerator = {
     // Network profile block
     lines.push('');
     lines.push('  network_profile {');
-    lines.push(`    network_plugin = ${context.getPropertyExpression(resource, 'network_plugin', networkPlugin)}`);
+    lines.push(`    network_plugin    = ${context.getPropertyExpression(resource, 'network_plugin', networkPlugin)}`);
+    lines.push(`    load_balancer_sku = ${context.getPropertyExpression(resource, 'load_balancer_sku', loadBalancerSku)}`);
+    lines.push(`    outbound_type     = ${context.getPropertyExpression(resource, 'outbound_type', outboundType)}`);
     lines.push('  }');
 
     lines.push('', '  tags = local.common_tags', '}');
