@@ -77,6 +77,27 @@
     });
   });
 
+  // ── Sync node.hidden from resource type visibility toggles ─────────────
+  $effect(() => {
+    const hidden = ui.hiddenResourceTypes;
+    // Read diagram.nodes to track reactivity, then update in untrack to avoid loops
+    const nodes = diagram.nodes;
+    untrack(() => {
+      let changed = false;
+      for (const node of nodes) {
+        const shouldHide = hidden.has(node.data.typeId);
+        if ((node as any).hidden !== shouldHide) {
+          (node as any).hidden = shouldHide;
+          changed = true;
+        }
+      }
+      // Trigger SvelteFlow re-render if any visibility changed
+      if (changed) {
+        diagram.nodes = [...nodes];
+      }
+    });
+  });
+
   // ── Reference edge display ──────────────────────────────────────────────
   // Merge real (persisted) edges with auto-generated reference edges.
   // $derived re-computes reactively whenever diagram.edges or diagram.nodes changes.
@@ -122,6 +143,16 @@
       // Hide edges involving hidden template member nodes
       if (hiddenTemplateMemberIds.size > 0) {
         if (hiddenTemplateMemberIds.has(edge.source) || hiddenTemplateMemberIds.has(edge.target)) {
+          continue;
+        }
+      }
+
+      // Hide edges involving resource types toggled off in visibility menu
+      if (ui.hiddenResourceTypes.size > 0) {
+        const srcNode = diagram.nodes.find((n) => n.id === edge.source);
+        const tgtNode = diagram.nodes.find((n) => n.id === edge.target);
+        if ((srcNode && ui.hiddenResourceTypes.has(srcNode.data.typeId)) ||
+            (tgtNode && ui.hiddenResourceTypes.has(tgtNode.data.typeId))) {
           continue;
         }
       }

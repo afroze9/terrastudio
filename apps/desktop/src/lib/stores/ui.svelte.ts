@@ -346,6 +346,41 @@ class UiStore {
     }
   }
 
+  // --- Resource type visibility ---
+  hiddenResourceTypes = $state<Set<ResourceTypeId>>(this.loadHiddenResourceTypes());
+
+  private loadHiddenResourceTypes(): Set<ResourceTypeId> {
+    if (typeof localStorage === 'undefined') return new Set();
+    try {
+      const raw = localStorage.getItem('terrastudio-hidden-resource-types');
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch { return new Set(); }
+  }
+
+  private saveHiddenResourceTypes() {
+    localStorage.setItem('terrastudio-hidden-resource-types', JSON.stringify([...this.hiddenResourceTypes]));
+  }
+
+  toggleResourceTypeVisibility(typeId: ResourceTypeId) {
+    const next = new Set(this.hiddenResourceTypes);
+    if (next.has(typeId)) {
+      next.delete(typeId);
+    } else {
+      next.add(typeId);
+    }
+    this.hiddenResourceTypes = next;
+    this.saveHiddenResourceTypes();
+  }
+
+  isResourceTypeVisible(typeId: ResourceTypeId): boolean {
+    return !this.hiddenResourceTypes.has(typeId);
+  }
+
+  showAllResourceTypes() {
+    this.hiddenResourceTypes = new Set();
+    this.saveHiddenResourceTypes();
+  }
+
   /** Toggle visibility of an edge category */
   toggleEdgeVisibility(category: EdgeCategoryId) {
     this.edgeVisibility = {

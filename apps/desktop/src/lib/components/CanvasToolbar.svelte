@@ -6,12 +6,13 @@
   import { saveDiagram } from '$lib/services/project-service';
   import { autoLayout, type LayoutDirection } from '$lib/services/layout-service';
   import { t } from '$lib/i18n';
-  import type { EdgeCategoryId } from '@terrastudio/types';
+  import type { EdgeCategoryId, ResourceTypeId } from '@terrastudio/types';
 
   let showLayoutMenu = $state(false);
   let showEdgeMenu = $state(false);
   let showGridMenu = $state(false);
   let showEdgeVisibilityMenu = $state(false);
+  let showNodeVisibilityMenu = $state(false);
 
   const edgeCategoryOptions: { id: EdgeCategoryId; labelKey: string; descKey: string }[] = [
     { id: 'structural', labelKey: 'canvas.edgeCategories.structural', descKey: 'canvas.edgeCategories.structuralDesc' },
@@ -62,6 +63,7 @@
       showEdgeMenu = false;
       showGridMenu = false;
       showEdgeVisibilityMenu = false;
+      showNodeVisibilityMenu = false;
     }
   }
 
@@ -70,6 +72,26 @@
     edgeCategoryOptions.filter((cat) => !ui.edgeVisibility[cat.id]).length
   );
 
+  // Distinct resource types on canvas (for node visibility toggles)
+  let canvasResourceTypes = $derived.by(() => {
+    const typeMap = new Map<ResourceTypeId, { displayName: string; count: number }>();
+    for (const node of diagram.nodes) {
+      // Skip synthetic nodes
+      if (node.id.startsWith('_mod_') || node.id.startsWith('_modinst_') || node.id.startsWith('_instmem_')) continue;
+      const typeId = node.data.typeId;
+      const existing = typeMap.get(typeId);
+      if (existing) {
+        existing.count++;
+      } else {
+        const schema = registry.getResourceSchema(typeId);
+        typeMap.set(typeId, { displayName: schema?.displayName ?? typeId, count: 1 });
+      }
+    }
+    return [...typeMap.entries()]
+      .sort((a, b) => a[1].displayName.localeCompare(b[1].displayName));
+  });
+
+  let hiddenNodeTypeCount = $derived(ui.hiddenResourceTypes.size);
 
 </script>
 
@@ -274,7 +296,7 @@
       aria-label={t('canvas.toolbar.edgeVisibility')}
       aria-haspopup="true"
       aria-expanded={showEdgeVisibilityMenu}
-      onclick={(e) => { e.stopPropagation(); showLayoutMenu = false; showEdgeMenu = false; showGridMenu = false; showEdgeVisibilityMenu = !showEdgeVisibilityMenu; }}
+      onclick={(e) => { e.stopPropagation(); showLayoutMenu = false; showEdgeMenu = false; showGridMenu = false; showNodeVisibilityMenu = false; showEdgeVisibilityMenu = !showEdgeVisibilityMenu; }}
     >
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         {#if hiddenEdgeCount === 0}
@@ -365,6 +387,73 @@
       </div>
     {/if}
   </div>
+
+  <!-- Node Type Visibility -->
+  {#if canvasResourceTypes.length > 0}
+    <div class="toolbar-dropdown-wrapper">
+      <button
+        class="toolbar-btn"
+        class:active={showNodeVisibilityMenu}
+        class:has-hidden={hiddenNodeTypeCount > 0}
+        title="Node Type Visibility"
+        aria-label="Node Type Visibility"
+        aria-haspopup="true"
+        aria-expanded={showNodeVisibilityMenu}
+        onclick={(e) => { e.stopPropagation(); showLayoutMenu = false; showEdgeMenu = false; showGridMenu = false; showEdgeVisibilityMenu = false; showNodeVisibilityMenu = !showNodeVisibilityMenu; }}
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="12" height="10" rx="1.5" />
+          <path d="M5 6h6M5 8.5h4" opacity="0.6" />
+          {#if hiddenNodeTypeCount > 0}
+            <line x1="3" y1="14" x2="13" y2="2" />
+          {/if}
+        </svg>
+        {#if hiddenNodeTypeCount > 0}
+          <span class="hidden-badge">{hiddenNodeTypeCount}</span>
+        {/if}
+      </button>
+      {#if showNodeVisibilityMenu}
+        <div class="toolbar-dropdown edge-visibility-dropdown">
+          <div class="dropdown-header">Show Node Types</div>
+          <!-- All toggle -->
+          <label class="visibility-toggle-item all-toggle">
+            <span class="toggle-label">
+              <span class="toggle-name">All</span>
+            </span>
+            <button
+              class="toggle-switch"
+              class:on={hiddenNodeTypeCount === 0}
+              onclick={(e) => { e.preventDefault(); if (hiddenNodeTypeCount > 0) { ui.showAllResourceTypes(); } else { for (const [typeId] of canvasResourceTypes) ui.toggleResourceTypeVisibility(typeId); } }}
+              role="switch"
+              aria-checked={hiddenNodeTypeCount === 0}
+              aria-label="Toggle all node types"
+            >
+              <span class="toggle-knob"></span>
+            </button>
+          </label>
+          <div class="toggle-divider"></div>
+          {#each canvasResourceTypes as [typeId, info] (typeId)}
+            <label class="visibility-toggle-item">
+              <span class="toggle-label">
+                <span class="toggle-name">{info.displayName}</span>
+                <span class="toggle-desc">{info.count} on canvas</span>
+              </span>
+              <button
+                class="toggle-switch"
+                class:on={!ui.hiddenResourceTypes.has(typeId)}
+                onclick={(e) => { e.preventDefault(); ui.toggleResourceTypeVisibility(typeId); }}
+                role="switch"
+                aria-checked={!ui.hiddenResourceTypes.has(typeId)}
+                aria-label={`Toggle ${info.displayName} visibility`}
+              >
+                <span class="toggle-knob"></span>
+              </button>
+            </label>
+          {/each}
+        </div>
+      {/if}
+    </div>
+  {/if}
 
 </div>
 
