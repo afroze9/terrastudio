@@ -788,6 +788,7 @@
   .properties-panel {
     width: 300px;
     min-width: 300px;
+    height: 100%;
     background: var(--color-surface);
     border-left: 1px solid var(--color-border);
     display: flex;
