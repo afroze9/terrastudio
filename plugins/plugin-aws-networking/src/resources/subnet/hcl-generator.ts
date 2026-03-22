@@ -43,6 +43,27 @@ export const subnetHclGenerator: HclGenerator = {
       lines.push(`  map_public_ip_on_launch = ${publicIpExpr}`);
     }
 
+    const ipv6CidrBlock = props['ipv6_cidr_block'] as string | undefined;
+    const ipv6CidrIsVar = resource.variableOverrides?.['ipv6_cidr_block'] === 'variable';
+    if (ipv6CidrIsVar || ipv6CidrBlock) {
+      const ipv6CidrExpr = context.getPropertyExpression(resource, 'ipv6_cidr_block', ipv6CidrBlock ?? '');
+      lines.push(`  ipv6_cidr_block = ${ipv6CidrExpr}`);
+    }
+
+    const assignIpv6 = props['assign_ipv6_address_on_creation'] as boolean | undefined;
+    const assignIpv6IsVar = resource.variableOverrides?.['assign_ipv6_address_on_creation'] === 'variable';
+    if (assignIpv6IsVar || (assignIpv6 !== undefined && assignIpv6 !== false)) {
+      const assignIpv6Expr = context.getPropertyExpression(resource, 'assign_ipv6_address_on_creation', assignIpv6 ?? false);
+      lines.push(`  assign_ipv6_address_on_creation = ${assignIpv6Expr}`);
+    }
+
+    const enableDns64 = props['enable_dns64'] as boolean | undefined;
+    const enableDns64IsVar = resource.variableOverrides?.['enable_dns64'] === 'variable';
+    if (enableDns64IsVar || (enableDns64 !== undefined && enableDns64 !== false)) {
+      const enableDns64Expr = context.getPropertyExpression(resource, 'enable_dns64', enableDns64 ?? false);
+      lines.push(`  enable_dns64 = ${enableDns64Expr}`);
+    }
+
     lines.push('');
     lines.push('  tags = merge(local.common_tags, {');
     lines.push(`    Name = ${nameExpr}`);

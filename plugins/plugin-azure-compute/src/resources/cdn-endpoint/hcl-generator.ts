@@ -10,6 +10,7 @@ export const cdnEndpointHclGenerator: HclGenerator = {
     const isHttpAllowed = props['is_http_allowed'] as boolean | undefined;
     const isHttpsAllowed = props['is_https_allowed'] as boolean | undefined;
     const isCompressionEnabled = props['is_compression_enabled'] as boolean | undefined;
+    const contentTypesToCompress = props['content_types_to_compress'] as string[] | undefined;
     const querystringCaching = props['querystring_caching_behaviour'] as string | undefined;
 
     const dependsOn: string[] = [];
@@ -48,6 +49,10 @@ export const cdnEndpointHclGenerator: HclGenerator = {
 
     if (isCompressionEnabled === true || resource.variableOverrides?.['is_compression_enabled'] === 'variable') {
       lines.push(`  is_compression_enabled = ${context.getPropertyExpression(resource, 'is_compression_enabled', isCompressionEnabled ?? false)}`);
+    }
+
+    if ((contentTypesToCompress && contentTypesToCompress.length > 0) || resource.variableOverrides?.['content_types_to_compress'] === 'variable') {
+      lines.push(`  content_types_to_compress = ${context.getPropertyExpression(resource, 'content_types_to_compress', contentTypesToCompress ?? [])}`);
     }
 
     if ((querystringCaching && querystringCaching !== 'IgnoreQueryString') || resource.variableOverrides?.['querystring_caching_behaviour'] === 'variable') {

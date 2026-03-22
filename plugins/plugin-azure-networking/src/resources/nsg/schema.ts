@@ -120,6 +120,12 @@ export const nsgSchema: ResourceSchema = {
             required: true,
             defaultValue: '*',
           },
+          {
+            key: 'description',
+            label: 'Description',
+            type: 'string',
+            required: false,
+          },
         ],
       },
     },

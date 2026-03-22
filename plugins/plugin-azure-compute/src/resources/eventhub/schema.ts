@@ -60,6 +60,20 @@ export const eventhubSchema: ResourceSchema = {
       },
       description: 'Days to retain events',
     },
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'select',
+      required: false,
+      group: 'General',
+      order: 4,
+      defaultValue: 'Active',
+      options: [
+        { label: 'Active', value: 'Active' },
+        { label: 'Disabled', value: 'Disabled' },
+        { label: 'Send Disabled', value: 'SendDisabled' },
+      ],
+    },
   ],
 
   handles: [],

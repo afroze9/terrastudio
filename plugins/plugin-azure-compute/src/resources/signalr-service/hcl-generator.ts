@@ -11,10 +11,13 @@ export const signalrServiceHclGenerator: HclGenerator = {
 		const connectivityLogs = props['connectivity_logs_enabled'] as boolean | undefined;
 		const messagingLogs = props['messaging_logs_enabled'] as boolean | undefined;
 		const liveTrace = props['live_trace_enabled'] as boolean | undefined;
+		const corsAllowedOrigins = props['cors_allowed_origins'] as string[] | undefined;
 
 		const rgExpr = context.getResourceGroupExpression(resource);
 		const locExpr = context.getLocationExpression(resource);
 		const nameExpr = context.getPropertyExpression(resource, 'name', name);
+
+		const capacityExpr = context.getPropertyExpression(resource, 'capacity', capacity);
 
 		const lines: string[] = [
 			`resource "azurerm_signalr_service" "${resource.terraformName}" {`,
@@ -24,7 +27,7 @@ export const signalrServiceHclGenerator: HclGenerator = {
 			'',
 			'  sku {',
 			`    name     = ${context.getPropertyExpression(resource, 'sku_name', skuName)}`,
-			`    capacity = ${capacity}`,
+			`    capacity = ${capacityExpr}`,
 			'  }',
 		];
 
@@ -50,6 +53,15 @@ export const signalrServiceHclGenerator: HclGenerator = {
 		if (liveTrace || resource.variableOverrides?.['live_trace_enabled'] === 'variable') {
 			lines.push(
 				`  live_trace_enabled = ${context.getPropertyExpression(resource, 'live_trace_enabled', liveTrace ?? false)}`,
+			);
+		}
+
+		if (corsAllowedOrigins && corsAllowedOrigins.length > 0 || resource.variableOverrides?.['cors_allowed_origins'] === 'variable') {
+			lines.push(
+				'',
+				'  cors {',
+				`    allowed_origins = ${context.getPropertyExpression(resource, 'cors_allowed_origins', corsAllowedOrigins ?? [])}`,
+				'  }',
 			);
 		}
 

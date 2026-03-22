@@ -8,6 +8,7 @@ export const eventhubHclGenerator: HclGenerator = {
     const name = props['name'] as string;
     const partitionCount = props['partition_count'] !== undefined ? Number(props['partition_count']) : 2;
     const messageRetention = props['message_retention'] !== undefined ? Number(props['message_retention']) : 1;
+    const status = (props['status'] as string) ?? 'Active';
 
     const dependsOn: string[] = [];
 
@@ -33,8 +34,13 @@ export const eventhubHclGenerator: HclGenerator = {
       `  resource_group_name = ${rgExpr}`,
       `  partition_count     = ${partitionExpr}`,
       `  message_retention   = ${retentionExpr}`,
-      '}',
     ];
+
+    if (status !== 'Active' || resource.variableOverrides?.['status'] === 'variable') {
+      lines.push(`  status              = ${context.getPropertyExpression(resource, 'status', status)}`);
+    }
+
+    lines.push('}');
 
     return [
       {

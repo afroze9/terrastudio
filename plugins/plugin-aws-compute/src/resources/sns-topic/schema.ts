@@ -48,7 +48,7 @@ export const snsTopicSchema: ResourceSchema = {
       placeholder: 'alias/aws/sns',
       group: 'Encryption',
       order: 4,
-      description: 'KMS key for server-side encryption (leave empty for no encryption)',
+      description: 'KMS key for at-rest encryption',
     },
   ],
 

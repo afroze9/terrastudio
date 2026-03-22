@@ -11,6 +11,9 @@ export const serviceBusQueueHclGenerator: HclGenerator = {
     const requiresDedupe = props['requires_duplicate_detection'] as boolean | undefined;
     const requiresSession = props['requires_session'] as boolean | undefined;
     const deadLetterOnExpiry = props['dead_lettering_on_message_expiration'] as boolean | undefined;
+    const enablePartitioning = props['enable_partitioning'] as boolean | undefined;
+    const forwardTo = props['forward_to'] as string | undefined;
+    const forwardDeadLettered = props['forward_dead_lettered_messages_to'] as string | undefined;
 
     const dependsOn: string[] = [];
 
@@ -50,6 +53,18 @@ export const serviceBusQueueHclGenerator: HclGenerator = {
 
     if (deadLetterOnExpiry === true) {
       lines.push(`  dead_lettering_on_message_expiration = ${context.getPropertyExpression(resource, 'dead_lettering_on_message_expiration', deadLetterOnExpiry)}`);
+    }
+
+    if (enablePartitioning === true || resource.variableOverrides?.['enable_partitioning'] === 'variable') {
+      lines.push(`  enable_partitioning = ${context.getPropertyExpression(resource, 'enable_partitioning', enablePartitioning ?? false)}`);
+    }
+
+    if (forwardTo || resource.variableOverrides?.['forward_to'] === 'variable') {
+      lines.push(`  forward_to = ${context.getPropertyExpression(resource, 'forward_to', forwardTo ?? '')}`);
+    }
+
+    if (forwardDeadLettered || resource.variableOverrides?.['forward_dead_lettered_messages_to'] === 'variable') {
+      lines.push(`  forward_dead_lettered_messages_to = ${context.getPropertyExpression(resource, 'forward_dead_lettered_messages_to', forwardDeadLettered ?? '')}`);
     }
 
     lines.push('}');

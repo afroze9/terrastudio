@@ -10,6 +10,11 @@ export const albHclGenerator: HclGenerator = {
     const lbType = (props['load_balancer_type'] as string) ?? 'application';
     const ipAddrType = (props['ip_address_type'] as string) ?? 'ipv4';
     const deletionProtection = props['enable_deletion_protection'] as boolean ?? false;
+    const enableHttp2 = props['enable_http2'] as boolean ?? true;
+    const enableCrossZone = props['enable_cross_zone_load_balancing'] as boolean ?? false;
+    const accessLogsEnabled = props['access_logs_enabled'] as boolean ?? false;
+    const accessLogsBucket = props['access_logs_bucket'] as string | undefined;
+    const accessLogsPrefix = props['access_logs_prefix'] as string | undefined;
 
     const dependsOn: string[] = [];
 
@@ -52,6 +57,35 @@ export const albHclGenerator: HclGenerator = {
 
     lines.push('');
     lines.push(`  enable_deletion_protection = ${deletionProtectionExpr}`);
+
+    // emit enable_http2 only when false (true is the AWS default)
+    if (!enableHttp2 || resource.variableOverrides?.['enable_http2'] === 'variable') {
+      const http2Expr = context.getPropertyExpression(resource, 'enable_http2', enableHttp2);
+      lines.push(`  enable_http2               = ${http2Expr}`);
+    }
+
+    // emit enable_cross_zone_load_balancing only when true (false is the AWS default)
+    if (enableCrossZone || resource.variableOverrides?.['enable_cross_zone_load_balancing'] === 'variable') {
+      const crossZoneExpr = context.getPropertyExpression(resource, 'enable_cross_zone_load_balancing', enableCrossZone);
+      lines.push(`  enable_cross_zone_load_balancing = ${crossZoneExpr}`);
+    }
+
+    // access_logs block
+    if (accessLogsEnabled) {
+      lines.push('');
+      lines.push('  access_logs {');
+      if (accessLogsBucket || resource.variableOverrides?.['access_logs_bucket'] === 'variable') {
+        const bucketExpr = context.getPropertyExpression(resource, 'access_logs_bucket', accessLogsBucket ?? '');
+        lines.push(`    bucket  = ${bucketExpr}`);
+      }
+      if (accessLogsPrefix || resource.variableOverrides?.['access_logs_prefix'] === 'variable') {
+        const prefixExpr = context.getPropertyExpression(resource, 'access_logs_prefix', accessLogsPrefix ?? '');
+        lines.push(`    prefix  = ${prefixExpr}`);
+      }
+      lines.push('    enabled = true');
+      lines.push('  }');
+    }
+
     lines.push('');
     lines.push('  tags = local.common_tags');
     lines.push('}');

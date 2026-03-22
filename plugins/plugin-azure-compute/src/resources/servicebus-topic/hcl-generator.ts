@@ -9,6 +9,8 @@ export const serviceBusTopicHclGenerator: HclGenerator = {
     const maxSizeMb = props['max_size_in_megabytes'] !== undefined ? Number(props['max_size_in_megabytes']) : undefined;
     const requiresDedupe = props['requires_duplicate_detection'] as boolean | undefined;
     const supportOrdering = props['support_ordering'] as boolean | undefined;
+    const enablePartitioning = props['enable_partitioning'] as boolean | undefined;
+    const enableBatchedOps = props['enable_batched_operations'] as boolean | undefined;
 
     const dependsOn: string[] = [];
 
@@ -40,6 +42,14 @@ export const serviceBusTopicHclGenerator: HclGenerator = {
 
     if (supportOrdering === true) {
       lines.push(`  support_ordering = ${context.getPropertyExpression(resource, 'support_ordering', supportOrdering)}`);
+    }
+
+    if (enablePartitioning === true || resource.variableOverrides?.['enable_partitioning'] === 'variable') {
+      lines.push(`  enable_partitioning = ${context.getPropertyExpression(resource, 'enable_partitioning', enablePartitioning ?? false)}`);
+    }
+
+    if (enableBatchedOps === false || resource.variableOverrides?.['enable_batched_operations'] === 'variable') {
+      lines.push(`  enable_batched_operations = ${context.getPropertyExpression(resource, 'enable_batched_operations', enableBatchedOps ?? true)}`);
     }
 
     lines.push('}');

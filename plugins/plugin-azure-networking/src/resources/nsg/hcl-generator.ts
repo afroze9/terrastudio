@@ -11,6 +11,7 @@ interface SecurityRule {
   destination_port_range: string;
   source_address_prefix: string;
   destination_address_prefix: string;
+  description?: string;
 }
 
 export const nsgHclGenerator: HclGenerator = {
@@ -44,6 +45,9 @@ export const nsgHclGenerator: HclGenerator = {
       lines.push(`    destination_port_range     = "${e(rule.destination_port_range)}"`);
       lines.push(`    source_address_prefix      = "${e(rule.source_address_prefix)}"`);
       lines.push(`    destination_address_prefix = "${e(rule.destination_address_prefix)}"`);
+      if (rule.description) {
+        lines.push(`    description                = "${e(rule.description)}"`);
+      }
       lines.push('  }');
     }
 

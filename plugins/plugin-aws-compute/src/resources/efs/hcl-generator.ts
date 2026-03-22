@@ -21,6 +21,13 @@ export const efsHclGenerator: HclGenerator = {
       `  encrypted        = ${encrypted}`,
     ];
 
+    const provisionedThroughput = props['provisioned_throughput_in_mibps'] as number | undefined;
+    const provisionedIsVar = resource.variableOverrides?.['provisioned_throughput_in_mibps'] === 'variable';
+    if (provisionedIsVar || (provisionedThroughput !== undefined && provisionedThroughput !== null)) {
+      const provisionedExpr = context.getPropertyExpression(resource, 'provisioned_throughput_in_mibps', provisionedThroughput ?? 0);
+      lines.push(`  provisioned_throughput_in_mibps = ${provisionedExpr}`);
+    }
+
     if (lifecyclePolicy) {
       lines.push('');
       lines.push('  lifecycle_policy {');

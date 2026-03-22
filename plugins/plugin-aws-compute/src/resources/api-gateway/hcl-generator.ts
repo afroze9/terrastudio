@@ -8,6 +8,8 @@ export const apiGatewayHclGenerator: HclGenerator = {
     const name = props['name'] as string;
     const protocolType = (props['protocol_type'] as string) ?? 'HTTP';
     const description = props['description'] as string | undefined;
+    const disableExecuteApiEndpoint = props['disable_execute_api_endpoint'] as boolean ?? false;
+    const apiKeySelectionExpression = props['api_key_selection_expression'] as string | undefined;
     const corsEnabled = props['cors_enabled'] as boolean ?? true;
     const corsOrigins = (props['cors_allow_origins'] as string[]) ?? ['*'];
 
@@ -20,9 +22,19 @@ export const apiGatewayHclGenerator: HclGenerator = {
       `  protocol_type = ${protocolExpr}`,
     ];
 
-    if (description) {
-      const descExpr = context.getPropertyExpression(resource, 'description', description);
+    if (description || resource.variableOverrides?.['description'] === 'variable') {
+      const descExpr = context.getPropertyExpression(resource, 'description', description ?? '');
       lines.push(`  description   = ${descExpr}`);
+    }
+
+    if (disableExecuteApiEndpoint || resource.variableOverrides?.['disable_execute_api_endpoint'] === 'variable') {
+      const disableEndpointExpr = context.getPropertyExpression(resource, 'disable_execute_api_endpoint', disableExecuteApiEndpoint);
+      lines.push(`  disable_execute_api_endpoint = ${disableEndpointExpr}`);
+    }
+
+    if (apiKeySelectionExpression || resource.variableOverrides?.['api_key_selection_expression'] === 'variable') {
+      const apiKeyExpr = context.getPropertyExpression(resource, 'api_key_selection_expression', apiKeySelectionExpression ?? '');
+      lines.push(`  api_key_selection_expression = ${apiKeyExpr}`);
     }
 
     if (corsEnabled && protocolType === 'HTTP') {

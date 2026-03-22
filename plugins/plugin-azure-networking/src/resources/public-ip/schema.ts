@@ -58,6 +58,19 @@ export const publicIpSchema: ResourceSchema = {
       ],
     },
     {
+      key: 'sku_tier',
+      label: 'SKU Tier',
+      type: 'select',
+      required: false,
+      group: 'General',
+      order: 4,
+      defaultValue: 'Regional',
+      options: [
+        { label: 'Regional', value: 'Regional' },
+        { label: 'Global', value: 'Global' },
+      ],
+    },
+    {
       key: 'ip_version',
       label: 'IP Version',
       type: 'select',
@@ -92,6 +105,15 @@ export const publicIpSchema: ResourceSchema = {
       order: 6,
       placeholder: 'myapp',
       description: 'Creates a DNS record: <label>.<region>.cloudapp.azure.com',
+    },
+    {
+      key: 'zones',
+      label: 'Availability Zones',
+      type: 'array',
+      required: false,
+      group: 'Availability',
+      order: 7,
+      itemSchema: { key: 'zone', label: 'Zone', type: 'string', required: true },
     },
   ],
 

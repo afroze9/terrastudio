@@ -8,9 +8,11 @@ export const publicIpHclGenerator: HclGenerator = {
     const name = props['name'] as string;
     const allocationMethod = (props['allocation_method'] as string) ?? 'Static';
     const sku = (props['sku'] as string) ?? 'Standard';
+    const skuTier = (props['sku_tier'] as string) ?? 'Regional';
     const ipVersion = props['ip_version'] as string | undefined;
     const idleTimeout = props['idle_timeout_in_minutes'] as number | undefined;
     const domainLabel = props['domain_name_label'] as string | undefined;
+    const zones = props['zones'] as string[] | undefined;
 
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
@@ -27,6 +29,14 @@ export const publicIpHclGenerator: HclGenerator = {
       `  sku                 = ${skuExpr}`,
     ];
 
+    if (skuTier && skuTier !== 'Regional') {
+      const skuTierExpr = context.getPropertyExpression(resource, 'sku_tier', skuTier);
+      lines.push(`  sku_tier            = ${skuTierExpr}`);
+    } else if (resource.variableOverrides?.['sku_tier'] === 'variable') {
+      const skuTierExpr = context.getPropertyExpression(resource, 'sku_tier', skuTier);
+      lines.push(`  sku_tier            = ${skuTierExpr}`);
+    }
+
     if (ipVersion && ipVersion !== 'IPv4') {
       const ipVersionExpr = context.getPropertyExpression(resource, 'ip_version', ipVersion);
       lines.push(`  ip_version          = ${ipVersionExpr}`);
@@ -40,6 +50,14 @@ export const publicIpHclGenerator: HclGenerator = {
     if (domainLabel) {
       const domainLabelExpr = context.getPropertyExpression(resource, 'domain_name_label', domainLabel);
       lines.push(`  domain_name_label   = ${domainLabelExpr}`);
+    }
+
+    if (zones && zones.length > 0) {
+      const zonesExpr = context.getPropertyExpression(resource, 'zones', zones);
+      lines.push(`  zones               = ${zonesExpr}`);
+    } else if (resource.variableOverrides?.['zones'] === 'variable') {
+      const zonesExpr = context.getPropertyExpression(resource, 'zones', []);
+      lines.push(`  zones               = ${zonesExpr}`);
     }
 
     lines.push('');

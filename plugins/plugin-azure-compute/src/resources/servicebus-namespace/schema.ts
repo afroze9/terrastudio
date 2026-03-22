@@ -97,6 +97,66 @@ export const serviceBusNamespaceSchema: ResourceSchema = {
       visibleWhen: { field: 'sku', operator: 'eq', value: 'Premium' },
       description: 'Enable zone redundancy (Premium only)',
     },
+
+    // Security
+    {
+      key: 'local_auth_enabled',
+      label: 'Local Authentication',
+      type: 'boolean',
+      required: false,
+      group: 'Security',
+      order: 10,
+      defaultValue: true,
+    },
+    {
+      key: 'public_network_access_enabled',
+      label: 'Public Network Access',
+      type: 'boolean',
+      required: false,
+      group: 'Security',
+      order: 11,
+      defaultValue: true,
+    },
+    {
+      key: 'minimum_tls_version',
+      label: 'Minimum TLS Version',
+      type: 'select',
+      required: false,
+      group: 'Security',
+      order: 12,
+      defaultValue: '1.2',
+      options: [
+        { label: '1.0', value: '1.0' },
+        { label: '1.1', value: '1.1' },
+        { label: '1.2', value: '1.2' },
+      ],
+    },
+
+    // Identity
+    {
+      key: 'identity_enabled',
+      label: 'Managed Identity',
+      type: 'boolean',
+      required: false,
+      group: 'Identity',
+      order: 20,
+      defaultValue: false,
+    },
+    {
+      key: 'identity_type',
+      label: 'Identity Type',
+      type: 'select',
+      required: false,
+      group: 'Identity',
+      order: 21,
+      defaultValue: 'SystemAssigned',
+      visibleWhen: { field: 'identity_enabled', operator: 'truthy' },
+      options: [
+        { label: 'System Assigned', value: 'SystemAssigned' },
+        { label: 'User Assigned', value: 'UserAssigned' },
+        { label: 'System & User Assigned', value: 'SystemAssigned, UserAssigned' },
+      ],
+    },
   ],
 
   handles: [],
@@ -104,6 +164,7 @@ export const serviceBusNamespaceSchema: ResourceSchema = {
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
     { key: 'default_primary_connection_string', label: 'Primary Connection String', terraformAttribute: 'default_primary_connection_string', sensitive: true },
+    { key: 'default_secondary_connection_string', label: 'Secondary Connection String', terraformAttribute: 'default_secondary_connection_string', sensitive: true },
   ],
 
   costEstimation: {

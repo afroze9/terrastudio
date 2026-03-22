@@ -54,6 +54,39 @@ export const loadBalancerHclGenerator: HclGenerator = {
       { blockType: 'resource', terraformType: 'azurerm_lb', name: resource.terraformName, content: lines.join('\n') },
     ];
 
+    // Emit a health probe resource when configured
+    const probeProtocol = (props['health_probe_protocol'] as string) ?? 'Tcp';
+    const probePort = props['health_probe_port'] !== undefined ? Number(props['health_probe_port']) : 80;
+    const probePath = props['health_probe_path'] as string | undefined;
+    const hasProbeConfig = probeProtocol || resource.variableOverrides?.['health_probe_protocol'] === 'variable'
+      || resource.variableOverrides?.['health_probe_port'] === 'variable';
+
+    if (hasProbeConfig) {
+      const probeName = `${resource.terraformName}_probe`;
+      const probeLines: string[] = [
+        `resource "azurerm_lb_probe" "${probeName}" {`,
+        `  loadbalancer_id = azurerm_lb.${resource.terraformName}.id`,
+        `  name            = "health-probe"`,
+        `  protocol        = ${context.getPropertyExpression(resource, 'health_probe_protocol', probeProtocol)}`,
+        `  port            = ${context.getPropertyExpression(resource, 'health_probe_port', probePort)}`,
+      ];
+
+      if ((probeProtocol === 'Http' || probeProtocol === 'Https') && probePath) {
+        probeLines.push(`  request_path    = ${context.getPropertyExpression(resource, 'health_probe_path', probePath)}`);
+      } else if (resource.variableOverrides?.['health_probe_path'] === 'variable') {
+        probeLines.push(`  request_path    = ${context.getPropertyExpression(resource, 'health_probe_path', probePath ?? '')}`);
+      }
+
+      probeLines.push('}');
+      blocks.push({
+        blockType: 'resource',
+        terraformType: 'azurerm_lb_probe',
+        name: probeName,
+        content: probeLines.join('\n'),
+        dependsOn: [`azurerm_lb.${resource.terraformName}`],
+      });
+    }
+
     // Emit a backend address pool for VMSS / VM connections
     const poolName = `${resource.terraformName}_backend_pool`;
     const poolLines: string[] = [

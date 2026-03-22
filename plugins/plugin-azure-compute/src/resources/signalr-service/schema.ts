@@ -105,6 +105,20 @@ export const signalrServiceSchema: ResourceSchema = {
 			order: 7,
 			defaultValue: false,
 		},
+		{
+			key: 'cors_allowed_origins',
+			label: 'CORS Allowed Origins',
+			type: 'array',
+			required: false,
+			group: 'CORS',
+			order: 8,
+			itemSchema: {
+				key: 'origin',
+				label: 'Origin',
+				type: 'string',
+				required: true,
+			},
+		},
 	],
 	handles: [{ id: 'pep-target', type: 'target', position: 'left', label: 'Private Endpoint' }],
 	outputs: [
