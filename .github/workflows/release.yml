@@ -118,7 +118,22 @@ jobs:
   build-cli:
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true'
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            target: node22-win-x64
+            artifact: tstudio-win-x64.exe
+          - os: ubuntu-latest
+            target: node22-linux-x64
+            artifact: tstudio-linux-x64
+          - os: macos-latest
+            target: node22-macos-arm64
+            artifact: tstudio-macos-arm64
+          - os: macos-latest
+            target: node22-macos-x64
+            artifact: tstudio-macos-x64
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -139,36 +154,35 @@ jobs:
         working-directory: packages/cli
         run: pnpm bundle
 
-      - name: Package CLI binaries
+      - name: Package CLI binary
         working-directory: packages/cli
+        shell: bash
         run: >
           ./node_modules/.bin/pkg bundle/cli.cjs
-          --targets node22-win-x64,node22-linux-x64,node22-macos-arm64,node22-macos-x64
+          --targets ${{ matrix.target }}
           --output bin/tstudio
 
-      - name: Rename binaries with version
+      - name: Rename binary with version
         working-directory: packages/cli/bin
         shell: bash
         run: |
           VERSION="${{ needs.release-please.outputs.version }}"
-          mv tstudio-win-x64.exe   "tstudio-${VERSION}-win-x64.exe"
-          mv tstudio-linux-x64     "tstudio-${VERSION}-linux-x64"
-          mv tstudio-macos-arm64   "tstudio-${VERSION}-macos-arm64"
-          mv tstudio-macos-x64     "tstudio-${VERSION}-macos-x64"
+          if [ -f "tstudio.exe" ]; then
+            mv tstudio.exe "tstudio-${VERSION}-win-x64.exe"
+          else
+            SUFFIX="${{ matrix.artifact }}"
+            mv tstudio "tstudio-${VERSION}-${SUFFIX#tstudio-}"
+          fi
 
-      - name: Upload CLI binaries to release
+      - name: Upload CLI binary to release
         working-directory: packages/cli/bin
+        shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${{ needs.release-please.outputs.version }}"
           TAG="${{ needs.release-please.outputs.tag_name }}"
-          gh release upload "$TAG" \
-            "tstudio-${VERSION}-win-x64.exe" \
-            "tstudio-${VERSION}-linux-x64" \
-            "tstudio-${VERSION}-macos-arm64" \
-            "tstudio-${VERSION}-macos-x64" \
-            --clobber
+          gh release upload "$TAG" tstudio-${VERSION}-* --clobber
 
   publish-cli-npm:
     needs: release-please
