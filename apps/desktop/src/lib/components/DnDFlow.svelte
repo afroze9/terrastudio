@@ -1081,9 +1081,35 @@
     const moved = diagram.nodes.filter((n) => descendantIds.has(n.id));
     diagram.nodes = [...others, ...moved];
   }
+
+  // ─── Double-click on empty canvas → create sticky note ─────────────
+  function handlePaneDblClick(event: MouseEvent) {
+    // Only fire on true empty-pane double-clicks (not on nodes, edges, or controls)
+    const target = event.target as HTMLElement;
+    if (target.closest('.svelte-flow__node') || target.closest('.svelte-flow__edge') || target.closest('.svelte-flow__controls') || target.closest('.svelte-flow__minimap')) return;
+    if (!target.closest('.svelte-flow__pane')) return;
+
+    const schema = registry.getResourceSchema('_annotation/general/sticky_note');
+    if (!schema) return;
+
+    const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+    const nodeData = createNodeData(schema);
+    const id = generateNodeId(schema.typeId);
+
+    const newNode = {
+      id,
+      type: schema.typeId,
+      position,
+      data: nodeData,
+    };
+
+    diagram.addNode(newNode as any);
+    diagram.selectedNodeId = id;
+  }
 </script>
 
-<div class="dnd-flow-wrapper" use:dndHandler>
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div class="dnd-flow-wrapper" use:dndHandler ondblclick={handlePaneDblClick}>
   <SvelteFlow
     bind:nodes={diagram.nodes}
     edges={displayEdges}

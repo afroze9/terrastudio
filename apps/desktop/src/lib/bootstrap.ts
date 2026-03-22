@@ -3,6 +3,7 @@ import DefaultResourceNode from '$lib/components/DefaultResourceNode.svelte';
 import ContainerResourceNode from '$lib/components/ContainerResourceNode.svelte';
 import ModuleNode from '$lib/components/ModuleNode.svelte';
 import ModuleInstanceNode from '$lib/components/ModuleInstanceNode.svelte';
+import StickyNoteNode from '$lib/components/StickyNoteNode.svelte';
 import { TerraStudioEdge } from '$lib/components/edges';
 import { checkTerraform } from '$lib/services/terraform-service';
 import { logger, setLoggerLevel, type LogLevel } from '$lib/logger';
@@ -96,6 +97,10 @@ export function initValidation(): void {
 export function buildNodeTypes(): Record<string, Component<any>> {
   const map: Record<string, Component<any>> = {};
   for (const typeId of pluginRegistry.inner.getResourceTypeIds()) {
+    if (typeId === '_annotation/general/sticky_note') {
+      map[typeId] = StickyNoteNode;
+      continue;
+    }
     const schema = pluginRegistry.inner.getResourceSchema(typeId);
     map[typeId] = schema?.isContainer ? ContainerResourceNode : DefaultResourceNode;
   }
