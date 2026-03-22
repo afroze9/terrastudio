@@ -156,6 +156,32 @@ export const vmHclGenerator: HclGenerator = {
     vmLines.push('    version   = "latest"');
     vmLines.push('  }');
 
+    // Identity block
+    const identityEnabled = props['identity_enabled'] as boolean;
+    if (identityEnabled) {
+      const identityType = (props['identity_type'] as string) ?? 'SystemAssigned';
+      const identityTypeExpr = context.getPropertyExpression(resource, 'identity_type', identityType);
+      vmLines.push('');
+      vmLines.push('  identity {');
+      vmLines.push(`    type = ${identityTypeExpr}`);
+      vmLines.push('  }');
+    }
+
+    // Boot diagnostics block
+    const bootDiagnosticsEnabled = props['boot_diagnostics_enabled'] as boolean;
+    if (bootDiagnosticsEnabled) {
+      vmLines.push('');
+      vmLines.push('  boot_diagnostics { }');
+    }
+
+    // License type
+    const licenseType = props['license_type'] as string | undefined;
+    if (licenseType || resource.variableOverrides?.['license_type'] === 'variable') {
+      const licenseTypeExpr = context.getPropertyExpression(resource, 'license_type', licenseType ?? '');
+      vmLines.push('');
+      vmLines.push(`  license_type = ${licenseTypeExpr}`);
+    }
+
     vmLines.push('');
     vmLines.push('  tags = local.common_tags');
     vmLines.push('}');
