@@ -191,6 +191,9 @@ This updates:
 | `apps/desktop/src-tauri/Cargo.toml` | Rust crate version. |
 | `packages/cli/package.json` | CLI reports this via `tstudio --version`. |
 
+**MUST update manually (the script does NOT update these):**
+- `.release-please-manifest.json` — Set `"apps/desktop"` to the new version. **Without this, release-please will not trigger a release PR.**
+
 **Derived automatically (no manual update needed):**
 - `apps/desktop/src-tauri/tauri.conf.json` — `"version": "../package.json"` reads from `package.json`
 - About dialog (`AboutModal.svelte`) — reads `__APP_VERSION__` injected by Vite
