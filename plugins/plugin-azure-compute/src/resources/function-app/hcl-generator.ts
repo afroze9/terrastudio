@@ -18,6 +18,11 @@ export const functionAppHclGenerator: HclGenerator = {
     const runtimeVersion = props['runtime_version'] as string | undefined;
     const httpsOnly = props['https_only'] as boolean | undefined;
     const enabled = props['enabled'] as boolean | undefined;
+    const http2Enabled = props['http2_enabled'] as boolean | undefined;
+    const minimumTlsVersion = (props['minimum_tls_version'] as string) ?? '1.2';
+    const appSettings = props['app_settings'] as Record<string, string> | undefined;
+    const identityEnabled = props['identity_enabled'] as boolean | undefined;
+    const identityType = (props['identity_type'] as string) ?? 'SystemAssigned';
 
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
@@ -72,9 +77,33 @@ export const functionAppHclGenerator: HclGenerator = {
       lines.push(`  enabled                    = ${context.getPropertyExpression(resource, 'enabled', false)}`);
     }
 
+    // App settings
+    if (appSettings && Object.keys(appSettings).length > 0) {
+      lines.push('');
+      lines.push('  app_settings = {');
+      for (const [key, value] of Object.entries(appSettings)) {
+        lines.push(`    ${e(key)} = "${e(String(value))}"`);
+      }
+      lines.push('  }');
+    }
+
+    // Identity block
+    if (identityEnabled || resource.variableOverrides?.['identity_type'] === 'variable') {
+      lines.push('');
+      lines.push('  identity {');
+      lines.push(`    type = ${context.getPropertyExpression(resource, 'identity_type', identityType)}`);
+      lines.push('  }');
+    }
+
     // site_config with application_stack (only if runtime is specified)
     lines.push('');
     lines.push('  site_config {');
+
+    if (http2Enabled || resource.variableOverrides?.['http2_enabled'] === 'variable') {
+      lines.push(`    http2_enabled        = ${context.getPropertyExpression(resource, 'http2_enabled', http2Enabled ?? false)}`);
+    }
+
+    lines.push(`    minimum_tls_version  = ${context.getPropertyExpression(resource, 'minimum_tls_version', minimumTlsVersion)}`);
 
     if (runtimeStack && runtimeVersion) {
       lines.push('    application_stack {');

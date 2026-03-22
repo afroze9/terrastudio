@@ -27,6 +27,12 @@ export const vmScaleSetHclGenerator: HclGenerator = {
     const singlePlacementGroup = props['single_placement_group'] as boolean | undefined;
     const overprovision = props['overprovision'] as boolean | undefined;
     const zones = props['zones'] as string[] | undefined;
+    const identityEnabled = props['identity_enabled'] as boolean | undefined;
+    const identityType = (props['identity_type'] as string) ?? 'SystemAssigned';
+    const priority = (props['priority'] as string) ?? 'Regular';
+    const evictionPolicy = props['eviction_policy'] as string | undefined;
+    const maxBidPrice = props['max_bid_price'] as number | undefined;
+    const encryptionAtHostEnabled = props['encryption_at_host_enabled'] as boolean | undefined;
 
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
@@ -107,6 +113,22 @@ export const vmScaleSetHclGenerator: HclGenerator = {
       lines.push(`  single_placement_group = ${context.getPropertyExpression(resource, 'single_placement_group', singlePlacementGroup ?? true)}`);
     }
 
+    // Spot VM priority
+    if (priority === 'Spot' || resource.variableOverrides?.['priority'] === 'variable') {
+      lines.push(`  priority              = ${context.getPropertyExpression(resource, 'priority', priority)}`);
+      if (evictionPolicy || resource.variableOverrides?.['eviction_policy'] === 'variable') {
+        lines.push(`  eviction_policy       = ${context.getPropertyExpression(resource, 'eviction_policy', evictionPolicy ?? 'Deallocate')}`);
+      }
+      if (maxBidPrice !== undefined || resource.variableOverrides?.['max_bid_price'] === 'variable') {
+        lines.push(`  max_bid_price         = ${context.getPropertyExpression(resource, 'max_bid_price', maxBidPrice ?? -1)}`);
+      }
+    }
+
+    // Encryption at host
+    if (encryptionAtHostEnabled === true || resource.variableOverrides?.['encryption_at_host_enabled'] === 'variable') {
+      lines.push(`  encryption_at_host_enabled = ${context.getPropertyExpression(resource, 'encryption_at_host_enabled', encryptionAtHostEnabled ?? false)}`);
+    }
+
     // Zones
     if (zones && zones.length > 0) {
       const zoneList = zones.map(z => `"${e(z)}"`).join(', ');
@@ -144,6 +166,14 @@ export const vmScaleSetHclGenerator: HclGenerator = {
     }
     lines.push('    }');
     lines.push('  }');
+
+    // Identity
+    if (identityEnabled || resource.variableOverrides?.['identity_enabled'] === 'variable') {
+      lines.push('');
+      lines.push('  identity {');
+      lines.push(`    type = ${context.getPropertyExpression(resource, 'identity_type', identityType)}`);
+      lines.push('  }');
+    }
 
     lines.push('', '  tags = local.common_tags', '}');
 

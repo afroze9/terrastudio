@@ -43,16 +43,47 @@ export const vmScaleSetSchema: ResourceSchema = {
         { label: 'Standard SSD', value: 'StandardSSD_LRS' },
         { label: 'Premium SSD', value: 'Premium_LRS' },
       ] },
-    { key: 'upgrade_mode', label: 'Upgrade Mode', type: 'select', required: false, group: 'Scaling', order: 12, defaultValue: 'Manual',
+    { key: 'single_placement_group', label: 'Single Placement Group', type: 'boolean', required: false, group: 'Scaling', order: 12, defaultValue: true },
+    { key: 'overprovision', label: 'Overprovision', type: 'boolean', required: false, group: 'Scaling', order: 13, defaultValue: true },
+    { key: 'zones', label: 'Availability Zones', type: 'multiselect', required: false, group: 'Availability', order: 14,
+      options: [{ label: 'Zone 1', value: '1' }, { label: 'Zone 2', value: '2' }, { label: 'Zone 3', value: '3' }] },
+
+    // Identity
+    { key: 'identity_enabled', label: 'Managed Identity', type: 'boolean', required: false, group: 'Identity', order: 15, defaultValue: false },
+    { key: 'identity_type', label: 'Identity Type', type: 'select', required: false, group: 'Identity', order: 16, defaultValue: 'SystemAssigned',
+      visibleWhen: { field: 'identity_enabled', operator: 'truthy' },
       options: [
-        { label: 'Automatic', value: 'Automatic' },
+        { label: 'System Assigned', value: 'SystemAssigned' },
+        { label: 'User Assigned', value: 'UserAssigned' },
+        { label: 'System & User Assigned', value: 'SystemAssigned, UserAssigned' },
+      ] },
+
+    // Spot VM
+    { key: 'priority', label: 'Priority', type: 'select', required: false, group: 'Spot VM', order: 17, defaultValue: 'Regular',
+      options: [
+        { label: 'Regular', value: 'Regular' },
+        { label: 'Spot', value: 'Spot' },
+      ] },
+    { key: 'eviction_policy', label: 'Eviction Policy', type: 'select', required: false, group: 'Spot VM', order: 18,
+      visibleWhen: { field: 'priority', operator: 'eq', value: 'Spot' },
+      options: [
+        { label: 'Deallocate', value: 'Deallocate' },
+        { label: 'Delete', value: 'Delete' },
+      ] },
+    { key: 'max_bid_price', label: 'Max Bid Price', type: 'number', required: false, group: 'Spot VM', order: 19,
+      description: '-1 for pay-as-you-go rate',
+      visibleWhen: { field: 'priority', operator: 'eq', value: 'Spot' } },
+
+    // Upgrade Policy
+    { key: 'upgrade_mode', label: 'Upgrade Mode', type: 'select', required: false, group: 'Upgrade Policy', order: 20, defaultValue: 'Manual',
+      options: [
         { label: 'Manual', value: 'Manual' },
+        { label: 'Automatic', value: 'Automatic' },
         { label: 'Rolling', value: 'Rolling' },
       ] },
-    { key: 'single_placement_group', label: 'Single Placement Group', type: 'boolean', required: false, group: 'Scaling', order: 13, defaultValue: true },
-    { key: 'overprovision', label: 'Overprovision', type: 'boolean', required: false, group: 'Scaling', order: 14, defaultValue: true },
-    { key: 'zones', label: 'Availability Zones', type: 'multiselect', required: false, group: 'Availability', order: 15,
-      options: [{ label: 'Zone 1', value: '1' }, { label: 'Zone 2', value: '2' }, { label: 'Zone 3', value: '3' }] },
+
+    // Advanced
+    { key: 'encryption_at_host_enabled', label: 'Encryption at Host', type: 'boolean', required: false, group: 'Advanced', order: 21, defaultValue: false },
   ],
   handles: [
     { id: 'lb-backend-in', type: 'target', position: 'top', label: 'Load Balancer' },
