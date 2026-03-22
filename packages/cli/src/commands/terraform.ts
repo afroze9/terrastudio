@@ -15,7 +15,7 @@ function tfDir(projectPath: string): string {
  * Streams stdout/stderr directly to the terminal.
  * Rejects with the exit code if non-zero.
  */
-function runTerraform(cwd: string, args: string[]): Promise<void> {
+function runTerraform(cwd: string, args: string[], allowedCodes: number[] = [0]): Promise<void> {
   return new Promise((resolve, reject) => {
     const proc = spawn('terraform', args, {
       cwd,
@@ -23,7 +23,7 @@ function runTerraform(cwd: string, args: string[]): Promise<void> {
       shell: process.platform === 'win32',
     });
     proc.on('close', (code) => {
-      if (code === 0) resolve();
+      if (code !== null && allowedCodes.includes(code)) resolve();
       else reject(new Error(`terraform exited with code ${code}`));
     });
     proc.on('error', (err) => {
@@ -91,7 +91,8 @@ export function makeTerraformCommand(): Command {
       const dir = tfDir(projectPath);
       const args = ['plan'];
       if (options.out) args.push('-out', options.out);
-      await runTerraform(dir, args).catch((err) => {
+      // Exit code 2 = changes present (not an error)
+      await runTerraform(dir, args, [0, 2]).catch((err) => {
         console.error(err.message);
         process.exit(1);
       });

@@ -1,14 +1,15 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
-import { createRequire } from 'node:module';
 import { makeProjectCommand } from './commands/project.js';
 import { makeResourceCommand } from './commands/resource.js';
 import { makeHclCommand } from './commands/hcl.js';
 import { makeModuleCommand } from './commands/module.js';
 import { makeTerraformCommand } from './commands/terraform.js';
 
-const require = createRequire(import.meta.url);
-const { version } = require('../package.json') as { version: string };
+// TSTUDIO_VERSION is replaced at bundle time by esbuild --define.
+// In dev mode (running unbundled via ts-node/tsx), it falls back to '0.0.0-dev'.
+declare const TSTUDIO_VERSION: string;
+const version = typeof TSTUDIO_VERSION !== 'undefined' ? TSTUDIO_VERSION : '0.0.0-dev';
 
 const program = new Command();
 
