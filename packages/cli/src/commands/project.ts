@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { storage, toLoadedProject } from '../platform/node-io.js';
 import { Project } from '@terrastudio/project';
 import type { ProviderId } from '@terrastudio/types';
+import { resolveProjectPath } from '../platform/resolve-project.js';
 
 /** Keys that should have their values redacted in output. */
 function isSensitiveKey(key: string): boolean {
@@ -58,10 +59,11 @@ export function makeProjectCommand(): Command {
     );
 
   cmd
-    .command('info <path>')
+    .command('info [path]')
     .description('Show project metadata')
-    .action(async (projectPath: string) => {
-      const stored = await storage.loadProject(projectPath);
+    .action(async (projectPath: string | undefined) => {
+      const resolved = resolveProjectPath(projectPath);
+      const stored = await storage.loadProject(resolved);
       const project = Project.fromLoaded(toLoadedProject(stored));
       console.log(`Name:     ${project.name}`);
       console.log(`Version:  ${project.version}`);
@@ -73,17 +75,18 @@ export function makeProjectCommand(): Command {
     });
 
   cmd
-    .command('config <path>')
+    .command('config [path]')
     .description('Print project config as JSON (sensitive values redacted)')
-    .action(async (projectPath: string) => {
-      const stored = await storage.loadProject(projectPath);
+    .action(async (projectPath: string | undefined) => {
+      const resolved = resolveProjectPath(projectPath);
+      const stored = await storage.loadProject(resolved);
       const project = Project.fromLoaded(toLoadedProject(stored));
       const redacted = redactSensitive(project.projectConfig);
       console.log(JSON.stringify(redacted, null, 2));
     });
 
   cmd
-    .command('config-set <path>')
+    .command('config-set [path]')
     .description('Update project config fields')
     .option(
       '--naming-convention <value>',
@@ -99,7 +102,7 @@ export function makeProjectCommand(): Command {
     )
     .action(
       async (
-        projectPath: string,
+        projectPath: string | undefined,
         options: {
           namingConvention?: string;
           layoutAlgorithm?: string;
@@ -107,7 +110,8 @@ export function makeProjectCommand(): Command {
           variable: string[];
         },
       ) => {
-        const stored = await storage.loadProject(projectPath);
+        const resolved = resolveProjectPath(projectPath);
+        const stored = await storage.loadProject(resolved);
         const project = Project.fromLoaded(toLoadedProject(stored));
 
         if (options.namingConvention !== undefined) {
@@ -159,7 +163,7 @@ export function makeProjectCommand(): Command {
           };
         }
 
-        await storage.saveProjectConfig(projectPath, project.projectConfig);
+        await storage.saveProjectConfig(resolved, project.projectConfig);
         console.log('Project config updated.');
       },
     );
