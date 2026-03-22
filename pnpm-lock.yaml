@@ -53,6 +53,9 @@ importers:
       '@terrastudio/plugin-aws-networking':
         specifier: workspace:*
         version: link:../../plugins/plugin-aws-networking
+      '@terrastudio/plugin-azure-ai':
+        specifier: workspace:*
+        version: link:../../plugins/plugin-azure-ai
       '@terrastudio/plugin-azure-compute':
         specifier: workspace:*
         version: link:../../plugins/plugin-azure-compute
@@ -267,6 +270,25 @@ importers:
         version: 4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)
 
   plugins/plugin-aws-networking:
+    dependencies:
+      '@terrastudio/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@terrastudio/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: ^4.0.18
+        version: 4.0.18(vitest@4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)
+
+  plugins/plugin-azure-ai:
     dependencies:
       '@terrastudio/core':
         specifier: workspace:*

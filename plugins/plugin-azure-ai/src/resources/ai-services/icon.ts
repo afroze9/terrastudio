@@ -1,0 +1,6 @@
+import type { IconDefinition } from '@terrastudio/types';
+
+export const aiServicesIcon: IconDefinition = {
+  type: 'svg',
+  svg: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><defs><linearGradient id="ais-a" x1="9" y1="16" x2="9" y2="2" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#5e6bc5"/><stop offset="1" stop-color="#7b83eb"/></linearGradient></defs><circle cx="9" cy="9" r="3" fill="url(#ais-a)"/><circle cx="9" cy="3" r="1.4" fill="#5e6bc5"/><circle cx="9" cy="15" r="1.4" fill="#5e6bc5"/><circle cx="3.6" cy="5.9" r="1.4" fill="#7b83eb"/><circle cx="14.4" cy="5.9" r="1.4" fill="#7b83eb"/><circle cx="3.6" cy="12.1" r="1.4" fill="#7b83eb"/><circle cx="14.4" cy="12.1" r="1.4" fill="#7b83eb"/><line x1="9" y1="4.4" x2="9" y2="6" stroke="#5e6bc5" stroke-width=".7"/><line x1="9" y1="12" x2="9" y2="13.6" stroke="#5e6bc5" stroke-width=".7"/><line x1="4.7" y1="6.7" x2="6.5" y2="7.8" stroke="#7b83eb" stroke-width=".7"/><line x1="11.5" y1="10.2" x2="13.3" y2="11.3" stroke="#7b83eb" stroke-width=".7"/><line x1="4.7" y1="11.3" x2="6.5" y2="10.2" stroke="#7b83eb" stroke-width=".7"/><line x1="11.5" y1="7.8" x2="13.3" y2="6.7" stroke="#7b83eb" stroke-width=".7"/></svg>`,
+};
