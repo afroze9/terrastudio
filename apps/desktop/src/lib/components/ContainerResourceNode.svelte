@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Handle, NodeResizer, Position, useUpdateNodeInternals } from '@xyflow/svelte';
+  import { tick } from 'svelte';
   import { registry } from '$lib/bootstrap';
   import { diagram } from '$lib/stores/diagram.svelte';
   import { terraform } from '$lib/stores/terraform.svelte';
@@ -160,14 +161,16 @@
     return styles;
   });
 
-  // When handles or their positions change, tell SvelteFlow to re-read handle positions
+  // When handles or their positions change, tell SvelteFlow to re-read handle positions.
+  // Must wait for DOM paint — handles need to be rendered before SvelteFlow measures them.
   $effect(() => {
     staticHandles;
     referenceHandles;
     dynamicOutputHandles;
     connectionPointHandles;
     handlePositions;
-    updateNodeInternals();
+    // Defer until after Svelte flushes DOM updates and the browser paints
+    tick().then(() => requestAnimationFrame(() => updateNodeInternals()));
   });
 
 
