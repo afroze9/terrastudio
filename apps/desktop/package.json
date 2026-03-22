@@ -9,7 +9,7 @@
     "directory": "apps/desktop"
   },
   "private": true,
-  "version": "0.45.0",
+  "version": "0.46.0",
   "type": "module",
   "scripts": {
     "dev": "vite dev",
@@ -34,6 +34,7 @@
     "@terrastudio/plugin-aws-compute": "workspace:*",
     "@terrastudio/plugin-aws-networking": "workspace:*",
     "@terrastudio/plugin-annotations": "workspace:*",
+    "@terrastudio/plugin-azure-ai": "workspace:*",
     "@terrastudio/plugin-azure-compute": "workspace:*",
     "@terrastudio/plugin-azure-database": "workspace:*",
     "@terrastudio/plugin-azure-monitoring": "workspace:*",
