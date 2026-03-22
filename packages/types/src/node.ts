@@ -35,6 +35,21 @@ export interface ConnectionPointConfig {
  */
 export type HandlePositionOverrides = Record<string, ConnectionPointPosition>;
 
+/** Visual formatting overrides for a node on the canvas. Does not affect Terraform generation. */
+export interface NodeFormatting {
+  textAlign?: 'left' | 'center' | 'right';
+  fontSize?: 'small' | 'medium' | 'large';
+  fontBold?: boolean;
+  fontItalic?: boolean;
+  backgroundColor?: string;
+  borderColor?: string;
+  borderStyle?: 'solid' | 'dashed' | 'dotted';
+  borderWidth?: number;
+  opacity?: number;
+  headerColor?: string;
+  borderRadius?: number;
+}
+
 export interface ResourceNodeData {
   [key: string]: unknown;
   typeId: ResourceTypeId;
@@ -64,6 +79,8 @@ export interface ResourceNodeData {
   referenceEdgeOverrides?: ReferenceEdgeOverrides;
   /** Module this resource belongs to (logical grouping, independent of parentId) */
   moduleId?: string;
+  /** Visual formatting overrides (colors, fonts, borders). Does not affect Terraform generation. */
+  formatting?: NodeFormatting;
 }
 
 /**

@@ -12,7 +12,7 @@
   import DirectionalArrows from './DirectionalArrows.svelte';
   import HandleMenu from './HandleMenu.svelte';
   import { connectionUx, type ArrowDirection, type HandleMenuEntry } from '$lib/stores/connection-ux.svelte';
-  import type { ContainerStyle, HandleDefinition, HandlePositionOverrides } from '@terrastudio/types';
+  import type { ContainerStyle, HandleDefinition, HandlePositionOverrides, NodeFormatting } from '@terrastudio/types';
 
   const updateNodeInternals = useUpdateNodeInternals();
 
@@ -199,17 +199,32 @@
   });
 
   let cs = $derived<ContainerStyle>(schema?.containerStyle ?? {});
+  let fmt = $derived((data.formatting as NodeFormatting | undefined) ?? {});
 
-  let borderColor = $derived(cs.borderColor ?? '#2e3347');
-  let borderStyle = $derived(cs.borderStyle ?? 'dashed');
-  let bg = $derived(cs.backgroundColor ?? 'rgba(26, 29, 39, 0.6)');
-  let headerColor = $derived(cs.headerColor ?? '#8b90a0');
-  let radius = $derived(cs.borderRadius ?? 10);
-  let borderWidth = $derived(cs.borderWidth ?? 1.5);
+  let borderColor = $derived(fmt.borderColor ?? cs.borderColor ?? '#2e3347');
+  let borderStyle = $derived(fmt.borderStyle ?? cs.borderStyle ?? 'dashed');
+  let bg = $derived(fmt.backgroundColor ?? cs.backgroundColor ?? 'rgba(26, 29, 39, 0.6)');
+  let headerColor = $derived(fmt.headerColor ?? cs.headerColor ?? '#8b90a0');
+  let radius = $derived(fmt.borderRadius ?? cs.borderRadius ?? 10);
+  let borderWidth = $derived(fmt.borderWidth ?? cs.borderWidth ?? 1.5);
   let hideHeaderBorder = $derived(cs.hideHeaderBorder ?? false);
   let iconSize = $derived(cs.iconSize ?? 18);
   let labelSize = $derived(Math.round((cs.labelSize ?? 12) * (ui.fontScale / 100)));
   let dashArray = $derived(cs.dashArray);
+  let containerOpacity = $derived(fmt.opacity);
+  let containerLabelStyle = $derived.by(() => {
+    const parts: string[] = [];
+    parts.push(`color: ${headerColor}`);
+    parts.push(`font-size: ${labelSize}px`);
+    if (fmt.textAlign) parts.push(`text-align: ${fmt.textAlign}`);
+    if (fmt.fontSize) {
+      const sizeMap = { small: '11px', medium: '13px', large: '16px' };
+      parts.push(`font-size: ${sizeMap[fmt.fontSize]}`);
+    }
+    if (fmt.fontBold) parts.push('font-weight: bold');
+    if (fmt.fontItalic) parts.push('font-style: italic');
+    return parts.join('; ') + ';';
+  });
   let useSvgBorder = $derived(!!dashArray);
 
   // Drag feedback: highlight as valid (green) or invalid (red) drop target
@@ -491,7 +506,7 @@
   class:plan-noop={planAction === 'no-op'}
   role="group"
   aria-label={`${canvasLabel} (${schema?.terraformType ?? data.typeId})`}
-  style="border-color: {isInvalidDropTarget ? '#ef4444' : isValidDropTarget ? '#22c55e' : hasValidationErrors ? '#ef4444' : selected ? '#3b82f6' : borderColor}; border-style: {useSvgBorder && !isInvalidDropTarget && !isValidDropTarget && !hasValidationErrors ? 'none' : isInvalidDropTarget || isValidDropTarget || hasValidationErrors ? 'solid' : borderStyle}; background: {isInvalidDropTarget ? 'rgba(239, 68, 68, 0.06)' : isValidDropTarget ? 'rgba(34, 197, 94, 0.06)' : hasValidationErrors ? 'rgba(239, 68, 68, 0.04)' : bg}; border-radius: {radius}px; border-width: {useSvgBorder && !isInvalidDropTarget && !isValidDropTarget && !hasValidationErrors ? 0 : isInvalidDropTarget || isValidDropTarget ? 2.5 : hasValidationErrors ? 2 : borderWidth}px;"
+  style="border-color: {isInvalidDropTarget ? '#ef4444' : isValidDropTarget ? '#22c55e' : hasValidationErrors ? '#ef4444' : selected ? '#3b82f6' : borderColor}; border-style: {useSvgBorder && !isInvalidDropTarget && !isValidDropTarget && !hasValidationErrors ? 'none' : isInvalidDropTarget || isValidDropTarget || hasValidationErrors ? 'solid' : borderStyle}; background: {isInvalidDropTarget ? 'rgba(239, 68, 68, 0.06)' : isValidDropTarget ? 'rgba(34, 197, 94, 0.06)' : hasValidationErrors ? 'rgba(239, 68, 68, 0.04)' : bg}; border-radius: {radius}px; border-width: {useSvgBorder && !isInvalidDropTarget && !isValidDropTarget && !hasValidationErrors ? 0 : isInvalidDropTarget || isValidDropTarget ? 2.5 : hasValidationErrors ? 2 : borderWidth}px;{containerOpacity != null ? ` opacity: ${containerOpacity};` : ''}"
   onmouseenter={onMouseEnter}
   onmouseleave={onMouseLeave}
   bind:this={nodeEl}
@@ -529,7 +544,7 @@
     {#if icon?.type === 'svg' && icon.svg && iconSize > 0}
       <span class="node-icon" style="width: {iconSize}px; height: {iconSize}px;">{@html icon.svg}</span>
     {/if}
-    <span class="node-label" style="color: {headerColor}; font-size: {labelSize}px;">{canvasLabel}</span>
+    <span class="node-label" style={containerLabelStyle}>{canvasLabel}</span>
     {#if cidrSubtitle}
       <span class="cidr-subtitle">{cidrSubtitle}</span>
     {/if}
