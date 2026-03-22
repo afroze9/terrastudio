@@ -4,6 +4,7 @@ import { Project } from '@terrastudio/project';
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
+import { resolveProjectPath } from '../platform/resolve-project.js';
 
 /** Resolve the terraform/ directory for a project path. */
 function tfDir(projectPath: string): string {
@@ -52,10 +53,11 @@ export function makeTerraformCommand(): Command {
   // ─── init ──────────────────────────────────────────────────────────────────
 
   cmd
-    .command('init <path>')
+    .command('init [path]')
     .description('Run terraform init in the project\'s terraform/ directory')
-    .action(async (projectPath: string) => {
-      const dir = tfDir(projectPath);
+    .action(async (projectPath: string | undefined) => {
+      const resolved = resolveProjectPath(projectPath);
+      const dir = tfDir(resolved);
       if (!existsSync(dir)) {
         console.error(`terraform/ directory not found at: ${dir}`);
         console.error('Run `tstudio hcl generate <path>` first.');
@@ -70,10 +72,11 @@ export function makeTerraformCommand(): Command {
   // ─── validate ──────────────────────────────────────────────────────────────
 
   cmd
-    .command('validate <path>')
+    .command('validate [path]')
     .description('Run terraform validate in the project\'s terraform/ directory')
-    .action(async (projectPath: string) => {
-      const dir = tfDir(projectPath);
+    .action(async (projectPath: string | undefined) => {
+      const resolved = resolveProjectPath(projectPath);
+      const dir = tfDir(resolved);
       await runTerraform(dir, ['validate']).catch((err) => {
         console.error(err.message);
         process.exit(1);
@@ -83,12 +86,13 @@ export function makeTerraformCommand(): Command {
   // ─── plan ──────────────────────────────────────────────────────────────────
 
   cmd
-    .command('plan <path>')
+    .command('plan [path]')
     .description('Run terraform plan')
     .option('--out <planFile>', 'Save plan to file (relative to terraform/ dir)')
-    .action(async (projectPath: string, options: { out?: string }) => {
-      await requireTerraformFiles(projectPath);
-      const dir = tfDir(projectPath);
+    .action(async (projectPath: string | undefined, options: { out?: string }) => {
+      const resolved = resolveProjectPath(projectPath);
+      await requireTerraformFiles(resolved);
+      const dir = tfDir(resolved);
       const args = ['plan'];
       if (options.out) args.push('-out', options.out);
       // Exit code 2 = changes present (not an error)
@@ -101,12 +105,13 @@ export function makeTerraformCommand(): Command {
   // ─── apply ─────────────────────────────────────────────────────────────────
 
   cmd
-    .command('apply <path>')
+    .command('apply [path]')
     .description('Run terraform apply (auto-approves)')
     .option('--plan <planFile>', 'Apply a saved plan file instead of planning inline')
-    .action(async (projectPath: string, options: { plan?: string }) => {
-      await requireTerraformFiles(projectPath);
-      const dir = tfDir(projectPath);
+    .action(async (projectPath: string | undefined, options: { plan?: string }) => {
+      const resolved = resolveProjectPath(projectPath);
+      await requireTerraformFiles(resolved);
+      const dir = tfDir(resolved);
       const args = options.plan
         ? ['apply', '-auto-approve', options.plan]
         : ['apply', '-auto-approve'];
@@ -119,10 +124,11 @@ export function makeTerraformCommand(): Command {
   // ─── destroy ───────────────────────────────────────────────────────────────
 
   cmd
-    .command('destroy <path>')
+    .command('destroy [path]')
     .description('Run terraform destroy (auto-approves)')
-    .action(async (projectPath: string) => {
-      const dir = tfDir(projectPath);
+    .action(async (projectPath: string | undefined) => {
+      const resolved = resolveProjectPath(projectPath);
+      const dir = tfDir(resolved);
       await runTerraform(dir, ['destroy', '-auto-approve']).catch((err) => {
         console.error(err.message);
         process.exit(1);
@@ -132,12 +138,13 @@ export function makeTerraformCommand(): Command {
   // ─── status ────────────────────────────────────────────────────────────────
 
   cmd
-    .command('status <path>')
+    .command('status [path]')
     .description('Show deployment status by reading terraform state (terraform show -json)')
-    .action(async (projectPath: string) => {
-      const stored = await storage.loadProject(projectPath);
+    .action(async (projectPath: string | undefined) => {
+      const resolved = resolveProjectPath(projectPath);
+      const stored = await storage.loadProject(resolved);
       const project = Project.fromLoaded(toLoadedProject(stored));
-      const dir = tfDir(projectPath);
+      const dir = tfDir(resolved);
 
       // Capture JSON output from terraform show
       const output = await new Promise<string>((resolve, reject) => {

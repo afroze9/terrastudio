@@ -3,6 +3,7 @@ import { storage, loadValidator, toLoadedProject } from '../platform/node-io.js'
 import { Project } from '@terrastudio/project';
 import { generateNodeId, generateUniqueTerraformName } from '@terrastudio/core';
 import type { ProjectNode, ProjectEdge, ResourceTypeId } from '@terrastudio/types';
+import { resolveProjectPath } from '../platform/resolve-project.js';
 
 function printWarnings(warnings: string[]): void {
   for (const w of warnings) {
@@ -14,11 +15,12 @@ export function makeResourceCommand(): Command {
   const cmd = new Command('resource').description('Manage diagram resources');
 
   cmd
-    .command('list <path>')
+    .command('list [path]')
     .description('List all resources in the project diagram')
     .option('-t, --type <typeId>', 'Filter by resource type ID')
-    .action(async (projectPath: string, options: { type?: string }) => {
-      const stored = await storage.loadProject(projectPath);
+    .action(async (projectPath: string | undefined, options: { type?: string }) => {
+      const resolved = resolveProjectPath(projectPath);
+      const stored = await storage.loadProject(resolved);
       const project = Project.fromLoaded(toLoadedProject(stored));
 
       let nodes = project.nodes.filter(
@@ -47,11 +49,12 @@ export function makeResourceCommand(): Command {
     });
 
   cmd
-    .command('add <path> <typeId> <terraformName>')
+    .command('add [path] <typeId> <terraformName>')
     .description('Add a new resource to the diagram')
     .option('-p, --parent <parentId>', 'Parent node ID (for contained resources)')
-    .action(async (projectPath: string, typeId: string, terraformName: string, options: { parent?: string }) => {
-      const stored = await storage.loadProject(projectPath);
+    .action(async (projectPath: string | undefined, typeId: string, terraformName: string, options: { parent?: string }) => {
+      const resolved = resolveProjectPath(projectPath);
+      const stored = await storage.loadProject(resolved);
       const project = Project.fromLoaded(toLoadedProject(stored));
 
       if (options.parent && !project.getNode(options.parent)) {
@@ -81,20 +84,20 @@ export function makeResourceCommand(): Command {
       };
 
       const { warnings } = project.addNode(node);
-      await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
+      await storage.saveDiagram(resolved, project.toDiagramSnapshot());
       console.log(`Added ${typeId} "${terraformName}" (${id})`);
       printWarnings(warnings);
     });
 
   cmd
-    .command('update <path> <nodeId>')
+    .command('update [path] <nodeId>')
     .description('Update a resource property, label, or terraform name')
     .option('-k, --key <key>', 'Property key to update (in data.properties)')
     .option('-v, --value <value>', 'New property value')
     .option('--label <label>', 'Update the display label')
     .option('--terraform-name <name>', 'Update the Terraform resource name')
     .action(async (
-      projectPath: string,
+      projectPath: string | undefined,
       nodeId: string,
       options: { key?: string; value?: string; label?: string; terraformName?: string },
     ) => {
@@ -111,7 +114,8 @@ export function makeResourceCommand(): Command {
         process.exit(1);
       }
 
-      const stored = await storage.loadProject(projectPath);
+      const resolved = resolveProjectPath(projectPath);
+      const stored = await storage.loadProject(resolved);
       const project = Project.fromLoaded(toLoadedProject(stored));
 
       const node = project.getNode(nodeId);
@@ -128,7 +132,7 @@ export function makeResourceCommand(): Command {
       if (options.terraformName !== undefined) dataUpdate.terraformName = options.terraformName;
 
       project.updateNode(nodeId, { data: dataUpdate });
-      await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
+      await storage.saveDiagram(resolved, project.toDiagramSnapshot());
 
       const changes: string[] = [];
       if (options.key) changes.push(`${options.key} = ${options.value}`);
@@ -138,16 +142,17 @@ export function makeResourceCommand(): Command {
     });
 
   cmd
-    .command('rename <path> <nodeId> <terraformName>')
+    .command('rename [path] <nodeId> <terraformName>')
     .description('Rename a resource (updates both label and terraform name)')
     .option('--label <label>', 'Override the display label (defaults to terraformName)')
     .action(async (
-      projectPath: string,
+      projectPath: string | undefined,
       nodeId: string,
       terraformName: string,
       options: { label?: string },
     ) => {
-      const stored = await storage.loadProject(projectPath);
+      const resolved = resolveProjectPath(projectPath);
+      const stored = await storage.loadProject(resolved);
       const project = Project.fromLoaded(toLoadedProject(stored));
 
       const node = project.getNode(nodeId);
@@ -161,20 +166,21 @@ export function makeResourceCommand(): Command {
         data: { ...node.data, terraformName, label },
       });
 
-      await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
+      await storage.saveDiagram(resolved, project.toDiagramSnapshot());
       console.log(`Renamed ${nodeId}: "${node.data.terraformName}" → "${terraformName}"`);
     });
 
   cmd
-    .command('duplicate <path> <nodeId>')
+    .command('duplicate [path] <nodeId>')
     .description('Duplicate a resource (new ID, unique terraform name, offset position)')
     .option('--terraform-name <name>', 'Override the terraform name of the duplicate')
     .action(async (
-      projectPath: string,
+      projectPath: string | undefined,
       nodeId: string,
       options: { terraformName?: string },
     ) => {
-      const stored = await storage.loadProject(projectPath);
+      const resolved = resolveProjectPath(projectPath);
+      const stored = await storage.loadProject(resolved);
       const project = Project.fromLoaded(toLoadedProject(stored));
 
       const node = project.getNode(nodeId);
@@ -207,16 +213,17 @@ export function makeResourceCommand(): Command {
       };
 
       const { warnings } = project.addNode(duplicate);
-      await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
+      await storage.saveDiagram(resolved, project.toDiagramSnapshot());
       console.log(`Duplicated ${nodeId} → ${newId} ("${newTerraformName}")`);
       printWarnings(warnings);
     });
 
   cmd
-    .command('remove <path> <nodeId>')
+    .command('remove [path] <nodeId>')
     .description('Remove a resource from the diagram')
-    .action(async (projectPath: string, nodeId: string) => {
-      const stored = await storage.loadProject(projectPath);
+    .action(async (projectPath: string | undefined, nodeId: string) => {
+      const resolved = resolveProjectPath(projectPath);
+      const stored = await storage.loadProject(resolved);
       const project = Project.fromLoaded(toLoadedProject(stored));
 
       const node = project.getNode(nodeId);
@@ -233,24 +240,25 @@ export function makeResourceCommand(): Command {
 
       const name = node.data.terraformName ?? node.data.label ?? nodeId;
       project.removeNode(nodeId);
-      await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
+      await storage.saveDiagram(resolved, project.toDiagramSnapshot());
       console.log(`Removed resource: ${name} (${nodeId})`);
     });
 
   cmd
-    .command('connect <path> <sourceId> <targetId>')
+    .command('connect [path] <sourceId> <targetId>')
     .description('Add an edge between two nodes')
     .option('--source-handle <handle>', 'Source handle ID')
     .option('--target-handle <handle>', 'Target handle ID')
     .option('--label <label>', 'Edge label')
     .action(
       async (
-        projectPath: string,
+        projectPath: string | undefined,
         sourceId: string,
         targetId: string,
         options: { sourceHandle?: string; targetHandle?: string; label?: string },
       ) => {
-        const stored = await storage.loadProject(projectPath);
+        const resolved = resolveProjectPath(projectPath);
+        const stored = await storage.loadProject(resolved);
         const project = Project.fromLoaded(toLoadedProject(stored));
 
         if (!project.getNode(sourceId)) {
@@ -282,17 +290,18 @@ export function makeResourceCommand(): Command {
         };
 
         const { warnings } = project.addEdge(edge);
-        await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
+        await storage.saveDiagram(resolved, project.toDiagramSnapshot());
         console.log(`Connected ${sourceId} -> ${targetId} (${edgeId})`);
         printWarnings(warnings);
       },
     );
 
   cmd
-    .command('disconnect <path> <edgeId>')
+    .command('disconnect [path] <edgeId>')
     .description('Remove an edge by ID')
-    .action(async (projectPath: string, edgeId: string) => {
-      const stored = await storage.loadProject(projectPath);
+    .action(async (projectPath: string | undefined, edgeId: string) => {
+      const resolved = resolveProjectPath(projectPath);
+      const stored = await storage.loadProject(resolved);
       const project = Project.fromLoaded(toLoadedProject(stored));
 
       const edge = project.edges.find((e) => e.id === edgeId);
@@ -302,23 +311,24 @@ export function makeResourceCommand(): Command {
       }
 
       project.removeEdge(edgeId);
-      await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
+      await storage.saveDiagram(resolved, project.toDiagramSnapshot());
       console.log(`Removed edge: ${edgeId}`);
     });
 
   cmd
-    .command('move <path> <nodeId>')
+    .command('move [path] <nodeId>')
     .description('Move a node to a new position')
     .option('--x <x>', 'X coordinate')
     .option('--y <y>', 'Y coordinate')
     .option('--parent <parentId>', 'New parent node ID (use empty string to unparent)')
     .action(
       async (
-        projectPath: string,
+        projectPath: string | undefined,
         nodeId: string,
         options: { x?: string; y?: string; parent?: string },
       ) => {
-        const stored = await storage.loadProject(projectPath);
+        const resolved = resolveProjectPath(projectPath);
+        const stored = await storage.loadProject(resolved);
         const project = Project.fromLoaded(toLoadedProject(stored));
 
         const node = project.getNode(nodeId);
@@ -345,24 +355,25 @@ export function makeResourceCommand(): Command {
         project.validator = await loadValidator(providers);
 
         const { warnings } = project.moveNode(nodeId, { x, y }, parentArg);
-        await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
+        await storage.saveDiagram(resolved, project.toDiagramSnapshot());
         console.log(`Moved node ${nodeId} to (${x}, ${y})`);
         printWarnings(warnings);
       },
     );
 
   cmd
-    .command('resize <path> <nodeId>')
+    .command('resize [path] <nodeId>')
     .description('Resize a node')
     .requiredOption('--width <width>', 'New width')
     .requiredOption('--height <height>', 'New height')
     .action(
       async (
-        projectPath: string,
+        projectPath: string | undefined,
         nodeId: string,
         options: { width: string; height: string },
       ) => {
-        const stored = await storage.loadProject(projectPath);
+        const resolved = resolveProjectPath(projectPath);
+        const stored = await storage.loadProject(resolved);
         const project = Project.fromLoaded(toLoadedProject(stored));
 
         if (!project.getNode(nodeId)) {
@@ -374,22 +385,23 @@ export function makeResourceCommand(): Command {
         const height = Number(options.height);
 
         project.resizeNode(nodeId, width, height);
-        await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
+        await storage.saveDiagram(resolved, project.toDiagramSnapshot());
         console.log(`Resized node ${nodeId} to ${width}x${height}`);
       },
     );
 
   cmd
-    .command('outputs <path> <nodeId>')
+    .command('outputs [path] <nodeId>')
     .description('Enable specific output keys on a node')
     .option('--enable <keys...>', 'Output keys to enable (space-separated)')
     .action(
       async (
-        projectPath: string,
+        projectPath: string | undefined,
         nodeId: string,
         options: { enable?: string[] },
       ) => {
-        const stored = await storage.loadProject(projectPath);
+        const resolved = resolveProjectPath(projectPath);
+        const stored = await storage.loadProject(resolved);
         const project = Project.fromLoaded(toLoadedProject(stored));
 
         const node = project.getNode(nodeId);
@@ -406,7 +418,7 @@ export function makeResourceCommand(): Command {
           },
         });
 
-        await storage.saveDiagram(projectPath, project.toDiagramSnapshot());
+        await storage.saveDiagram(resolved, project.toDiagramSnapshot());
         console.log(
           `Set enabled outputs for ${nodeId}: [${enabledOutputs.join(', ')}]`,
         );
@@ -414,11 +426,12 @@ export function makeResourceCommand(): Command {
     );
 
   cmd
-    .command('edges <path>')
+    .command('edges [path]')
     .description('List edges in the diagram')
     .option('--node <nodeId>', 'Filter edges connected to a specific node')
-    .action(async (projectPath: string, options: { node?: string }) => {
-      const stored = await storage.loadProject(projectPath);
+    .action(async (projectPath: string | undefined, options: { node?: string }) => {
+      const resolved = resolveProjectPath(projectPath);
+      const stored = await storage.loadProject(resolved);
       const project = Project.fromLoaded(toLoadedProject(stored));
 
       let edges = project.edges;

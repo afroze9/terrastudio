@@ -5,22 +5,24 @@ import { HclPipeline, EdgeRuleValidator, validateDiagram, validateNetworkTopolog
 import { convertToResourceInstances, extractOutputBindings } from '@terrastudio/project';
 import type { ProviderId } from '@terrastudio/types';
 import path from 'node:path';
+import { resolveProjectPath } from '../platform/resolve-project.js';
 
 export function makeHclCommand(): Command {
   const cmd = new Command('hcl').description('HCL generation and inspection');
 
   cmd
-    .command('generate <path>')
+    .command('generate [path]')
     .description('Generate Terraform HCL from the diagram and write to terraform/')
     .option('--dry-run', 'Print files to stdout instead of writing to disk')
     .option('--file <filename>', 'With --dry-run: show only a specific file (e.g. main.tf)')
     .option('--no-validate', 'Skip diagram and network topology validation')
     .action(
       async (
-        projectPath: string,
+        projectPath: string | undefined,
         options: { dryRun?: boolean; file?: string; validate: boolean },
       ) => {
-        const stored = await storage.loadProject(projectPath);
+        const resolved = resolveProjectPath(projectPath);
+        const stored = await storage.loadProject(resolved);
         const project = Project.fromLoaded(toLoadedProject(stored));
 
         const providers = (project.projectConfig.activeProviders ?? ['azurerm']) as ProviderId[];
@@ -128,8 +130,8 @@ export function makeHclCommand(): Command {
             }
           }
         } else {
-          await storage.writeTerraformFiles(projectPath, fileMap);
-          const tfDir = path.join(projectPath, 'terraform');
+          await storage.writeTerraformFiles(resolved, fileMap);
+          const tfDir = path.join(resolved, 'terraform');
           console.log(`Generated ${Object.keys(fileMap).length} file(s) to: ${tfDir}`);
           for (const filename of Object.keys(fileMap).sort()) {
             console.log(`  ${filename}`);
@@ -146,18 +148,19 @@ export function makeHclCommand(): Command {
     );
 
   cmd
-    .command('show <path>')
+    .command('show [path]')
     .description('Print existing Terraform files from the terraform/ directory')
     .option('--file <filename>', 'Show only a specific file (e.g. main.tf)')
     .action(
       async (
-        projectPath: string,
+        projectPath: string | undefined,
         options: { file?: string },
       ) => {
-        const stored = await storage.loadProject(projectPath);
+        const resolved = resolveProjectPath(projectPath);
+        const stored = await storage.loadProject(resolved);
         Project.fromLoaded(toLoadedProject(stored)); // validate project loads
 
-        const files = await storage.readTerraformFiles(projectPath);
+        const files = await storage.readTerraformFiles(resolved);
 
         if (Object.keys(files).length === 0) {
           console.log('No Terraform files found in terraform/ directory.');
