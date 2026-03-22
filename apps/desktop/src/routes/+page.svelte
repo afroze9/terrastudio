@@ -8,7 +8,7 @@
 	import ActivityBar from '$lib/components/ActivityBar.svelte';
 	import SidePanel from '$lib/components/SidePanel.svelte';
 	import EditorArea from '$lib/components/EditorArea.svelte';
-	import PropertiesPanel from '$lib/components/PropertiesPanel.svelte';
+	import RightPanel from '$lib/components/RightPanel.svelte';
 	import StatusBar from '$lib/components/StatusBar.svelte';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import UnsavedChangesDialog from '$lib/components/UnsavedChangesDialog.svelte';
@@ -192,6 +192,11 @@
 				ui.setActiveView('search');
 				return;
 			}
+			if (e.altKey && e.key === 'f' && !inInput) {
+				e.preventDefault();
+				ui.setActiveRightView('formatting');
+				return;
+			}
 			if (e.ctrlKey && e.key === ',' && !inInput) {
 				e.preventDefault();
 				ui.setActiveView('app-settings');
@@ -229,7 +234,7 @@
 			{/if}
 			<EditorArea />
 			{#if ui.showPropertiesPanel}
-				<PropertiesPanel />
+				<RightPanel />
 			{/if}
 		</div>
 		<StatusBar />
