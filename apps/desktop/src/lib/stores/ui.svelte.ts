@@ -35,6 +35,7 @@ const DEFAULT_EDGE_VISIBILITY: EdgeCategoryVisibility = {
 };
 
 export type SidebarView = 'explorer' | 'terraform' | 'settings' | 'cost' | 'app-settings' | 'search';
+export type RightPanelView = 'properties' | 'formatting';
 export type EdgeStyle = 'default' | 'smoothstep' | 'step' | 'straight';
 export type Theme = 'dark' | 'light';
 export type BottomPanelTab = 'terminal' | 'problems' | 'connection-wizard' | 'plan';
@@ -71,6 +72,7 @@ class UiStore {
 
   // --- Properties Panel (right) ---
   showPropertiesPanel = $state(true);
+  activeRightView = $state<RightPanelView>('properties');
 
   /** When set, PropertiesPanel scrolls to and highlights this property field. Cleared after one render. */
   highlightedPropertyKey = $state<string | null>(null);
@@ -178,6 +180,16 @@ class UiStore {
       categoryIds.forEach((id) => next.add(id));
     }
     this.collapsedCategories = next;
+  }
+
+  /** Toggle right panel view; collapse if already showing the same view */
+  setActiveRightView(view: RightPanelView) {
+    if (this.activeRightView === view && this.showPropertiesPanel) {
+      this.showPropertiesPanel = false;
+    } else {
+      this.activeRightView = view;
+      this.showPropertiesPanel = true;
+    }
   }
 
   /** Toggle sidebar view; collapse if already showing the same view */
