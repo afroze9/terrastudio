@@ -11,6 +11,7 @@
   import KeyVaultAccessControlSection from './KeyVaultAccessControlSection.svelte';
   import CollapsiblePanelSection from './CollapsiblePanelSection.svelte';
   import EdgeStyleEditor from './EdgeStyleEditor.svelte';
+  import NodeFormatPanel from './NodeFormatPanel.svelte';
   import type { ResourceTypeId, PropertyVariableMode, AccessModel, AccessGrant, EdgeStyleSettings, EdgeCategoryId, HandleDefinition, PropertySchema, OutputDefinition, ModuleInstance, TerraformVariable } from '@terrastudio/types';
 
   let schema = $derived(
@@ -355,6 +356,8 @@
     if (connectedBindings.length > 0) {
       ids.push('props-connected-secrets');
     }
+    // Visual formatting
+    ids.push('props-formatting');
     return ids;
   });
 
@@ -710,6 +713,10 @@
           {/each}
         </CollapsiblePanelSection>
       {/if}
+
+      <CollapsiblePanelSection id="props-formatting" label="Visual Style">
+        <NodeFormatPanel nodeId={diagram.selectedNode.id} />
+      </CollapsiblePanelSection>
 
     {:else if diagram.selectedEdge}
       <div class="edge-endpoints">

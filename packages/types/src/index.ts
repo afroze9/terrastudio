@@ -35,6 +35,7 @@ export type {
   ConnectionPointPosition,
   ConnectionPointConfig,
   HandlePositionOverrides,
+  NodeFormatting,
   ResourceNodeData,
   ProjectNode,
   ProjectEdge,

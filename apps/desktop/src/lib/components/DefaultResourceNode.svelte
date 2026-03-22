@@ -12,7 +12,7 @@
   import DirectionalArrows from './DirectionalArrows.svelte';
   import HandleMenu from './HandleMenu.svelte';
   import { connectionUx, type ArrowDirection, type HandleMenuEntry } from '$lib/stores/connection-ux.svelte';
-  import type { HandleDefinition, HandlePositionOverrides } from '@terrastudio/types';
+  import type { HandleDefinition, HandlePositionOverrides, NodeFormatting } from '@terrastudio/types';
 
   const updateNodeInternals = useUpdateNodeInternals();
 
@@ -23,6 +23,30 @@
 
   /** Canvas label: displayLabel overrides everything; otherwise use label (kept in sync with naming convention). */
   let canvasLabel = $derived((data.displayLabel || data.label || schema?.displayName || 'Resource') as string);
+
+  // Visual formatting overrides
+  let fmt = $derived((data.formatting as NodeFormatting | undefined) ?? {});
+  let nodeStyle = $derived.by(() => {
+    const parts: string[] = [];
+    if (fmt.backgroundColor) parts.push(`background-color: ${fmt.backgroundColor}`);
+    if (fmt.borderColor) parts.push(`border-color: ${fmt.borderColor}`);
+    if (fmt.borderStyle) parts.push(`border-style: ${fmt.borderStyle}`);
+    if (fmt.borderWidth != null) parts.push(`border-width: ${fmt.borderWidth}px`);
+    if (fmt.opacity != null) parts.push(`opacity: ${fmt.opacity}`);
+    if (fmt.borderRadius != null) parts.push(`border-radius: ${fmt.borderRadius}px`);
+    return parts.length > 0 ? parts.join('; ') + ';' : undefined;
+  });
+  let labelStyle = $derived.by(() => {
+    const parts: string[] = [];
+    if (fmt.textAlign) parts.push(`text-align: ${fmt.textAlign}`);
+    if (fmt.fontSize) {
+      const sizeMap = { small: '11px', medium: '13px', large: '16px' };
+      parts.push(`font-size: ${sizeMap[fmt.fontSize]}`);
+    }
+    if (fmt.fontBold) parts.push('font-weight: bold');
+    if (fmt.fontItalic) parts.push('font-style: italic');
+    return parts.length > 0 ? parts.join('; ') + ';' : undefined;
+  });
 
   // Get error message for this resource if any
   let errorMessage = $derived.by(() => {
@@ -341,6 +365,7 @@
   class:plan-noop={planAction === 'no-op'}
   role="group"
   aria-label={`${canvasLabel} (${schema?.terraformType ?? data.typeId})`}
+  style={nodeStyle}
   onmouseenter={onMouseEnter}
   onmouseleave={onMouseLeave}
   onclick={planAction ? () => { plan.diffNodeId = id; } : undefined}
@@ -363,7 +388,7 @@
         <span class="compact-badge compact-badge-pep" title="Private Endpoint ({pepSubresources})">{@html pepIcon.svg}</span>
       {/if}
     </div>
-    <span class="compact-label">{canvasLabel}</span>
+    <span class="compact-label" style={labelStyle}>{canvasLabel}</span>
   {:else}
     <!-- Detailed card view -->
     <div class="node-header">
@@ -371,7 +396,7 @@
         <span class="node-icon">{@html icon.svg}</span>
       {/if}
       <div class="node-info">
-        <span class="node-label">{canvasLabel}</span>
+        <span class="node-label" style={labelStyle}>{canvasLabel}</span>
         <span class="node-type">{schema?.terraformType ?? data.typeId}</span>
       </div>
       {#if hasNsg && nsgIcon?.type === 'svg' && nsgIcon.svg}
