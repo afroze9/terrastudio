@@ -13,6 +13,12 @@ export const kubernetesClusterNodePoolHclGenerator: HclGenerator = {
     const maxCount = props['max_count'] as number | undefined;
     const osType = props['os_type'] as string | undefined;
     const mode = props['mode'] as string | undefined;
+    const nodeLabels = props['node_labels'] as Record<string, string> | undefined;
+    const nodeTaints = props['node_taints'] as string[] | undefined;
+    const zones = props['zones'] as string[] | undefined;
+    const priority = props['priority'] as string | undefined;
+    const evictionPolicy = props['eviction_policy'] as string | undefined;
+    const spotMaxPrice = props['spot_max_price'] as number | undefined;
 
     const dependsOn: string[] = [];
 
@@ -55,6 +61,36 @@ export const kubernetesClusterNodePoolHclGenerator: HclGenerator = {
 
     if (mode && mode !== 'User') {
       lines.push(`  mode                  = ${context.getPropertyExpression(resource, 'mode', mode)}`);
+    }
+
+    // Node labels
+    if (nodeLabels && Object.keys(nodeLabels).length > 0) {
+      lines.push(`  node_labels = {`);
+      for (const [k, v] of Object.entries(nodeLabels)) {
+        lines.push(`    "${k}" = "${v}"`);
+      }
+      lines.push(`  }`);
+    }
+
+    // Node taints
+    if (nodeTaints && nodeTaints.length > 0) {
+      lines.push(`  node_taints           = ${context.getPropertyExpression(resource, 'node_taints', nodeTaints)}`);
+    }
+
+    // Availability zones
+    if (zones && zones.length > 0) {
+      lines.push(`  zones                 = ${context.getPropertyExpression(resource, 'zones', zones)}`);
+    }
+
+    // Spot configuration
+    if (priority === 'Spot') {
+      lines.push(`  priority              = ${context.getPropertyExpression(resource, 'priority', priority)}`);
+      if (evictionPolicy) {
+        lines.push(`  eviction_policy       = ${context.getPropertyExpression(resource, 'eviction_policy', evictionPolicy)}`);
+      }
+      if (spotMaxPrice !== undefined) {
+        lines.push(`  spot_max_price        = ${context.getPropertyExpression(resource, 'spot_max_price', spotMaxPrice)}`);
+      }
     }
 
     // Subnet reference for Azure CNI

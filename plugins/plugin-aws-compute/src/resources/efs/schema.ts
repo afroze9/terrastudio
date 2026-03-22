@@ -48,13 +48,22 @@ export const efsSchema: ResourceSchema = {
       order: 3,
     },
     {
+      key: 'provisioned_throughput_in_mibps',
+      label: 'Provisioned Throughput (MiB/s)',
+      type: 'number',
+      required: false,
+      group: 'Performance',
+      order: 4,
+      visibleWhen: { field: 'throughput_mode', operator: 'eq', value: 'provisioned' },
+    },
+    {
       key: 'encrypted',
       label: 'Encrypted',
       type: 'boolean',
       required: false,
       defaultValue: true,
       group: 'Security',
-      order: 4,
+      order: 5,
     },
     {
       key: 'lifecycle_policy',

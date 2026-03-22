@@ -113,6 +113,15 @@ export const firewallSchema: ResourceSchema = {
       description: 'ID of an existing Azure Firewall Policy to associate',
     },
     {
+      key: 'virtual_hub_id',
+      label: 'Virtual Hub ID',
+      type: 'string',
+      required: false,
+      group: 'Deployment',
+      order: 45,
+      description: 'ID of the Virtual Hub for Secure Hub deployment',
+    },
+    {
       key: 'subnet_id',
       label: 'Subnet',
       type: 'reference',
@@ -138,7 +147,7 @@ export const firewallSchema: ResourceSchema = {
 
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },
-    { key: 'private_ip_address', label: 'Private IP', terraformAttribute: 'ip_configuration.0.private_ip_address' },
+    { key: 'private_ip_address', label: 'Private IP', terraformAttribute: 'ip_configuration[0].private_ip_address' },
     { key: 'public_ip_address', label: 'Public IP', terraformAttribute: 'ip_configuration.0.public_ip_address_id' },
   ],
 

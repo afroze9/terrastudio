@@ -7,6 +7,7 @@ export const containerAppEnvironmentHclGenerator: HclGenerator = {
     const name = props['name'] as string;
     const zoneRedundant = props['zone_redundancy_enabled'] as boolean | undefined;
     const internalLb = props['internal_load_balancer_enabled'] as boolean | undefined;
+    const infrastructureSubnetId = props['infrastructure_subnet_id'] as string | undefined;
 
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
@@ -31,6 +32,10 @@ export const containerAppEnvironmentHclGenerator: HclGenerator = {
 
     if (internalLb === true || resource.variableOverrides?.['internal_load_balancer_enabled'] === 'variable') {
       lines.push(`  internal_load_balancer_enabled = ${context.getPropertyExpression(resource, 'internal_load_balancer_enabled', internalLb ?? false)}`);
+    }
+
+    if (infrastructureSubnetId || resource.variableOverrides?.['infrastructure_subnet_id'] === 'variable') {
+      lines.push(`  infrastructure_subnet_id = ${context.getPropertyExpression(resource, 'infrastructure_subnet_id', infrastructureSubnetId ?? '')}`);
     }
 
     lines.push('', '  tags = local.common_tags', '}');

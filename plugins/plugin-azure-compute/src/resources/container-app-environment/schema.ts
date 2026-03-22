@@ -31,6 +31,7 @@ export const containerAppEnvironmentSchema: ResourceSchema = {
     { key: 'log_analytics_workspace_id', label: 'Log Analytics Workspace', type: 'reference', required: false, group: 'Monitoring', order: 2, referenceTargetTypes: ['azurerm/monitoring/log_analytics_workspace'], description: 'Log Analytics workspace for container app logs' },
     { key: 'zone_redundancy_enabled', label: 'Zone Redundancy', type: 'boolean', required: false, group: 'Availability', order: 3, defaultValue: false, description: 'Enable zone redundancy for high availability' },
     { key: 'internal_load_balancer_enabled', label: 'Internal Load Balancer', type: 'boolean', required: false, group: 'Networking', order: 4, defaultValue: false, description: 'Use internal load balancer (no public ingress)' },
+    { key: 'infrastructure_subnet_id', label: 'Infrastructure Subnet ID', type: 'string', required: false, group: 'Networking', order: 5, description: 'Subnet ID for VNet integration' },
   ],
   handles: [],
   outputs: [

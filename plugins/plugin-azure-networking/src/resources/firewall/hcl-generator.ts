@@ -13,6 +13,7 @@ export const firewallHclGenerator: HclGenerator = {
     const dnsServers = props['dns_servers'] as string[] | undefined;
     const zones = props['zones'] as string[] | undefined;
     const firewallPolicyId = props['firewall_policy_id'] as string | undefined;
+    const virtualHubId = props['virtual_hub_id'] as string | undefined;
 
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
@@ -78,8 +79,11 @@ export const firewallHclGenerator: HclGenerator = {
 
     // Availability zones
     if (zones && zones.length > 0) {
-      const zonesStr = `[${zones.map((z) => `"${z}"`).join(', ')}]`;
-      lines.push(`  zones              = ${zonesStr}`);
+      const zonesExpr = context.getPropertyExpression(resource, 'zones', zones);
+      lines.push(`  zones              = ${zonesExpr}`);
+    } else if (resource.variableOverrides?.['zones'] === 'variable') {
+      const zonesExpr = context.getPropertyExpression(resource, 'zones', []);
+      lines.push(`  zones              = ${zonesExpr}`);
     }
 
     // Firewall policy
@@ -89,6 +93,21 @@ export const firewallHclGenerator: HclGenerator = {
     } else if (resource.variableOverrides?.['firewall_policy_id'] === 'variable') {
       const policyExpr = context.getPropertyExpression(resource, 'firewall_policy_id', '');
       lines.push(`  firewall_policy_id = ${policyExpr}`);
+    }
+
+    // Virtual hub
+    if (virtualHubId) {
+      const virtualHubExpr = context.getPropertyExpression(resource, 'virtual_hub_id', virtualHubId);
+      lines.push('');
+      lines.push('  virtual_hub {');
+      lines.push(`    virtual_hub_id = ${virtualHubExpr}`);
+      lines.push('  }');
+    } else if (resource.variableOverrides?.['virtual_hub_id'] === 'variable') {
+      const virtualHubExpr = context.getPropertyExpression(resource, 'virtual_hub_id', '');
+      lines.push('');
+      lines.push('  virtual_hub {');
+      lines.push(`    virtual_hub_id = ${virtualHubExpr}`);
+      lines.push('  }');
     }
 
     // IP configuration block

@@ -27,8 +27,10 @@ export const snsTopicHclGenerator: HclGenerator = {
       lines.push(`  display_name = ${displayNameExpr}`);
     }
 
-    if (kmsKeyId) {
-      lines.push(`  kms_master_key_id = "${kmsKeyId}"`);
+    const kmsIsVar = resource.variableOverrides?.['kms_master_key_id'] === 'variable';
+    if (kmsIsVar || kmsKeyId) {
+      const kmsExpr = context.getPropertyExpression(resource, 'kms_master_key_id', kmsKeyId ?? '');
+      lines.push(`  kms_master_key_id = ${kmsExpr}`);
     }
 
     lines.push('');

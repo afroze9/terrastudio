@@ -17,6 +17,8 @@ export const applicationGatewayHclGenerator: HclGenerator = {
     const backendProtocol = (props['backend_protocol'] as string) ?? 'Http';
     const cookieAffinity = (props['cookie_based_affinity'] as string) ?? 'Disabled';
     const requestTimeout = props['request_timeout'] !== undefined ? Number(props['request_timeout']) : 60;
+    const http2Enabled = props['http2_enabled'] as boolean | undefined;
+    const zones = props['zones'] as string[] | undefined;
     const wafEnabled = props['waf_enabled'] as boolean | undefined;
     const wafMode = (props['waf_mode'] as string) ?? 'Detection';
     const wafRuleSetVersion = (props['waf_rule_set_version'] as string) ?? '3.2';
@@ -60,6 +62,16 @@ export const applicationGatewayHclGenerator: HclGenerator = {
       `  location            = ${locExpr}`,
       `  resource_group_name = ${rgExpr}`,
     ];
+
+    // HTTP/2
+    if (http2Enabled === true || resource.variableOverrides?.['http2_enabled'] === 'variable') {
+      lines.push(`  enable_http2        = ${context.getPropertyExpression(resource, 'http2_enabled', http2Enabled ?? false)}`);
+    }
+
+    // Availability Zones
+    if ((zones && zones.length > 0) || resource.variableOverrides?.['zones'] === 'variable') {
+      lines.push(`  zones               = ${context.getPropertyExpression(resource, 'zones', zones ?? [])}`);
+    }
 
     // SKU block
     lines.push('');

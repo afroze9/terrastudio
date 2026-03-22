@@ -10,6 +10,8 @@ export const bastionHclGenerator: HclGenerator = {
     const copyPaste = props['copy_paste_enabled'] as boolean | undefined;
     const fileCopy = props['file_copy_enabled'] as boolean | undefined;
     const tunneling = props['tunneling_enabled'] as boolean | undefined;
+    const ipConnect = props['ip_connect_enabled'] as boolean | undefined;
+    const shareableLink = props['shareable_link_enabled'] as boolean | undefined;
     const scaleUnits = props['scale_units'] as number | undefined;
 
     const rgExpr = context.getResourceGroupExpression(resource);
@@ -48,6 +50,16 @@ export const bastionHclGenerator: HclGenerator = {
     if (copyPaste === false) {
       const copyPasteExpr = context.getPropertyExpression(resource, 'copy_paste_enabled', false);
       lines.push(`  copy_paste_enabled = ${copyPasteExpr}`);
+    }
+
+    if (ipConnect === true || resource.variableOverrides?.['ip_connect_enabled'] === 'variable') {
+      const ipConnectExpr = context.getPropertyExpression(resource, 'ip_connect_enabled', ipConnect ?? false);
+      lines.push(`  ip_connect_enabled = ${ipConnectExpr}`);
+    }
+
+    if (shareableLink === true || resource.variableOverrides?.['shareable_link_enabled'] === 'variable') {
+      const shareableLinkExpr = context.getPropertyExpression(resource, 'shareable_link_enabled', shareableLink ?? false);
+      lines.push(`  shareable_link_enabled = ${shareableLinkExpr}`);
     }
 
     if (sku === 'Standard') {

@@ -9,6 +9,11 @@ export const serviceBusNamespaceHclGenerator: HclGenerator = {
     const sku = (props['sku'] as string) ?? 'Standard';
     const capacity = props['capacity'] !== undefined ? Number(props['capacity']) : undefined;
     const zoneRedundant = props['zone_redundant'] as boolean | undefined;
+    const localAuthEnabled = props['local_auth_enabled'] as boolean | undefined;
+    const publicNetworkAccessEnabled = props['public_network_access_enabled'] as boolean | undefined;
+    const minimumTlsVersion = props['minimum_tls_version'] as string | undefined;
+    const identityEnabled = props['identity_enabled'] as boolean | undefined;
+    const identityType = props['identity_type'] as string | undefined;
 
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
@@ -30,6 +35,25 @@ export const serviceBusNamespaceHclGenerator: HclGenerator = {
 
     if (sku === 'Premium' && zoneRedundant === true) {
       lines.push(`  zone_redundant      = ${context.getPropertyExpression(resource, 'zone_redundant', zoneRedundant)}`);
+    }
+
+    if (localAuthEnabled === false) {
+      lines.push(`  local_auth_enabled  = ${context.getPropertyExpression(resource, 'local_auth_enabled', localAuthEnabled)}`);
+    }
+
+    if (publicNetworkAccessEnabled === false) {
+      lines.push(`  public_network_access_enabled = ${context.getPropertyExpression(resource, 'public_network_access_enabled', publicNetworkAccessEnabled)}`);
+    }
+
+    if (minimumTlsVersion && minimumTlsVersion !== '1.2') {
+      lines.push(`  minimum_tls_version = ${context.getPropertyExpression(resource, 'minimum_tls_version', minimumTlsVersion)}`);
+    }
+
+    if (identityEnabled && identityType) {
+      lines.push('');
+      lines.push(`  identity {`);
+      lines.push(`    type = ${context.getPropertyExpression(resource, 'identity_type', identityType)}`);
+      lines.push(`  }`);
     }
 
     lines.push('');

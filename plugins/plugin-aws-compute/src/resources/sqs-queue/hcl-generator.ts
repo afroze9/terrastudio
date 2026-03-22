@@ -28,6 +28,27 @@ export const sqsQueueHclGenerator: HclGenerator = {
     lines.push(`  message_retention_seconds   = ${messageRetention}`);
     lines.push(`  delay_seconds              = ${delaySeconds}`);
     lines.push(`  max_message_size           = ${maxMessageSize}`);
+
+    const receiveWaitTime = Number(props['receive_wait_time_seconds'] ?? 0);
+    const receiveWaitIsVar = resource.variableOverrides?.['receive_wait_time_seconds'] === 'variable';
+    if (receiveWaitIsVar || receiveWaitTime !== 0) {
+      const receiveWaitExpr = context.getPropertyExpression(resource, 'receive_wait_time_seconds', receiveWaitTime);
+      lines.push(`  receive_wait_time_seconds  = ${receiveWaitExpr}`);
+    }
+
+    const redriveEnabled = props['redrive_policy_enabled'] as boolean ?? false;
+    if (redriveEnabled) {
+      const dlqArn = props['dead_letter_target_arn'] as string ?? '';
+      const maxReceiveCount = Number(props['max_receive_count'] ?? 5);
+      const dlqArnExpr = context.getPropertyExpression(resource, 'dead_letter_target_arn', dlqArn);
+      const maxReceiveExpr = context.getPropertyExpression(resource, 'max_receive_count', maxReceiveCount);
+      lines.push('');
+      lines.push(`  redrive_policy = jsonencode({`);
+      lines.push(`    deadLetterTargetArn = ${dlqArnExpr}`);
+      lines.push(`    maxReceiveCount     = ${maxReceiveExpr}`);
+      lines.push(`  })`);
+    }
+
     lines.push('');
     lines.push('  tags = local.common_tags');
     lines.push('}');

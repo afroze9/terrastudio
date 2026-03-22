@@ -6,10 +6,13 @@ export const mssqlDatabaseHclGenerator: HclGenerator = {
   generate(resource: ResourceInstance, context: HclGenerationContext): HclBlock[] {
     const props = resource.properties;
     const name = props['name'] as string;
+    const createMode = props['create_mode'] as string | undefined;
     const skuName = props['sku_name'] as string | undefined;
+    const elasticPoolId = props['elastic_pool_id'] as string | undefined;
     const collation = props['collation'] as string | undefined;
     const maxSizeGb = props['max_size_gb'] as number | undefined;
     const zoneRedundant = props['zone_redundant'] as boolean | undefined;
+    const ledgerEnabled = props['ledger_enabled'] as boolean | undefined;
     const licenseType = props['license_type'] as string | undefined;
 
     const dependsOn: string[] = [];
@@ -33,9 +36,19 @@ export const mssqlDatabaseHclGenerator: HclGenerator = {
       `  server_id = ${serverIdExpr}`,
     ];
 
+    if (createMode && createMode !== 'Default') {
+      const createModeExpr = context.getPropertyExpression(resource, 'create_mode', createMode);
+      lines.push(`  create_mode = ${createModeExpr}`);
+    }
+
     if (skuName) {
       const skuExpr = context.getPropertyExpression(resource, 'sku_name', skuName);
       lines.push(`  sku_name  = ${skuExpr}`);
+    }
+
+    if (elasticPoolId || resource.variableOverrides?.['elastic_pool_id'] === 'variable') {
+      const elasticPoolExpr = context.getPropertyExpression(resource, 'elastic_pool_id', elasticPoolId ?? '');
+      lines.push(`  elastic_pool_id = ${elasticPoolExpr}`);
     }
 
     if (collation && collation !== 'SQL_Latin1_General_CP1_CI_AS') {
@@ -51,6 +64,11 @@ export const mssqlDatabaseHclGenerator: HclGenerator = {
     if (zoneRedundant === true) {
       const zoneExpr = context.getPropertyExpression(resource, 'zone_redundant', zoneRedundant);
       lines.push(`  zone_redundant = ${zoneExpr}`);
+    }
+
+    if (ledgerEnabled === true) {
+      const ledgerExpr = context.getPropertyExpression(resource, 'ledger_enabled', ledgerEnabled);
+      lines.push(`  ledger_enabled = ${ledgerExpr}`);
     }
 
     if (licenseType) {

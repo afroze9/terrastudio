@@ -9,6 +9,10 @@ export const containerRegistryHclGenerator: HclGenerator = {
     const sku = (props['sku'] as string) ?? 'Basic';
     const adminEnabled = props['admin_enabled'] as boolean | undefined;
     const publicAccess = props['public_network_access_enabled'] as boolean | undefined;
+    const identityEnabled = props['identity_enabled'] as boolean | undefined;
+    const identityType = (props['identity_type'] as string) ?? 'SystemAssigned';
+    const dataEndpointEnabled = props['data_endpoint_enabled'] as boolean | undefined;
+    const anonymousPullEnabled = props['anonymous_pull_enabled'] as boolean | undefined;
 
     const rgExpr = context.getResourceGroupExpression(resource);
     const locExpr = context.getLocationExpression(resource);
@@ -30,6 +34,22 @@ export const containerRegistryHclGenerator: HclGenerator = {
 
     if (publicAccess === false) {
       lines.push(`  public_network_access_enabled = ${context.getPropertyExpression(resource, 'public_network_access_enabled', publicAccess)}`);
+    }
+
+    if (dataEndpointEnabled === true || resource.variableOverrides?.['data_endpoint_enabled'] === 'variable') {
+      lines.push(`  data_endpoint_enabled = ${context.getPropertyExpression(resource, 'data_endpoint_enabled', dataEndpointEnabled ?? false)}`);
+    }
+
+    if (anonymousPullEnabled === true || resource.variableOverrides?.['anonymous_pull_enabled'] === 'variable') {
+      lines.push(`  anonymous_pull_enabled = ${context.getPropertyExpression(resource, 'anonymous_pull_enabled', anonymousPullEnabled ?? false)}`);
+    }
+
+    // Identity block
+    if (identityEnabled || resource.variableOverrides?.['identity_type'] === 'variable') {
+      lines.push('');
+      lines.push('  identity {');
+      lines.push(`    type = ${context.getPropertyExpression(resource, 'identity_type', identityType)}`);
+      lines.push('  }');
     }
 
     lines.push('');

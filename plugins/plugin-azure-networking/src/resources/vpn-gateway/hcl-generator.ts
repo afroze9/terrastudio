@@ -1,4 +1,5 @@
 import type { HclGenerator, HclBlock, ResourceInstance, HclGenerationContext } from '@terrastudio/types';
+import { escapeHclString as e } from '@terrastudio/core';
 
 export const vpnGatewayHclGenerator: HclGenerator = {
   typeId: 'azurerm/networking/virtual_network_gateway',
@@ -109,6 +110,27 @@ export const vpnGatewayHclGenerator: HclGenerator = {
       lines.push(`    public_ip_address_id          = ${pip2IdExpr}`);
       lines.push('    private_ip_address_allocation = "Dynamic"');
       lines.push('  }');
+    }
+
+    // VPN client configuration (Point-to-Site)
+    const vpnClientEnabled = props['vpn_client_enabled'] as boolean | undefined;
+    if (vpnClientEnabled === true) {
+      const addressPool = (props['vpn_client_address_pool'] as string[] | undefined) ?? [];
+      const protocols = (props['vpn_client_protocols'] as string[] | undefined) ?? [];
+
+      if (addressPool.length > 0 || protocols.length > 0) {
+        lines.push('');
+        lines.push('  vpn_client_configuration {');
+        if (addressPool.length > 0) {
+          const addressItems = addressPool.map(cidr => `"${e(cidr)}"`).join(', ');
+          lines.push(`    address_space = [${addressItems}]`);
+        }
+        if (protocols.length > 0) {
+          const protocolItems = protocols.map(p => `"${e(p)}"`).join(', ');
+          lines.push(`    vpn_client_protocols = [${protocolItems}]`);
+        }
+        lines.push('  }');
+      }
     }
 
     // BGP settings
