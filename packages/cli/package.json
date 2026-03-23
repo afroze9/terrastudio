@@ -1,6 +1,6 @@
 {
   "name": "@afroze9/terrastudio-cli",
-  "version": "0.47.2",
+  "version": "0.48.0",
   "description": "CLI for TerraStudio — headless project manipulation and HCL generation",
   "author": "afroze9",
   "license": "AGPL-3.0-only",
@@ -31,8 +31,8 @@
     "assets": [],
     "outputPath": "bin"
   },
-  "dependencies": {},
   "devDependencies": {
+    "@clack/prompts": "^1.1.0",
     "@terrastudio/core": "workspace:*",
     "@terrastudio/platform-node": "workspace:*",
     "@terrastudio/plugin-aws-compute": "workspace:*",

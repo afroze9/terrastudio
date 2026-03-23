@@ -1,4 +1,6 @@
 import { Command } from 'commander';
+import * as p from '@clack/prompts';
+import path from 'node:path';
 import { storage, toLoadedProject } from '../platform/node-io.js';
 import { Project } from '@terrastudio/project';
 import type { ProviderId } from '@terrastudio/types';
@@ -30,31 +32,135 @@ export function makeProjectCommand(): Command {
   const cmd = new Command('project').description('Project information and configuration');
 
   cmd
-    .command('create <parentPath> <name>')
+    .command('create [name]')
     .description('Create a new TerraStudio project directory')
+    .option('--path <parentPath>', 'Parent directory (default: current directory)')
     .option('--providers <providers...>', 'Active providers (default: azurerm)')
     .option('--location <location>', 'Default Azure location (default: eastus)')
     .option('--rg <resourceGroupName>', 'Default resource group name')
     .action(
       async (
-        parentPath: string,
-        name: string,
-        options: { providers?: string[]; location?: string; rg?: string },
+        nameArg: string | undefined,
+        options: {
+          path?: string;
+          providers?: string[];
+          location?: string;
+          rg?: string;
+        },
       ) => {
-        const stored = await storage.createProject(name, parentPath);
+        // If all required info is provided via args/flags, skip the wizard
+        const interactive = !nameArg;
+
+        let name = nameArg;
+        let parentPath = options.path ?? '.';
+        let providers = options.providers;
+        let location = options.location;
+        let rg = options.rg;
+
+        if (interactive) {
+          p.intro('Create a new TerraStudio project');
+
+          const answers = await p.group(
+            {
+              name: () =>
+                p.text({
+                  message: 'Project name',
+                  placeholder: 'my-infra',
+                  validate: (val = '') => {
+                    if (!val.trim()) return 'Project name is required';
+                    if (/[<>:"/\\|?*]/.test(val))
+                      return 'Project name contains invalid characters';
+                  },
+                }),
+              parentPath: () =>
+                p.text({
+                  message: 'Project location',
+                  placeholder: '.',
+                  initialValue: '.',
+                }),
+              providers: () =>
+                p.multiselect({
+                  message: 'Select providers',
+                  options: [
+                    { value: 'azurerm', label: 'Azure (azurerm)', hint: 'Azure Resource Manager' },
+                    { value: 'aws', label: 'AWS', hint: 'Amazon Web Services' },
+                  ],
+                  initialValues: ['azurerm'],
+                  required: true,
+                }),
+              location: ({ results }) => {
+                if (!results.providers?.includes('azurerm')) return;
+                return p.select({
+                  message: 'Default Azure location',
+                  options: [
+                    { value: 'eastus', label: 'East US' },
+                    { value: 'eastus2', label: 'East US 2' },
+                    { value: 'westus', label: 'West US' },
+                    { value: 'westus2', label: 'West US 2' },
+                    { value: 'westus3', label: 'West US 3' },
+                    { value: 'centralus', label: 'Central US' },
+                    { value: 'northeurope', label: 'North Europe' },
+                    { value: 'westeurope', label: 'West Europe' },
+                    { value: 'uksouth', label: 'UK South' },
+                    { value: 'ukwest', label: 'UK West' },
+                    { value: 'southeastasia', label: 'Southeast Asia' },
+                    { value: 'australiaeast', label: 'Australia East' },
+                    { value: 'canadacentral', label: 'Canada Central' },
+                  ],
+                  initialValue: 'eastus',
+                });
+              },
+              rg: ({ results }) => {
+                const defaultRg = `rg-${results.name}`;
+                return p.text({
+                  message: 'Resource group name',
+                  placeholder: defaultRg,
+                  initialValue: defaultRg,
+                });
+              },
+            },
+            {
+              onCancel: () => {
+                p.cancel('Project creation cancelled.');
+                process.exit(0);
+              },
+            },
+          );
+
+          name = answers.name;
+          parentPath = answers.parentPath || '.';
+          providers = answers.providers;
+          location = answers.location as string | undefined;
+          rg = answers.rg as string | undefined;
+        }
+
+        const stored = await storage.createProject(name!, parentPath);
 
         // Apply any option overrides to the saved config
-        if (options.providers || options.location || options.rg) {
+        if (providers || location || rg) {
           const config = stored.metadata.projectConfig as Record<string, unknown>;
-          if (options.providers) config['activeProviders'] = options.providers;
-          if (options.location) config['location'] = options.location;
-          if (options.rg) config['resourceGroupName'] = options.rg;
+          if (providers) config['activeProviders'] = providers;
+          if (location) config['location'] = location;
+          if (rg) config['resourceGroupName'] = rg;
           await storage.saveProjectConfig(stored.path, config);
         }
 
-        console.log(`Created project "${name}" at: ${stored.path}`);
-        const providers = (options.providers ?? ['azurerm']).join(', ');
-        console.log(`Providers: ${providers}`);
+        const resolvedPath = path.resolve(stored.path);
+        const providerList = (providers ?? ['azurerm']).join(', ');
+
+        if (interactive) {
+          p.note(
+            [
+              `cd ${resolvedPath}`,
+              `tstudio generate .`,
+            ].join('\n'),
+            'Next steps',
+          );
+          p.outro(`Project "${name}" created successfully!`);
+        } else {
+          console.log(`Created project "${name}" at: ${resolvedPath}`);
+          console.log(`Providers: ${providerList}`);
+        }
       },
     );
 
