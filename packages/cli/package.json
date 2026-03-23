@@ -1,6 +1,6 @@
 {
   "name": "@afroze9/terrastudio-cli",
-  "version": "0.46.0",
+  "version": "0.47.0",
   "description": "CLI for TerraStudio — headless project manipulation and HCL generation",
   "author": "afroze9",
   "license": "AGPL-3.0-only",
@@ -14,16 +14,10 @@
   },
   "type": "module",
   "bin": {
-    "tstudio": "./dist/cli.js"
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
+    "tstudio": "./bundle/cli.cjs"
   },
   "files": [
-    "dist"
+    "bundle"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -37,7 +31,8 @@
     "assets": [],
     "outputPath": "bin"
   },
-  "dependencies": {
+  "dependencies": {},
+  "devDependencies": {
     "@terrastudio/core": "workspace:*",
     "@terrastudio/platform-node": "workspace:*",
     "@terrastudio/plugin-aws-compute": "workspace:*",
@@ -50,11 +45,9 @@
     "@terrastudio/plugin-azure-storage": "workspace:*",
     "@terrastudio/project": "workspace:*",
     "@terrastudio/types": "workspace:*",
-    "commander": "^12.1.0"
-  },
-  "devDependencies": {
     "@types/node": "^25.5.0",
     "@yao-pkg/pkg": "^6.14.1",
+    "commander": "^12.1.0",
     "esbuild": "^0.27.4",
     "typescript": "^5.7.0"
   }

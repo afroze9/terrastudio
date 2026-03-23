@@ -11,6 +11,7 @@ export const raiPolicySchema: ResourceSchema = {
   requiresResourceGroup: false,
   cafAbbreviation: 'raip',
   canBeChildOf: ['azurerm/core/resource_group'],
+  visualContainment: true,
 
   properties: [
     {
@@ -40,6 +41,12 @@ export const raiPolicySchema: ResourceSchema = {
       type: 'target',
       position: 'left',
       label: 'AI Account',
+    },
+    {
+      id: 'raip-out',
+      type: 'source',
+      position: 'right',
+      label: 'Policy Out',
     },
   ],
 

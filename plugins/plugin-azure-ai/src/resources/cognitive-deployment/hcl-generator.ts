@@ -48,7 +48,10 @@ export const cognitiveDeploymentHclGenerator: HclGenerator = {
     lines.push('  }');
 
     // optional top-level properties
-    if (raiPolicyName || resource.variableOverrides?.['rai_policy_name'] === 'variable') {
+    const raiPolicyRef = resource.references['rai_policy_name'];
+    if (raiPolicyRef) {
+      lines.push(`  rai_policy_name        = ${context.getAttributeReference(raiPolicyRef, 'name')}`);
+    } else if (raiPolicyName || resource.variableOverrides?.['rai_policy_name'] === 'variable') {
       const expr = context.getPropertyExpression(resource, 'rai_policy_name', raiPolicyName ?? '');
       lines.push(`  rai_policy_name        = ${expr}`);
     }

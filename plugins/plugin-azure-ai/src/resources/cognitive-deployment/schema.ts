@@ -11,6 +11,7 @@ export const cognitiveDeploymentSchema: ResourceSchema = {
   requiresResourceGroup: false,
   cafAbbreviation: 'cogd',
   canBeChildOf: ['azurerm/core/resource_group'],
+  visualContainment: true,
 
   properties: [
     {
@@ -124,6 +125,12 @@ export const cognitiveDeploymentSchema: ResourceSchema = {
       type: 'target',
       position: 'left',
       label: 'AI Account',
+    },
+    {
+      id: 'raip-in',
+      type: 'target',
+      position: 'left',
+      label: 'RAI Policy',
     },
   ],
 

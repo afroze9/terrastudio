@@ -33,4 +33,12 @@ export const aiConnectionRules: ConnectionRule[] = [
     targetHandle: 'cognitive-account-in',
     createsReference: { side: 'target', propertyKey: 'cognitive_account_id' },
   },
+  // RAI Policy → Cognitive Deployment
+  {
+    sourceType: 'azurerm/ai/rai_policy',
+    sourceHandle: 'raip-out',
+    targetType: 'azurerm/ai/cognitive_deployment',
+    targetHandle: 'raip-in',
+    createsReference: { side: 'target', propertyKey: 'rai_policy_name' },
+  },
 ];

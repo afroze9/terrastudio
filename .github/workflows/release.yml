@@ -208,6 +208,10 @@ jobs:
       - name: Build workspace packages
         run: pnpm build
 
+      - name: Bundle CLI (esbuild → self-contained CJS)
+        working-directory: packages/cli
+        run: pnpm bundle
+
       - name: Publish @afroze9/terrastudio-cli to npm
         working-directory: packages/cli
         run: npm publish --provenance --access public
