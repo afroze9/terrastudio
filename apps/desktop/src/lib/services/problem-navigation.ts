@@ -7,6 +7,12 @@ import type { ProblemEntry } from '$lib/stores/validation.svelte';
  * and highlights the specific property field.
  */
 export function navigateToProblem(problem: ProblemEntry): void {
+  // General terraform problems have no canvas node — just ensure the problems tab is visible
+  if (problem.instanceId === '_terraform_general') {
+    ui.openBottomPanel('problems');
+    return;
+  }
+
   // 1. Select the node
   diagram.selectedNodeId = problem.instanceId;
 
@@ -16,7 +22,10 @@ export function navigateToProblem(problem: ProblemEntry): void {
   // 3. Pan canvas to the node
   ui.navigateToNode(problem.instanceId);
 
-  // 4. Signal the PropertiesPanel to scroll + highlight the field
+  // 4. For terraform-sourced problems, skip property field highlighting (no form field)
+  if (problem.source === 'terraform') return;
+
+  // 5. Signal the PropertiesPanel to scroll + highlight the field
   ui.highlightedPropertyKey = problem.propertyKey;
 }
 

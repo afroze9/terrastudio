@@ -6,10 +6,29 @@
   import type { ProblemEntry, ProblemsGroup } from '$lib/stores/validation.svelte';
 
   let severityFilter = $state<'all' | 'errors' | 'warnings'>('all');
+  let sourceFilter = $state<'all-sources' | 'validation' | 'terraform'>('all-sources');
   let searchText = $state('');
 
   let filteredGroups = $derived.by((): ProblemsGroup[] => {
     let groups = validation.groups;
+
+    // Apply source filter
+    if (sourceFilter !== 'all-sources') {
+      groups = groups
+        .map((g) => {
+          const filtered = g.problems.filter((p) =>
+            (p.source ?? 'validation') === sourceFilter,
+          );
+          if (filtered.length === 0) return null;
+          return {
+            ...g,
+            problems: filtered,
+            errorCount: filtered.filter((p) => p.severity === 'error').length,
+            warningCount: filtered.filter((p) => p.severity === 'warning').length,
+          };
+        })
+        .filter((g): g is ProblemsGroup => g !== null);
+    }
 
     // Apply severity filter
     if (severityFilter !== 'all') {
@@ -38,7 +57,8 @@
             (p) =>
               p.message.toLowerCase().includes(query) ||
               p.resourceLabel.toLowerCase().includes(query) ||
-              p.propertyKey.toLowerCase().includes(query),
+              p.propertyKey.toLowerCase().includes(query) ||
+              (p.detail?.toLowerCase().includes(query) ?? false),
           );
           if (filtered.length === 0) return null;
           return {
@@ -112,6 +132,23 @@
         </svg>
         {validation.warningCount}
       </button>
+      {#if validation.hasTerraformProblems}
+        <span class="filter-separator"></span>
+        <button
+          class="severity-btn source-btn"
+          class:active={sourceFilter === 'validation'}
+          onclick={() => { sourceFilter = sourceFilter === 'validation' ? 'all-sources' : 'validation'; }}
+        >
+          {t('problems.sourceValidation')}
+        </button>
+        <button
+          class="severity-btn source-btn tf-btn"
+          class:active={sourceFilter === 'terraform'}
+          onclick={() => { sourceFilter = sourceFilter === 'terraform' ? 'all-sources' : 'terraform'; }}
+        >
+          {t('problems.sourceTerraform')}
+        </button>
+      {/if}
     </div>
     <input
       type="text"
@@ -148,7 +185,17 @@
             <svg class="chevron" class:collapsed={isCollapsed} width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="4 6 8 10 12 6" />
             </svg>
-            {#if getResourceIcon(group.typeId)}
+            {#if group.instanceId === '_terraform_general'}
+              <span class="resource-icon terraform-icon">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="4 12 1 10 1 2 4 4" />
+                  <polyline points="12 12 15 10 15 2 12 4" />
+                  <rect x="4" y="1" width="8" height="14" rx="1" />
+                  <line x1="7" y1="5" x2="9" y2="5" />
+                  <line x1="7" y1="8" x2="9" y2="8" />
+                </svg>
+              </span>
+            {:else if getResourceIcon(group.typeId)}
               <span class="resource-icon">{@html getResourceIcon(group.typeId)}</span>
             {/if}
             <span class="group-label">{group.resourceLabel}</span>
@@ -163,7 +210,7 @@
           </button>
           {#if !isCollapsed}
             <div class="group-items">
-              {#each group.problems as problem (problem.propertyKey + problem.message)}
+              {#each group.problems as problem ((problem.source ?? 'validation') + ':' + problem.propertyKey + ':' + problem.message)}
                 <!-- svelte-ignore a11y_click_events_have_key_events -->
                 <!-- svelte-ignore a11y_no_static_element_interactions -->
                 <div class="problem-item" onclick={() => handleProblemClick(problem)}>
@@ -178,9 +225,17 @@
                       <text x="8" y="13" text-anchor="middle" fill="var(--color-bg)" font-size="9" font-weight="bold">!</text>
                     </svg>
                   {/if}
+                  {#if problem.source === 'terraform'}
+                    <span class="tf-badge">TF</span>
+                  {/if}
                   <span class="problem-key">{problem.propertyKey}</span>
-                  <span class="problem-message">{problem.message}</span>
-                  {#if problem.quickFix}
+                  <div class="problem-text">
+                    <span class="problem-message">{problem.message}</span>
+                    {#if problem.detail}
+                      <span class="problem-detail">{problem.detail}</span>
+                    {/if}
+                  </div>
+                  {#if problem.quickFix && problem.source !== 'terraform'}
                     <button
                       class="quick-fix-btn"
                       onclick={(e: MouseEvent) => { e.stopPropagation(); problem.quickFix?.apply(problem.instanceId, problem.propertyKey); }}
@@ -217,7 +272,15 @@
   }
   .severity-buttons {
     display: flex;
+    align-items: center;
     gap: 2px;
+  }
+  .filter-separator {
+    width: 1px;
+    height: 14px;
+    background: var(--color-border);
+    margin: 0 4px;
+    flex-shrink: 0;
   }
   .severity-btn {
     display: flex;
@@ -241,6 +304,15 @@
     background: var(--color-surface-hover);
     color: var(--color-text);
     border-color: var(--color-border);
+  }
+  .source-btn {
+    font-size: var(--font-10);
+    padding: 2px 6px;
+  }
+  .tf-btn.active {
+    background: rgba(139, 92, 246, 0.15);
+    color: #a78bfa;
+    border-color: rgba(139, 92, 246, 0.3);
   }
   .severity-icon.error {
     color: #ef4444;
@@ -337,6 +409,9 @@
     width: 14px;
     height: 14px;
   }
+  .terraform-icon {
+    color: var(--color-text-muted);
+  }
   .group-label {
     flex: 1;
     overflow: hidden;
@@ -369,7 +444,7 @@
   }
   .problem-item {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 6px;
     width: 100%;
     padding: 3px 8px 3px 28px;
@@ -386,10 +461,23 @@
   .problem-severity.error {
     color: #ef4444;
     flex-shrink: 0;
+    margin-top: 1px;
   }
   .problem-severity.warning {
     color: #f59e0b;
     flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .tf-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 0 4px;
+    border-radius: 3px;
+    background: rgba(139, 92, 246, 0.15);
+    color: #a78bfa;
+    flex-shrink: 0;
+    line-height: 16px;
+    margin-top: 1px;
   }
   .problem-key {
     color: var(--color-accent);
@@ -397,13 +485,28 @@
     font-family: 'Cascadia Code', 'Fira Code', monospace;
     flex-shrink: 0;
   }
-  .problem-message {
+  .problem-text {
     flex: 1;
+    overflow: hidden;
+    min-width: 0;
+  }
+  .problem-message {
+    display: block;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--color-text-muted);
     font-size: var(--font-11);
+  }
+  .problem-detail {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-text-muted);
+    font-size: var(--font-10);
+    opacity: 0.6;
+    margin-top: 1px;
   }
   .quick-fix-btn {
     padding: 1px 6px;

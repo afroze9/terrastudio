@@ -16,6 +16,7 @@ import {
   type TerraformJsonResult,
 } from '$lib/stores/terraform.svelte';
 import { ui } from '$lib/stores/ui.svelte';
+import { validation, type ProblemEntry } from '$lib/stores/validation.svelte';
 import { plan, parsePlanChanges, type PlanAction, type PlanResourceChange } from '$lib/stores/plan.svelte';
 import { convertToResourceInstances, extractOutputBindings } from './diagram-converter';
 
@@ -323,6 +324,79 @@ export function buildAddressToNodeIdMap(): Map<string, string> {
 }
 
 /**
+ * Convert terraform JSON result diagnostics into ProblemEntry[] for the Problems pane.
+ */
+function convertDiagnosticsToProblems(result: TerraformJsonResult, command: TerraformCommand): ProblemEntry[] {
+  const entries: ProblemEntry[] = [];
+  const addressToNodeId = buildAddressToNodeIdMap();
+
+  for (const diag of result.diagnostics) {
+    const entry: ProblemEntry = {
+      instanceId: '_terraform_general',
+      resourceLabel: 'Terraform',
+      typeId: '',
+      propertyKey: diag.address ?? command,
+      message: diag.summary,
+      severity: diag.severity,
+      source: 'terraform',
+      detail: diag.detail || undefined,
+    };
+
+    // Try to match diagnostic to a diagram node
+    let address = diag.address;
+
+    // For validate diagnostics: extract address from detail text
+    // e.g. 'with azurerm_storage_table.sktabledev01,' or
+    // 'in resource "azurerm_storage_table" "sktabledev01":'
+    if (!address && diag.detail) {
+      const withMatch = diag.detail.match(/with\s+(\w+\.\w+)/);
+      if (withMatch) {
+        address = withMatch[1];
+      } else {
+        const inMatch = diag.detail.match(/in resource "(\w+)" "(\w+)"/);
+        if (inMatch) {
+          address = `${inMatch[1]}.${inMatch[2]}`;
+        }
+      }
+    }
+
+    if (address) {
+      entry.propertyKey = address;
+      const nodeId = addressToNodeId.get(address);
+      if (nodeId) {
+        const node = diagram.nodes.find((n) => n.id === nodeId);
+        if (node) {
+          entry.instanceId = nodeId;
+          entry.resourceLabel = (node.data as any).label ?? nodeId;
+          entry.typeId = node.type ?? '';
+        }
+      }
+    }
+
+    entries.push(entry);
+  }
+
+  // Convert failed resource_changes
+  for (const rc of result.resource_changes) {
+    if (!rc.success && rc.error) {
+      const nodeId = addressToNodeId.get(rc.address);
+      const node = nodeId ? diagram.nodes.find((n) => n.id === nodeId) : undefined;
+      entries.push({
+        instanceId: nodeId ?? '_terraform_general',
+        resourceLabel: node ? ((node.data as any).label ?? nodeId!) : 'Terraform',
+        typeId: node?.type ?? '',
+        propertyKey: rc.address,
+        message: rc.error,
+        severity: 'error',
+        source: 'terraform',
+      });
+    }
+  }
+
+  return entries;
+}
+
+/**
  * Update diagram nodes with error status from terraform result.
  */
 function updateNodeErrorStatus(result: TerraformJsonResult) {
@@ -407,6 +481,7 @@ export async function runTerraformCommand(
   terraform.setStatus('running', command);
   terraform.appendInfo(`\n--- terraform ${command} ---\n`);
   terraform.clearErrors();
+  validation.clearTerraformProblems();
 
   const unlisteners: UnlistenFn[] = [];
 
@@ -439,8 +514,8 @@ export async function runTerraformCommand(
 
   let success = false;
   try {
-    // Commands with JSON output (plan, apply, destroy)
-    if (['plan', 'apply', 'destroy'].includes(command)) {
+    // Commands with JSON output (validate, plan, apply, destroy)
+    if (['validate', 'plan', 'apply', 'destroy'].includes(command)) {
       const result = await invoke<TerraformJsonResult>(
         `terraform_${command}`,
         { projectPath: project.path },
@@ -449,9 +524,18 @@ export async function runTerraformCommand(
       // Store result and extract error info
       terraform.setLastResult(result);
 
+      // Surface terraform diagnostics in the Problems pane
+      const tfProblems = convertDiagnosticsToProblems(result, command);
+      validation.setTerraformProblems(tfProblems);
+
       // Update node error status
       if (!result.success) {
         updateNodeErrorStatus(result);
+
+        // Auto-switch to problems tab when there are terraform errors
+        if (tfProblems.length > 0) {
+          ui.openBottomPanel('problems');
+        }
 
         // Log errors to output
         for (const diag of result.diagnostics) {
@@ -554,6 +638,7 @@ export async function runTerraformPlan(): Promise<boolean> {
   terraform.setStatus('running', 'plan');
   terraform.appendInfo('\n--- terraform plan (with diff capture) ---\n');
   terraform.clearErrors();
+  validation.clearTerraformProblems();
 
   const unlisteners: UnlistenFn[] = [];
   const appWindow = getCurrentWindow();
@@ -631,7 +716,20 @@ export async function runTerraformPlan(): Promise<boolean> {
       // Show plan tab in bottom panel
       ui.openBottomPanel('plan');
     } else {
-      // Plan failed — log errors
+      // Plan failed — surface errors in Problems pane
+      const planResult: TerraformJsonResult = {
+        success: rawResult.success,
+        code: rawResult.code,
+        diagnostics: rawResult.diagnostics as import('$lib/stores/terraform.svelte').TerraformDiagnostic[],
+        resource_changes: [],
+      };
+      const tfProblems = convertDiagnosticsToProblems(planResult, 'plan');
+      validation.setTerraformProblems(tfProblems);
+      if (tfProblems.length > 0) {
+        ui.openBottomPanel('problems');
+      }
+
+      // Log errors to output
       for (const diag of rawResult.diagnostics) {
         if (diag.severity === 'error') {
           terraform.appendError(`Error: ${diag.summary}`);
@@ -674,6 +772,7 @@ export async function applyFromPlan(): Promise<boolean> {
   terraform.setStatus('running', 'apply-plan');
   terraform.appendInfo('\n--- terraform apply (from saved plan) ---\n');
   terraform.clearErrors();
+  validation.clearTerraformProblems();
 
   const unlisteners: UnlistenFn[] = [];
   const appWindow = getCurrentWindow();
@@ -705,8 +804,17 @@ export async function applyFromPlan(): Promise<boolean> {
     terraform.setLastResult(result);
     success = result.success;
 
+    // Surface terraform diagnostics in the Problems pane
+    const tfProblems = convertDiagnosticsToProblems(result, 'apply-plan');
+    validation.setTerraformProblems(tfProblems);
+
     if (!result.success) {
       updateNodeErrorStatus(result);
+
+      if (tfProblems.length > 0) {
+        ui.openBottomPanel('problems');
+      }
+
       for (const diag of result.diagnostics) {
         if (diag.severity === 'error') {
           terraform.appendError(`Error: ${diag.summary}`);

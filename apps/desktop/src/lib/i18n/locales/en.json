@@ -524,7 +524,11 @@
     "warning": "warning",
     "warningPlural": "warnings",
     "fix": "Fix",
-    "validating": "Validating..."
+    "validating": "Validating...",
+    "sourceAll": "All Sources",
+    "sourceValidation": "Validation",
+    "sourceTerraform": "TF",
+    "terraformGeneral": "Terraform"
   },
   "search": {
     "placeholder": "Search resources...",

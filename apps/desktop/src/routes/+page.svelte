@@ -9,6 +9,7 @@
 	import SidePanel from '$lib/components/SidePanel.svelte';
 	import EditorArea from '$lib/components/EditorArea.svelte';
 	import RightPanel from '$lib/components/RightPanel.svelte';
+	import RightActivityBar from '$lib/components/RightActivityBar.svelte';
 	import StatusBar from '$lib/components/StatusBar.svelte';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import UnsavedChangesDialog from '$lib/components/UnsavedChangesDialog.svelte';
@@ -236,6 +237,7 @@
 			{#if ui.showPropertiesPanel}
 				<RightPanel />
 			{/if}
+			<RightActivityBar />
 		</div>
 		<StatusBar />
 	</div>

@@ -160,6 +160,138 @@ pub async fn run_terraform_capture(
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
 
+/// Validate result from `terraform validate -json` (single JSON blob, not streaming).
+#[derive(Clone, Debug, Deserialize)]
+pub struct TerraformValidateResult {
+    #[serde(default)]
+    pub valid: bool,
+    #[serde(default)]
+    pub error_count: u32,
+    #[serde(default)]
+    pub warning_count: u32,
+    #[serde(default)]
+    pub diagnostics: Vec<TerraformValidateDiagnostic>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct TerraformValidateDiagnostic {
+    pub severity: String,
+    pub summary: String,
+    #[serde(default)]
+    pub detail: Option<String>,
+    #[serde(default)]
+    pub range: Option<TerraformRange>,
+}
+
+/// Run `terraform validate -json`, which outputs a single JSON blob (not streaming).
+/// Parses the result and converts it to TerraformJsonResult for consistent frontend handling.
+pub async fn run_terraform_validate_json(
+    app: &AppHandle,
+    window_label: &str,
+    working_dir: &Path,
+) -> Result<TerraformJsonResult, String> {
+    // Emit running status
+    let _ = app.emit_to(
+        window_label,
+        "terraform:status",
+        TerraformStatus {
+            status: "running".into(),
+            command: "validate".into(),
+        },
+    );
+
+    let mut cmd = Command::new("terraform");
+    cmd.arg("validate");
+    cmd.arg("-json");
+    cmd.current_dir(working_dir);
+
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+
+    let output = cmd.output().await.map_err(|e| {
+        format!("Failed to run terraform validate: {}", e)
+    })?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+
+    // Emit stdout/stderr for the terminal pane
+    if !stdout.is_empty() {
+        // Try to parse and emit human-readable diagnostics
+        if let Ok(validate_result) = serde_json::from_str::<TerraformValidateResult>(&stdout) {
+            for diag in &validate_result.diagnostics {
+                let line = format!(
+                    "{}: {}{}",
+                    diag.severity,
+                    diag.summary,
+                    diag.detail.as_deref().map(|d| format!("\n  {}", d)).unwrap_or_default()
+                );
+                let stream = if diag.severity == "error" { "stderr" } else { "stdout" };
+                let _ = app.emit_to(
+                    window_label,
+                    if stream == "stderr" { "terraform:stderr" } else { "terraform:stdout" },
+                    TerraformOutput {
+                        stream: stream.into(),
+                        line,
+                    },
+                );
+            }
+        }
+    }
+    if !stderr.is_empty() {
+        for line in stderr.lines() {
+            let _ = app.emit_to(
+                window_label,
+                "terraform:stderr",
+                TerraformOutput {
+                    stream: "stderr".into(),
+                    line: line.to_string(),
+                },
+            );
+        }
+    }
+
+    let code = output.status.code().unwrap_or(-1);
+    let success = output.status.success();
+
+    // Emit completion status
+    let _ = app.emit_to(
+        window_label,
+        "terraform:status",
+        TerraformStatus {
+            status: if success { "success".into() } else { "error".into() },
+            command: "validate".into(),
+        },
+    );
+
+    let exit = TerraformExit { code, success };
+    let _ = app.emit_to(window_label, "terraform:exit", exit);
+
+    // Parse the single JSON blob
+    let validate_result: TerraformValidateResult = serde_json::from_str(&stdout)
+        .map_err(|e| format!("Failed to parse terraform validate JSON: {}", e))?;
+
+    // Convert to TerraformJsonResult
+    let diagnostics = validate_result
+        .diagnostics
+        .into_iter()
+        .map(|d| TerraformDiagnostic {
+            severity: d.severity,
+            summary: d.summary,
+            detail: d.detail.unwrap_or_default(),
+            address: None,
+            range: d.range,
+        })
+        .collect();
+
+    Ok(TerraformJsonResult {
+        success: validate_result.valid,
+        code,
+        diagnostics,
+        resource_changes: vec![],
+    })
+}
+
 /// Run a terraform command with -json flag, parsing each line and emitting structured events.
 /// Returns aggregated result with diagnostics and resource change info.
 /// Events are targeted to the specified window label so other windows are not affected.

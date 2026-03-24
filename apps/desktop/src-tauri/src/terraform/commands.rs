@@ -54,13 +54,12 @@ pub async fn terraform_init(app: AppHandle, window: WebviewWindow, project_path:
     Ok(result.success)
 }
 
-/// Run terraform validate.
+/// Run terraform validate with JSON output for structured error parsing.
+/// Note: `terraform validate -json` outputs a single JSON blob, not streaming lines.
 #[command]
-pub async fn terraform_validate(app: AppHandle, window: WebviewWindow, project_path: String) -> Result<bool, String> {
+pub async fn terraform_validate(app: AppHandle, window: WebviewWindow, project_path: String) -> Result<TerraformJsonResult, String> {
     let terraform_dir = PathBuf::from(&project_path).join("terraform");
-    let result =
-        runner::run_terraform(&app, window.label(), &terraform_dir, "validate", &["-no-color"]).await?;
-    Ok(result.success)
+    runner::run_terraform_validate_json(&app, window.label(), &terraform_dir).await
 }
 
 /// Run terraform plan with JSON output for structured error parsing.

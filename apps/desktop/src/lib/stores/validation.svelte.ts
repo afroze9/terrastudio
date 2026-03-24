@@ -16,6 +16,8 @@ export interface ProblemEntry {
   message: string;
   severity: 'error' | 'warning';
   quickFix?: QuickFix;
+  source?: 'validation' | 'terraform';
+  detail?: string;
 }
 
 export interface QuickFix {
@@ -35,16 +37,21 @@ export interface ProblemsGroup {
 
 class ValidationStore {
   private _problems = $state<ProblemEntry[]>([]);
+  private _terraformProblems = $state<ProblemEntry[]>([]);
   private _pending = $state(false);
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
   private _initialized = false;
 
-  readonly problems = $derived(this._problems);
+  readonly problems = $derived([...this._problems, ...this._terraformProblems]);
   readonly pending = $derived(this._pending);
 
+  /** Whether any terraform-sourced problems exist (for UI filtering). */
+  readonly hasTerraformProblems = $derived(this._terraformProblems.length > 0);
+
   readonly groups = $derived.by((): ProblemsGroup[] => {
+    const merged = [...this._problems, ...this._terraformProblems];
     const map = new Map<string, ProblemsGroup>();
-    for (const p of this._problems) {
+    for (const p of merged) {
       let group = map.get(p.instanceId);
       if (!group) {
         group = {
@@ -68,8 +75,14 @@ class ValidationStore {
     });
   });
 
-  readonly errorCount = $derived(this._problems.filter((p) => p.severity === 'error').length);
-  readonly warningCount = $derived(this._problems.filter((p) => p.severity === 'warning').length);
+  readonly errorCount = $derived(
+    this._problems.filter((p) => p.severity === 'error').length +
+    this._terraformProblems.filter((p) => p.severity === 'error').length
+  );
+  readonly warningCount = $derived(
+    this._problems.filter((p) => p.severity === 'warning').length +
+    this._terraformProblems.filter((p) => p.severity === 'warning').length
+  );
 
   /** Call once on app bootstrap to start reactive watching. */
   init() {
@@ -92,7 +105,22 @@ class ValidationStore {
     });
   }
 
+  /** Replace all terraform-sourced problems (called after terraform plan/apply/destroy). */
+  setTerraformProblems(entries: ProblemEntry[]) {
+    this._terraformProblems = entries;
+  }
+
+  /** Clear all terraform-sourced problems. */
+  clearTerraformProblems() {
+    this._terraformProblems = [];
+  }
+
   private runValidation() {
+    // Note: do NOT clear _terraformProblems here. They are managed by
+    // terraform commands (set on completion, cleared when a new command starts).
+    // Clearing them here would wipe terraform errors whenever the reactive
+    // diagram-validation effect re-runs.
+
     // Use untrack to prevent diagram mutations (setNodeValidationErrors, clearAll)
     // from re-triggering the $effect that watches diagram.nodes/edges.
     untrack(() => {

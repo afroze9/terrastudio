@@ -72,18 +72,6 @@
     </button>
   {/each}
   <div class="tab-spacer"></div>
-  <button
-    class="toggle-props-btn"
-    class:active={ui.showPropertiesPanel}
-    onclick={() => (ui.showPropertiesPanel = !ui.showPropertiesPanel)}
-    title={ui.showPropertiesPanel ? 'Hide Properties Panel' : 'Show Properties Panel'}
-    aria-label="Toggle properties panel"
-  >
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-      <rect x="14" y="3" width="7" height="18" rx="1"/>
-      <rect x="3" y="3" width="7" height="18" rx="1" opacity="0.3"/>
-    </svg>
-  </button>
 </div>
 
 <!-- Context menu -->
@@ -197,26 +185,6 @@
   .tab-spacer {
     flex: 1;
   }
-  .toggle-props-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 35px;
-    border: none;
-    background: transparent;
-    color: var(--color-text-muted);
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: color 0.1s, background 0.1s;
-  }
-  .toggle-props-btn:hover {
-    background: var(--color-surface-hover);
-    color: var(--color-text);
-  }
-  .toggle-props-btn.active {
-    color: var(--color-accent);
-  }
-
   /* Context menu */
   .tab-context-menu {
     position: fixed;
