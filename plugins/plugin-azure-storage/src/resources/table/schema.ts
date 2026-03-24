@@ -33,7 +33,7 @@ export const tableSchema: ResourceSchema = {
     },
   ],
 
-  parentReference: { propertyKey: 'storage_account_id' },
+  parentReference: { propertyKey: 'storage_account_name' },
 
   handles: [],
 
