@@ -34,11 +34,11 @@ const DEFAULT_EDGE_VISIBILITY: EdgeCategoryVisibility = {
   annotation: true,
 };
 
-export type SidebarView = 'explorer' | 'terraform' | 'settings' | 'cost' | 'app-settings' | 'search';
+export type SidebarView = 'explorer' | 'terraform' | 'settings' | 'cost' | 'app-settings' | 'search' | 'git';
 export type RightPanelView = 'properties' | 'formatting';
 export type EdgeStyle = 'default' | 'smoothstep' | 'step' | 'straight';
 export type Theme = 'dark' | 'light';
-export type BottomPanelTab = 'terminal' | 'problems' | 'connection-wizard' | 'plan';
+export type BottomPanelTab = 'terminal' | 'problems' | 'connection-wizard' | 'plan' | 'git-output';
 export type ReducedMotionPref = 'system' | 'reduce' | 'no-preference';
 export type FontScale = 75 | 85 | 100 | 115 | 130 | 150;
 
@@ -54,7 +54,7 @@ export interface DragFeedback {
 export interface EditorTab {
   id: string;        // 'canvas' or filename
   label: string;     // 'Canvas' or 'main.tf'
-  type: 'canvas' | 'file' | 'dep-graph';
+  type: 'canvas' | 'file' | 'dep-graph' | 'diff';
 }
 
 class UiStore {
@@ -211,6 +211,27 @@ class UiStore {
       const tab: EditorTab = { id: filename, label: filename, type: 'file' };
       this.tabs = [...this.tabs, tab];
       this.activeTabId = tab.id;
+    }
+  }
+
+  /** Open a diff tab (or focus it if already open) */
+  openDiffTab(title: string) {
+    const existing = this.tabs.find((t) => t.type === 'diff');
+    if (existing) {
+      existing.label = title;
+      this.activeTabId = existing.id;
+    } else {
+      const tab: EditorTab = { id: 'diff', label: title, type: 'diff' };
+      this.tabs = [...this.tabs, tab];
+      this.activeTabId = tab.id;
+    }
+  }
+
+  /** Close the diff tab and return to canvas */
+  closeDiffTab() {
+    this.tabs = this.tabs.filter((t) => t.type !== 'diff');
+    if (this.activeTabId === 'diff') {
+      this.activeTabId = 'canvas';
     }
   }
 

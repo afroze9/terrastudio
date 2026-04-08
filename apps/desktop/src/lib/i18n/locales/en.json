@@ -72,7 +72,9 @@
     "connection": "Connection",
     "colorPalette": "Color Palette",
     "switchToLight": "Switch to Light Mode",
-    "switchToDark": "Switch to Dark Mode"
+    "switchToDark": "Switch to Dark Mode",
+    "plan": "Plan",
+    "gitOutput": "Git"
   },
   "settings": {
     "title": "Settings",
@@ -133,6 +135,7 @@
     "settings": "SETTINGS",
     "cost": "COST ESTIMATES",
     "search": "SEARCH",
+    "git": "GIT",
     "expandAll": "Expand All",
     "collapseAll": "Collapse All",
     "expandAllCategories": "Expand all categories",
@@ -144,6 +147,7 @@
     "project": "Project",
     "cost": "Cost Estimates",
     "search": "Search",
+    "git": "Git",
     "settings": "Settings"
   },
   "palette": {
@@ -509,7 +513,8 @@
     "connectionPlaceholder": "Make a connection on the canvas to see it explained here",
     "connectionHistory": "Connection History",
     "clear": "Clear",
-    "plan": "Plan"
+    "plan": "Plan",
+    "gitOutput": "Git"
   },
   "problems": {
     "noProblems": "No problems detected",
@@ -619,5 +624,22 @@
     "documentation": "Export Documentation",
     "success": "Export successful",
     "error": "Export failed"
+  },
+  "git": {
+    "noProject": "Open a project to use Git.",
+    "notARepo": "This project is not tracked by Git.",
+    "initialize": "Initialize Repository",
+    "commit": "Commit",
+    "committing": "Committing...",
+    "commitPlaceholder": "Commit message...",
+    "commitTooltip": "Auto-generate Terraform files and commit (Ctrl+Enter)",
+    "push": "Push",
+    "pull": "Pull",
+    "changes": "Changes",
+    "noChanges": "No changes to commit.",
+    "terraform": "Terraform",
+    "noTerraformChanges": "No Terraform file changes.",
+    "history": "History",
+    "noHistory": "No commits yet."
   }
 }

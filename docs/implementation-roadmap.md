@@ -1392,7 +1392,7 @@ All layout controls live in a **"Layout" toolbar section** that appears contextu
 - **Plugin doc sections**: Plugins contribute custom sections to exported architecture docs
 - **Azure resource name availability validation**: Real-time name validation via Azure REST API
 - **Drift detection**: Compare deployed state to diagram and highlight differences
-- **Git integration**: Version control diagram files with diff visualization
+- **Git integration**: Version control diagram files with diff visualization — [spec](git-integration.md)
 - **Collaboration**: Real-time multi-user editing via CRDT
 
 ## Related Docs

@@ -2,11 +2,14 @@
   import { ui, type BottomPanelTab } from '$lib/stores/ui.svelte';
   import { connectionWizard } from '$lib/stores/connection-wizard.svelte';
   import { validation } from '$lib/stores/validation.svelte';
+  import { terraform } from '$lib/stores/terraform.svelte';
+  import { git } from '$lib/stores/git.svelte';
   import { t } from '$lib/i18n';
   import TerminalTab from './bottom-panel/TerminalTab.svelte';
   import ProblemsTab from './bottom-panel/ProblemsTab.svelte';
   import ConnectionWizardTab from './bottom-panel/ConnectionWizardTab.svelte';
   import PlanTab from './bottom-panel/PlanTab.svelte';
+  import GitOutputTab from './bottom-panel/GitOutputTab.svelte';
 
   let isResizing = $state(false);
 
@@ -15,6 +18,7 @@
     { id: 'problems', labelKey: 'bottomPanel.problems' },
     { id: 'connection-wizard', labelKey: 'bottomPanel.connection' },
     { id: 'plan', labelKey: 'bottomPanel.plan' },
+    { id: 'git-output', labelKey: 'bottomPanel.gitOutput' },
   ];
 
   function onResizeMouseDown(e: MouseEvent) {
@@ -73,7 +77,25 @@
           </button>
         {/each}
       </div>
-      <button class="panel-btn" onclick={() => { ui.showBottomPanel = false; }}>{t('bottomPanel.hide')}</button>
+      {#if ui.activeBottomTab === 'terminal'}
+        <button class="panel-icon-btn" onclick={() => terraform.clearOutput()} title="Clear output">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h12"/><path d="M5 3V2h6v1"/><path d="M6 7v5"/><path d="M10 7v5"/><path d="M3 3l1 10a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-10"/>
+          </svg>
+        </button>
+      {/if}
+      {#if ui.activeBottomTab === 'git-output'}
+        <button class="panel-icon-btn" onclick={() => git.clearOutput()} title="Clear git output">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h12"/><path d="M5 3V2h6v1"/><path d="M6 7v5"/><path d="M10 7v5"/><path d="M3 3l1 10a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-10"/>
+          </svg>
+        </button>
+      {/if}
+      <button class="panel-icon-btn" onclick={() => { ui.showBottomPanel = false; }} title={t('bottomPanel.hide')}>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="3" y1="8" x2="13" y2="8"/>
+        </svg>
+      </button>
     </div>
     <div class="panel-content">
       {#if ui.activeBottomTab === 'terminal'}
@@ -84,6 +106,8 @@
         <ConnectionWizardTab />
       {:else if ui.activeBottomTab === 'plan'}
         <PlanTab />
+      {:else if ui.activeBottomTab === 'git-output'}
+        <GitOutputTab />
       {/if}
     </div>
   </div>
@@ -151,16 +175,24 @@
     color: var(--color-text);
     border-bottom-color: var(--color-accent);
   }
-  .panel-btn {
+  .panel-icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
     background: none;
     border: none;
+    border-radius: 4px;
     color: var(--color-text-muted);
-    font-size: var(--font-10);
     cursor: pointer;
-    padding: 2px 6px;
+    opacity: 0.6;
+    transition: opacity 0.1s, background 0.1s;
   }
-  .panel-btn:hover {
+  .panel-icon-btn:hover {
     color: var(--color-text);
+    opacity: 1;
+    background: var(--color-surface-hover);
   }
   .tab-badge {
     width: 6px;

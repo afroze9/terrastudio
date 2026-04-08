@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { terraform } from '$lib/stores/terraform.svelte';
+  import { git } from '$lib/stores/git.svelte';
   import { tick } from 'svelte';
 
   let outputEl: HTMLPreElement | undefined = $state();
 
   // Auto-scroll when output changes
   $effect(() => {
-    terraform.outputLines;
+    git.outputLines;
     tick().then(() => {
       if (outputEl) {
         outputEl.scrollTop = outputEl.scrollHeight;
@@ -15,19 +15,19 @@
   });
 </script>
 
-<div class="terminal-tab">
-  <pre class="terminal-output" bind:this={outputEl}>{#each terraform.outputLines as line}<span class={line.stream === 'stderr' ? 'line-stderr' : 'line-stdout'}>{line.line}
+<div class="git-output-tab">
+  <pre class="git-output" bind:this={outputEl}>{#each git.outputLines as entry}<span class="log-line"><span class="log-time">[{entry.timestamp}]</span> {entry.line}
 </span>{/each}</pre>
 </div>
 
 <style>
-  .terminal-tab {
+  .git-output-tab {
     display: flex;
     flex-direction: column;
     flex: 1;
     min-height: 0;
   }
-  .terminal-output {
+  .git-output {
     flex: 1;
     overflow-y: auto;
     padding: 4px 12px;
@@ -38,10 +38,11 @@
     white-space: pre-wrap;
     word-break: break-all;
   }
-  .line-stdout {
+  .log-line {
     color: var(--color-text-muted);
   }
-  .line-stderr {
-    color: #ef4444;
+  .log-time {
+    color: var(--color-text-muted);
+    opacity: 0.5;
   }
 </style>

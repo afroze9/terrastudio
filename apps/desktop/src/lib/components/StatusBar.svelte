@@ -3,6 +3,7 @@
   import { ui, type BottomPanelTab } from '$lib/stores/ui.svelte';
   import { connectionWizard } from '$lib/stores/connection-wizard.svelte';
   import { validation } from '$lib/stores/validation.svelte';
+  import { git } from '$lib/stores/git.svelte';
   import PaletteSelector from './PaletteSelector.svelte';
   import { t } from '$lib/i18n';
 
@@ -24,6 +25,11 @@
       id: 'connection-wizard',
       labelKey: 'status.connection',
       icon: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3v6a2 2 0 0 1-2 2H5" /><polyline points="8 8 5 11 8 14" /></svg>',
+    },
+    {
+      id: 'plan',
+      labelKey: 'status.plan',
+      icon: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2h8v12H4z"/><path d="M6 5h4"/><path d="M6 8h4"/><path d="M6 11h2"/></svg>',
     },
   ];
 
@@ -97,18 +103,24 @@
     {/each}
   </div>
   <div class="status-right">
+    {#if git.isRepo}
+      <button
+        class="panel-toggle"
+        class:active={ui.showBottomPanel && ui.activeBottomTab === 'git-output'}
+        title={t('status.gitOutput')}
+        onclick={() => ui.toggleBottomPanel('git-output')}
+      >
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><circle cx="4" cy="4" r="2"/><path d="M9 4h2a1.5 1.5 0 0 1 1.5 1.5V10"/><line x1="4" y1="6" x2="4" y2="14"/></svg>
+        <span class="panel-toggle-label">{git.branch || 'HEAD'}</span>
+      </button>
+      <span class="separator"></span>
+    {/if}
     <span
       class="status-dot"
       class:pulse={terraform.isRunning}
       style="background: {statusColor}"
     ></span>
     <span class="status-label">{statusLabel}</span>
-    {#if terraform.terraformVersion}
-      <span class="version-badge">{t('status.terraformFound', { version: terraform.terraformVersion })}</span>
-    {/if}
-    {#if terraform.terraformInstalled === false}
-      <span class="warning-badge">{t('status.terraformMissing')}</span>
-    {/if}
     <span class="separator"></span>
     <div class="palette-btn-wrapper">
       <button

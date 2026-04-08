@@ -4,6 +4,7 @@
   import Canvas from './Canvas.svelte';
   import FilePreview from './FilePreview.svelte';
   import DependencyGraphView from './DependencyGraphView.svelte';
+  import DiffView from './git/DiffView.svelte';
   import BottomPanel from './BottomPanel.svelte';
 
   const activeTab = $derived(ui.tabs.find((t) => t.id === ui.activeTabId));
@@ -18,6 +19,8 @@
       <FilePreview filename={activeTab.id} />
     {:else if activeTab?.type === 'dep-graph'}
       <DependencyGraphView />
+    {:else if activeTab?.type === 'diff'}
+      <DiffView />
     {/if}
   </div>
   <BottomPanel />

@@ -6,6 +6,7 @@ use tauri::webview::WebviewWindowBuilder;
 use tauri_plugin_log::{Target, TargetKind, RotationStrategy, TimezoneStrategy};
 
 mod azure;
+mod git;
 mod project;
 mod security;
 mod terraform;
@@ -123,6 +124,19 @@ pub fn run() {
             project::secrets::generate_secrets_id,
             azure::commands::az_list_subscriptions,
             azure::commands::fetch_azure_price,
+            git::commands::git_is_repo,
+            git::commands::git_init,
+            git::commands::git_status,
+            git::commands::git_commit,
+            git::commands::git_log,
+            git::commands::git_show_file,
+            git::commands::git_push,
+            git::commands::git_pull,
+            git::commands::git_branch_list,
+            git::commands::git_branch_create,
+            git::commands::git_branch_switch,
+            git::commands::git_remote_status,
+            git::commands::git_current_branch,
             set_log_level,
             open_log_folder,
             get_pending_open_path,

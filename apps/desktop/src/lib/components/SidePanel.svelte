@@ -9,6 +9,10 @@
   import AppSettingsPanel from './AppSettingsPanel.svelte';
   import CostPanel from './CostPanel.svelte';
   import SearchPanel from './SearchPanel.svelte';
+  import GitPanel from './git/GitPanel.svelte';
+  import { git } from '$lib/stores/git.svelte';
+  import { project } from '$lib/stores/project.svelte';
+  import { refreshGitState, pushAndRefresh, pullAndRefresh } from '$lib/services/git-service';
 
   const categoryIds = registry.paletteCategories.map((c: PaletteCategory) => c.id);
 
@@ -31,6 +35,7 @@
       case 'app-settings': return t('sidebar.settings');
       case 'cost': return t('sidebar.cost');
       case 'search': return t('sidebar.search');
+      case 'git': return t('sidebar.git');
       default: return '';
     }
   });
@@ -64,6 +69,39 @@
   <div class="panel-header">
     <span class="panel-title">{viewTitle}</span>
     <div class="header-spacer"></div>
+    {#if ui.activeView === 'git' && git.isRepo}
+      <button
+        class="header-action"
+        onclick={() => { if (project.path) refreshGitState(project.path); }}
+        title="Fetch"
+        disabled={git.loading}
+      >
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 2v8"/><polyline points="4 6 8 2 12 6"/>
+          <path d="M3 12h10"/>
+        </svg>
+      </button>
+      <button
+        class="header-action"
+        onclick={() => { if (project.path) pullAndRefresh(project.path); }}
+        title="Pull"
+        disabled={git.loading}
+      >
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 2v8"/><polyline points="4 6 8 10 12 6"/>
+        </svg>
+      </button>
+      <button
+        class="header-action"
+        onclick={() => { if (project.path) pushAndRefresh(project.path); }}
+        title="Push"
+        disabled={git.loading}
+      >
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 14V6"/><polyline points="4 10 8 6 12 10"/>
+        </svg>
+      </button>
+    {/if}
     {#if activeCategoryIds.length > 0}
       <button
         class="header-action"
@@ -100,6 +138,8 @@
       <CostPanel />
     {:else if ui.activeView === 'search'}
       <SearchPanel />
+    {:else if ui.activeView === 'git'}
+      <GitPanel />
     {/if}
   </div>
   <!-- svelte-ignore a11y_no_static_element_interactions -->
