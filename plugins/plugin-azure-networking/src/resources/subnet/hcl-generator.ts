@@ -53,6 +53,7 @@ export const subnetHclGenerator: HclGenerator = {
           'Microsoft.Network/virtualNetworks/subnets/unprepareNetworkPolicies/action',
         ],
         'Microsoft.ApiManagement/service': ['Microsoft.Network/virtualNetworks/subnets/join/action'],
+        'Microsoft.Sql/managedInstances': ['Microsoft.Network/virtualNetworks/subnets/join/action'],
       };
       const actions = delegationActionsMap[delegationService] ?? [];
       lines.push('');

@@ -160,6 +160,7 @@ export const subnetSchema: ResourceSchema = {
         { label: 'Container Instances', value: 'Microsoft.ContainerInstance/containerGroups' },
         { label: 'Azure Databricks', value: 'Microsoft.Databricks/workspaces' },
         { label: 'API Management', value: 'Microsoft.ApiManagement/service' },
+        { label: 'SQL Managed Instance', value: 'Microsoft.Sql/managedInstances' },
       ],
     },
   ],

@@ -18,6 +18,7 @@ import { loadBalancerRegistration } from './resources/load-balancer/index.js';
 import { dnsZoneRegistration } from './resources/dns-zone/index.js';
 import { dnsARecordRegistration } from './resources/dns-a-record/index.js';
 import { dnsCnameRecordRegistration } from './resources/dns-cname-record/index.js';
+import { vnetPeeringRegistration } from './resources/vnet-peering/index.js';
 import { networkingConnectionRules } from './connections/rules.js';
 
 const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
@@ -39,6 +40,7 @@ const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
   ['azurerm/dns/dns_zone', dnsZoneRegistration],
   ['azurerm/dns/dns_a_record', dnsARecordRegistration],
   ['azurerm/dns/dns_cname_record', dnsCnameRecordRegistration],
+  ['azurerm/networking/virtual_network_peering', vnetPeeringRegistration],
 ]);
 
 const plugin: InfraPlugin = {

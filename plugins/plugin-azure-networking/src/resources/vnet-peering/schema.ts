@@ -1,0 +1,91 @@
+import type { ResourceSchema } from '@terrastudio/types';
+
+export const vnetPeeringSchema: ResourceSchema = {
+  typeId: 'azurerm/networking/virtual_network_peering',
+  provider: 'azurerm',
+  displayName: 'VNet Peering',
+  category: 'networking',
+  description: 'Bidirectional peering between two Azure Virtual Networks',
+  terraformType: 'azurerm_virtual_network_peering',
+  supportsTags: false,
+  requiresResourceGroup: false,
+
+  properties: [
+    {
+      key: 'name_prefix',
+      label: 'Name Prefix',
+      type: 'string',
+      required: true,
+      placeholder: 'hub-spoke',
+      group: 'General',
+      order: 1,
+      description: 'Prefix used for both peering names (e.g. "hub-spoke" produces hub-spoke-a-to-b and hub-spoke-b-to-a)',
+    },
+    {
+      key: 'vnet_a_id',
+      label: 'VNet A',
+      type: 'reference',
+      required: true,
+      group: 'General',
+      order: 2,
+      referenceTargetTypes: ['azurerm/networking/virtual_network'],
+    },
+    {
+      key: 'vnet_b_id',
+      label: 'VNet B',
+      type: 'reference',
+      required: true,
+      group: 'General',
+      order: 3,
+      referenceTargetTypes: ['azurerm/networking/virtual_network'],
+    },
+    {
+      key: 'allow_virtual_network_access',
+      label: 'Allow VNet Access',
+      type: 'boolean',
+      required: false,
+      group: 'Options',
+      order: 10,
+      defaultValue: true,
+      description: 'Allow VMs in the peered VNet to access this VNet',
+    },
+    {
+      key: 'allow_forwarded_traffic',
+      label: 'Allow Forwarded Traffic',
+      type: 'boolean',
+      required: false,
+      group: 'Options',
+      order: 11,
+      defaultValue: false,
+      description: 'Allow forwarded traffic (e.g. from NVAs) from the peered VNet',
+    },
+    {
+      key: 'allow_gateway_transit',
+      label: 'Allow Gateway Transit',
+      type: 'boolean',
+      required: false,
+      group: 'Options',
+      order: 12,
+      defaultValue: false,
+      description: 'Allow the peered VNet to use this VNet\u2019s gateway (hub side)',
+    },
+    {
+      key: 'use_remote_gateways',
+      label: 'Use Remote Gateways',
+      type: 'boolean',
+      required: false,
+      group: 'Options',
+      order: 13,
+      defaultValue: false,
+      description: 'Use the peered VNet\u2019s gateway for outbound traffic (spoke side)',
+    },
+  ],
+
+  handles: [],
+
+  outputs: [
+    { key: 'id_a_to_b', label: 'A\u2192B Peering ID', terraformAttribute: 'id' },
+  ],
+
+  costEstimation: { serviceName: 'VNet Peering', staticMonthlyCost: 0 },
+};

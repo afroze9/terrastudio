@@ -8,6 +8,8 @@ import { cosmosdbAccountRegistration } from './resources/cosmosdb-account/index.
 import { cosmosdbSqlDatabaseRegistration } from './resources/cosmosdb-sql-database/index.js';
 import { mysqlFlexibleServerRegistration } from './resources/mysql-flexible-server/index.js';
 import { mysqlFlexibleServerDatabaseRegistration } from './resources/mysql-flexible-server-database/index.js';
+import { mssqlManagedInstanceRegistration } from './resources/mssql-managed-instance/index.js';
+import { mssqlManagedInstanceAadAdministratorRegistration } from './resources/mssql-managed-instance-aad-administrator/index.js';
 import { databaseConnectionRules } from './connections/rules.js';
 
 const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
@@ -20,6 +22,8 @@ const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
   ['azurerm/database/cosmosdb_sql_database', cosmosdbSqlDatabaseRegistration],
   ['azurerm/database/mysql_flexible_server', mysqlFlexibleServerRegistration],
   ['azurerm/database/mysql_flexible_server_database', mysqlFlexibleServerDatabaseRegistration],
+  ['azurerm/database/mssql_managed_instance', mssqlManagedInstanceRegistration],
+  ['azurerm/database/mssql_managed_instance_aad_administrator', mssqlManagedInstanceAadAdministratorRegistration],
 ]);
 
 const plugin: InfraPlugin = {
@@ -56,6 +60,11 @@ const plugin: InfraPlugin = {
       id: 'cosmosdb',
       label: 'Cosmos DB',
       order: 29,
+    },
+    {
+      id: 'managed-instance',
+      label: 'SQL Managed Instance',
+      order: 30,
     },
   ],
 };

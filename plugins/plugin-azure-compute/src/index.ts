@@ -27,6 +27,9 @@ import { vmScaleSetRegistration } from './resources/vm-scale-set/index.js';
 import { staticWebAppRegistration } from './resources/static-web-app/index.js';
 import { signalrServiceRegistration } from './resources/signalr-service/index.js';
 import { apiManagementRegistration } from './resources/api-management/index.js';
+import { appConfigurationRegistration } from './resources/app-configuration/index.js';
+import { communicationServiceRegistration } from './resources/communication-service/index.js';
+import { emailCommunicationServiceRegistration } from './resources/email-communication-service/index.js';
 import { computeConnectionRules } from './connections/rules.js';
 import { keyVaultSecretBinding } from './bindings/keyvault-secret.js';
 
@@ -59,6 +62,9 @@ const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
   ['azurerm/web/static_web_app', staticWebAppRegistration],
   ['azurerm/web/signalr_service', signalrServiceRegistration],
   ['azurerm/integration/api_management', apiManagementRegistration],
+  ['azurerm/integration/app_configuration', appConfigurationRegistration],
+  ['azurerm/messaging/communication_service', communicationServiceRegistration],
+  ['azurerm/messaging/email_communication_service', emailCommunicationServiceRegistration],
 ]);
 
 const plugin: InfraPlugin = {

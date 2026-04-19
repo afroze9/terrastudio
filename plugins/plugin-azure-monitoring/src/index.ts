@@ -1,11 +1,15 @@
 import type { InfraPlugin, ResourceTypeId, ResourceTypeRegistration } from '@terrastudio/types';
 import { logAnalyticsWorkspaceRegistration } from './resources/log-analytics-workspace/index.js';
 import { applicationInsightsRegistration } from './resources/application-insights/index.js';
+import { actionGroupRegistration } from './resources/action-group/index.js';
+import { diagnosticSettingRegistration } from './resources/diagnostic-setting/index.js';
 import { monitoringConnectionRules } from './connections/rules.js';
 
 const resourceTypes = new Map<ResourceTypeId, ResourceTypeRegistration>([
   ['azurerm/monitoring/log_analytics_workspace', logAnalyticsWorkspaceRegistration],
   ['azurerm/monitoring/application_insights', applicationInsightsRegistration],
+  ['azurerm/monitoring/action_group', actionGroupRegistration],
+  ['azurerm/monitoring/diagnostic_setting', diagnosticSettingRegistration],
 ]);
 
 const plugin: InfraPlugin = {
