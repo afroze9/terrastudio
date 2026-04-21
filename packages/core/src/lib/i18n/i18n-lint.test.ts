@@ -189,6 +189,7 @@ describe('i18n import coverage', () => {
     'lib/components/HandleMenu.svelte',
     'lib/components/KeyVaultAccessControlSection.svelte',
     'lib/components/ModuleNode.svelte',
+    'lib/components/NodeFormatPanel.svelte',
     'lib/components/NodePlanDiff.svelte',
     'lib/components/PlanSummaryBanner.svelte',
     'lib/components/SubscriptionPicker.svelte',
