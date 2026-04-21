@@ -135,12 +135,18 @@ importers:
       '@terrastudio/platform-node':
         specifier: workspace:*
         version: link:../platform-node
+      '@terrastudio/plugin-annotations':
+        specifier: workspace:*
+        version: link:../plugin-annotations
       '@terrastudio/plugin-aws-compute':
         specifier: workspace:*
         version: link:../../plugins/plugin-aws-compute
       '@terrastudio/plugin-aws-networking':
         specifier: workspace:*
         version: link:../../plugins/plugin-aws-networking
+      '@terrastudio/plugin-azure-ai':
+        specifier: workspace:*
+        version: link:../../plugins/plugin-azure-ai
       '@terrastudio/plugin-azure-compute':
         specifier: workspace:*
         version: link:../../plugins/plugin-azure-compute

@@ -25,6 +25,9 @@ export function toLoadedProject(stored: StoredProjectData): LoadedProject {
  * Register lazy plugin loaders for the given provider IDs onto a PluginRegistry.
  */
 function registerPlugins(registry: PluginRegistry, providerIds: ProviderId[]): void {
+  // Annotations plugin is always available (matches desktop bootstrap behavior).
+  registry.registerLazyPlugin('_annotation', () => import('@terrastudio/plugin-annotations'));
+
   for (const providerId of providerIds) {
     if (providerId === 'azurerm') {
       registry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-networking'));
@@ -33,6 +36,7 @@ function registerPlugins(registry: PluginRegistry, providerIds: ProviderId[]): v
       registry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-database'));
       registry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-monitoring'));
       registry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-security'));
+      registry.registerLazyPlugin('azurerm', () => import('@terrastudio/plugin-azure-ai'));
     } else if (providerId === 'aws') {
       registry.registerLazyPlugin('aws', () => import('@terrastudio/plugin-aws-networking'));
       registry.registerLazyPlugin('aws', () => import('@terrastudio/plugin-aws-compute'));
@@ -47,7 +51,11 @@ function registerPlugins(registry: PluginRegistry, providerIds: ProviderId[]): v
 export async function loadRegistry(providerIds: ProviderId[]): Promise<PluginRegistry> {
   const registry = new PluginRegistry();
   registerPlugins(registry, providerIds);
-  await registry.loadPluginsForProviders(providerIds);
+  // Always load annotations alongside cloud providers (matches desktop bootstrap).
+  const allProviders: ProviderId[] = providerIds.includes('_annotation' as ProviderId)
+    ? providerIds
+    : (['_annotation' as ProviderId, ...providerIds]);
+  await registry.loadPluginsForProviders(allProviders);
   return registry;
 }
 
