@@ -866,6 +866,29 @@
             label = `Store ${outputDef.label} as secret`;
           }
         }
+
+        // Drag from a showAsEdge reference handle (`ref-{propKey}`): write the
+        // reference onto the source node's data instead of storing a structural
+        // edge. The visual edge is derived by referenceEdges, and the property
+        // panel stays in sync.
+        if (
+          connection.sourceHandle?.startsWith('ref-') &&
+          result.rule.createsReference?.side === 'source'
+        ) {
+          const propKey = result.rule.createsReference.propertyKey;
+          const newRefs = { ...sourceNode.data.references, [propKey]: connection.target };
+          diagram.updateNodeData(sourceNode.id, { references: newRefs });
+
+          const wizardEntry = buildEdgeWizardEntry({
+            edgeId: `ref-${sourceNode.id}-${propKey}`,
+            sourceNode,
+            targetNode,
+            rule: result.rule,
+            registry,
+          });
+          if (wizardEntry) connectionWizard.notifyEdgeConnection(wizardEntry);
+          return;
+        }
       }
     }
 

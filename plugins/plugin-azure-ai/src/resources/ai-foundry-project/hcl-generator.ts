@@ -15,10 +15,10 @@ export const aiFoundryProjectHclGenerator: HclGenerator = {
     const nameExpr = context.getPropertyExpression(resource, 'name', name);
 
     // Resolve AI Foundry Hub reference (parent containment)
-    const hubRef = resource.references['ai_foundry_id'];
+    const hubRef = resource.references['ai_services_hub_id'];
     const hubIdExpr = hubRef
       ? context.getAttributeReference(hubRef, 'id')
-      : '"<ai-foundry-id>"';
+      : '"<ai-services-hub-id>"';
 
     if (hubRef) {
       const hubAddr = context.getTerraformAddress(hubRef);
@@ -27,19 +27,19 @@ export const aiFoundryProjectHclGenerator: HclGenerator = {
 
     const lines: string[] = [
       `resource "azurerm_ai_foundry_project" "${resource.terraformName}" {`,
-      `  name           = ${nameExpr}`,
-      `  location       = ${locExpr}`,
-      `  ai_foundry_id  = ${hubIdExpr}`,
+      `  name               = ${nameExpr}`,
+      `  location           = ${locExpr}`,
+      `  ai_services_hub_id = ${hubIdExpr}`,
     ];
 
     if (friendlyName || resource.variableOverrides?.['friendly_name'] === 'variable') {
       const friendlyNameExpr = context.getPropertyExpression(resource, 'friendly_name', friendlyName ?? '');
-      lines.push(`  friendly_name  = ${friendlyNameExpr}`);
+      lines.push(`  friendly_name      = ${friendlyNameExpr}`);
     }
 
     if (description || resource.variableOverrides?.['description'] === 'variable') {
       const descExpr = context.getPropertyExpression(resource, 'description', description ?? '');
-      lines.push(`  description    = ${descExpr}`);
+      lines.push(`  description        = ${descExpr}`);
     }
 
     lines.push('}');

@@ -139,24 +139,24 @@
 
   let handles = $derived([...staticHandles, ...dynamicOutputHandles]);
 
-  // Compute offsets so handles on the same side are evenly spaced
-  // For left/right sides: use top percentage
-  // For top/bottom sides: use left percentage
-  let handleStyles = $derived.by(() => {
-    const all = handles;
-    const bySide = new Map<string, number[]>();
-    all.forEach((h, i) => {
+  // Compute offsets so handles on the same side are evenly spaced.
+  // Includes reference handles so all visible anchors (schema + output + ref)
+  // share the spacing budget on each side.
+  let handleStylesById = $derived.by(() => {
+    const all = [...handles, ...referenceHandles];
+    const bySide = new Map<string, string[]>();
+    for (const h of all) {
       const list = bySide.get(h.position) ?? [];
-      list.push(i);
+      list.push(h.id);
       bySide.set(h.position, list);
-    });
-    const styles: (string | undefined)[] = new Array(all.length);
-    for (const [side, indices] of bySide) {
-      if (indices.length <= 1) continue;
+    }
+    const styles = new Map<string, string>();
+    for (const [side, ids] of bySide) {
+      if (ids.length <= 1) continue;
       const isVerticalSide = side === 'left' || side === 'right';
-      indices.forEach((idx, rank) => {
-        const pct = ((rank + 1) / (indices.length + 1)) * 100;
-        styles[idx] = isVerticalSide ? `top: ${pct}%;` : `left: ${pct}%;`;
+      ids.forEach((id, rank) => {
+        const pct = ((rank + 1) / (ids.length + 1)) * 100;
+        styles.set(id, isVerticalSide ? `top: ${pct}%;` : `left: ${pct}%;`);
       });
     }
     return styles;
@@ -266,7 +266,7 @@
   let visibleHandleIds = $derived(new Set((data.visibleHandles as string[]) ?? []));
 
   function onArrowClick(direction: ArrowDirection) {
-    const allEntries: HandleMenuEntry[] = handles.map((h) => ({
+    const allEntries: HandleMenuEntry[] = [...handles, ...referenceHandles].map((h) => ({
       handleId: h.id,
       label: h.label,
       type: h.type,
@@ -355,6 +355,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div
   class="resource-node"
   class:selected
@@ -418,8 +419,8 @@
     {/if}
   {/if}
 
-  {#each handles as handle, i (handle.id)}
-    <HandleWithLabel {handle} nodeTypeId={data.typeId} style={handleStyles[i]} compact={ui.compactNodes} hovered={isHovered} connected={connectedHandleIds.has(handle.id)} ghost={ghostHandleIds.has(handle.id)} visible={visibleHandleIds.has(handle.id)} />
+  {#each handles as handle (handle.id)}
+    <HandleWithLabel {handle} nodeTypeId={data.typeId} style={handleStylesById.get(handle.id)} compact={ui.compactNodes} hovered={isHovered} connected={connectedHandleIds.has(handle.id)} ghost={ghostHandleIds.has(handle.id)} visible={visibleHandleIds.has(handle.id)} />
   {/each}
 
   {#if showArrows && !connectionUx.isDragging}
@@ -451,15 +452,16 @@
     />
   {/each}
 
-  <!-- Reference edge handles: non-connectable anchors for showAsEdge properties.
-       Position is user-overridable via the Manage Handles dialog. -->
+  <!-- Reference edge handles: source handles for showAsEdge properties.
+       Drag from these to a valid target to wire the reference; position is
+       user-overridable via the Manage Handles dialog. -->
   {#each referenceHandles as refHandle (refHandle.id)}
     <Handle
       type="source"
       position={refHandle.position === 'top' ? Position.Top : refHandle.position === 'bottom' ? Position.Bottom : refHandle.position === 'left' ? Position.Left : Position.Right}
       id={refHandle.id}
       class="reference-handle"
-      isConnectable={false}
+      style={handleStylesById.get(refHandle.id)}
     />
   {/each}
 
@@ -696,15 +698,19 @@
     pointer-events: none;
   }
 
-  /* Reference edge handles — subtle dot, non-interactive */
+  /* Reference edge handles — subtle dot; draggable to wire a showAsEdge reference. */
   :global(.reference-handle) {
-    width: 6px !important;
-    height: 6px !important;
+    width: 8px !important;
+    height: 8px !important;
     background: #8b90a0 !important;
     border: 1px solid #1a1d27 !important;
     border-radius: 50% !important;
-    pointer-events: none !important;
-    opacity: 0.6 !important;
+    opacity: 0.7 !important;
+    cursor: crosshair !important;
+  }
+  :global(.reference-handle:hover) {
+    background: #b9c0d0 !important;
+    opacity: 1 !important;
   }
 
   /* Connection point handles for annotation edges.

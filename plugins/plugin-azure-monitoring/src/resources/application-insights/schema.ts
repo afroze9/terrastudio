@@ -90,7 +90,14 @@ export const applicationInsightsSchema: ResourceSchema = {
     },
   ],
 
-  handles: [],
+  handles: [
+    {
+      id: 'pep-target',
+      type: 'target',
+      position: 'left',
+      label: 'Reference',
+    },
+  ],
 
   outputs: [
     { key: 'id', label: 'Resource ID', terraformAttribute: 'id' },

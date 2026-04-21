@@ -8,14 +8,14 @@ export const aiFoundryProjectSchema: ResourceSchema = {
   description: 'Azure AI Foundry project within a hub for organizing AI workloads',
   terraformType: 'azurerm_ai_foundry_project',
   supportsTags: false,
-  requiresResourceGroup: false,
+  requiresResourceGroup: true,
   cafAbbreviation: 'aiproj',
 
   canBeChildOf: [
     'azurerm/ai/ai_foundry',
   ],
 
-  parentReference: { propertyKey: 'ai_foundry_id' },
+  parentReference: { propertyKey: 'ai_services_hub_id' },
 
   properties: [
     {
