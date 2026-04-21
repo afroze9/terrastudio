@@ -3,6 +3,8 @@
   import MenuBar from './MenuBar.svelte';
   import WindowControls from './WindowControls.svelte';
 
+  const isMac = navigator.platform.toUpperCase().includes('MAC');
+
   let { onNewProject }: { onNewProject: () => void } = $props();
 </script>
 
@@ -16,7 +18,7 @@
     <polygon points="384,290 424,313 424,367 384,390 344,367 344,313" fill="#9333ea" stroke="#9333ea" stroke-width="14" stroke-linejoin="round"/>
   </svg>
   <span class="app-logo" data-tauri-drag-region>TerraStudio</span>
-  {#if project.isOpen}
+  {#if project.isOpen && !isMac}
     <MenuBar {onNewProject} />
   {/if}
   <div class="drag-spacer" data-tauri-drag-region></div>
@@ -25,19 +27,21 @@
       {project.name}{#if project.isDirty} <span class="dirty-dot"></span>{/if}
     </span>
   {/if}
-  <WindowControls />
+  {#if !isMac}
+    <WindowControls />
+  {/if}
 </header>
 
 <style>
   .titlebar {
     display: flex;
     align-items: center;
-    height: 30px;
+    height: 36px;
     background: var(--color-surface);
     border-bottom: 1px solid var(--color-border);
     flex-shrink: 0;
     -webkit-app-region: drag;
-    padding-left: 12px;
+    padding-left: 80px; /* space for macOS traffic lights with titleBarStyle:Overlay */
     gap: 0;
   }
   .app-icon {

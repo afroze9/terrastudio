@@ -11,6 +11,8 @@
   import WindowControls from './WindowControls.svelte';
 
   // ── View state ─────────────────────────────────────────────────────────────
+  const isMac = navigator.platform.toUpperCase().includes('MAC');
+
   type View = 'home' | 'step1' | 'step2';
   const { startInWizard = false }: { startInWizard?: boolean } = $props();
   let view = $state<View>(startInWizard ? 'step1' : 'home');
@@ -262,7 +264,9 @@
       <span class="welcome-logo" data-tauri-drag-region>TerraStudio</span>
     {/if}
     <div class="titlebar-spacer" data-tauri-drag-region></div>
-    <WindowControls />
+    {#if !isMac}
+      <WindowControls />
+    {/if}
   </div>
 
   <!-- ── HOME ──────────────────────────────────────────────────────────────── -->
@@ -616,14 +620,16 @@
     position: relative;
     display: flex;
     align-items: center;
-    height: 30px;
+    height: 36px;
     width: 100%;
     -webkit-app-region: drag;
     z-index: 10;
     flex-shrink: 0;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
   }
 
-  .titlebar-icon { flex-shrink: 0; margin-left: 12px; margin-right: 6px; }
+  .titlebar-icon { flex-shrink: 0; margin-left: 80px; margin-right: 6px; } /* space for macOS traffic lights */
   .welcome-logo { font-weight: 700; font-size: var(--font-12); letter-spacing: -0.02em; color: var(--color-accent); flex-shrink: 0; }
   .titlebar-spacer { flex: 1; }
 
@@ -631,7 +637,7 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    margin-left: 8px;
+    margin-left: 80px; /* space for macOS traffic lights */
     padding: 4px 10px;
     border: none;
     background: none;

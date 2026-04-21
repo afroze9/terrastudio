@@ -3,6 +3,7 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Mutex;
 use tauri::{Emitter, Manager};
 use tauri::webview::WebviewWindowBuilder;
+use tauri::menu::{Menu, Submenu, MenuItem, PredefinedMenuItem};
 use tauri_plugin_log::{Target, TargetKind, RotationStrategy, TimezoneStrategy};
 
 mod azure;
@@ -19,6 +20,61 @@ pub struct PendingWindowPaths(pub Mutex<HashMap<String, String>>);
 
 /// Counter for generating unique window labels.
 static WINDOW_COUNTER: AtomicU32 = AtomicU32::new(1);
+
+/// Build a native macOS-style menu bar.
+fn build_menu(app: &tauri::AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
+    let file_menu = Submenu::with_items(app, "File", true, &[
+        &MenuItem::with_id(app, "new_project", "New Project", true, Some("CmdOrCtrl+N"))?,
+        &MenuItem::with_id(app, "new_window", "New Window", true, Some("CmdOrCtrl+Shift+N"))?,
+        &PredefinedMenuItem::separator(app)?,
+        &MenuItem::with_id(app, "open_project", "Open Project...", true, Some("CmdOrCtrl+O"))?,
+        &MenuItem::with_id(app, "save", "Save", true, Some("CmdOrCtrl+S"))?,
+        &PredefinedMenuItem::separator(app)?,
+        &MenuItem::with_id(app, "close_project", "Close Project", true, Some("CmdOrCtrl+Shift+W"))?,
+        &PredefinedMenuItem::close_window(app, Some("Close Window"))?,
+    ])?;
+
+    let edit_menu = Submenu::with_items(app, "Edit", true, &[
+        &MenuItem::with_id(app, "undo", "Undo", true, Some("CmdOrCtrl+Z"))?,
+        &MenuItem::with_id(app, "redo", "Redo", true, Some("CmdOrCtrl+Shift+Z"))?,
+        &PredefinedMenuItem::separator(app)?,
+        &MenuItem::with_id(app, "select_all", "Select All", true, Some("CmdOrCtrl+A"))?,
+    ])?;
+
+    let view_menu = Submenu::with_items(app, "View", true, &[
+        &MenuItem::with_id(app, "toggle_sidebar", "Toggle Sidebar", true, Some("CmdOrCtrl+B"))?,
+        &MenuItem::with_id(app, "toggle_panel", "Toggle Panel", true, Some("CmdOrCtrl+J"))?,
+        &MenuItem::with_id(app, "fit_view", "Fit to View", true, Some("CmdOrCtrl+0"))?,
+        &PredefinedMenuItem::separator(app)?,
+        &MenuItem::with_id(app, "toggle_theme", "Toggle Theme", true, None::<&str>)?,
+        &PredefinedMenuItem::separator(app)?,
+        &MenuItem::with_id(app, "devtools", "Developer Tools", true, Some("F12"))?,
+    ])?;
+
+    let help_menu = Submenu::with_items(app, "Help", true, &[
+        &MenuItem::with_id(app, "shortcuts", "Keyboard Shortcuts", true, None::<&str>)?,
+        &PredefinedMenuItem::separator(app)?,
+        &MenuItem::with_id(app, "about", "About TerraStudio", true, None::<&str>)?,
+    ])?;
+
+    Menu::with_items(app, &[
+        &Submenu::with_items(app, "TerraStudio", true, &[
+            &PredefinedMenuItem::about(app, Some("About TerraStudio"), None)?,
+            &PredefinedMenuItem::separator(app)?,
+            &MenuItem::with_id(app, "settings", "Settings...", true, Some("CmdOrCtrl+,"))?,
+            &PredefinedMenuItem::separator(app)?,
+            &PredefinedMenuItem::hide(app, None)?,
+            &PredefinedMenuItem::hide_others(app, None)?,
+            &PredefinedMenuItem::show_all(app, None)?,
+            &PredefinedMenuItem::separator(app)?,
+            &PredefinedMenuItem::quit(app, None)?,
+        ])?,
+        &file_menu,
+        &edit_menu,
+        &view_menu,
+        &help_menu,
+    ])
+}
 
 /// Compute a date-stamped log file name: "terrastudio-YYYY-MM-DD"
 /// (the plugin appends ".log" automatically).
@@ -41,6 +97,11 @@ pub fn run() {
     }
 
     tauri::Builder::default()
+        .on_menu_event(|app, event| {
+            let id = event.id().0.clone();
+            // Forward menu events to all webview windows
+            let _ = app.emit("menu://action", id);
+        })
         .plugin(
             tauri_plugin_log::Builder::new()
                 .targets(log_targets)
@@ -87,6 +148,10 @@ pub fn run() {
             let pending_path = extract_tstudio_path(&std::env::args().collect::<Vec<_>>());
             app.manage(PendingOpenPath(Mutex::new(pending_path)));
             app.manage(PendingWindowPaths(Mutex::new(HashMap::new())));
+
+            // Set up native menu bar (primarily for macOS global menu)
+            let menu = build_menu(app.handle())?;
+            app.set_menu(menu)?;
 
             Ok(())
         })

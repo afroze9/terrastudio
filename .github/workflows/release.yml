@@ -61,9 +61,6 @@ jobs:
 
   build-release:
     needs: create-release
-    # Windows-only for now. Re-enable Linux (ubuntu-22.04) and macOS
-    # (macos-latest with aarch64-apple-darwin target) by adding them back
-    # to the matrix below.
     strategy:
       fail-fast: false
       matrix:
@@ -71,6 +68,9 @@ jobs:
           - platform: windows-latest
             args: ''
             rust-targets: ''
+          - platform: macos-latest
+            args: '--target aarch64-apple-darwin'
+            rust-targets: 'aarch64-apple-darwin'
 
     runs-on: ${{ matrix.platform }}
 
@@ -128,16 +128,15 @@ jobs:
 
   build-cli:
     needs: create-release
-    # Windows-only for now. Re-enable Linux/macOS CLI binaries by adding
-    # them back to the matrix (node22-linux-x64 / node22-macos-arm64 /
-    # node22-macos-x64). The npm package is still published and works
-    # cross-platform via Node.js.
     strategy:
       matrix:
         include:
           - os: windows-latest
             target: node22-win-x64
             artifact: tstudio-win-x64.exe
+          - os: macos-latest
+            target: node22-macos-arm64
+            artifact: tstudio-macos-arm64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4

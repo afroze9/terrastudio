@@ -2,6 +2,7 @@
 	import { onMount, tick } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
 	import { getCurrentWindow } from '@tauri-apps/api/window';
+	import { listen } from '@tauri-apps/api/event';
 	import { declarePlugins, initializeTerraformCheck, initLogging, initValidation } from '$lib/bootstrap';
 	import { i18n } from '$lib/i18n';
 	import Titlebar from '$lib/components/Titlebar.svelte';
@@ -13,6 +14,8 @@
 	import StatusBar from '$lib/components/StatusBar.svelte';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import UnsavedChangesDialog from '$lib/components/UnsavedChangesDialog.svelte';
+	import ShortcutsModal from '$lib/components/ShortcutsModal.svelte';
+	import AboutModal from '$lib/components/AboutModal.svelte';
 	import WelcomeScreen from '$lib/components/WelcomeScreen.svelte';
 	import { ui } from '$lib/stores/ui.svelte';
 	import { project } from '$lib/stores/project.svelte';
@@ -23,6 +26,8 @@
 	import { initSettingsSync, destroySettingsSync } from '$lib/stores/settings-sync';
 
 	let startWelcomeInWizard = $state(false);
+	let showShortcutsModal = $state(false);
+	let showAboutModal = $state(false);
 
 	/** Close the current project and go to the welcome screen's new project wizard. */
 	async function handleNewProject() {
@@ -215,10 +220,46 @@
 			e.preventDefault();
 		}
 
+		// Listen for native menu actions from macOS global menu
+		const unlistenMenu = listen<string>('menu://action', (event) => {
+			const action = event.payload;
+			switch (action) {
+				case 'new_project': handleNewProject(); break;
+				case 'new_window': invoke('create_project_window', {}).catch(() => {}); break;
+				case 'open_project': openProject().catch(() => {}); break;
+				case 'save': if (project.isOpen) saveDiagram(); break;
+				case 'close_project':
+					if (project.isOpen) {
+						guardUnsavedChanges().then((ok) => {
+							if (!ok) return;
+							diagram.clear();
+							terraform.clear();
+							plan.clear();
+							ui.closeAllFileTabs();
+							project.close();
+							getCurrentWindow().setTitle('TerraStudio').catch(() => {});
+						});
+					}
+					break;
+				case 'undo': if (project.isOpen) diagram.undo(); break;
+				case 'redo': if (project.isOpen) diagram.redo(); break;
+				case 'select_all': if (project.isOpen) diagram.selectAll(); break;
+				case 'toggle_sidebar': ui.showSidePanel = !ui.showSidePanel; break;
+				case 'toggle_panel': ui.showBottomPanel = !ui.showBottomPanel; break;
+				case 'fit_view': if (project.isOpen) ui.fitView?.(); break;
+				case 'toggle_theme': ui.toggleTheme(); break;
+				case 'settings': ui.setActiveView('app-settings'); break;
+				case 'devtools': invoke('open_devtools').catch(() => {}); break;
+				case 'shortcuts': showShortcutsModal = true; break;
+				case 'about': showAboutModal = true; break;
+			}
+		});
+
 		window.addEventListener('keydown', handleKeydown);
 		window.addEventListener('contextmenu', blockContextMenu);
 		return () => {
 			unlistenClose.then((fn) => fn());
+			unlistenMenu.then((fn) => fn());
 			window.removeEventListener('keydown', handleKeydown);
 			window.removeEventListener('contextmenu', blockContextMenu);
 		};
@@ -247,6 +288,8 @@
 
 <ConfirmDialog />
 <UnsavedChangesDialog />
+<ShortcutsModal open={showShortcutsModal} onclose={() => (showShortcutsModal = false)} />
+<AboutModal open={showAboutModal} onclose={() => (showAboutModal = false)} />
 
 <style>
 	.app-shell {
