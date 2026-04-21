@@ -13,8 +13,10 @@ concurrency:
 
 jobs:
   build-nightly:
-    # Skip release-please merge commits
-    if: "!contains(github.event.head_commit.message, 'chore(main): release')"
+    # Skip auto-generated release commits
+    if: "!contains(github.event.head_commit.message, 'chore: release v')"
+    # Windows-only for now. Re-enable Linux (ubuntu-22.04) and macOS
+    # (macos-latest aarch64/x86_64) by adding them back to the matrix.
     strategy:
       fail-fast: false
       matrix:
@@ -25,35 +27,11 @@ jobs:
             portable-ext: exe
             portable-name: app.exe
             archive-cmd: 7z a -tzip
-          - platform: ubuntu-22.04
-            args: ''
-            rust-targets: ''
-            portable-ext: ''
-            portable-name: terra-studio
-            archive-cmd: tar czf
-          - platform: macos-latest
-            args: '--target aarch64-apple-darwin'
-            rust-targets: 'aarch64-apple-darwin,x86_64-apple-darwin'
-            portable-ext: ''
-            portable-name: ''
-            archive-cmd: ''
-          - platform: macos-latest
-            args: '--target x86_64-apple-darwin'
-            rust-targets: 'aarch64-apple-darwin,x86_64-apple-darwin'
-            portable-ext: ''
-            portable-name: ''
-            archive-cmd: ''
 
     runs-on: ${{ matrix.platform }}
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install Linux dependencies
-        if: matrix.platform == 'ubuntu-22.04'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - uses: pnpm/action-setup@v4
 
