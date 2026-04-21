@@ -177,27 +177,36 @@ Official Azure/AWS icon SVGs are available in `temp/azure/` and `temp/aws/`, org
 - Keep commits atomic — one concern per commit
 - Do NOT push automatically; wait for explicit user request
 
-### Version Bumping (Semantic Versioning)
-Run the version bump script from the repo root — it updates all locations at once:
+### Releasing (Semantic Versioning)
 
+Releases are **tag-driven**. The `Release` GitHub Actions workflow fires when a `v*.*.*` tag is pushed — it creates the GitHub Release with auto-generated notes, builds Tauri installers (Windows / Linux / macOS aarch64), builds `tstudio` CLI binaries for all 4 platforms, and publishes `@afroze9/terrastudio-cli` to npm.
+
+**One-shot release:**
 ```bash
-pnpm version-bump 0.40.0
+pnpm release 0.51.3 --push
 ```
 
-This updates:
+**Staged release (review before pushing):**
+```bash
+pnpm release 0.51.3
+# inspect with: git log -1 --stat
+git push && git push origin v0.51.3
+```
+
+`scripts/release.mjs` handles the full flow: bumps versions, commits `chore: release vX.Y.Z`, creates the tag, and (with `--push`) pushes. `pnpm version-bump <version>` is still available if you need to bump without tagging.
+
+**Version locations** (all updated by `pnpm version-bump`):
 | File | Notes |
 |------|-------|
 | `apps/desktop/package.json` | Source of truth. Vite injects it as `__APP_VERSION__`. |
 | `apps/desktop/src-tauri/Cargo.toml` | Rust crate version. |
 | `packages/cli/package.json` | CLI reports this via `tstudio --version`. |
 
-**MUST update manually (the script does NOT update these):**
-- `.release-please-manifest.json` — Set `"apps/desktop"` to the new version. **Without this, release-please will not trigger a release PR.**
-
 **Derived automatically (no manual update needed):**
 - `apps/desktop/src-tauri/tauri.conf.json` — `"version": "../package.json"` reads from `package.json`
 - About dialog (`AboutModal.svelte`) — reads `__APP_VERSION__` injected by Vite
 - Package sub-versions (`packages/*/package.json` except CLI) — stay at `0.1.0` until individually published
+- `apps/desktop/CHANGELOG.md` — no longer auto-generated; GitHub Release notes are produced from commit history via `--generate-notes`
 
 **PATCH (0.0.x)** — Bug fixes, minor tweaks:
 - Fixing a bug that doesn't change behavior
@@ -217,14 +226,11 @@ This updates:
 - Major architectural changes
 - Dropping support for old Terraform versions
 
-### When to Bump Version
-- Bump version when creating a release-worthy commit (not every commit)
-- Group related changes into a single version bump
-- Update version in ALL THREE locations:
-  - `apps/desktop/package.json` → `"version": "x.y.z"`
-  - `apps/desktop/src-tauri/tauri.conf.json` → `"version": "x.y.z"`
-  - `apps/desktop/src-tauri/Cargo.toml` → `version = "x.y.z"`
-- Include version bump in the same commit as the feature (e.g., `feat: add dark mode (v0.4.0)`)
+### When to Release
+- Release when a logical chunk of user-visible work lands (new feature, bugfix with impact, CLI change)
+- Group related changes into one release rather than tagging every commit
+- Day-to-day work commits with `feat:`/`fix:`/`chore:` — the release commit is a separate `chore: release vX.Y.Z` created by `pnpm release`
+- CI only acts on tag pushes, so unreleased commits sit on `master` harmlessly until you tag
 
 ### Commit Message Format
 ```

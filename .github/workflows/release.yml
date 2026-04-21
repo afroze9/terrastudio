@@ -1,30 +1,66 @@
 name: Release
 
+# Triggered by pushing a semver tag like v0.51.3.
+# Create the tag with: pnpm release 0.51.3
+# (see scripts/release.mjs — it bumps versions, commits, tags, and prints push instructions)
+
 on:
   push:
-    branches: [master]
+    tags: ['v*.*.*']
 
 permissions:
   contents: write
-  pull-requests: write
   id-token: write
 
 jobs:
-  release-please:
+  create-release:
     runs-on: ubuntu-latest
     outputs:
-      release_created: ${{ steps.release.outputs['apps/desktop--release_created'] }}
-      tag_name: ${{ steps.release.outputs['apps/desktop--tag_name'] }}
-      version: ${{ steps.release.outputs['apps/desktop--version'] }}
+      version: ${{ steps.meta.outputs.version }}
+      tag: ${{ github.ref_name }}
     steps:
-      - uses: googleapis/release-please-action@v4
-        id: release
+      - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: meta
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Tag: ${TAG}  Version: ${VERSION}"
+
+      - name: Verify package.json versions match tag
+        shell: bash
+        run: |
+          EXPECTED="${{ steps.meta.outputs.version }}"
+          DESKTOP=$(node -p "require('./apps/desktop/package.json').version")
+          CLI=$(node -p "require('./packages/cli/package.json').version")
+          CARGO=$(grep -m1 '^version' apps/desktop/src-tauri/Cargo.toml | sed -E 's/.*"([^"]+)".*/\1/')
+          FAIL=0
+          if [ "$DESKTOP" != "$EXPECTED" ]; then echo "::error::apps/desktop/package.json is $DESKTOP, expected $EXPECTED"; FAIL=1; fi
+          if [ "$CLI" != "$EXPECTED" ]; then echo "::error::packages/cli/package.json is $CLI, expected $EXPECTED"; FAIL=1; fi
+          if [ "$CARGO" != "$EXPECTED" ]; then echo "::error::Cargo.toml is $CARGO, expected $EXPECTED"; FAIL=1; fi
+          if [ $FAIL -ne 0 ]; then echo "Run: pnpm version-bump $EXPECTED  and re-tag."; exit 1; fi
+          echo "All versions match $EXPECTED"
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "Release $GITHUB_REF_NAME already exists — skipping create."
+          else
+            gh release create "$GITHUB_REF_NAME" \
+              --title "TerraStudio ${{ steps.meta.outputs.version }}" \
+              --generate-notes \
+              --verify-tag
+          fi
 
   build-release:
-    needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
+    needs: create-release
     strategy:
       fail-fast: false
       matrix:
@@ -78,9 +114,9 @@ jobs:
         with:
           projectPath: apps/desktop
           tauriScript: pnpm tauri
-          tagName: ${{ needs.release-please.outputs.tag_name }}
-          releaseName: 'TerraStudio ${{ needs.release-please.outputs.version }}'
-          releaseBody: 'See [CHANGELOG](apps/desktop/CHANGELOG.md) for details.'
+          tagName: ${{ needs.create-release.outputs.tag }}
+          releaseName: 'TerraStudio ${{ needs.create-release.outputs.version }}'
+          releaseBody: 'See release notes below.'
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
@@ -91,30 +127,29 @@ jobs:
         shell: bash
         run: |
           cd apps/desktop/src-tauri/target/release
-          7z a -tzip "TerraStudio-${{ needs.release-please.outputs.version }}-portable-x64.zip" app.exe
+          7z a -tzip "TerraStudio-${{ needs.create-release.outputs.version }}-portable-x64.zip" app.exe
       - name: Upload portable zip (Windows)
         if: matrix.platform == 'windows-latest'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "${{ needs.release-please.outputs.tag_name }}" "apps/desktop/src-tauri/target/release/TerraStudio-${{ needs.release-please.outputs.version }}-portable-x64.zip" --clobber
+          gh release upload "${{ needs.create-release.outputs.tag }}" "apps/desktop/src-tauri/target/release/TerraStudio-${{ needs.create-release.outputs.version }}-portable-x64.zip" --clobber
 
       # Upload portable tarball on Linux
       - name: Create portable tarball (Linux)
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           cd apps/desktop/src-tauri/target/release
-          tar czf "TerraStudio-${{ needs.release-please.outputs.version }}-portable-linux-x64.tar.gz" app
+          tar czf "TerraStudio-${{ needs.create-release.outputs.version }}-portable-linux-x64.tar.gz" app
       - name: Upload portable tarball (Linux)
         if: matrix.platform == 'ubuntu-22.04'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "${{ needs.release-please.outputs.tag_name }}" "apps/desktop/src-tauri/target/release/TerraStudio-${{ needs.release-please.outputs.version }}-portable-linux-x64.tar.gz" --clobber
+          gh release upload "${{ needs.create-release.outputs.tag }}" "apps/desktop/src-tauri/target/release/TerraStudio-${{ needs.create-release.outputs.version }}-portable-linux-x64.tar.gz" --clobber
 
   build-cli:
-    needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
+    needs: create-release
     strategy:
       matrix:
         include:
@@ -163,7 +198,7 @@ jobs:
         working-directory: packages/cli/bin
         shell: bash
         run: |
-          VERSION="${{ needs.release-please.outputs.version }}"
+          VERSION="${{ needs.create-release.outputs.version }}"
           if [ -f "tstudio.exe" ]; then
             mv tstudio.exe "tstudio-${VERSION}-win-x64.exe"
           else
@@ -177,13 +212,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION="${{ needs.release-please.outputs.version }}"
-          TAG="${{ needs.release-please.outputs.tag_name }}"
+          VERSION="${{ needs.create-release.outputs.version }}"
+          TAG="${{ needs.create-release.outputs.tag }}"
           gh release upload "$TAG" tstudio-${VERSION}-* --clobber
 
   publish-cli-npm:
-    needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
+    needs: create-release
     runs-on: ubuntu-latest
     permissions:
       contents: read
