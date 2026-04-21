@@ -8,7 +8,7 @@
   let { onNewProject }: { onNewProject: () => void } = $props();
 </script>
 
-<header class="titlebar" data-tauri-drag-region>
+<header class="titlebar" class:macos={isMac} data-tauri-drag-region>
   <svg class="app-icon" width="16" height="16" viewBox="0 0 512 512" data-tauri-drag-region>
     <line x1="256" y1="128" x2="128" y2="340" stroke="#60a5fa" stroke-width="20" stroke-linecap="round" opacity="0.6"/>
     <line x1="256" y1="128" x2="384" y2="340" stroke="#5eead4" stroke-width="20" stroke-linecap="round" opacity="0.6"/>
@@ -41,8 +41,11 @@
     border-bottom: 1px solid var(--color-border);
     flex-shrink: 0;
     -webkit-app-region: drag;
-    padding-left: 80px; /* space for macOS traffic lights with titleBarStyle:Overlay */
+    padding-left: 12px;
     gap: 0;
+  }
+  .titlebar.macos {
+    padding-left: 80px;
   }
   .app-icon {
     flex-shrink: 0;

@@ -244,7 +244,7 @@
 
 <div class="welcome">
   <!-- Titlebar -->
-  <div class="welcome-titlebar" data-tauri-drag-region>
+  <div class="welcome-titlebar" class:macos={isMac} data-tauri-drag-region>
     {#if view !== 'home'}
       <button class="back-btn" onclick={goHome}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -629,7 +629,8 @@
     border-bottom: 1px solid var(--color-border);
   }
 
-  .titlebar-icon { flex-shrink: 0; margin-left: 80px; margin-right: 6px; } /* space for macOS traffic lights */
+  .titlebar-icon { flex-shrink: 0; margin-left: 12px; margin-right: 6px; }
+  .welcome-titlebar.macos .titlebar-icon { margin-left: 80px; }
   .welcome-logo { font-weight: 700; font-size: var(--font-12); letter-spacing: -0.02em; color: var(--color-accent); flex-shrink: 0; }
   .titlebar-spacer { flex: 1; }
 
@@ -637,7 +638,7 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    margin-left: 80px; /* space for macOS traffic lights */
+    margin-left: 8px;
     padding: 4px 10px;
     border: none;
     background: none;
@@ -648,6 +649,7 @@
     -webkit-app-region: no-drag;
   }
   .back-btn:hover { color: var(--color-text); background: var(--color-surface-hover); }
+  .welcome-titlebar.macos .back-btn { margin-left: 80px; }
 
   /* ── Home layout ────────────────────────────────────────────────────────── */
   .welcome-inner {
