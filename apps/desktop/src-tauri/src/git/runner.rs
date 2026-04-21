@@ -149,23 +149,3 @@ pub async fn run_git(
     Ok(exit)
 }
 
-/// Check if git is available on PATH.
-pub async fn check_git_installed() -> Result<String, String> {
-    let output = Command::new("git")
-        .arg("--version")
-        .output()
-        .await
-        .map_err(|e| {
-            format!(
-                "Git not found: {}. Please install git and ensure it is on your PATH.",
-                e
-            )
-        })?;
-
-    if !output.status.success() {
-        return Err("Git version check failed".into());
-    }
-
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    Ok(stdout.lines().next().unwrap_or("unknown").trim().to_string())
-}

@@ -166,10 +166,6 @@ pub struct TerraformValidateResult {
     #[serde(default)]
     pub valid: bool,
     #[serde(default)]
-    pub error_count: u32,
-    #[serde(default)]
-    pub warning_count: u32,
-    #[serde(default)]
     pub diagnostics: Vec<TerraformValidateDiagnostic>,
 }
 

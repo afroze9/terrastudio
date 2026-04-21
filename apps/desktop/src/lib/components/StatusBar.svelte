@@ -199,17 +199,6 @@
   .status-label {
     font-size: var(--font-11);
   }
-  .version-badge {
-    padding: 0 4px;
-    font-size: var(--font-10);
-    color: var(--color-text-muted);
-    opacity: 0.7;
-  }
-  .warning-badge {
-    padding: 0 4px;
-    font-size: var(--font-10);
-    color: #ef4444;
-  }
   .separator {
     width: 1px;
     height: 12px;
